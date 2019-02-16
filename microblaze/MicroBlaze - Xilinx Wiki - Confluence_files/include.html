@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <script src="include_data/all.js"></script><style type="text/css">body {margin: 0 !important;}</style>
+        <script>
+            "use strict";
+            (function () {
+                // Check for DNT property in JS again
+                if (navigator.doNotTrack === '1') {
+                    console.debug('Analytics: Not tracking due to set Do-Not-Track HTTP header');
+                    return;
+                }
+
+                // Computes the SHA-256 digest of a string with Web Crypto
+                // Source: https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest
+                function sha256(str) {
+                    // Get the string as arraybuffer.
+                    var buffer = new TextEncoder("utf-8").encode(str);
+                    return (window.crypto || window.msCrypto).subtle.digest("SHA-256", buffer).then(function (hash) {
+                        // Convert to hex
+                        var digest = '';
+                        var view = new DataView(hash);
+                        for (var i = 0; i < view.byteLength; i += 4) {
+                            // We use getUint32 to reduce the number of iterations (notice the `i += 4`)
+                            var value = view.getUint32(i);
+                            // toString(16) will transform the integer into the corresponding hex string
+                            // but will remove any initial "0"
+                            var stringValue = value.toString(16);
+                            // One Uint32 element is 4 bytes or 8 hex chars (it would also work with 4
+                            // chars for Uint16 and 2 chars for Uint8)
+                            var padding = '00000000';
+                            digest += (padding + stringValue).slice(-padding.length)
+                        }
+                        return digest;
+                    })
+                }
+
+                var failCount = 0;
+
+                function track(id) {
+                    if (typeof id !== 'string' || id === '') {
+                        console.warn('Skipping Google Analytics initialization due to unset GA ID. Go to app settings to fix this. If you are sure that you\'ve configured an ID, there might be a temporary problem retrieving it.');
+                        return;
+                    }
+
+                    // Set up GA data layer
+                    if (!window.dataLayer) {
+                        window.dataLayer = [];
+
+                        window.gtag = function () {
+                            dataLayer.push(arguments);
+                        };
+
+                        gtag('js', new Date());
+                    }
+
+
+                    if (!window.AP) {
+                        if (failCount++ > 20) {
+                            return;
+                        }
+                        setTimeout(function () {
+                            track(id);
+                        }, 500);
+                        return;
+                    }
+
+                    var user = undefined;
+                    var location = undefined;
+                    var startTime = Date.now();
+
+                    AP.user.getCurrentUser(function (retUser) {
+                        if (retUser && retUser.atlassianAccountId) {
+                            try {
+                                sha256(retUser.atlassianAccountId).then(function (userHash) {
+                                    user = userHash;
+                                    loaded();
+                                }, function (e) {
+                                    console.warn('Error hashing user account id', e);
+                                    user = retUser.atlassianAccountId;
+                                    loaded();
+                                });
+                            } catch (e) {
+                                console.warn('Error hashing user account id', e);
+                                user = retUser.atlassianAccountId;
+                                loaded();
+                            }
+                        } else {
+                            user = null;
+                            loaded();
+                        }
+                    });
+                    AP.getLocation(function (retLocation) {
+                        location = retLocation;
+                        loaded();
+                    });
+
+                    function loaded() {
+                        if (user === undefined || location === undefined) {
+                            // too early. But this is cheaper than a Promise library
+                            return;
+                        }
+                        console.debug('GA: Acquisition of GA dataLayer resources took ' + (Date.now() - startTime) + 'ms');
+
+                        // async load GA
+                        var newElement = document.createElement('script');
+                        var firstScriptTag = document.getElementsByTagName('script')[0];
+                        newElement.async = true;
+                        newElement.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+                        firstScriptTag.parentNode.insertBefore(newElement, firstScriptTag);
+
+                        // Prepare pageview parameters
+                        var path = location.replace(/^[a-zA-Z]+:\/\/[^\/]*/, "");
+
+                        var pageViewOptions = {
+                            send_to: id,
+                            page_location: location,
+                            page_path: path,
+                            dimension1: 'A',
+                            dimension2: 'anonymous',
+                            dimension3: '18842560',
+                            dimension4: 'page',
+                            dimension5: '2'
+                        };
+                        if (user) {
+                            pageViewOptions.user_id = pageViewOptions.dimension2 = user;
+                            console.debug('GA: sending user account id ' + user);
+                        }
+                        gtag('event', 'page_view', pageViewOptions);
+                        console.debug('GA: sending pageview with params', pageViewOptions);
+
+                    }
+                }
+
+                track("");
+            })()
+        </script>
+    </head>
+    <body style="padding-bottom: 0px; padding-top: 0px; margin-bottom: 0px; margin-top: 0px;">
+        <svg height="1" width="1">
+            <circle r="0.5" stroke-opacity="0" fill-opacity="0"></circle>
+        </svg>
+    
+
+<div class="ac-resize-sensor" style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"><div class="ac-resize-sensor-expand" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"><div style="position: absolute; left: 0px; top: 0px; width: 1553px; height: 11px;"></div></div><div class="ac-resize-sensor-shrink" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"><div style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"></div></div></div></body></html>

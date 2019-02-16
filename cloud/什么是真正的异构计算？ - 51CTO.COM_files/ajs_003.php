@@ -1,0 +1,3 @@
+var OX_5b3e8025 = '';
+OX_5b3e8025 += "<"+"script type=\"text/javascript\" src=\"\"><"+"/script><"+"a href=\'//gg.51cto.com/www/delivery/ck.php?oaparams=2__bannerid=3933__zoneid=270__cb=fc78e2b133__oadest=http%3A%2F%2Fedu.51cto.com%2Fpx%2Ftrain%2F232%3Fwzl\' target=\'_blank\'><"+"font color=\'red\'>区块链实战,从0到1实现电子货币<"+"/font><"+"/a><"+"div id=\'beacon_fc78e2b133\' style=\'position: absolute; left: 0px; top: 0px; visibility: hidden;\'><"+"img src=\'//gg3.51cto.com/www/delivery/lg.php?bannerid=3933&amp;campaignid=780&amp;zoneid=270&amp;loc=1&amp;referer=http%3A%2F%2Fmobile.51cto.com%2Fnews-415805.htm&amp;cb=fc78e2b133\' width=\'0\' height=\'0\' alt=\'\' style=\'width: 0px; height: 0px;\' /><"+"/div>\n";
+document.write(OX_5b3e8025);

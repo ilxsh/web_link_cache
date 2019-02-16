@@ -1,0 +1,1 @@
+if(window.location.href.indexOf("ck365.cn") != -1){document.domain = "ck365.cn";}var XZGPath = "http://www.ck365.cn/";var SKPath = "http://www.ck365.cn/skin/default/";var EXPath = "http://www.ck365.cn/extend/";var CKPrex = "D0G_";var CKPath = "/";var CKDomain = ".ck365.cn";

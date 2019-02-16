@@ -1,0 +1,701 @@
+﻿//prototype
+Array.prototype.indexOf = function (v) {
+	var i = -1;
+	while (this[++i]) {
+		if (this[i] === v) {
+			return i
+		}
+	}
+	return -1
+};
+Array.prototype.remove = function (v) {
+	var i = this.indexOf(v);
+	if (i > -1) {
+		this.splice(i, 1)
+	}
+	return [i, v]
+};
+String.prototype.trim = function () {
+	return this.replace(/(^\s*)|(\s*$)/g, "")
+};
+String.prototype.Ltrim = function () {
+	return this.replace(/(^\s*)/g, "");
+};
+String.prototype.Rtrim = function () {
+	return this.replace(/(\s*$)/g, "");
+};
+String.prototype.len = function () {
+	return this.replace(/[^\x00-\xff]/g, "**").length
+};
+String.prototype.cut = function (l) {
+	if (this.len() <= l) {
+		return this
+	} else {
+		for (var i = Math.floor(l / 2) ; i < this.len() ; i++) {
+			if (this.substr(0, i).len() >= l) {
+				return this.substr(0, i)
+			}
+		}
+	}
+};
+String.prototype.encodeHtml = function () {
+	return this.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/ /g, '&nbsp;').replace(/\'/g, '&#39;').replace(/\"/g, '&quot;').replace(/\n/g, '<br />')
+};
+String.prototype.encodeUrl = function (n) {
+	var ret = encodeURIComponent(this.trim());
+	if (n == 0) {
+		document.all && (ret = encodeURIComponent(ret));
+	} else if (n == 2) {
+		ret = encodeURIComponent(ret);
+	}
+	return ret;
+};
+String.prototype.decodeUrl = function () {
+	var ret = decodeURIComponent(this)
+	try {
+		ret = decodeURIComponent(ret)
+	} catch (e) { }
+	return ret
+};
+//Q.js
+(function () {
+    var Q = window.Q = function (x, pat) {
+        return Q.type(x) == 'function' ? Q.ready(x) : new Q.prototype.init(x, pat)
+    },
+        isFF = window.addEventListener ? true : false,
+        reHTML = /<|&#?\w+;/;
+    Q.prototype = {
+        init: function (x, pat) {
+            this.elements = [];
+            return Q.type(x) === 'string' ? (reHTML.test(x) ? this.merge(Q.clean(x)) : this.selector(x, pat)) : this.merge(x)
+        },
+        each: function (cak) {
+            Q.each(this.e, cak);
+            return this
+        },
+        merge: function (els) {
+            this.pointer = 0;
+            this.elements.splice(0, 0, els.length === undefined || (els.nodeName && els.nodeName.toUpperCase() === 'SELECT') ? [els] : els);
+            this.e = this.elements[this.pointer];
+            return this
+        },
+        selector: function (x, pat, fir) {
+            pat = pat || document;
+            pat = pat.length === undefined ? [pat] : pat;
+            var ret = [],
+                els = function (pat, noe) {
+                    var ret = [];
+                    Q.each(pat, function () {
+                        ret = ret.concat(Q.toArray(this.getElementsByTagName(noe || '*')))
+                    });
+                    return ret
+                },
+                tet = function (els, ate, rep) {
+                    var ret = [];
+                    Q.each(els, function () {
+                        if (Q.reCSS(rep).test(this[ate])) {
+                            ret.push(this)
+                        }
+                    });
+                    return ret
+                };
+            Q.each(x.split(','), function () {
+                ret = ret.concat((function (x, pat, fir) {
+                    var ret = [],
+                        ary = x.shift().match(/([A-Za-z0-9*]+)?(#|\.)?([\w\-]+)?/);
+                    if (ary[2] === '#') {
+                        if (fir) {
+                            ret = ret.concat(tet(pat, 'id', ary[3]))
+                        } else {
+                            var elt = document.getElementById(ary[3]);
+                            ret = ret.concat(elt ? [elt] : [])
+                        }
+                    } else if (ary[2] === '.') {
+                        if (fir) {
+                            ret = ret.concat(tet(ary[1] ? tet(pat, 'nodeName', ary[1].toUpperCase()) : pat, 'className', ary[3]))
+                        } else {
+                            ret = ret.concat(tet(els(pat, ary[1]), 'className', ary[3]))
+                        }
+                    } else {
+                        if (fir) {
+                            ret = ret.concat(tet(pat, 'nodeName', ary[1].toUpperCase()))
+                        } else {
+                            ret = ret.concat(els(pat, ary[1]))
+                        }
+                    }
+                    return x[0] ? arguments.callee(x, ret) : ret
+                })(fir ? [this] : this.match(/([A-Za-z0-9*]+)?((#|\.)([\w\-]+))|([A-Za-z0-9*]+)((#|\.)([\w\-]+))?/g), pat, fir))
+            });
+            return this.merge(ret)
+        },
+        find: function (x) {
+            return this.selector(x, this.e)
+        },
+        filter: function (x) {
+            return this.selector(x, this.e, 1)
+        },
+        end: function () {
+            this.e = this.elements[++this.pointer];
+            return this
+        },
+        eq: function (i) {
+            i = i === -1 ? this.e.length - 1 : i;
+            return this.merge(this.e[i] ? this.e[i] : [])
+        },
+        parent: function () {
+            var ret = [];
+            this.each(function () {
+                if (this.parentNode.nodeType === 1 && ret.indexOf(this.parentNode) === -1) {
+                    ret.push(this.parentNode)
+                }
+            });
+            return this.merge(ret)
+        },
+        children: function () {
+            var ret = [];
+            this.each(function () {
+                var i = -1,
+                    ths = this.childNodes;
+                while (ths[++i]) {
+                    if (ths[i].nodeType === 1 && ret.indexOf(ths[i]) === -1) {
+                        ret.push(ths[i])
+                    }
+                }
+            });
+            return this.merge(ret)
+        },
+        sibling: function (sig) {
+            var ret = [];
+            this.each(function () {
+                var ths = this;
+                while (ths = ths[sig]) {
+                    if (ths.nodeType === 1 && ret.indexOf(ths) === -1) {
+                        ret.push(ths)
+                    }
+                }
+            });
+            return sig == 'previousSibling' ? ret.reverse() : ret
+        },
+        pn: function (sig) {
+            var ret = [];
+            this.each(function () {
+                var ths = this;
+                do {
+                    ths = ths[sig]
+                } while (ths && ths.nodeType !== 1) if (ths && ret.indexOf(ths) === -1) {
+                    ret.push(ths)
+                }
+            });
+            return ret
+        },
+        siblings: function () {
+            return this.merge(this.sibling('previousSibling').concat(this.sibling('nextSibling')))
+        },
+        prevAll: function () {
+            return this.merge(this.sibling('previousSibling'))
+        },
+        nextAll: function () {
+            return this.merge(this.sibling('nextSibling'))
+        },
+        prev: function () {
+            return this.merge(this.pn('previousSibling'))
+        },
+        next: function () {
+            return this.merge(this.pn('nextSibling'))
+        },
+        index: function () {
+            return this.sibling('previousSibling').length
+        },
+        attr: function (obt) {
+            if (Q.type(obt) === 'object') {
+                return this.each(function () {
+                    for (var n in obt) {
+                        this[n] === undefined ? (this.setAttribute ? this.setAttribute(n, obt[n]) : null) : this[n] = obt[n]
+                    }
+                })
+            } else {
+                return this.e[0] ? (this.e[0][obt] === undefined ? this.e[0].getAttribute(obt) : this.e[0][obt]) : undefined
+            }
+        },
+        css: function (v, n) {
+            if (v === undefined) {
+                return this.e[0] ? this.e[0].className : '';
+            } else {
+                var _class, _match;
+                return this.each(function () {
+                    _class = ' ' + this.className + ' ';
+                    _match = function (s) {
+                        return !~_class.indexOf(' ' + s + ' ');
+                    };
+                    if (n === undefined) {
+                        v === '' ? this.className = '' : _match(v) && (this.className = (_class + v + ' ').trim());
+                    } else {
+                        if (v === '') {
+                            this.className = _class = '';
+                        } else {
+                            _class = _class.replace(' ' + v + ' ', ' ');
+                            this.className = _class.trim();
+                        }
+                        n !== '' && _match(n) && (this.className = (_class + n + ' ').trim());
+                    }
+                })
+            }
+        },
+        hasClass: function (v) {
+            var ret = false;
+            this.each(function () {
+                if (Q.reCSS(v).test(this.className)) {
+                    ret = true;
+                    return false;
+                }
+            });
+            return ret;
+        },
+        style: function (j) {
+            if (typeof j === 'object') {
+                return this.each(function () {
+                    for (var n in j) {
+                        this.style[n] = j[n]
+                    }
+                })
+            } else {
+                if (j === 'width') {
+                    return this.e[0].clientWidth
+                } else if (j === 'height') {
+                    return this.e[0].clientHeight
+                } else {
+                    return this.e[0].currentStyle ? this.e[0].currentStyle[j] : document.defaultView.getComputedStyle(this.e[0], null)[j]
+                }
+            }
+        },
+        html: function (v) {
+            return this.attr(v === undefined ? 'innerHTML' : {
+                innerHTML: v
+            })
+        },
+        text: function (v) {
+            return this.attr(v === undefined ? (isFF ? 'textContent' : 'innerText') : (isFF ? {
+                'textContent': v
+            } : {
+                'innerText': v
+            }))
+        },
+        val: function (v) {
+            return this.attr(v === undefined ? 'value' : {
+                value: v
+            })
+        },
+        width: function (v) {
+            return this.style(v === undefined ? 'width' : {
+                width: v
+            })
+        },
+        height: function (v) {
+            return this.style(v === undefined ? 'height' : {
+                height: v
+            })
+        },
+        offset: function () {
+            return {
+                'top': Q.offset(this.e[0], 'offsetTop'),
+                'left': Q.offset(this.e[0], 'offsetLeft'),
+                'width': this.e[0].offsetWidth,
+                'height': this.e[0].offsetHeight
+            }
+        },
+        position: function (s) {
+            return {
+                'top': this.e[0].getBoundingClientRect().top + (s ? document.body.scrollTop + document.documentElement.scrollTop : 0),
+                'left': this.e[0].getBoundingClientRect().left + (s ? document.body.scrollLeft + document.documentElement.scrollLeft : 0)
+            }
+        },
+        show: function () {
+            return this.style({
+                display: 'block'
+            })
+        },
+        hide: function () {
+            return this.style({
+                display: 'none'
+            })
+        },
+        bind: function (evt, cak) {
+            return this.each(function () {
+                isFF ? this.addEventListener(evt, cak, false) : this.attachEvent('on' + evt, (function (ths, cak) {
+                    return ths['ev' + cak] = function () {
+                        cak.call(ths, Q.event.fix(window.event))
+                    };
+                })(this, cak))
+            })
+        },
+        unbind: function (evt, cak) {
+            return this.each(function () {
+                isFF ? this.removeEventListener(evt, cak, false) : this.detachEvent('on' + evt, this['ev' + cak])
+            })
+        },
+        on: function (evt, cak) {
+            return this.each(function () {
+                this['on' + evt] = function (e) {
+                    cak.call(this, e || Q.event.fix(window.event))
+                }
+            })
+        }
+    };
+    Q.each = function (obt, cak) {
+        if (obt.length === undefined) {
+            for (var n in obt) {
+                if (cak.call(obt[n], n) === false) {
+                    break
+                }
+            }
+        } else {
+            for (var i = 0; i < obt.length; i++) {
+                if (cak.call(obt[i], i) === false) {
+                    break
+                }
+            }
+        }
+        return obt
+    };
+    Q.event = {
+        add: function (evt, cak) {
+            isFF ? this.addEventListener(evt, cak, false) : this.attachEvent('on' + evt, (function (ths, cak) {
+                return ths['ev' + cak] = function () {
+                    cak.call(ths, Q.event.fix(window.event))
+                };
+            })(this, cak))
+        },
+        remove: function (evt, cak) {
+            isFF ? this.removeEventListener(evt, cak, false) : this.detachEvent('on' + evt, this['ev' + cak])
+        },
+        fix: function (e) {
+            var type = e.type.toLowerCase();
+            if (type == 'mouseover') {
+                e.relatedTarget = e.fromElement
+            } else if (type = 'mouseout') {
+                e.relatedTarget = e.toElement
+            }
+            e.target = e.srcElement;
+            e.pageX = e.clientX;
+            e.pageY = e.clientY;
+            e.preventDefault = function () {
+                this.returnValue = false;
+            };
+            e.stopPropagation = function () {
+                this.cancelBubble = true;
+            };
+            return e;
+        }
+    };
+    Q.extend = Q.prototype.extend = function () {
+        var ret = {};
+        if (arguments.length === 1) {
+            ret = this
+        }
+        Q.each(arguments, function () {
+            Q.each(this, function (n) {
+                ret[n] = this
+            })
+        });
+        return ret
+    };
+    Q.prototype.extend({
+        append: function (x) {
+            var f = Q.fragment(Q(x));
+            return this.each(function () {
+                this.appendChild(f)
+            })
+        },
+        appendTo: function (x) {
+            var f = Q.fragment(this);
+            (x.e ? x : Q(x)).each(function () {
+                this.appendChild(f)
+            });
+            return this
+        },
+        prepend: function (x) {
+            var f = Q.fragment(Q(x));
+            return this.each(function () {
+                this.insertBefore(f, this.firstChild)
+            })
+        },
+        prependTo: function (x) {
+            var f = Q.fragment(this);
+            (x.e ? x : Q(x)).each(function () {
+                this.insertBefore(f, this.firstChild)
+            });
+            return this
+        },
+        before: function (x) {
+            var f = Q.fragment(Q(x));
+            return this.each(function () {
+                this.parentNode.insertBefore(f, this)
+            })
+        },
+        insertBefore: function (x) {
+            var f = Q.fragment(this);
+            (x.e ? x : Q(x)).each(function () {
+                this.parentNode.insertBefore(f, this)
+            });
+            return this
+        },
+        after: function (x) {
+            var f = Q.fragment(Q(x));
+            return this.each(function () {
+                this.parentNode.insertBefore(f, this.nextSibling)
+            })
+        },
+        insertAfter: function (x) {
+            var f = Q.fragment(this);
+            (x.e ? x : Q(x)).each(function () {
+                this.parentNode.insertBefore(f, this.nextSibling)
+            });
+            return this
+        },
+        replaceWith: function (x) {
+            var f = Q.fragment(Q(x));
+            return this.each(function () {
+                this.parentNode.replaceChild(f, this)
+            })
+        },
+        replaceAll: function (x) {
+            var f = Q.fragment(this);
+            (x.e ? x : Q(x)).each(function () {
+                this.parentNode.replaceChild(f, this)
+            });
+            return this
+        },
+        empty: function () {
+            return this.each(function () {
+                while (this.firstChild) {
+                    this.removeChild(this.firstChild)
+                }
+            })
+        },
+        remove: function () {
+            return this.each(function () {
+                this.parentNode.removeChild(this)
+            })
+        },
+        clone: function () {
+            var ret = [];
+            this.each(function () {
+                ret.push(this.cloneNode(true))
+            });
+            return this.merge(ret)
+        }
+    });
+    Q.extend({
+        ready: function (cak) {
+            isFF ? document.addEventListener('DOMContentLoaded', cak, false) : (function () {
+                try {
+                    document.documentElement.doScroll('left')
+                } catch (e) {
+                    setTimeout(arguments.callee, 1);
+                    return
+                }
+                cak()
+            })()
+        },
+        type: function (obt) {
+            return (obt === null ? String(obt) : Object.prototype.toString.call(obt).slice(8, -1)).toLowerCase()
+        },
+        toArray: function (obt) {
+            try {
+                return [].slice.call(obt)
+            } catch (e) {
+                var ret = [];
+                Q.each(obt, function () {
+                    ret.push(this)
+                });
+                return ret
+            }
+        },
+        toStr: function (obt) {
+            switch (Q.type(obt)) {
+                case 'unknown':
+                    return;
+                    break;
+                case 'regexp':
+                    return obt.toString();
+                    break;
+                case 'number':
+                    return isFinite(obt) ? obt.toString() : 'null';
+                    break;
+                case 'string':
+                    return '"' + obt.replace(/(\\|\")/g, "\\$1").replace(/\n|\r|\t/g, function () {
+                        var a = arguments[0];
+                        return (a == '\n') ? '\\n' : (a == '\r') ? '\\r' : (a == '\t') ? '\\t' : ""
+                    }) + '"';
+                    break;
+                case 'object':
+                    if (obt === null) {
+                        return 'null'
+                    }
+                    var ret = [];
+                    for (var n in obt) {
+                        if (obt[n] != null) {
+                            var value = Q.toStr(obt[n]);
+                            if (value !== undefined) {
+                                ret.push(Q.toStr(n) + ':' + value)
+                            }
+                        } else {
+                            ret.push(n + ':null')
+                        }
+                    }
+                    return '{' + ret.join(',') + '}';
+                    break;
+                case 'array':
+                    var ret = [];
+                    for (var i = 0; i < obt.length; i++) {
+                        var value = Q.toStr(obt[i]);
+                        if (value !== undefined) {
+                            ret.push(value)
+                        }
+                    }
+                    return '[' + ret.join(',') + ']';
+                    break
+            }
+        },
+        reCSS: function (stg) {
+            return RegExp('(^|\\s)' + stg + '(\\s|$)')
+        },
+        offset: function (t, f) {
+            var ret = t[f];
+            t.offsetParent != null && (ret += arguments.callee(t.offsetParent, f));
+            return ret
+        },
+        contains: function (p, c, s) {
+            var tmp = p.contains ? p != c && p.contains(c) : !!(p.compareDocumentPosition(c) & 16);
+            return s ? tmp || p == c : tmp;
+        },
+        eval: function (stg) {
+            return eval('(' + stg + ')')
+        },
+        clean: function (x) {
+            var div = document.createElement('div');
+            div.innerHTML = x;
+            return Q.toArray(div.childNodes)
+        },
+        fragment: function (x) {
+            frt = document.createDocumentFragment();
+            x.each(function () {
+                frt.appendChild(this)
+            });
+            return frt
+        },
+        cookie: function (name, value, expires) {
+            if (value) {
+                var duration = new Date();
+                duration.setDate(duration.getDate() + expires);
+                document.cookie = name + '=' + encodeURIComponent(value) + ';path=/' + (expires ? ';expires=' + duration.toGMTString() : '');
+                return value
+            } else {
+                var arr = document.cookie.match(new RegExp('(^| )' + name + '=([^;]*)(;|$)'));
+                return arr != null ? decodeURIComponent(arr[2]) : ''
+            }
+        },
+        request: function (name) {
+            var ret = window.location.search.substr(1).match(new RegExp("(^|&)" + name + "=([^&]*)(&|$)"));
+            return ret != null ? ret[2].decodeUrl() : '';
+        },
+        js: function (obt) {
+            var hed = document.getElementsByTagName('head')[0],
+                sct = null,
+                com = function () {
+                    obt.success && obt.success();
+                    sct.loaded = true;
+                    obt.cache !== undefined && hed.removeChild(sct);
+                };
+            obt.cache === undefined && Q('head script').each(function () {
+                if (this.src == (obt.url.indexOf('http://') > -1 ? obt.url : 'http://' + location.host + obt.url)) {
+                    sct = this;
+                    return false
+                }
+            });
+            if (!sct) {
+                sct = document.createElement('script'),
+                sct.type = 'text/javascript';
+                sct.src = obt.url + (obt.cache === false ? (obt.url.indexOf('?') > -1 ? '&_=' : '?_=') + new Date().getTime() : '');
+                sct.charset = obt.charset || 'utf-8';
+            }
+            sct.loaded ? com() : (isFF ? sct.addEventListener('load', com, false) : sct.attachEvent('onreadystatechange', function () {
+                /loaded|complete/.test(sct.readyState) && com();
+            }));
+            hed.appendChild(sct);
+        },
+        ajax: function (obt) {
+            var xhr = null,
+                msg = Q('<div style="position:absolute; top:100px; right:100px; padding:10px 20px; border:#ccc solid 1px; color:#666; background:#f3f3f3; display:none;"></div>');
+            if (obt.start) {
+                obt.start()
+            } else {
+                //msg.appendTo('body').text('Loading').show()
+            }
+            try {
+                xhr = new XMLHttpRequest()
+            } catch (e) {
+                try {
+                    xhr = new ActiveXObject('Microsoft.XMLHTTP')
+                } catch (e) {
+                    //msg.appendTo('body').text('Can Not Create XMLHTTP Object').show();
+                    return false
+                }
+            }
+            xhr.open(obt.method || 'post', obt.url, obt.async || true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        if (obt.stop) {
+                            obt.stop()
+                        } else {
+                            //msg.appendTo('body').text('Success').show();
+                            setTimeout(function () {
+                                msg.remove()
+                            }, 5000)
+                        }
+                        switch (obt.type) {
+                            case 'xml':
+                                obt.success(xhr.responseXML);
+                                break;
+                            case 'text':
+                                obt.success(xhr.responseText);
+                                break;
+                            case 'json':
+                                obt.success(Q.eval(xhr.responseText));
+                                break;
+                            case 'script':
+                                Q.eval(xhr.responseText);
+                                obt.success();
+                                break;
+                            default:
+                                obt.success(xhr.responseText);
+                                break
+                        }
+                    } else {
+                        if (obt.error) {
+                            obt.error(xhr.statusText)
+                        } else {
+                            //msg.appendTo('body').text(xhr.statusText).show()
+                        }
+                    }
+                }
+            };
+            xhr.send(obt.param || '')
+        }
+    });
+    Q.each(['focus', 'click', 'dblclick', 'change', 'select', 'submit', 'keydown', 'keypress', 'keyup', 'mousedown', 'mouseup', 'mousemove', 'mouseover', 'mouseout', 'mouseenter', 'mouseleave', 'blur', 'error', 'resize', 'scroll', 'load', 'unload'], function () {
+        var ths = this;
+        Q.prototype[ths] = function (cak) {
+            return this.bind(ths, cak)
+        }
+    });
+    Q.prototype.init.prototype = Q.prototype
+})();
+
+Q(function () {
+    Q("#topNavCustomer").click(function () {
+        HqmService('12949', 'FB62F4B8-63E5-4735-8FB4-3DA152933D81', '1', '12949', '81');
+    });
+});

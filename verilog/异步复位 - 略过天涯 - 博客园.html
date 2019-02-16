@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<!-- saved from url=(0061)http://www.cnblogs.com/lueguo/archive/2013/09/30/3346972.html -->
+<html lang="zh-cn"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="never">
+    <title>异步复位 - 略过天涯 - 博客园</title>
+<meta property="og:description" content="长时间以来，异步复位在电路设计中经常被采用，特别是ASIC设计中。这样的设计非常受欢迎，比如一个异步输入到器件，然后给该异步信号分配全局布线资源，并连接这个异步信号到器件中每一个（几乎所有）寄存器的异">
+    <link type="text/css" rel="stylesheet" href="./异步复位 - 略过天涯 - 博客园_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="./异步复位 - 略过天涯 - 博客园_files/style2.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="./异步复位 - 略过天涯 - 博客园_files/bundle-BOOK-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/lueguo/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/lueguo/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/lueguo/wlwmanifest.xml">
+    <script async="" src="./异步复位 - 略过天涯 - 博客园_files/analytics.js.download"></script><script src="./异步复位 - 略过天涯 - 博客园_files/jquery-2.2.0.min.js.download"></script>
+    <script>var currentBlogId=158959;var currentBlogApp='lueguo',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="./异步复位 - 略过天涯 - 博客园_files/blog-common.js.download" type="text/javascript"></script>
+<link rel="preload" href="./异步复位 - 略过天涯 - 博客园_files/f.txt" as="script"><script type="text/javascript" src="./异步复位 - 略过天涯 - 博客园_files/f.txt"></script><script src="./异步复位 - 略过天涯 - 博客园_files/pubads_impl_301.js.download" async=""></script></head>
+<body>
+<a name="top"></a>
+
+
+<script type="text/javascript">
+	try {
+		if (screen.availWidth > 1200) {
+			document.getElementById("MainCss").href = '/Skins/BOOK/style2.css';
+		}
+	} catch (e) { }
+</script>
+
+<div id="header">
+<div id="HeaderTitle">
+<div id="Title">
+<a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/lueguo/">略过天涯</a>
+</div>
+<div id="subTitle"></div>
+</div>
+</div>
+
+<div id="main">
+	
+        <div id="post_detail">
+	<div class="post">
+		<h2>
+			<a id="cb_post_title_url" href="https://www.cnblogs.com/lueguo/p/3346972.html">异步复位</a>
+		</h2>
+		<div id="cnblogs_post_body" class="blogpost-body"><p>&nbsp;长时间以来，异步复位在电路设计中经常被采用，特别是ASIC设计中。这样的设计非常受欢迎，比如一个异步输入到器件，然后给该异步信号分配全局布线资源，并连接这个异步信号到器件中每一个（几乎所有）寄存器的异步复位引脚。在某些情况下，这种方法有它的优点，但是它并不是没有缺陷。比如并不是每一个设计，器件中的每一个寄存器都需要复位的。所以说这个方法也不是完全不需要消耗布线资源以及LAB范围控制信号，最好的做法是只将复位连接到那些需要复位的寄存器。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 异步复位的一个最大优点是，它们没有象同步复位那样插入到数据路径中。因此，异步复位对寄存器之间的数据到达时间不产生任何负面影响。另一个优点是，它们一般都是即刻生效。只要寄存器收到复位脉冲，寄存器将被即刻复位，而不管相对于时钟的时序关系。所以异步复位不象同步复位那样依赖于时钟。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 电路使用异步并没有任何问题，只是在复位被释放的时候可能会出现问题，所谓的复位释放（Release）有时候也被称为复位去除（Removal）。当复位撤除时，它必须满足异步微建立时间，即µt<sub>SU</sub>。这个可以在TimeQuest里使用Recovery时间检查来得到确认。此外，复位撤除时，它也必须要满足微保持时间，即µt<sub>H</sub>。同样可以在TimeQuest使用Removal时间检查来得到确认。总之，上述两种Check被称为Rcovery/Removal分析。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 当复位信号为置无效（Deasserted）时，并且不能通过时序分析里的Recovery和Removal检查时，那么复位信号边沿就会很可能落入了一个亚稳态区域，如图1所示。</p>
+<p align="center">&nbsp;</p>
+<div><a href="http://download.bbs.ednchina.com/images/attachments/201306/original/41415_TIME_1372656423213.jpg" target="_blank"><img src="./异步复位 - 略过天涯 - 博客园_files/41415_TIME_1372656423213.jpg" alt="1.jpg" width="349" height="321" border="0"></a></div>
+<p align="center">&nbsp;</p>
+<p align="center">图1：亚稳态曲线</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 亚稳态带来的后果是寄存器的输出（基于输入到寄存器的输入数据）需要花费更多的时间来回复到其正确的状态。这个额外增加的时间可能会导致寄存器下一级的建立时间失败，从而导致系统错误。显然，需要不惜一切代价来避免这种情况。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 避免亚稳态的方法之一是在寄存该异步复位的寄存器后增加一系列寄存器，然后使用这些寄存器的输出作为设计的复位。后面增加的寄存器通过将数据同步到时钟的方式来去除亚稳态问题。设计中后续寄存器越接近这些寄存器越好，这样可以最大限度减少布线延时，降低了数据的到达时间，从而增加了平均无故障时间（MTBF）。需要注意，重要的是这些额外增加的寄存器本身不但没有被复位，而且有几个时钟周期通过“冲刷”掉它们当前或者初始状态而被初始化。图2显示了这样一个电路的例子。</p>
+<div><a href="http://download.bbs.ednchina.com/images/attachments/201306/original/41415_TIME_1372656363613.jpg" target="_blank"><img src="./异步复位 - 略过天涯 - 博客园_files/41415_TIME_1372656363613.jpg" alt="1.jpg" width="450" height="110" border="0"></a></div>
+<p align="center">&nbsp;</p>
+<p align="center">图2：异步复位跟随几个寄存器的原理图</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 在一般情况下，象图12所示的没有反馈电路的流水线设计，它不依赖于时序电路的初始状态，并如果电路能够在跳出复位状态后等待几个周期才开始运作的话，这种类型的复位还是可以接受的。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 图2所示电路的Verilog代码如图3所示。请注意与同步复位代码的差异。现在，复位的有效沿已经位于进程的敏感列表中了。同样重要的是，后续两个寄存器不是在第一个进程的“else”部分，而是位于另外一个进程中，因为如果位于第一个进程的“else”部分，复位信号取反后被连接到寄存器的时钟使能端口，从而将会被推导出时钟使能。可以看到后面两个寄存器在第二个进程中使用了非阻塞赋值。</p>
+<p align="center">&nbsp;</p>
+<div><a href="http://download.bbs.ednchina.com/images/attachments/201306/original/41415_TIME_1372656491155.jpg" target="_blank"><img src="./异步复位 - 略过天涯 - 博客园_files/41415_TIME_1372656491155.jpg" alt="1.jpg" width="279" height="350" border="0"></a></div>
+<p align="center">&nbsp;</p>
+<p align="center">图3：异步复位跟随寄存器代码</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 约束一个异步复位非常简单，根据定义，异步复位和它们将要复位的寄存器的时钟域之间没有任何确定的时间关系。因此，对这些复位进行静态时序分析是不太可能，它们通常在SDC文件中使用set_false_path语句来进行切割，如图4所示。由于寄存器的复位和时钟之间的时序关系是未知的，所以在TimeQuest中无法对这些路径进行Recovery和Removal分析，即使试图尝试这样做，也不会获得期望的路径报告。即使没有使用假路径约束语句对路径进行切割，也不会有这些路径上的Recovery和Removal报告。</p>
+<p align="center">&nbsp;</p>
+<div><a href="http://download.bbs.ednchina.com/images/attachments/201306/original/41415_TIME_1372657122211.jpg" target="_blank"><img src="./异步复位 - 略过天涯 - 博客园_files/41415_TIME_1372657122211.jpg" alt="1.jpg" width="245" height="274" border="0"></a></div>
+<p align="center">&nbsp;</p>
+<p align="center">图4：SDC中对异步复位的约束</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 异步复位除了上述潜在的亚稳态问题，另一个问题是它们对噪声的易感染性。一个“嘈杂”的异步复位，很可能导致虚假的复位。出于这个原因，对异步复位进行滤波和去抖是非常重要的。如前所述，由于同步复位经过了时钟寄存，所以同步复位是不太容易出现此问题（虽然不是绝对免疫）。后面我们将看到的同步化的异步复位，会讨论完全避免这个问题的方法。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 同样的，异步复位最大的问题也许还是涉及到复位的释放（移除）。除了潜在的亚稳态问题外，无法保证每个寄存器的异步复位和时钟之间时序关系都是一样的，因为这些寄存器被布局布线于整个器件的各处。如此带来的影响是有些寄存器会及时复位，而有些寄存器不会，而是要等到下一个时钟周期才能复位。对于类似这种一个寄存器的下一个输出依赖与其它寄存器的当前输出反馈电路将带来潜在的灾难性影响。一个常见的例子就是带状态机的电路。One-Hot状态机尤其会有这种问题，因为其一次只有一个状态位被设置。由于有些状态位跳出复位状态，而其它状态位没有，那么就会有多于一个状态位被置高（即有效），这样这个状态机就会进入非法状态。如果使用二进制编码状态机，它可以创建未使用的状态来过渡到复位状态，这使得其成为一个确定性的状态机。这样就允许一个非法的或者闲置的状态得到完美的恢复。</p>
+<p>注：现在的Quartus II软件中有一个“Safe State Machine”的综合设置，可以用来保证设计的状态机从非法状态完美恢复。只是这个设置默认是没有打开的。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 尽管我们看到有办法解决异步复位产生的这些问题，但是还是尽可能避免使用异步复位。如何避免上述复位的问题，只能是改变复位的结构，后面我们将会看到一种不同的复位机制，即同步化的异步复位。</p></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(3346972,cb_blogId,1);green_channel_success(this,&#39;谢谢推荐！&#39;);">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow(&#39;95744399-c8f4-e211-bd67-90b11c0b1faa&#39;);" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="./异步复位 - 略过天涯 - 博客园_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="./异步复位 - 略过天涯 - 博客园_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/lueguo/" target="_blank"><img src="./异步复位 - 略过天涯 - 博客园_files/sample_face.gif" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/lueguo/">略过天涯</a><br>
+            <a href="http://home.cnblogs.com/u/lueguo/followees">关注 - 35</a><br>
+            <a href="http://home.cnblogs.com/u/lueguo/followers">粉丝 - 11</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow(&#39;95744399-c8f4-e211-bd67-90b11c0b1faa&#39;);return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(3346972,&#39;Digg&#39;)">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(3346972,&#39;Bury&#39;)">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/lueguo/p/3345869.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/lueguo/p/3345869.html" title="发布于2013-09-29 16:01">分享：FIFO 同步、异步以及Verilog代码实现</a><br><a href="https://www.cnblogs.com/lueguo/p/3346994.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/lueguo/p/3346994.html" title="发布于2013-09-30 11:21">同步复位</a><br></div>
+</div>
+
+
+		<p class="postfoot">
+			posted on <span id="post-date">2013-09-30 11:14</span> <a href="https://www.cnblogs.com/lueguo/">略过天涯</a> 阅读(<span id="post_view_count">951</span>) 评论(<span id="post_comment_count">0</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=3346972" rel="nofollow">编辑</a> <a href="http://www.cnblogs.com/lueguo/archive/2013/09/30/3346972.html#" onclick="AddToWz(3346972);return false;">收藏</a>
+		</p>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=158959,cb_entryId=3346972,cb_blogApp=currentBlogApp,cb_blogUserGuid='95744399-c8f4-e211-bd67-90b11c0b1faa',cb_entryCreatedDate='2013/9/30 11:14:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+	</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="http://www.cnblogs.com/lueguo/archive/2013/09/30/3346972.html#" onclick="return RefreshPage();">刷新页面</a><a href="http://www.cnblogs.com/lueguo/archive/2013/09/30/3346972.html#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login(&#39;commentform&#39;);">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"></div>
+<div id="opt_under_post"></div>
+<script async="async" src="./异步复位 - 略过天涯 - 博客园_files/gpt.js.download"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;"></div>
+</div>
+<div id="under_post_news"></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;"></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/618939/" target="_blank">马云为什么要求必须公开这个视频？</a><br> ·  <a href="https://news.cnblogs.com/n/618936/" target="_blank">任正非：谁请下属吃饭多，谁升得就快</a><br> ·  <a href="https://news.cnblogs.com/n/618923/" target="_blank">与其一年读完100本书，不如认真读完一本书</a><br> ·  <a href="https://news.cnblogs.com/n/618930/" target="_blank">EA第三财季净利润2.62亿美元 同比扭亏</a><br> ·  <a href="https://news.cnblogs.com/n/618938/" target="_blank">春晚发红包，腾讯、阿里连续宕机3年，百度为何挺住了？</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	
+<p id="footer">
+	Powered by: 
+	<br>
+	
+	<a id="Footer1_Hyperlink3" name="Hyperlink1" href="https://www.cnblogs.com/" style="font-family:Verdana;font-size:12px;">博客园</a>
+	<br>
+	Copyright © 略过天涯
+</p>
+</div>
+<div id="rightmenu">
+	
+		<div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" cellspacing="0" cellpadding="0" title="Calendar">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2019/01/01&#39;);return false;">&lt;</a></td><td align="center">2019年2月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2019/03/01&#39;);return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" align="center" abbr="日" scope="col">日</th><th class="CalDayHeader" align="center" abbr="一" scope="col">一</th><th class="CalDayHeader" align="center" abbr="二" scope="col">二</th><th class="CalDayHeader" align="center" abbr="三" scope="col">三</th><th class="CalDayHeader" align="center" abbr="四" scope="col">四</th><th class="CalDayHeader" align="center" abbr="五" scope="col">五</th><th class="CalDayHeader" align="center" abbr="六" scope="col">六</th></tr><tr><td class="CalOtherMonthDay" align="center">27</td><td class="CalOtherMonthDay" align="center">28</td><td class="CalOtherMonthDay" align="center">29</td><td class="CalOtherMonthDay" align="center">30</td><td class="CalOtherMonthDay" align="center">31</td><td align="center">1</td><td class="CalWeekendDay" align="center">2</td></tr><tr><td class="CalWeekendDay" align="center">3</td><td align="center">4</td><td align="center">5</td><td class="CalTodayDay" align="center">6</td><td align="center">7</td><td align="center">8</td><td class="CalWeekendDay" align="center">9</td></tr><tr><td class="CalWeekendDay" align="center">10</td><td align="center">11</td><td align="center">12</td><td align="center">13</td><td align="center">14</td><td align="center">15</td><td class="CalWeekendDay" align="center">16</td></tr><tr><td class="CalWeekendDay" align="center">17</td><td align="center">18</td><td align="center">19</td><td align="center">20</td><td align="center">21</td><td align="center">22</td><td class="CalWeekendDay" align="center">23</td></tr><tr><td class="CalWeekendDay" align="center">24</td><td align="center">25</td><td align="center">26</td><td align="center">27</td><td align="center">28</td><td class="CalOtherMonthDay" align="center">1</td><td class="CalOtherMonthDay" align="center">2</td></tr><tr><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td><td class="CalOtherMonthDay" align="center">7</td><td class="CalOtherMonthDay" align="center">8</td><td class="CalOtherMonthDay" align="center">9</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script>
+		
+<h3>导航</h3>
+<ul>
+			<li><a id="blog_nav_sitehome" href="https://www.cnblogs.com/">博客园</a></li>
+			<li><a id="blog_nav_myhome" href="https://www.cnblogs.com/lueguo/">首页</a></li>
+			<li><a id="blog_nav_newpost" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+			<li><a id="blog_nav_contact" accesskey="9" rel="nofollow" href="https://msg.cnblogs.com/send/%E7%95%A5%E8%BF%87%E5%A4%A9%E6%B6%AF">联系</a></li>
+			<li><a id="blog_nav_rss" href="https://www.cnblogs.com/lueguo/rss">订阅</a><a id="blog_nav_rss_image" href="https://www.cnblogs.com/lueguo/rss"><img src="./异步复位 - 略过天涯 - 博客园_files/xml.gif" alt="订阅"></a>
+			</li><li><a id="blog_nav_admin" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+</ul>
+		<div id="blog_stats">
+<h3>统计</h3>
+	<ul>
+		<li>随笔 - 72
+		</li><li>文章 - 0
+		</li><li>评论 - 1
+		</li><li>引用 - 0
+	</li>
+</ul></div>
+		
+<h3>公告</h3>
+	<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/lueguo/">略过天涯</a><br>园龄：<a href="https://home.cnblogs.com/u/lueguo/" title="入园时间：2013-07-25">5年6个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/lueguo/followers/">11</a><br>关注：<a href="https://home.cnblogs.com/u/lueguo/followees/">35</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow(&#39;95744399-c8f4-e211-bd67-90b11c0b1faa&#39;)">+加关注</a></div><script>getFollowStatus('95744399-c8f4-e211-bd67-90b11c0b1faa')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+
+		<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/lueguo/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/lueguo/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/lueguo/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/lueguo/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/lueguo/tag/" title="我的博客的标签列表">我的标签</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+
+</div></div><div id="sidebar_toptags" class="sidebar-block"></div><div id="sidebar_categories">
+		<h3>随笔分类</h3>
+		
+				<ul>
+			
+				<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/lueguo/category/522539.html">FIFO(5)</a> </li>
+			
+				<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/lueguo/category/521411.html">FPGA(11)</a> </li>
+			
+				<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/lueguo/category/538229.html">LINUX(2)</a> </li>
+			
+				<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/lueguo/category/528486.html">NIOS(7)</a> </li>
+			
+				<li><a id="CatList_LinkList_0_Link_4" href="https://www.cnblogs.com/lueguo/category/525233.html">sdram(2)</a> </li>
+			
+				<li><a id="CatList_LinkList_0_Link_5" href="https://www.cnblogs.com/lueguo/category/525114.html">VGA(4)</a> </li>
+			
+				<li><a id="CatList_LinkList_0_Link_6" href="https://www.cnblogs.com/lueguo/category/521418.html">状态机(6)</a> </li>
+			
+				</ul>
+			
+	
+		<h3>随笔档案</h3>
+		
+				<ul>
+			
+				<li><a id="CatList_LinkList_1_Link_0" href="https://www.cnblogs.com/lueguo/archive/2014/03.html">2014年3月 (4)</a> </li>
+			
+				<li><a id="CatList_LinkList_1_Link_1" href="https://www.cnblogs.com/lueguo/archive/2014/02.html">2014年2月 (6)</a> </li>
+			
+				<li><a id="CatList_LinkList_1_Link_2" href="https://www.cnblogs.com/lueguo/archive/2013/12.html">2013年12月 (4)</a> </li>
+			
+				<li><a id="CatList_LinkList_1_Link_3" href="https://www.cnblogs.com/lueguo/archive/2013/11.html">2013年11月 (10)</a> </li>
+			
+				<li><a id="CatList_LinkList_1_Link_4" href="https://www.cnblogs.com/lueguo/archive/2013/10.html">2013年10月 (10)</a> </li>
+			
+				<li><a id="CatList_LinkList_1_Link_5" href="https://www.cnblogs.com/lueguo/archive/2013/09.html">2013年9月 (18)</a> </li>
+			
+				<li><a id="CatList_LinkList_1_Link_6" href="https://www.cnblogs.com/lueguo/archive/2013/08.html">2013年8月 (20)</a> </li>
+			
+				</ul>
+			
+	</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<h3 class="catListTitle">最新评论</h3>
+<div class="RecentComment" id="RecentComments">
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/lueguo/p/3582247.html#4047918">1. Re:很经典，逻辑电路设计经验（转）</a></li>
+        <li class="recent_comment_body">写的太棒了。很有启发性</li>
+        <li class="recent_comment_author">--AOEYI</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<h3 class="catListTitle">阅读排行榜</h3>
+<div class="RecentComment" id="TopViewPosts"> 
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/lueguo/p/3283594.html">1. 巧用FPGA中资源(2198)</a></li><li><a href="https://www.cnblogs.com/lueguo/p/3346972.html">2. 异步复位(951)</a></li><li><a href="https://www.cnblogs.com/lueguo/p/3314709.html">3. Cordic 算法入门(950)</a></li><li><a href="https://www.cnblogs.com/lueguo/p/3283356.html">4. 优化时序之补全if else(643)</a></li><li><a href="https://www.cnblogs.com/lueguo/p/3283400.html">5. 有限状态机的三种写法及优缺点(635)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<h3 class="catListTitle">评论排行榜</h3>
+<div class="RecentComment" id="TopCommentsPosts">
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/lueguo/p/3582247.html">1. 很经典，逻辑电路设计经验（转）(1)</a></li></ul></div>
+</div></div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div class="RecentComment">
+	<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/lueguo/p/3582247.html">1. 很经典，逻辑电路设计经验（转）(1)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+	
+</div>
+			
+			
+			
+			
+			 
+
+	
+
+
+
+
+</body></html>

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="never">
+    <title>macvlan 网络隔离和连通 - 每天5分钟玩转 Docker 容器技术（57） - CloudMan - 博客园</title>
+<meta property="og:description" content="上一节我们创建了两个 macvlan 并部署了容器，本节验证 macvlan 之间的连通性。">
+    <link type="text/css" rel="stylesheet" href="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-ClearScreen01.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-ClearScreen01-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/CloudMan6/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/CloudMan6/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/CloudMan6/wlwmanifest.xml">
+    <script src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/osd.js"></script><script src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_299.js"></script><script async="" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script>var currentBlogId=267676;var currentBlogApp='CloudMan6',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js" type="text/javascript"></script>
+<link rel="preload" href="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_299.js" async=""></script></head>
+<body>
+<a name="top"></a>
+
+
+<!--done-->
+<div id="header">
+	
+<!--done-->
+<div class="header">
+	<div class="headerText">
+		<a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/CloudMan6/">CloudMan</a><br>
+		致力于云计算学习和实践； 
+原创《每天5分钟玩转OpenStack》教程
+	</div>
+</div>
+
+</div>
+<div id="mylinks">
+<!--done-->
+<a id="blog_nav_sitehome" class="listitem" href="https://www.cnblogs.com/">博客园</a>&nbsp;&nbsp;::&nbsp;
+<a id="blog_nav_myhome" class="listitem" href="https://www.cnblogs.com/CloudMan6/">首页</a>&nbsp;&nbsp;::&nbsp;
+<a id="blog_nav_newpost" class="listitem" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a>&nbsp;&nbsp;::&nbsp;
+<a id="blog_nav_contact" accesskey="9" class="listitem" rel="nofollow" href="https://msg.cnblogs.com/send/CloudMan">联系</a>&nbsp;&nbsp;::&nbsp;
+<a id="blog_nav_rss" class="listitem" href="https://www.cnblogs.com/CloudMan6/rss">订阅</a>&nbsp;<a id="blog_nav_rss_image" href="https://www.cnblogs.com/CloudMan6/rss"><img src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/xml.gif" alt="订阅"></a>&nbsp;&nbsp;::&nbsp;
+<a id="blog_nav_admin" class="listitem" rel="nofollow" href="https://i.cnblogs.com/">管理</a>
+</div>
+<div id="mytopmenu">
+	
+		<div id="mystats">
+			<div id="blog_stats">
+<!--done-->
+<div class="blogStats">
+posts - 360,&nbsp;
+comments - 2244,&nbsp;
+trackbacks - 0
+
+</div></div></div>
+	
+</div>
+<div id="main">
+    <div id="leftcontent">
+	    
+		    <div id="leftcontentcontainer">
+			    
+<!--done-->
+<div class="news">公告</div>
+	<div class="newsItem">
+		<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/CloudMan6/">CloudMan</a><br>园龄：<a href="https://home.cnblogs.com/u/CloudMan6/" title="入园时间：2015-06-16">3年6个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/CloudMan6/followers/">1463</a><br>关注：<a href="https://home.cnblogs.com/u/CloudMan6/followees/">0</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow('80611f09-3d14-e511-b908-9dcfd8948a71')">+加关注</a></div><script>getFollowStatus('80611f09-3d14-e511-b908-9dcfd8948a71')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+	</div>
+
+			    <div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar('2018/12/01');return false;">&lt;</a></td><td align="center">2019年1月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/02/01');return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" abbr="日" scope="col" align="center">日</th><th class="CalDayHeader" abbr="一" scope="col" align="center">一</th><th class="CalDayHeader" abbr="二" scope="col" align="center">二</th><th class="CalDayHeader" abbr="三" scope="col" align="center">三</th><th class="CalDayHeader" abbr="四" scope="col" align="center">四</th><th class="CalDayHeader" abbr="五" scope="col" align="center">五</th><th class="CalDayHeader" abbr="六" scope="col" align="center">六</th></tr><tr><td class="CalOtherMonthDay" align="center">30</td><td class="CalOtherMonthDay" align="center">31</td><td align="center">1</td><td align="center">2</td><td align="center">3</td><td align="center">4</td><td class="CalWeekendDay" align="center">5</td></tr><tr><td class="CalWeekendDay" align="center">6</td><td align="center">7</td><td align="center">8</td><td align="center">9</td><td align="center">10</td><td align="center">11</td><td class="CalWeekendDay" align="center">12</td></tr><tr><td class="CalWeekendDay" align="center">13</td><td align="center">14</td><td class="CalTodayDay" align="center">15</td><td align="center">16</td><td align="center">17</td><td align="center">18</td><td class="CalWeekendDay" align="center">19</td></tr><tr><td class="CalWeekendDay" align="center">20</td><td align="center">21</td><td align="center">22</td><td align="center">23</td><td align="center">24</td><td align="center">25</td><td class="CalWeekendDay" align="center">26</td></tr><tr><td class="CalWeekendDay" align="center">27</td><td align="center">28</td><td align="center">29</td><td align="center">30</td><td align="center">31</td><td class="CalOtherMonthDay" align="center">1</td><td class="CalOtherMonthDay" align="center">2</td></tr><tr><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td><td class="CalOtherMonthDay" align="center">7</td><td class="CalOtherMonthDay" align="center">8</td><td class="CalOtherMonthDay" align="center">9</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script>
+			    <div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/CloudMan6/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/CloudMan6/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/CloudMan6/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/CloudMan6/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/CloudMan6/tag/" title="我的博客的标签列表">我的标签</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+
+</div></div><div id="sidebar_toptags" class="sidebar-block">
+<h3 class="catListTitle">我的标签</h3>
+<div id="MyTag">
+<ul>
+<li><a href="https://www.cnblogs.com/CloudMan6/tag/%E6%95%99%E7%A8%8B/">教程</a>(230)</li><li><a href="https://www.cnblogs.com/CloudMan6/tag/%E5%AE%B9%E5%99%A8/">容器</a>(182)</li><li><a href="https://www.cnblogs.com/CloudMan6/tag/Docker/">Docker</a>(182)</li><li><a href="https://www.cnblogs.com/CloudMan6/tag/Kubernetes/">Kubernetes</a>(68)</li><li><a href="https://www.cnblogs.com/CloudMan6/tag/OpenStack/">OpenStack</a>(49)</li><li><a href="https://www.cnblogs.com/CloudMan6/tag/Swarm/">Swarm</a>(20)</li><li><a href="https://www.cnblogs.com/CloudMan6/tag/KVM/">KVM</a>(5)</li><li><a href="https://www.cnblogs.com/CloudMan6/tag/%E8%99%9A%E6%8B%9F%E5%8C%96/">虚拟化</a>(3)</li><li><a href="https://www.cnblogs.com/CloudMan6/tag/%E4%BA%91%E8%AE%A1%E7%AE%97/">云计算</a>(1)</li><li><a href="https://www.cnblogs.com/CloudMan6/tag/%E8%A7%86%E9%A2%91/">视频</a>(1)</li><li><a href="https://www.cnblogs.com/CloudMan6/tag/">更多</a></li>
+</ul>
+</div></div><div id="sidebar_categories">
+<!--done-->
+
+		<h1 class="catListTitle">随笔档案</h1>
+		
+				<ul class="catList">
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_0" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2018/06.html">2018年6月 (6)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_1" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2018/05.html">2018年5月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_2" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2018/04.html">2018年4月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_3" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2018/03.html">2018年3月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_4" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2018/02.html">2018年2月 (12)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_5" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2018/01.html">2018年1月 (14)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_6" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/12.html">2017年12月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_7" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/11.html">2017年11月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_8" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/10.html">2017年10月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_9" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/09.html">2017年9月 (14)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_10" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/08.html">2017年8月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_11" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/07.html">2017年7月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_12" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/06.html">2017年6月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_13" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/05.html">2017年5月 (14)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_14" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/04.html">2017年4月 (12)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_15" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/03.html">2017年3月 (14)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_16" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/02.html">2017年2月 (12)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_17" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2017/01.html">2017年1月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_18" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/12.html">2016年12月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_19" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/11.html">2016年11月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_20" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/10.html">2016年10月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_21" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/09.html">2016年9月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_22" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/08.html">2016年8月 (14)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_23" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/07.html">2016年7月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_24" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/06.html">2016年6月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_25" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/05.html">2016年5月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_26" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/04.html">2016年4月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_27" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/03.html">2016年3月 (13)</a></li>
+			
+				<li class="catListItem"> <a id="CatList_LinkList_0_Link_28" class="listitem" href="https://www.cnblogs.com/CloudMan6/archive/2016/02.html">2016年2月 (1)</a></li>
+			
+				</ul>
+			
+	
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<h3 class="catListTitle">最新评论</h3>
+<div class="RecentComment" id="RecentComments">
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/CloudMan6/p/7294501.html#4163011">1. Re:在 overlay 中运行容器 - 每天5分钟玩转 Docker 容器技术（51）</a></li>
+        <li class="recent_comment_body">@CloudMan所有的docker 镜像都不行，在安装 docker-machine 的那个虚拟机上面没问题可以正常使用，只有通过 docker-machine 安装docker 的两个虚拟机都是这......</li>
+        <li class="recent_comment_author">--修改失败c</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/CloudMan6/p/8282367.html#4162960">2. Re:部署 k8s Cluster（下）- 每天5分钟玩转 Docker 容器技术（119）</a></li>
+        <li class="recent_comment_body">@eleven2014kubectl apply -f 其他yaml文件可以吗？...</li>
+        <li class="recent_comment_author">--CloudMan</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/CloudMan6/p/7294501.html#4162958">3. Re:在 overlay 中运行容器 - 每天5分钟玩转 Docker 容器技术（51）</a></li>
+        <li class="recent_comment_body">@修改失败c意思是这个镜像中没有安装sh。换个busybox镜像试试...</li>
+        <li class="recent_comment_author">--CloudMan</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/CloudMan6/p/8282367.html#4162554">4. Re:部署 k8s Cluster（下）- 每天5分钟玩转 Docker 容器技术（119）</a></li>
+        <li class="recent_comment_body">root@master:~# wget --2019-01-14 15:37:56-- Resolving raw.githubusercontent.com (raw.githubusercont.......</li>
+        <li class="recent_comment_author">--eleven2014</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/CloudMan6/p/7294501.html#4162504">5. Re:在 overlay 中运行容器 - 每天5分钟玩转 Docker 容器技术（51）</a></li>
+        <li class="recent_comment_body">hi @CloudMan 在host1和host2 上创建 容器 会出现如下错误，docker: Error response from daemon: OCI runtime create fai.......</li>
+        <li class="recent_comment_author">--修改失败c</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<h3 class="catListTitle">阅读排行榜</h3>
+<div class="RecentComment" id="TopViewPosts"> 
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/CloudMan6/p/5233484.html">1. 虚拟化 - 每天5分钟玩转 OpenStack（2）(32649)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/5357273.html">2. 部署 DevStack - 每天5分钟玩转 OpenStack（17）(25952)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/5224114.html">3. 写在最前面 - 每天5分钟玩转 OpenStack（1）(25828)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/5240770.html">4. 准备 KVM 实验环境 - 每天5分钟玩转 OpenStack（3）(20986)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/5308071.html">5. 理解 virbr0 - 每天5分钟玩转 OpenStack（11）(20607)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<h3 class="catListTitle">评论排行榜</h3>
+<div class="RecentComment" id="TopCommentsPosts">
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/CloudMan6/p/5357273.html">1. 部署 DevStack - 每天5分钟玩转 OpenStack（17）(206)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/5326737.html">2. 动手实践 Linux VLAN - 每天5分钟玩转 OpenStack（13）(60)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/7237420.html">3. 创建 Machine - 每天5分钟玩转 Docker 容器技术（46）(50)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/5240770.html">4. 准备 KVM 实验环境 - 每天5分钟玩转 OpenStack（3）(42)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/7270551.html">5. 准备 overlay 网络实验环境 - 每天5分钟玩转 Docker 容器技术（49）(37)</a></li></ul></div>
+</div></div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div class="RecentComment">
+	<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/CloudMan6/p/6693772.html">1. 写在最前面 - 每天5分钟玩转容器技术（1）(39)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/5224114.html">2. 写在最前面 - 每天5分钟玩转 OpenStack（1）(17)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/6751516.html">3. 容器 What, Why, How - 每天5分钟玩转容器技术（6）(16)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/5451276.html">4. nova-compute 部署 instance 详解 - 每天5分钟玩转 OpenStack（28）(14)</a></li><li><a href="https://www.cnblogs.com/CloudMan6/p/7594225.html">5. 新书发布《每天5分钟玩转Docker容器技术》(14)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script></div>
+	    
+    </div>
+    <div id="centercontent">
+	    
+        <div id="post_detail">
+<!--done-->
+<div class="post">
+	<div class="postTitle">
+		<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/CloudMan6/p/7400580.html">macvlan 网络隔离和连通 - 每天5分钟玩转 Docker 容器技术（57）</a>
+	</div>
+	<div id="cnblogs_post_body" class="blogpost-body"><p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">上一节我们创建了两个 macvlan 并部署了容器，网络结构如下：</p>
+<p><img style="float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218440492073524.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219257074024921.jpg" alt=""></p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal"> 本节验证 macvlan 之间的连通性。<br><br><img style="font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218440302084791.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219257609071416.jpg" alt="">
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <img style="white-space: normal; float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218440332079663.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219257955082784.jpg" alt="">
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    bbox1 能 ping 通 bbox3，bbox2 能 ping 通 bbox4。即：同一 macvlan 网络能通信。
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <img style="white-space: normal; float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218440578088006.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219258276007254.jpg" alt="">
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <img style="white-space: normal; float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218440582061717.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219258635054772.jpg" alt="">
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    bbox1 无法 ping 通 bbox2 和 bbox4。即：不同 macvlan 网络之间不能通信。但更准确的说法应该是：不同 macvlan 网络不能<span class="Apple-converted-space">&nbsp;</span><strong style="color: #000000">在二层上</strong><span class="Apple-converted-space">&nbsp;</span>通信。在三层上可以通过网关将 macvlan 连通，下面我们就启用网关。
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    我们会将 Host 192.168.56.101 配置成一个虚拟路由器，设置网关并转发 VLAN10 和 VLAN20 的流量。当然也可以使用物理路由器达到同样的效果。首先确保操作系统 IP Forwarding 已经启用。
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <img style="white-space: normal; float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218440715069119.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219258950086461.jpg" alt="">
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    输出为 1 则表示启用，如果为 0 可通过如下命令启用：<br>
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <span style="font-size: 12px; background-color: #d8d8d8">sysctl -w net.ipv4.ip_forward=1</span>
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    在 /etc/network/interfaces 中配置 vlan sub-interface：<br>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">auto eth2</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">iface eth2 inet manual</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">auto eth2.10</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">iface eth2.10 inet manual</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">vlan-raw-device eth2</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">auto eth2.20</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">iface eth2.20 inet manual</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">vlan-raw-device eth2</span>
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <br>启用 sub-interface：<br>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">ifup eth2.10</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">ifup eth2.20</span>
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <br>将网关 IP 配置到 sub-interface：<br>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">ifconfig eth2.10 172.16.10.1 netmask 255.255.255.0 up</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">ifconfig eth2.20 172.16.20.1 netmask 255.255.255.0 up</span>
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <br>添加 iptables 规则，转发不同 VLAN 的数据包。<br>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">iptables -t nat -A POSTROUTING -o eth2.10 -j MASQUERADE</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">iptables -t nat -A POSTROUTING -o eth2.20 -j MASQUERADE</span>
+</p>
+<p>
+    <br>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">iptables -A FORWARD -i eth2.10 -o eth2.20 -m state --state RELATED,ESTABLISHED -j ACCEPT</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">iptables -A FORWARD -i eth2.20 -o eth2.10 -m state --state RELATED,ESTABLISHED -j ACCEPT</span>
+</p>
+<p>
+    <br>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">iptables -A FORWARD -i eth2.10 -o eth2.20 -j ACCEPT</span>
+</p>
+<p>
+    <span style="font-size: 12px; background-color: #d8d8d8">iptables -A FORWARD -i eth2.20 -o eth2.10 -j ACCEPT</span>
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <br>当前网络拓扑如下图所示：
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <img style="white-space: normal; float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218441179037826.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219259278090647.jpg" alt="">
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    现在 host1 上位于 mac_net10 的 bbox1 已经可以与 host2 上位于 mac_net20 的 bbox4 通信了。
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <img style="white-space: normal; float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218440756095033.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219260066011438.jpg" alt="">
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    下面我们分析数据包是如何从 bbox1（172.16.10.10）到达 bbox4（172.16.20.11）的。整个过程如下图所示：
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <img style="white-space: normal; float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218441226066121.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219260462043301.jpg" alt="">
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    ① 因为 bbox1 与 bbox4 在不同的 IP 网段，跟据 bbox1 的路由表：
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <img style="white-space: normal; float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218440783061529.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219260925032064.jpg" alt="">
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    数据包将发送到网关 172.16.10.1。
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    ② 路由器从 eth2.10 收到数据包，发现目的地址是 172.16.20.11，查看自己的路由表：
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    <img style="white-space: normal; float: none" title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170820-1503218441202002636.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219261240006072.jpg" alt="">
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    于是将数据包从 eth2.20 转发出去。
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    ③ 通过 ARP 记录的信息，路由器能够得知 172.16.20.11 在 host2 上，于是将数据包发送给 host2。
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    ④ host2 根据目的地址和 VLAN 信息将数据包发送给 bbox4。
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    macvlan 网络的连通和隔离完全依赖 VLAN、IP subnet 和路由，docker 本身不做任何限制，用户可以像管理传统 VLAN 网络那样管理 macvlan。
+</p>
+<p style="margin-top: 0px; margin-bottom: 1.5em; line-height: 1.6; color: #383a42; font-family: BlinkMacSystemFont, &quot;Lucida Grande&quot;, &quot;Segoe UI&quot;, Ubuntu, Cantarell, sans-serif; font-size: 14.4px; white-space: normal">
+    至此，macvlan 就讨论完了，恭喜大家又学完一个网络方案，下一节我们开始学习 flannel。<br>
+</p>
+<p>
+    <img title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20170803-1501750363651066724.png" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/upload-ueditor-image-20170820-1503219261633060865.jpg" alt="二维码+指纹.png"><br>
+</p></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag">标签: <a href="https://www.cnblogs.com/CloudMan6/tag/Docker/">Docker</a>, <a href="https://www.cnblogs.com/CloudMan6/tag/%E5%AE%B9%E5%99%A8/">容器</a>, <a href="https://www.cnblogs.com/CloudMan6/tag/%E6%95%99%E7%A8%8B/">教程</a></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(7400580,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow('80611f09-3d14-e511-b908-9dcfd8948a71');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/CloudMan6/" target="_blank"><img src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/20160228114235.png" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/CloudMan6/">CloudMan</a><br>
+            <a href="http://home.cnblogs.com/u/CloudMan6/followees">关注 - 0</a><br>
+            <a href="http://home.cnblogs.com/u/CloudMan6/followers">粉丝 - 1483</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('80611f09-3d14-e511-b908-9dcfd8948a71');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(7400580,'Digg')">
+        <span class="diggnum" id="digg_count">4</span>
+    </div>
+    <div class="buryit" onclick="votePost(7400580,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/CloudMan6/p/7383919.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/CloudMan6/p/7383919.html" title="发布于2017-08-18 05:17">macvlan 网络结构分析 - 每天5分钟玩转 Docker 容器技术（56）</a><br><a href="https://www.cnblogs.com/CloudMan6/p/7412150.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/CloudMan6/p/7412150.html" title="发布于2017-08-23 07:42">flannel 概述 - 每天5分钟玩转 Docker 容器技术（58）</a><br></div>
+</div>
+
+
+	<div class="postDesc">posted on <span id="post-date">2017-08-21 07:58</span> <a href="https://www.cnblogs.com/CloudMan6/">CloudMan</a> 阅读(<span id="post_view_count">4059</span>) 评论(<span id="post_comment_count">6</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=7400580" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(7400580);return false;">收藏</a></div>
+</div>
+<script type="text/javascript">var allowComments=true,cb_blogId=267676,cb_entryId=7400580,cb_blogApp=currentBlogApp,cb_blogUserGuid='80611f09-3d14-e511-b908-9dcfd8948a71',cb_entryCreatedDate='2017/8/21 7:58:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+
+</div><a name="!comments"></a><div id="blog-comments-placeholder"><div id="comments_pager_top"></div>
+<!--done-->
+<a name="feedback"></a>
+<div class="feedback">
+	<div class="feedbackTitle">
+		Feedback
+	</div>
+	<div class="feedbackNoItems"></div>
+	
+	
+			<div class="feedbackItem">
+				<div class="feedbackListTitle"><a href="#3982124" class="layer">#1楼</a><a name="3982124" id="comment_anchor_3982124"></a></div>
+				<div class="feedbackListSubtitle">
+					 <span class="comment_date">2018-05-25 14:56</span> | <a id="a_comment_author_3982124" href="https://www.cnblogs.com/philia/" target="_blank">奇鸟</a> <a href="http://msg.cnblogs.com/send/%E5%A5%87%E9%B8%9F" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+				</div>
+				<div id="comment_body_3982124" class="blog_comment_body">iptables -t nat -A POSTROUTING -o eth2.10 -j MASQUERADE<br>iptables -t nat -A POSTROUTING -o eth2.20 -j MASQUERADE<br><br>iptables -A FORWARD -i eth2.10 -o eth2.20 -m state --state RELATED,ESTABLISHED -j ACCEPT<br>iptables -A FORWARD -i eth2.20 -o eth2.10 -m state --state RELATED,ESTABLISHED -j ACCEPT<br><br>iptables -A FORWARD -i eth2.10 -o eth2.20 -j ACCEPT<br>iptables -A FORWARD -i eth2.20 -o eth2.10 -j ACCEPT<br><br><br>博主，这一坨对网络这块的小白太高深了，可以详解下吗？</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(3982124,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(3982124,'Bury',this)">反对(0)</a></div><span id="comment_3982124_avatar" style="display:none;">http://pic.cnblogs.com/face/772425/20161101105211.png</span>
+				&nbsp;&nbsp;<span class="comment_actions"></span>
+			</div>
+		
+			<div class="feedbackItem">
+				<div class="feedbackListTitle"><a href="#4152302" class="layer">#2楼</a><a name="4152302" id="comment_anchor_4152302"></a></div>
+				<div class="feedbackListSubtitle">
+					 <span class="comment_date">2018-12-30 14:05</span> | <a id="a_comment_author_4152302" href="http://home.cnblogs.com/u/1575867/" target="_blank">Damon~~</a> <a href="http://msg.cnblogs.com/send/Damon~~" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+				</div>
+				<div id="comment_body_4152302" class="blog_comment_body">大神，跟着做到了这里，受益匪浅。<br>今天遇到了一个问题，我在host 192.168.56.101上创建虚拟路由的时候。<br>auto eth2<br>iface eth2 inet manual<br>是否主机也需要开启第三块网卡并开混杂模式？<br>而且在创建eth2时，service networking restart之后通过ifconfig看不到创建的网卡。<br>只有把名字设置为enp0s9，service networking restart之后才能看见网卡创建成功。这是为什么呢。。。<br>求教。。。</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4152302,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(4152302,'Bury',this)">反对(0)</a></div>
+				&nbsp;&nbsp;<span class="comment_actions"></span>
+			</div>
+		
+			<div class="feedbackItem">
+				<div class="feedbackListTitle"><a href="#4152584" class="layer">#3楼</a><a name="4152584" id="comment_anchor_4152584"></a>[<span class="louzhu">楼主</span>]</div>
+				<div class="feedbackListSubtitle">
+					 <span class="comment_date">2018-12-31 07:00</span> | <a id="a_comment_author_4152584" href="https://www.cnblogs.com/CloudMan6/" target="_blank">CloudMan</a> <a href="http://msg.cnblogs.com/send/CloudMan" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+				</div>
+				<div id="comment_body_4152584" class="blog_comment_body"><a href="#4152302" title="查看所回复的评论" onclick="commentManager.renderComments(0,50,4152302);">@</a>
+Damon~~<br>网卡的名字到底是什么是由linux系统自己决定的，通过ip a 可以看到网卡的名字，是哪个就用哪个。混杂模式只需要在virtualbox中开启，linux中不需要开启。</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4152584,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(4152584,'Bury',this)">反对(0)</a></div><span id="comment_4152584_avatar" style="display:none;">http://pic.cnblogs.com/face/775365/20160228114235.png</span>
+				&nbsp;&nbsp;<span class="comment_actions"></span>
+			</div>
+		
+			<div class="feedbackItem">
+				<div class="feedbackListTitle"><a href="#4155142" class="layer">#4楼</a><a name="4155142" id="comment_anchor_4155142"></a></div>
+				<div class="feedbackListSubtitle">
+					 <span class="comment_date">2019-01-04 07:06</span> | <a id="a_comment_author_4155142" href="https://www.cnblogs.com/linupython/" target="_blank">里纳斯-派森</a> <a href="http://msg.cnblogs.com/send/%E9%87%8C%E7%BA%B3%E6%96%AF-%E6%B4%BE%E6%A3%AE" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+				</div>
+				<div id="comment_body_4155142" class="blog_comment_body">大神，请教一个问题：<br>既
+然这里的物理机已经有了enp0s9接口，并且启动的两个镜像，创建的网络也是基于这个接口创建的子接口enp0s9.10和enp0s9.20来运行
+的，为什么在最后一步实现不同vlan之间的通信时，配置实际网关又另外配置了一个接口eth2，然后启用10和20两个子接口去配置实际的网关呢？直接
+在enp0s9.10和enp0s9.20配置网关不行吗？这里没太明白为什么需要另外启用一个物理接口后配置子接口启用网关。<br><br>谢谢大神百忙中回复！</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4155142,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(4155142,'Bury',this)">反对(0)</a></div><span id="comment_4155142_avatar" style="display:none;">http://pic.cnblogs.com/face/999656/20160727181738.png</span>
+				&nbsp;&nbsp;<span class="comment_actions"></span>
+			</div>
+		
+			<div class="feedbackItem">
+				<div class="feedbackListTitle"><a href="#4156089" class="layer">#5楼</a><a name="4156089" id="comment_anchor_4156089"></a>[<span class="louzhu">楼主</span>]</div>
+				<div class="feedbackListSubtitle">
+					 <span class="comment_date">2019-01-05 06:47</span> | <a id="a_comment_author_4156089" href="https://www.cnblogs.com/CloudMan6/" target="_blank">CloudMan</a> <a href="http://msg.cnblogs.com/send/CloudMan" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+				</div>
+				<div id="comment_body_4156089" class="blog_comment_body"><a href="#4155142" title="查看所回复的评论" onclick="commentManager.renderComments(0,50,4155142);">@</a>
+里纳斯-派森<br><fieldset class="comment_quote"><legend><a href="#4155142" title="查看引用原文">引用</a></legend><br>大神，请教一个问题：<br>既
+然这里的物理机已经有了enp0s9接口，并且启动的两个镜像，创建的网络也是基于这个接口创建的子接口enp0s9.10和enp0s9.20来运行
+的，为什么在最后一步实现不同vlan之间的通信时，配置实际网关又另外配置了一个接口eth2，然后启用10和20两个子接口去配置实际的网关呢？直接
+在enp0s9.10和enp0s9.20配置网关不行吗？这里没太明白为什么需要另外启用一个物理接口后配置子接口启用网关。<br><br>谢谢大神百忙中回复！<br></fieldset><br>实际的网络环境中，网关是一个单独的设备，一般不会用docker主机当网关。所以这里我在另一个ubuntu linux中配置这个网关，目的是模拟出一个单独网关设备，网关是与其他docker主机分离的情况。这样逻辑上更清晰。</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4156089,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(4156089,'Bury',this)">反对(0)</a></div><span id="comment_4156089_avatar" style="display:none;">http://pic.cnblogs.com/face/775365/20160228114235.png</span>
+				&nbsp;&nbsp;<span class="comment_actions"></span>
+			</div>
+		
+			<div class="feedbackItem">
+				<div class="feedbackListTitle"><a href="#4156111" class="layer">#6楼</a><a name="4156111" id="comment_anchor_4156111"></a><span id="comment-maxId" style="display:none;">4156111</span><span id="comment-maxDate" style="display:none;">2019/1/5 8:40:05</span></div>
+				<div class="feedbackListSubtitle">
+					 <span class="comment_date">2019-01-05 08:40</span> | <a id="a_comment_author_4156111" href="https://www.cnblogs.com/linupython/" target="_blank">里纳斯-派森</a> <a href="http://msg.cnblogs.com/send/%E9%87%8C%E7%BA%B3%E6%96%AF-%E6%B4%BE%E6%A3%AE" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+				</div>
+				<div id="comment_body_4156111" class="blog_comment_body"><a href="#4156089" title="查看所回复的评论" onclick="commentManager.renderComments(0,50,4156089);">@</a>
+CloudMan<br>明白了，昨天没有注意到是3个独立的host，IP不同，谢谢博主回复！<br><br>这个教程真的很棒，赞一个！</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4156111,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(4156111,'Bury',this)">反对(0)</a></div><span id="comment_4156111_avatar" style="display:none;">http://pic.cnblogs.com/face/999656/20160727181738.png</span>
+				&nbsp;&nbsp;<span class="comment_actions"></span>
+			</div>
+		
+</div>
+
+
+<div id="comments_pager_bottom"></div></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万VC++源码: 大型组态工控、电力仿真CAD与GIS源码库！</a><br><a href="https://www.cnblogs.com/xhload3d/p/10328669.html" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-图扑')">【推荐】基于 HTML5 的 WebGL 楼宇自控 3D 可视化监控</a><br><a href="https://gitee.com/enterprises?from=bky-2" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-gitee')">【推荐】专业便捷的企业级代码托管服务 - Gitee 码云</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="macvlan%20%E7%BD%91%E7%BB%9C%E9%9A%94%E7%A6%BB%E5%92%8C%E8%BF%9E%E9%80%9A%20-%20%E6%AF%8F%E5%A4%A95%E5%88%86%E9%92%9F%E7%8E%A9%E8%BD%AC%20Docker%20%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF%EF%BC%8857%EF%BC%89%20-%20CloudMan%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="COWD8I6dp-ACFQnEvQod2GIA3Q"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_news"></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CKeB8I6dp-ACFUKXlgodX8sARg"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/618939/" target="_blank">马云为什么要求必须公开这个视频？</a><br> ·  <a href="https://news.cnblogs.com/n/618936/" target="_blank">任正非：谁请下属吃饭多，谁升得就快</a><br> ·  <a href="https://news.cnblogs.com/n/618923/" target="_blank">与其一年读完100本书，不如认真读完一本书</a><br> ·  <a href="https://news.cnblogs.com/n/618930/" target="_blank">EA第三财季净利润2.62亿美元 同比扭亏</a><br> ·  <a href="https://news.cnblogs.com/n/618938/" target="_blank">春晚发红包，腾讯、阿里连续宕机3年，百度为何挺住了？</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+    </div>
+</div>
+
+<!--done-->
+<div class="footer">
+	Powered by: 
+	<br>
+	
+	<a id="Footer1_Hyperlink3" name="Hyperlink1" href="https://www.cnblogs.com/" style="font-family:Verdana;font-size:12px;">博客园</a>
+	<br>
+	Copyright ©2019 CloudMan
+</div>
+
+
+
+
+
+<iframe id="google_osd_static_frame_8994144210347" name="google_osd_static_frame" style="display: none; width: 0px; height: 0px;"></iframe></body></html>

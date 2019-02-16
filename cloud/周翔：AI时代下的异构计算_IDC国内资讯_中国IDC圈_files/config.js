@@ -1,0 +1,1 @@
+var IMG_URL="http://img.idcquan.com/",UPLOAD_URL="http://upload.idcquan.com/",APP_URL="http://app.idcquan.com/",WWW_URL="http://www.idcquan.com/",SPACE_URL="http://space.idcquan.com/",COOKIE_PRE="Y2E5Mj_",COOKIE_DOMAIN=".idcquan.com",COOKIE_PATH="/",SINA_APPKEY="3972269122",QQ_SOURCEID="1000033";

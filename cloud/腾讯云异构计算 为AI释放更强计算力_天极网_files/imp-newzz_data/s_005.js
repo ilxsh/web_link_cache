@@ -1,0 +1,1 @@
+document.write("<a href=http://antmedia.sunrtb.com target=_blank><img src=/b/1x1.gif border=0></a>");

@@ -1,0 +1,364 @@
+(function ($) {
+
+	//define login kickoff function
+window.autodeskAknUserServices_initLogin = function (callback){
+    var initScript = '/login_init.php';
+
+    $.ajax({
+        url: initScript,
+        dataType: "json",
+        context: document.body,
+        success: function(data){
+            if (typeof data.sig === "undefined") {
+            	callback();
+            }
+            else {
+	            var authHeader = 'AKNAUTH akn_accessid="' + data.accessId + '" , akn_signature="'+data.sig+'"'; //example: AKNAUTH akn_accessid="4ea6e7eb-d181-43cf-9e8e-2044b83e8aa1" , akn_signature="X7/UFu0Fxt1u6JMEWCxeVgmMJphnIG45J53X5q0P+vo="
+	            callback(authHeader, data.requestId, data.clientId);
+            }
+        }
+    });
+}
+
+})(jQuery);;
+(function($) {
+
+  $(document).ready(function() {
+    // Click to remove lithium board from drupal
+    $(".remove-lithium-board").on("click", function() { // OLD function 'live' - bad for performance
+      $(this).parent().remove();
+    });
+
+    $(".add-lithium-map").parents("form").find("#edit-submit").click(function() {
+      saveLithiumBoards($(this).parents("form"));
+      return false;
+    });
+  });
+
+  // Send save request
+  function saveLithiumBoards(form) {
+    $(".lithium-boards-dd").removeAttr("disabled");
+    $.ajax({
+      url: '/adsk-api/save-lithium-boards',
+      dataType: 'json',
+      data: form.serialize(),
+      async: false,
+      success: function(response) {
+        form.submit();
+      },
+      error: function(response) {
+        alert(response.responseText);
+        return false;
+      }
+    });
+  }
+
+})(jQuery);;
+(function($) {
+  $(document).ready(function() {
+    $(".create-notification").click(createNewNotification);
+    $(".remove-notification").click(createNewNotification);
+
+    bannerJs();
+  });
+
+  function createNewNotification() {
+    $(".adsk_notification-message").val('');
+    $(".adsk_notification-end_date").val('');
+  }
+
+  function bannerJs() {
+
+      function setBanner(content) {
+        if (content.length) {
+          var alertHTML = '<div class="asdk-notification-wrapper clearfix">' + content + '</div>';
+          $('#adsk-banner-alert').html(alertHTML);
+        }
+      };
+
+      var bannerTTL = 1000*60 //1 minute
+      var lang  = Drupal.settings.l10n.language;
+      var bannerUrl = (lang=='en') ? '/banner' : '/' + lang + '/banner';
+
+      var bannerLastUpdate = localStorage.getItem('bannerLastUpdate') || 0;
+      var bannerContent =  localStorage.getItem('bannerContent') || '';
+      var bannerLanguage = localStorage.getItem('bannerLanguage') || '';
+      var bannerRequest = bannerLastUpdate==0 || ((Date.now()-bannerLastUpdate) >= bannerTTL) || lang != bannerLanguage;
+
+      if (bannerRequest) {
+          $.getJSON(bannerUrl, null, function(retData) {
+              localStorage.setItem('bannerLastUpdate', Date.now());
+              localStorage.setItem('bannerLanguage', lang);
+              if (retData != '') {
+                localStorage.setItem('bannerContent', retData.content);
+                setBanner(retData.content);
+              } else {
+                  localStorage.setItem('bannerContent', '');
+              }
+          });
+      } else {
+        setBanner(bannerContent);
+      }
+  }
+
+}) (jQuery)
+;
+(function($) {
+  $(document).ready(function() {
+
+    //Find if user is using MAC OS or not
+    var macUser = navigator.platform.match(/(Mac)/i) ? true : false;
+
+    // Do not show again, if true takes precedence - AutoCAD
+    var noML10nMsgForClientAutoCAD = (typeof localStorage.getItem("noML10nMsgForClientAutoCAD") != "undefined"
+        && localStorage.getItem("noML10nMsgForClientAutoCAD") == "true") ? true : false;
+
+    // Do not show again, if true takes precedence - AutoCAD LT
+    var noML10nMsgForClientAutoCADLT = (typeof localStorage.getItem("noML10nMsgForClientAutoCADLT") != "undefined"
+        && localStorage.getItem("noML10nMsgForClientAutoCADLT") == "true") ? true : false;
+
+
+    // Do not show again for the session - AutoCAD
+    var noML10nMsgForSessAutoCAD = (typeof sessionStorage.getItem("") != "undefined"
+        && sessionStorage.getItem("noML10nMsgForSessAutoCAD") == "true") ? true : false;
+
+    // Do not show again for the session - AutoCAD LT
+    var noML10nMsgForSessAutoCADLT = (typeof sessionStorage.getItem("") != "undefined"
+        && sessionStorage.getItem("noML10nMsgForSessAutoCADLT") == "true") ? true : false;
+
+
+    var showML10nMsg = (
+				typeof Drupal.settings.is_large_product != "undefined" // 3. if varaible is not undefined
+        && macUser != false // 6. if user browsing from Mac Device
+        && ( Drupal.settings.pName == 'AutoCAD' || Drupal.settings.pName == 'AutoCAD LT') // 7. only for AutoCAD and AutoCAD LT product
+
+				) ? true : false;
+
+    
+    var showFlag = false;
+
+    if(Drupal.settings.pName == 'AutoCAD' && !noML10nMsgForClientAutoCAD && !noML10nMsgForSessAutoCAD) {
+        showFlag = true;
+    }
+    else if(Drupal.settings.pName == 'AutoCAD LT' && !noML10nMsgForClientAutoCADLT && !noML10nMsgForSessAutoCADLT) {
+        showFlag = true;
+    }
+
+
+    // show mac user alert notification
+    if (showML10nMsg && showFlag) {
+
+      // create message
+      var msg = '<div id="showML10nMsg">'
+          + '<div class="row">'
+
+          + '<div id="macsel_close">&nbsp;</div>'
+
+          +	'<div id="macsel_container">'
+
+          + '<span id="macsel_question">'
+          + Drupal.settings.macuser_l10n_app_strings.MACUSER_QUESTION.replace("@product_name", Drupal.settings.pName)
+          + '</span>'
+
+
+          + '<span id="macsel_options">'
+          + '<span id="macsel_confirm" class="showML10nMsg-button">'
+          +	Drupal.settings.macuser_l10n_app_strings.MACUSER_CONFIRM
+          + '</span>'
+          + '<span id="macsel_decline" class="showML10nMsg-button">'
+          + Drupal.settings.macuser_l10n_app_strings.MACUSER_DECLINE
+          + '</span>'
+          + '</span>'
+
+          + '</div>'
+
+          + '<div id="macsel_show_option">'
+          + '<span>'
+          + '<input id="macsel_remove" type="checkbox"/>'
+          + Drupal.settings.macuser_l10n_app_strings.MACUSER_REMOVE
+          + '</span>'
+          + '</div>'
+
+          + '</div>'
+          + '</div>';
+
+      // add to page top
+      $("#mac-user-alert").append(msg);
+    }
+
+    //on confirm, go to local page
+    $("#mac-user-alert").on("click", ".showML10nMsg-button", function() {
+
+      var productName = Drupal.settings.pName;
+
+      var call_id = $(this).attr('id');
+
+      var eventTrackingObject = new Object();
+      eventTrackingObject.event = 'languageSelectionBanner';
+      eventTrackingObject.bannerOption = document.getElementById(call_id).innerHTML;
+      GA_AKP.dataLayerSend(eventTrackingObject);
+
+      var macsel_remove = $("#macsel_remove").prop('checked');
+      if(macsel_remove == true) {
+        switch (productName) {
+          case 'AutoCAD':
+            localStorage.setItem("noML10nMsgForClientAutoCAD", "true");
+            break;
+          case 'AutoCAD LT':
+            localStorage.setItem("noML10nMsgForClientAutoCADLT", "true");
+            break;
+        }
+      }
+
+      if(call_id == "macsel_confirm") {
+        var goto_path = '';
+        switch (productName) {
+          case 'AutoCAD':
+            goto_path = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'support/autocad-for-mac';
+            break;
+          case 'AutoCAD LT':
+            goto_path =  Drupal.settings.basePath + Drupal.settings.pathPrefix + 'support/autocad-lt-for-mac';
+            break;
+        }
+        // var goto_path = $('ul.language-switcher-locale-url').find('li.'+browserLanguagePart+'>a').attr('href');
+        window.location.href = 'https://' + Drupal.settings.autodesk_oxygen.domain + goto_path;
+      }
+
+      if(call_id == "macsel_decline") {
+
+        switch (productName) {
+          case 'AutoCAD':
+            sessionStorage.setItem("noML10nMsgForSessAutoCAD", "true");
+            break;
+          case 'AutoCAD LT':
+            sessionStorage.setItem("noML10nMsgForSessAutoCADLT", "true");
+            break;
+        }
+        $("#showML10nMsg").remove();
+      }
+
+    });
+
+    $("#mac-user-alert").on("click", "#macsel_close", function() {
+      $("#showML10nMsg").remove();
+    });
+
+  });
+
+}) (jQuery)
+;
+(function($) {
+	$(document).ready(function() {
+		
+		// make knowledge card clickable
+		// requires data-url value to be set
+		$(".knowledgeCard").click(function() {
+			if($(this).data("url")) {
+				window.location = $(this).data("url");
+			}
+		  return false;
+		});
+	});
+  
+})(jQuery);;
+(function($) {
+	$(document).ready(function() {
+
+		// Do not show again, if true takes precedence
+		var noL10nMsgForClient = (typeof localStorage.getItem("noL10nMsgForClient") != "undefined"
+			&& localStorage.getItem("noL10nMsgForClient") == "true") ? true : false;
+
+		// Do not show again for the session
+		var noL10nMsgForSess = (typeof sessionStorage.getItem("noL10nMsgForSess") != "undefined"
+			&& sessionStorage.getItem("noL10nMsgForSess") == "true") ? true : false;
+
+		// get first part of language
+		if (localStorage.getItem("browserLanguage") != null)  {
+			Drupal.settings.browser_language = localStorage.getItem("browserLanguage");
+			var browserLanguagePart  = Drupal.settings.browser_language;
+		}
+		else {
+			var browserLanguagePart = "en";
+		}
+
+		var showL10nMsg = (
+				browserLanguagePart != Drupal.settings.l10n.language // 1. browser lang != current lang &&
+				&& $.inArray(browserLanguagePart, Drupal.settings.l10n.available_paths) != "-1" // 2. browser lang available &&
+				&& !noL10nMsgForClient // 3. !noL10nMsgForClient
+				&& !noL10nMsgForSess // 4. !noL10nMsgForSess
+				&& typeof Drupal.settings.langsel_l10n_app_strings != "undefined" // translated strings exist
+				) ? true : false;
+
+		// show language selector notification
+		if (showL10nMsg) {
+
+			// create message
+			var msg = '<div id="showL10nMsg">'
+			        + '<div class="row" id="showL10nMsg_inner">'
+
+							+ '<div id="langsel_close">&nbsp;</div>'
+
+							+	'<div id="langsel_container">'
+							+ '<span id="langsel_question">'
+							+ Drupal.settings.langsel_l10n_app_strings.LANGSEL_QUESTION[browserLanguagePart]
+							+ '</span>'
+							+ '</div>'
+
+							+ '<div id="langsel_options">'
+							+ '<span id="langsel_confirm" class="showL10nMsg-button">'
+							+	Drupal.settings.langsel_l10n_app_strings.LANGSEL_CONFIRM[browserLanguagePart]
+							+ '</span>'
+							+ '<span id="langsel_decline" class="showL10nMsg-button">'
+							+ Drupal.settings.langsel_l10n_app_strings.LANGSEL_DECLINE[browserLanguagePart]
+							+ '</span>'
+							+ '</div>'
+
+							+ '<div id="langsel_show_option">'
+							+ '<span>'
+							+ '<input id="langsel_remove" type="checkbox"/>'
+							+ Drupal.settings.langsel_l10n_app_strings.LANGSEL_REMOVE[browserLanguagePart]
+							+ '</span>'
+							+ '</div>'
+
+							+ '</div>'
+							+ '</div>';
+
+			// add to page top
+			$("#adsk-banner-alert").append(msg);
+		}
+
+		//on confirm, go to local page
+		$("#adsk-banner-alert").on("click", ".showL10nMsg-button", function() {
+
+			var call_id = $(this).attr('id');
+
+			var eventTrackingObject = new Object();
+			eventTrackingObject.event = 'languageSelectionBanner';
+			eventTrackingObject.bannerOption = document.getElementById(call_id).innerHTML;
+			GA_AKP.dataLayerSend(eventTrackingObject);
+
+			var langsel_remove = $("#langsel_remove").prop('checked');
+			if(langsel_remove == true) {
+				localStorage.setItem("noL10nMsgForClient", "true");
+			}
+
+			if(call_id == "langsel_confirm") {
+				var goto_path = $('ul.language-switcher-locale-url').find('li.'+browserLanguagePart+'>a').attr('href');
+				window.location.href = goto_path;
+			}
+
+			if(call_id == "langsel_decline") {
+				sessionStorage.setItem("noL10nMsgForSess", "true");
+				$("#showL10nMsg").remove();
+			}
+
+		});
+
+		$("#adsk-banner-alert").on("click", "#langsel_close", function() {
+			$("#showL10nMsg").remove();
+		});
+
+  });
+
+}) (jQuery)
+;

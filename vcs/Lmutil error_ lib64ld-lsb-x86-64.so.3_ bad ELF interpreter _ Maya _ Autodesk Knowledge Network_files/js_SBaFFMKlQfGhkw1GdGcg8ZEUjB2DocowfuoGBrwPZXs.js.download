@@ -1,0 +1,1228 @@
+(function ($, Drupal) {
+  Drupal.behaviors.autodesk_share = {
+    attach: function (context, settings) {
+      log.info("More Options Panel Init");
+
+      /*
+       * More Options UI
+       */
+      var card = null;
+      var cardDataAttributes = null;
+      var cardMoreOptionsPanel = null;
+      var cardSharePanel = null;
+      var cardReportPanel = null;
+      var panelOpen = false;
+
+      /*
+      * Note
+      * in some places the cards are rendered using angular. Angular elements are rendered after Drupal behaviour javascript runs,
+      * so if we bind click events to DOM elements inside of the card, they will not register in Angular cards.
+       */
+
+      // Trigger link to open "more options" panel
+      $("body").on("click",".more-options-open",function(e) {
+        e.preventDefault();
+        log.debug("More Options: open panel");
+
+        if (card !== null) {
+          card.removeClass("faded");
+          cardMoreOptionsPanel.removeClass("active");
+          $('.more-options-share-content').removeClass("active");
+          $('.more-options-report-content').removeClass("active");
+        }
+
+        card = $(this).closest(".card");
+        log.debug(card);
+        cardDataAttributes = $(this).siblings(".card-data");
+        log.debug(cardDataAttributes);
+        cardMoreOptionsPanel = $(this).next(".more-options");
+        cardSharePanel = $(this).next().find('.more-options-share-content');
+        cardReportPanel = $(this).next().find('.more-options-report-content');
+        panelOpen = true;
+
+        // If the user is also the author of the card, don't show the report link
+        if (userData === undefined || cardDataAttributes[0].getAttribute("data-sid") === undefined || cardDataAttributes[0].getAttribute("data-sid") === "") {
+          log.debug("More Options: incomplete user data, hiding report link...");
+        } else if (cardDataAttributes[0].getAttribute("data-nodeid") === undefined || cardDataAttributes[0].getAttribute("data-nodeid") === "") {
+          log.debug("More Options: incomplete nodeId data, hiding report link...");
+        } else if(userData.userid != cardDataAttributes[0].getAttribute("data-sid")) {
+          cardReportPanel.parent().removeClass("hide");
+        }
+
+        cardMoreOptionsPanel.addClass("active");
+        cardMoreOptionsPanel.children('.more-options-item').addClass('active');
+        card.addClass("faded");
+      });
+
+      // Clicking outside of panel should close it
+      $(document).bind('mouseup touchend keyup', function (e) {
+        if (e.type=='keyup' && e.keyCode!=27) return;
+
+        if (cardMoreOptionsPanel) {
+          if (!cardMoreOptionsPanel.is(e.target) // if the target of the click is not the desired div or section
+            && cardMoreOptionsPanel.has(e.target).length === 0) // ... nor a descendant-child of the container
+          {
+            cardSharePanel.removeClass("active");
+            cardReportPanel.removeClass("active");
+            cardMoreOptionsPanel.removeClass("active");
+            cardMoreOptionsPanel.children('.more-options-item').removeClass('active');
+            card.removeClass("faded");
+          }
+        }
+      });
+
+      // Trigger link to close "more options" panel
+      $("body").on("click", ".more-options-close", function(e) {
+        e.preventDefault();
+
+        cardSharePanel.removeClass("active");
+        cardReportPanel.removeClass("active");
+        cardMoreOptionsPanel.children('.more-options-item').removeClass('active');
+        cardMoreOptionsPanel.removeClass("active");
+        card.removeClass("faded");
+      });
+
+      // Trigger link to execute "add to" functionality
+      $("body").on('click', ".more-options-add-to-trigger", function(e) {
+        e.preventDefault();
+        // IE10 does not support .dataset
+        var cardData = {};
+        var cardAttributes = cardDataAttributes[0].attributes;
+
+        for (var i = 1; i < cardAttributes.length; i++ ) {
+          cardData[cardAttributes[i].name.slice(5)] = cardAttributes[i].value;
+        }
+
+        angular.element(document.getElementById('init-add-item-modal')).scope().openAddTo(cardData);
+        cardMoreOptionsPanel.children('.more-options-item').removeClass('active');
+        cardMoreOptionsPanel.removeClass("active");
+      });
+
+      // Trigger link to open "report" panel
+      $("body").on('click', ".more-options-report-trigger", function(e) {
+        e.preventDefault();
+        $(this).siblings('.more-options-report-content').toggleClass("active");
+        $('.more-options-share-content').removeClass("active");
+
+      });
+
+      // Trigger link to open "share" panel
+      $("body").on('click', ".more-options-share-trigger", function(e) {
+        e.preventDefault();
+        cardMoreOptionsPanel.css('height','auto');
+        $(this).siblings('.more-options-share-content').toggleClass("active");
+        $('.more-options-report-content').removeClass("active");
+        createShareLinks(cardDataAttributes);
+      });
+
+
+      /*
+      * Create Share Links
+      */
+      var createShareLinks = function(card) {
+
+        log.debug("Generate Share Links");
+
+        var el = card;
+        var u = el.attr('data-url');
+        var t = el.attr('data-title');
+        var i = el.attr('data-image');
+        var d = el.attr('data-description');
+        var f = el.attr('data-path');
+
+        u = encodeURIComponent(u);
+        t = encodeURIComponent(t);
+        t = t.replace(/\'/g, '%27');
+        i = encodeURIComponent(i);
+        d = encodeURIComponent(d);
+        d = d.replace(/\'/g, '%27');
+
+        var fbQuery = 'u=' + u;
+        if (i != 'null' && i != '')fbQuery = 's=100&p[url]=' + u + '&p[title]=' + t + '&p[summary]=' + d + '&p[images][0]=' + i;
+
+        /**
+         * share-icons.png contain images of all the share (9 total) arrays set up to pick the correct icon for display.
+         */
+        var share = new Array();
+        share['en'] = new Array();
+        share['en'][0] = '"#" data-count="fb" onclick="window.open(\'http://www.facebook.com/sharer.php?' + fbQuery + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Facebook" target="_blank" data-type="share" data-share="facebook"';
+        share['en'][1] = '"http://www.stumbleupon.com/submit?url=' + u + '&title=' + t + '" title="Share on StumbleUpon" target="_blank" data-type="share" data-share="stumbleupon"';
+        share['en'][2] = '"#" onclick="window.open(\'https://plus.google.com/share?url=' + u + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Google+" target="_blank" data-type="share" data-share="googleplus"';
+        // share['en'][3] = '"#" data-count="dlcs" onclick="window.open(\'http://delicious.com/save?url=' + u + '&title=' + t + '&note=' + d + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=710, height=660, toolbar=0, status=0\');return false" title="Save to Delicious" data-type="share" data-share="delicious"';
+        share['en'][4] = '"#" onclick="window.open(\'http://www.tumblr.com/share?v=3&u=' + u + '&t=' + t + '&s=' + d + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=450, height=440, toolbar=0, status=0\');return false" title="Share on Tumblr" target="_blank" data-type="share" data-share="tumblr"';
+        share['en'][5] = '"#" data-count="twi" onclick="window.open(\'https://twitter.com/intent/tweet?url=' + u + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Twitter" data-type="share" data-share="twitter"';
+        share['en'][6] = '"#" data-count="lnkd" onclick="window.open(\'http://www.linkedin.com/shareArticle?mini=true&url=' + u + '&title=' + t + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=600, height=400, toolbar=0, status=0\');return false" title="Share on Linkedin" target="_blank" data-type="share" data-share="linkedin"';
+        share['en'][8] = '"mailto:?subject=' + t + '&body=' + t + '%0D%0A' + u + '" title="Share this page via Email" data-type="share" data-share="email"';
+
+        share['de'] = new Array();
+        share['de'][0] = '"#" data-count="fb" onclick="window.open(\'http://www.facebook.com/sharer.php?' + fbQuery + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Facebook" target="_blank" data-type="share" data-share="facebook"';
+        share['de'][2] = '"#" onclick="window.open(\'https://plus.google.com/share?url=' + u + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Google+" target="_blank" data-type="share" data-share="googleplus"';
+        share['de'][5] = '"#" data-count="twi" onclick="window.open(\'https://twitter.com/intent/tweet?url=' + u + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Twitter" data-type="share" data-share="twitter"';
+        share['de'][6] = '"#" data-count="lnkd" onclick="window.open(\'http://www.linkedin.com/shareArticle?mini=true&url=' + u + '&title=' + t + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=600, height=400, toolbar=0, status=0\');return false" title="Share on Linkedin" target="_blank" data-type="share" data-share="linkedin"';
+        share['de'][7] = '"#" data-count="xing" onclick="window.open(\'https://www.xing.com/spi/shares/new?url=' + u + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on XING" target="_blank" data-type="share" data-share="xing"';
+        share['de'][8] = '"mailto:?subject=' + t + '&body=' + t + '%0D%0A' + u + '" title="Share this page via Email" data-type="share" data-share="email"';
+
+        share['ja'] = new Array();
+        share['ja'][0] = '"#" data-count="fb" onclick="window.open(\'http://www.facebook.com/sharer.php?' + fbQuery + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Facebook" target="_blank" data-type="share" data-share="facebook"';
+        share['ja'][2] = '"#" onclick="window.open(\'https://plus.google.com/share?url=' + u + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Google+" target="_blank" data-type="share" data-share="googleplus"';
+        share['ja'][5] = '"#" data-count="twi" onclick="window.open(\'https://twitter.com/intent/tweet?url=' + u + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Twitter" data-type="share" data-share="twitter"';
+        share['ja'][8] = '"mailto:?subject=' + t + '&body=' + t + '%0D%0A' + u + '" title="Share this page via Email" data-type="share" data-share="email"';
+
+        share['zh-hans'] = new Array();
+        share['zh-hans'][0] = '"#" data-count="fb" onclick="window.open(\'http://www.facebook.com/sharer.php?' + fbQuery + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Facebook" target="_blank" data-type="share" data-share="facebook"';
+        share['zh-hans'][1] = '"http://www.stumbleupon.com/submit?url=' + u + '&title=' + t + '" title="Share on StumbleUpon" target="_blank" data-type="share" data-share="stumbleupon"';
+        share['zh-hans'][2] = '"#" onclick="window.open(\'https://plus.google.com/share?url=' + u + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Google+" target="_blank" data-type="share" data-share="googleplus"';
+        // share['zh-hans'][3] = '"#" data-count="dlcs" onclick="window.open(\'http://delicious.com/save?url=' + u + '&title=' + t + '&note=' + d + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=710, height=660, toolbar=0, status=0\');return false" title="Save to Delicious" data-type="share" data-share="delicious"';
+        share['zh-hans'][4] = '"#" onclick="window.open(\'http://www.tumblr.com/share?v=3&u=' + u + '&t=' + t + '&s=' + d + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=450, height=440, toolbar=0, status=0\');return false" title="Share on Tumblr" target="_blank" data-type="share" data-share="tumblr"';
+        share['zh-hans'][5] = '"#" data-count="twi" onclick="window.open(\'https://twitter.com/intent/tweet?url=' + u + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on Twitter" data-type="share" data-share="twitter"';
+        share['zh-hans'][6] = '"#" data-count="lnkd" onclick="window.open(\'http://www.linkedin.com/shareArticle?mini=true&url=' + u + '&title=' + t + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=600, height=400, toolbar=0, status=0\');return false" title="Share on Linkedin" target="_blank" data-type="share" data-share="linkedin"';
+        share['zh-hans'][8] = '"mailto:?subject=' + t + '&body=' + t + '%0D%0A' + u + '" title="Share this page via 邮件" data-type="share" data-share="email"';
+        share['zh-hans'][9] = '"#" data-count="weibo" onclick="window.open(\'http://service.weibo.com/share/share.php?url=' + u + '&title=' + t + '\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=100, top=100, width=550, height=440, toolbar=0, status=0\');return false" title="Share on 新浪微博" target="_blank" data-type="share" data-share="weibo"';
+        var addQr = '';
+        if (Drupal.settings.l10n.language == 'zh-hans') {
+            addQr = '<div style="clear:both;border-top: 1px solid #cccccc;"><div style="width: 70%;height: 70%;margin: 15px auto;font-size:13px;line-height:2">微信扫一扫<div class="qrcode"></div></div></div>';
+        }
+
+        var lang = Drupal.settings.l10n.language;
+
+        var label = {};
+        label = {
+          "0": "Facebook",
+          "1": "StumbleUpon",
+          "2": "Google+",
+          "3": "Delicious",
+          "4": "Tumblr",
+          "5": "Twitter",
+          "6": "Linkedin",
+          "7": "Xing",
+          "8": (lang != 'zh-hans') ? "Email": "邮件",
+          "9": "新浪微博"
+        };
+
+        var s = share[lang] || share['en'];
+        var l = '';
+        var cnt = 0;
+        $.each(Object.keys(s), function (key, val) {
+          l += '<a rel="nofollow" class="icon-share" href=' + s[val] + '><span class="icon-dyn icon-dyn-' + label[val].toLowerCase() + '"></span><span class="icon-txt">' + label[val] + '</span></a>';
+        });
+        l += addQr;
+
+        cardSharePanel.html(l);
+        if (addQr.length>0) new QRCode(cardSharePanel.find('.qrcode')[0], {
+            text: decodeURIComponent(u),
+            correctLevel : QRCode.CorrectLevel.L
+        });
+
+        $('a[data-share="googleplus"]').children('span.icon-dyn').addClass('icon-dyn-googleplus');
+      };
+
+      /*
+      * Click on share links
+      * Log analytics, close panel
+      */
+      $("body").on('click', '.more-options-share-content a.icon-share', function () {
+        var shareText = $(this).children('.icon-txt').text();
+        var shareTextClean = "";
+        if (typeof shareText != 'undefined') {
+          if (shareText === 'Google+') {
+            shareTextClean = "googleplus";
+          } else {
+            shareTextClean = shareText.toLowerCase();
+          }
+        }
+        log.debug("Share", shareTextClean);
+        // GTM call
+        cardMoreOptionsPanel.removeClass("active");
+        card.removeClass("faded");
+      });
+
+      /*
+      * Report Content
+      */
+      $("body").on('click', '.more-options-report-content .report-button-report', function (e) {
+        e.preventDefault();
+        var source = cardDataAttributes[0].getAttribute("data-source") === "simplecontent" ? "article" : (cardDataAttributes[0].getAttribute("data-source") === "contributedlink" ? "link" :cardDataAttributes[0].getAttribute("data-source"));
+        var id = cardDataAttributes[0].getAttribute("data-nodeid");
+        if ((source !== "") && (id !== "")) {
+          $.ajax('/moderation/flag/' + source + '/' + id, {
+            success: function (msg) {
+              log.debug("Flag Report Status:" + JSON.stringify(msg));
+            },
+            error: function (msg) {
+              log.debug("Flag Report Status:" + JSON.stringify(msg));
+            }
+          });
+        }
+        cardMoreOptionsPanel.removeClass("active");
+        card.removeClass("faded");
+      });
+
+      $("body").on('click', '.more-options-report-content .report-button-cancel', function (e) {
+        e.preventDefault();
+       $(this).parent().removeClass("active");
+      });
+
+    }
+  }
+})(jQuery, Drupal);
+;
+"use strict";document.domain="autodesk.com";var userServiceUrl,identifier,manageUrl,mode,stateLess,currentAknDomain,adskLogout,loadOnce,userData,signIn,signOut,myProfile,myContributions,myPreferences,manageSubscription,lang,accountCreateLink,createAccount,accountSettings,autodeskAccount,akn,viewCases,viewCasesUrl,entitlementData;"undefined"==typeof Drupal?(log.debug("Oxygen Drupal undefined in autodesk_oxygen.js"),userServiceUrl="//akn.publisher-staging.autodesk.com",identifier="https://accounts-staging.autodesk.com",manageUrl="https://customer-stg.autodesk.com",mode="iframe",signIn="Sign In",signOut="Sign Out",lang="en",createAccount="Create Account"):(userServiceUrl=Drupal.settings.autodesk_oxygen.userServiceUrl,identifier=Drupal.settings.autodesk_oxygen.accountsUrl,manageUrl=Drupal.settings.autodesk_oxygen.manageUrl,mode=Drupal.settings.autodesk_oxygen.viewmode,signIn=Drupal.settings.autodesk_oxygen.uiLinks.signIn,signOut=Drupal.settings.autodesk_oxygen.uiLinks.signOut,myProfile=Drupal.settings.autodesk_oxygen.uiLinks.myProfile,myContributions=Drupal.settings.autodesk_oxygen.uiLinks.myContributions,myPreferences=Drupal.settings.autodesk_oxygen.uiLinks.myPreferences,manageSubscription=Drupal.settings.autodesk_oxygen.uiLinks.manageSubscription,accountSettings=Drupal.settings.autodesk_oxygen.uiLinks.accountSettings,lang=Drupal.settings.l10n.oxygen_languages[Drupal.settings.l10n.language],createAccount=Drupal.settings.autodesk_oxygen.uiLinks.createAccount,autodeskAccount=Drupal.settings.autodesk_oxygen.uiLinks.autodeskAccount,akn=Drupal.settings.autodesk_oxygen.uiLinks.akn,viewCases=Drupal.settings.autodesk_oxygen.uiLinks.viewCases,viewCasesUrl=Drupal.settings.autodesk_oxygen.viewCasesUrl),stateLess=!1,currentAknDomain=window.location.protocol+"//"+window.location.host+"/",adskLogout="/Authentication/LogOut?ReturnToUrl=",loadOnce=!1,accountCreateLink=identifier+"/register?viewmode=iframe&ReturnUrl="+currentAknDomain+"new_account_refresh.html",jQuery(document).ready(function(){log.info("Oxygen Init"),"function"==typeof autodeskAknUserServices_initLogin?(log.debug("Oxygen authenticated check immediate"),autodeskAknUserServices_initLogin(Auth.authModImmediateLogin)):(log.debug("Oxygen autodeskAknUserServices_init Login was not defined 3"),Auth.authModImmediateLogin()),jQuery("body").on("click","#simpleOpenAdskLogin",function(a){a.preventDefault(),"function"==typeof autodeskAknUserServices_initLogin?(log.debug("Oxygen autodeskAknUserServices_init user services integration"),autodeskAknUserServices_initLogin(Auth.authModSimpleLogin)):(log.debug("Oxygen autodeskAknUserServices_init Login was not defined 2"),Auth.authModSimpleLogin())}),jQuery("body").on("click",".simpleOpenAdskLogin",function(a){a.preventDefault(),"function"==typeof autodeskAknUserServices_initLogin?(log.debug("Oxygen autodeskAknUserServices_init user services integration"),autodeskAknUserServices_initLogin(Auth.authModSimpleLogin)):(log.debug("Oxygen autodeskAknUserServices_init Login was not defined 2"),Auth.authModSimpleLogin())}),jQuery("body").on("click",".createNewAccountOnOxygen",function(a){a.preventDefault(),Auth.createNewAccount(accountCreateLink,mode)}),jQuery("body").on("click","#signOff",function(a){a.preventDefault(),Auth.authModSimpleLogout()}),jQuery("body").on("hover",".profile-dropdown",function(a){jQuery(this).toggleClass("hover")}),jQuery(document).on("click",function(a){jQuery(a.target).closest(".profile-dropdown").length||jQuery(".profile-dropdown").removeClass("active")}),jQuery("body").on("click touchstart",".manage-subscriptions-downloads",function(a){a.preventDefault();var b=jQuery(this).attr("href");log.debug(b),window.location=b}),jQuery("body").on("click",".profile-dropdown",function(a){jQuery(".profile-dropdown").not(this).removeClass("active"),jQuery(this).toggleClass("active")}),Auth.userSessionToggle(),Auth.profileDropdownToggle()}),window.closeOxygen=function(){jQuery.colorbox.close()};var Auth=function(){function a(a){var b=jQuery.Deferred();return jQuery.ajax({url:a.url,type:a.type,data:a.data,crossDomain:a.crossDomain,contentType:a.contentType,dataType:a.dataType,timeout:a.timeout,beforeSend:function(b,c){return a.auth&&b.setRequestHeader("Authorization",a.auth),!0},error:function(a){b.reject(a)},success:function(a){log.debug("Oxygen auth response",a),!a||"SUCCESS"!==a.MESSAGE&&void 0===a.analyticsId&&"SUCCESS"!==a.message?b.reject(a):b.resolve(a)}}),b.promise()}return{isLoginSession:!1,userSessionToggle:function(){var a=Cookies.get("user_logged_in");void 0!==a?(log.debug("Oxygen user logged in cookie exists"),jQuery(".user-logged-in").addClass("show"),jQuery(".user-logged-in").removeClass("hide"),jQuery(".user-logged-out").removeClass("show"),jQuery(".user-logged-out").addClass("hide")):(log.debug("Oxygen user logged in cookie undefined"),jQuery(".user-logged-out").addClass("show"),jQuery(".user-logged-out").removeClass("hide"),jQuery(".user-logged-in").removeClass("show"),jQuery(".user-logged-in").addClass("hide"))},profileDropdownToggle:function(){var a=Cookies.get("user_logged_in");void 0==a?jQuery(".block-autodesk-oxygen-block-oxygen-signon > .block-content").html('<a class="createNewAccountOnOxygen profile-login"><span>'+createAccount+'</span></a><span id="profileLoginPipe" class="profile-login">|</span><a id="simpleOpenAdskLogin" class="profile-login"><span>'+signIn+"</span></a>"):jQuery(".block-autodesk-oxygen-block-oxygen-signon > .block-content").html('<span class="profile-loading"></span>')},renderProfileDropdown:function(a){log.debug(a),jQuery(".block-autodesk-oxygen-block-oxygen-signon > .block-content").html('<div class="profile-dropdown"><span class="profile-dropdown-avatar"><img src="'+a.mediaimage20+'"/></span><span class="profile-dropdown-name"><span class="profile-dropdown-first-name">'+a.first+'</span><span class="profile-dropdown-last-name">&#32'+a.last+'</span></span><span class="caret"></span><div class="profile-dropdown-wrapper"><div class="profile-triangle"></div><div class="profile-menu"><ul><li class="profile-menu-group"><span class="profile-menu-group-title">'+akn+'</span><ul><li><a class="profile-menu-item-large" href="/'+Drupal.settings.pathPrefix+'profile">'+myProfile+'</a></li><li id="my-contributions"><a class="profile-menu-item-large" href="/'+Drupal.settings.pathPrefix+'profile/contributions">'+myContributions+'</a></li><li><a class="profile-menu-item-large" href="/'+Drupal.settings.pathPrefix+'profile/preferences">'+myPreferences+'</a></li></ul></li><li class="profile-menu-group"><span class="profile-menu-group-title">'+autodeskAccount+'</span><ul><li><a class="profile-menu-item-large" href="'+manageUrl+'">'+manageSubscription+'</a></li><li><a class="profile-menu-item-large" href="'+identifier+'/Profile/Security" target="_blank">'+accountSettings+'</a></li><li><a id="signOff">'+signOut+"</a></li></ul></li></ul></div></div></div>")},authModImmediateLogin:function(b,c,d){var e=encodeURIComponent(currentAknDomain+"index_refresh.php"),f="identifier="+identifier+"&returnUrl="+e+"&stateLess="+stateLess+"&pluckCookie=true&oauth=true&mode="+mode;f=f+("undefined"!=typeof c?"&requestId="+c:"")+("undefined"!=typeof d?"&clientId="+d:""),log.debug("Oxygen data: ",f);var g=a({url:userServiceUrl+"/aknuserservices/user/openid/checkidimmediate",type:"GET",data:f,crossDomain:!0,contentType:"application/json",auth:b||!1,dataType:"json",timeout:15e3});return g.done(function(a){if(log.debug("Oxygen loadOnce",loadOnce),a.REDIRECT_URL&&!loadOnce){log.debug("Oxygen login check passed",a.REDIRECT_URL);var b=a.REDIRECT_URL;Auth.loadFrame(b,!0)}else log.debug("Oxygen login check failed",a)}),g},loadFrame:function(a,b){jQuery("#oxygen_loader").length>0&&jQuery("#oxygen_loader").remove(),jQuery("body").append('<iframe src="" name="oxygen_loader" id="oxygen_loader" style="width:0px;height:0px;display:none;"></iframe>'),jQuery("iframe#oxygen_loader").attr("src",a),jQuery("iframe#oxygen_loader").load(function(){loadOnce=b})},authModSimpleLogin:function(a,b,c){Auth.simpleOpenAdskLogin(currentAknDomain,userServiceUrl,identifier,!0,stateLess,!0,mode,a,b,c).done(function(a){log.debug("auth simple login"),"SUCCESS"===a.MESSAGE&&a.CONSUMER_RESPONSE_DATA?window.closeOxygen():Auth.createLogin(a.REDIRECT_URL,mode)})},authModSimpleLogout:function(){jQuery(".block-autodesk-oxygen-block-oxygen-signon > .block-content").html('<span class="profile-loading"></span>'),"undefined"!=typeof adskUnifiedProfile&&"function"==typeof adskUnifiedProfile.logout&&adskUnifiedProfile.logout(),Auth.signOff(!0,userServiceUrl,identifier,adskLogout,!0).done(function(a){Auth.authModImmediateLogin().done(function(){Auth.logUserOutFromAKNBackend().done(function(){Auth.signOffInProgress=!0,window.onbeforeunload=null,window.closeOxygen(),Cookies.remove("autodesk_akn_user_services_login",{path:"/"}),Cookies.remove("user_logged_in",{path:"/"}),sessionStorage.removeItem("adsk_user_id"),localStorage.removeItem("user_analytics_id"),localStorage.removeItem("user_analytics_enc_csn"),location.pathname=="/"+Drupal.settings.pathPrefix+"profile/contributions"||"undefined"!=typeof Drupal.settings.exitOnSignOut?document.location.href="/"+Drupal.settings.pathPrefix:(0==location.pathname.indexOf("/"+Drupal.settings.pathPrefix+"profile")||0==location.pathname.indexOf("/"+Drupal.settings.pathPrefix+"contact-support")||0==location.pathname.indexOf("/"+Drupal.settings.pathPrefix+"content")||"undefined"!=typeof Drupal.settings.reloadOnSignOut)&&location.reload(!0)})})})},simpleOpenAdskLogin:function(b,c,d,e,f,g,h,i,j,k){var l=encodeURIComponent(b+"index_refresh.php"),m="identifier="+d+"&pluckCookie="+e+"&returnUrl="+l+"&stateLess="+f+"&oauth="+g+"&mode="+h+"&lang="+lang;return m=m+("undefined"!=typeof j?"&requestId="+j:"")+("undefined"!=typeof k?"&clientId="+k:""),a({url:c+"/aknuserservices/user/openid/signin",type:"GET",data:m,crossDomain:!0,contentType:"application/json",dataType:"json",auth:i||!1,timeout:15e3})},immediateLogin:function(b,c,d,e,f,g,h){var i=encodeURIComponent(b+"index_refresh.php"),j="identifier="+d+"&returnUrl="+i+"&stateLess="+f+"&pluckCookie="+e+"&oauth="+g+"&mode="+h;return a({url:c+"/aknuserservices/user/openid/checkidimmediate",type:"GET",data:j,crossDomain:!0,contentType:"application/json",dataType:"jsonp",timeout:15e3})},signOff:function(b,c,d,e,f){var g=encodeURIComponent(currentAknDomain+"index_refresh.php"),h=identifier+e+g;Auth.loadFrame(h,!1),removeAnalyticsUser();var i="pluckCookie="+b+"&userid=&oauth="+f,j=a({url:c+"/aknuserservices/user/openid/signoff",type:"GET",data:i,crossDomain:!0,contentType:"application/json",dataType:"jsonp",timeout:15e3});return j},logUserOutFromAKNBackend:function(){return a({url:"/js-ajax?js_module=autodesk_oxygen_login&js_callback=logoutsession",type:"GET",data:"",crossDomain:!1,contentType:"application/json",dataType:"json",timeout:15e3})},getProductEntitlementData:function(b){return a({url:b+"/aknuserservices/user/entitlement/getentitlementproductdata",type:"GET",data:"",crossDomain:!0,contentType:"application/json",dataType:"jsonp",timeout:15e3})},getRegionalPhoneNumbers:function(b,c){return a({url:b+"/aknuserservices/user/gps/getphoneinfo",type:"GET",data:{countrycode:c},crossDomain:!0,contentType:"application/json",dataType:"jsonp",timeout:15e3})},createNewAccount:function(a,b){var c=Cookies.get("user_logged_in");return void 0!==c?!1:void("mobile"===b&&override===!1?jQuery.colorbox({iframe:!0,href:a,maxWidth:"100%",maxHeight:"100%",innerWidth:"100%",innerHeight:"100%",opacity:.45,transition:"none",overlayClose:!0,onClosed:function(){autodeskAknUserServices_initLogin(Auth.authModImmediateLogin)}}):jQuery.colorbox({iframe:!0,href:a,maxWidth:"100%",maxHeight:"100%",innerWidth:350,innerHeight:500,opacity:.45,overlayClose:!0,onClosed:function(){autodeskAknUserServices_initLogin(Auth.authModImmediateLogin)}}))},createLogin:function(a,b){this.isLoginSession=!0;var c=!0,d="/signin"==window.location.pathname?!1:!0;Cookies.set("loginAttemptedPage",window.location.href,{path:"/"}),"mobile"===b&&c===!1?jQuery.colorbox({iframe:!0,href:a,maxWidth:"100%",maxHeight:"100%",innerWidth:"100%",innerHeight:"100%",opacity:.45,transition:"none",overlayClose:d}):jQuery.colorbox({iframe:!0,href:a,maxWidth:"100%",maxHeight:"100%",innerWidth:350,innerHeight:400,opacity:.45,overlayClose:d})},processOpenIDResponse:function(b){if(userData=parseQueryString(b),"undefined"!=typeof userData.userid){var c=Cookies.get("user_logged_in");if(0!=location.pathname.indexOf("/"+Drupal.settings.pathPrefix+"content")||"undefined"!=typeof c&&0!=c||location.reload(!0),"undefined"!=typeof adskUnifiedProfile&&"function"==typeof adskUnifiedProfile.mergeExperience.validate){var d=!1;"undefined"!=typeof Drupal.settings.company&&("undefined"!=typeof Drupal.settings.company.company_display_optin_dialog&&1==Drupal.settings.company.company_display_optin_dialog||"undefined"!=typeof Drupal.settings.company.company_change_optin_dialog&&1==Drupal.settings.company.company_change_optin_dialog||"undefined"!=typeof Drupal.settings.company.company_removed_optin_dialog&&1==Drupal.settings.company.company_removed_optin_dialog)&&(d=!0),d||adskUnifiedProfile.mergeExperience.validate()}if(log.debug("Oxygen initUser"),Cookies.set("user_logged_in","true",{path:"/"}),"undefined"!=typeof Drupal&&"undefined"!=typeof AKNProfile&&AKNProfile.checkOwnership(),"function"==typeof getUrlParameter){var e=getUrlParameter("redirectTo"),f=window.location.pathname.split("/").slice(-1)[0];if(log.debug("hasRedirect",e,Cookies.get("user_logged_in")),e.length&&"signin"==f){var g="?rt="+(new Date).getTime(),h="/"+e+g+window.location.hash;log.debug(h),window.location.href=h}}if("function"==typeof setAnalyticsUser){var i=sessionStorage.getItem("adsk_user_id");i!=userData.userid&&sessionStorage.setItem("adsk_user_id",userData.userid),setAnalyticsUser(userData.userid,null,null)}"undefined"!=typeof Drupal&&(Auth.userSessionToggle(),Auth.renderProfileDropdown(userData),jQuery(".signIn").css("display","none"));var j=localStorage.getItem("user_analytics_id");if(null==j){var k=a({url:userServiceUrl+"/aknuserservices/user/v1/analytics/analyticsid/user/"+userData.userid,type:"GET",crossDomain:!0,contentType:"application/json",dataType:"json",timeout:15e3});k.done(function(a){localStorage.setItem("user_analytics_id",a.analyticsId),setAnalyticsUser(null,null,a.analyticsId),dataLayer.push({analyticsId:a.analyticsId,login:!0})})}else setAnalyticsUser(null,null,j),dataLayer.push({analyticsId:j,login:!0});var l=a({data:"",url:userServiceUrl+"/aknuserservices/user/entitlement/v2/app/knowledge/getentitlementdata",type:"GET",crossDomain:!0,contentType:"application/json",dataType:"jsonp",timeout:15e3});l.done(function(a){if(log.debug(a),entitlementData=a,dataLayer.push({entitlementData:entitlementData}),"undefined"!=typeof entitlementData.usageType&&""!=entitlementData.usageType&&entitlementData.usageType.length>0){var b=jQuery.map(entitlementData.usageType,function(a,b){return a}).join("|");dataLayer.push({usageType:b})}else dataLayer.push({usageType:"none"});if("undefined"!=typeof entitlementData.highestSupportProgram&&""!=entitlementData.highestSupportProgram&&entitlementData.highestSupportProgram.length>0?dataLayer.push({highestSupportProgram:entitlementData.highestSupportProgram}):dataLayer.push({highestSupportProgram:"none"}),"undefined"!=typeof entitlementData.phoneSupport&&""!==entitlementData.phoneSupport&&entitlementData.phoneSupport.length>0?dataLayer.push({phoneSupport:entitlementData.phoneSupport}):dataLayer.push({phoneSupport:"none"}),"undefined"!=typeof entitlementData.entitlementProductData&&""!==entitlementData.entitlementProductData){var c=jQuery.map(entitlementData.entitlementProductData,function(a,b){return b}).join("|");dataLayer.push({productCode:c})}else dataLayer.push({productCode:"none"});if("undefined"!=typeof entitlementData.highestSupportProgram&&""!=entitlementData.highestSupportProgram&&entitlementData.highestSupportProgram.length>0){log.debug(entitlementData.highestSupportProgram);var d='<li><a id="view-cases-menu" class="profile-menu-item-large" href="javascript:void(0)">'+viewCases+"</a></li>";jQuery("#my-contributions").append(d),jQuery("#view-cases-menu, #view-cases").on("click",function(a){"undefined"!=typeof Drupal&&"undefined"!=typeof Drupal.settings&&"undefined"!=typeof Drupal.settings.autodesk_oxygen&&"undefined"!=typeof Drupal.settings.autodesk_oxygen.viewCasesUrl&&(jQuery("#sfdcModalFrame").attr("src",Drupal.settings.autodesk_oxygen.viewCasesUrl),jQuery(document).foundation({reveal:{close_on_background_click:!0,close_on_esc:!0}}),jQuery("#sfdcModalWrapper").foundation("reveal","reflow"),jQuery("#sfdcModalWrapper").foundation("reveal","open"))});var e=localStorage.getItem("user_analytics_enc_csn");null==e?"undefined"!=typeof userData.userid&&jQuery.ajax({method:"GET",url:userServiceUrl+"/aknuserservices/user/entitlement/v2/enc/csn/"+userData.userid,dataType:"json"}).done(function(a){"undefined"!=typeof a&&"undefined"!=typeof a.enccsn&&a.enccsn.length>0&&(setAnalyticsUser(null,a.enccsn,null),localStorage.setItem("user_analytics_enc_csn",a.enccsn))}):setAnalyticsUser(null,e,null)}"undefined"!=typeof GPSEntitlement&&(Auth.isLoginSession?location.reload(!0):GPSEntitlement.refreshEntitlements(userData,entitlementData)),"undefined"!=typeof SFDCEntitlement&&(window.sfdcReload=!0,Auth.isLoginSession?(SFDCEntitlement.setReload(!1),location.reload(!0)):SFDCEntitlement.refreshEntitlements(userData,entitlementData))})}else{log.debug("Oxygen no user found"),"undefined"!=typeof adskUnifiedProfile&&"function"==typeof adskUnifiedProfile.logout&&adskUnifiedProfile.logout(),userData={loginNeeded:"true"},"undefined"!=typeof Drupal&&"undefined"!=typeof AKNProfile&&AKNProfile.showPublicTitles(),Cookies.remove("user_logged_in"),"undefined"!=typeof Drupal&&(jQuery(".profile-login").css("display",""),jQuery(".signIn").css("display",""),Auth.userSessionToggle(),Auth.profileDropdownToggle()),sessionStorage.removeItem("adsk_user_id");var j=localStorage.getItem("user_analytics_id");if(null!==j&&dataLayer.push({analyticsId:j,login:!1}),"function"==typeof getUrlParameter){var e=getUrlParameter("redirectTo"),f=window.location.pathname.split("/").slice(-1)[0];log.debug("hasRedirect",e,Cookies.get("user_logged_in")),e.length&&"signin"==f&&autodeskAknUserServices_initLogin(Auth.authModSimpleLogin)}"undefined"!=typeof GPSEntitlement&&GPSEntitlement.refreshEntitlements(userData,{}),"undefined"!=typeof SFDCEntitlement&&(window.sfdcReload=!0,SFDCEntitlement.refreshEntitlements(userData,{}))}closeOxygen(),jQuery("#oxygen_loader").length>0&&jQuery("#oxygen_loader").remove()}}}(),parseQueryString=function(a){var b,c,d,e=(/\?/.test(a)?a.split("?")[1]:a).split("&"),f={};for(c=0,d=e.length;d>c;c++)b=e[c].split("="),f[b[0]]=decodeURIComponent(b[1]).replace(/<[^>]*>/g,"");return f};;
+var itemApp = angular.module('itemAdd', ['ngDialog', 'ui.select', 'ui.sortable', 'akn.filters']);
+
+itemApp.directive('myEnter', function () {
+    return function (scope, element, attrs) {
+        element.bind("keydown keypress", function (event) {
+            if(event.which === 13) {
+                scope.$apply(function (){
+                    scope.$eval(attrs.myEnter);
+                });
+
+                event.preventDefault();
+            }
+        });
+    };
+})
+
+itemApp.controller('ItemAddCtrl', ['$scope', 'loginService', 'ngDialog', '$timeout', '$sce', function($scope, loginService, ngDialog, $timeout, $sce) {
+  log.info("Collections Add Item Init");
+
+  var $ = jQuery;
+  
+  $scope.l10n_strings = Drupal.settings.additem_l10n_strings;
+
+  var doc_caas = {};
+
+  $scope.productList = Drupal.settings.all_active_releases;
+  $scope.collectionLanguages = [ {
+        "code" : "CSY",
+        "display" :  "Čeština",
+    }, {
+        "code" : "DEU",
+        "display" :  "Deutsch",
+    }, {
+        "code" : "ENU",
+        "display" : "English"
+    },  {
+        "code" : "ESP",
+        "display" :  "Español",
+    },  {
+        "code" : "FRA",
+        "display" :  "Français",
+    },  {
+        "code" : "ITA",
+        "display" :  "Italiano",
+    }, {
+        "code" : "HUN",
+        "display" :  "Magyar",
+    }, {
+        "code" : "PLK",
+        "display" :  "Polski",
+    }, {
+        "code" : "PTB",
+        "display" :  "Português (Brasil)",
+    }, {
+        "code" : "RUS",
+        "display" :  "Русский"
+    }, {
+        "code" : "KOR",
+        "display" :  "한국어",
+    }, {
+        "code" : "JPN",
+        "display" :  "日本語",
+    }, {
+        "code" : "CHS",
+        "display" :  "简体中文",
+    }, {
+        "code": "CHT",
+        "display": "繁體中文",
+    }, {
+        "code": "OTH",
+        "display": "Other",
+    } ];
+
+  $scope.isMobile = window.mobileAndTabletcheck();
+
+  if (Drupal.settings.analytics_params) {
+    doc_caas = {
+      caas_key : Drupal.settings.analytics_params.caas_key,
+      site_lang : Drupal.settings.analytics_params.site_lang,
+      site_context : Drupal.settings.analytics_params.site_context,
+      //'is_caas' => 1,
+      caas_title : Drupal.settings.analytics_params.title,
+      caas_source : Drupal.settings.analytics_params.source_plain
+    };
+  }
+
+  $scope.resetdropdownScrollTop=function(){}
+
+  $scope.tagTransform = function(newTag) {
+      var item = {
+          Name: newTag,
+          Line:"",
+          Release:"",
+          Remembered:true
+      };
+      return item;
+  }
+
+  $scope.getCollectionCategoryString = function(categoriesObject) {
+      var mapTable = {
+          gettingStarted: 'Getting Started',
+          learnExplore: 'Learn & Explore',
+          troubleshooting: 'Troubleshooting'
+      }
+      var elems = [];
+      if (typeof categoriesObject != 'undefined') {
+          $.each(categoriesObject, function(k, v) {
+              if (v) elems.push(mapTable[k]);
+          });
+      }
+
+      var str = elems.join(',');
+      return str;
+    }
+
+  $scope.getCollections = function(source) {
+    
+    var deferred = $.Deferred();
+    $.ajax({
+      url: '/profile/contributions/ajax/collection/get'
+    }).done(function(data) {
+      if (data && data.csrf_token) Drupal.settings.autodesk_collections_add_item.csrf_token = data.csrf_token;
+      var loadedCollectionData = data.content;
+      deferred.resolve(loadedCollectionData);
+    }).error(function(data) {
+      if (data.responseJSON && data.responseJSON.csrf_token) Drupal.settings.autodesk_collections_add_item.csrf_token = data.responseJSON.csrf_token;
+      var loadedCollectionData = [];
+      deferred.resolve(loadedCollectionData);
+    });
+
+    return deferred.promise();
+  };
+  
+  $scope.openAddTo = function(cardData){
+
+    if (cardData) {
+      log.debug("Open Add To Modal", cardData);
+      doc_caas = {
+        caas_key : cardData.caas,
+        caas_title : cardData.title,
+        caas_source : cardData.source,
+        // document lang
+        site_lang : cardData.lang,
+        // document context
+        site_context : cardData.context
+      };
+    }
+
+    $scope.showaddandcreate = false;
+    $scope.addToCollection = {title: '', collectionId: '', error: false, created: false,
+        viewLink: '', collectionName: '', description: '', content_lang: '', duplicate: false, maxLimit: false, processing1: false, processing2: false, tags: []};
+    // viewLink: '', collectionName: '', duplicate: false, maxLimit: false, processing1: false, processing2: false, tags: ['a','b','c'], tags2: ['tag1','tag2']};
+
+    if (loginService.needsSignIn()) {
+      loginService.makeSignin();
+      return false;
+    }
+    
+    $scope.getCollections($scope.source).then(function(resp) {
+      $timeout(function() {
+        
+        $scope.userCollections = resp;
+        
+        if ($scope.userCollections.length == 0) {
+          $scope.showaddandcreate = true;
+        }
+        
+        ngDialog
+        .open({
+          template: 'addToCollection',
+          scope: $scope,
+          data: JSON.stringify({
+            'item': doc_caas
+          }),
+          showClose: true,
+          closeByEscape: true,
+          closeByDocument: true,
+          className: 'ngdialog ngdialog-theme-default ngdialog-contribapp ngdialog-addToCollection'
+        });
+       
+      })
+    });  
+    
+    // Submit add to new collection form
+    $scope.performAddToCollectionAction = function(action, caasData) {
+      
+      if (caasData == null) {
+        return false;
+      }
+
+      if ($scope.addToCollection.processing1 || $scope.addToCollection.processing2) { return false; }
+
+      var allowed_actions = ['add', 'new'];
+      
+      if (allowed_actions.indexOf(action) == -1) {
+        return false;
+      }
+      
+      var collectionSafe = {};
+      var update_postfix = '';
+      
+      if (action == 'add') {
+        $scope.addToCollection.processing1 = true;
+        if ($scope.addToCollection.collectionId == null) {
+          return false;
+        }
+        update_postfix = "/" + $scope.addToCollection.collectionId;
+        
+      }
+      else { // new
+        // initialize as a truthy state
+        $scope.addToCollection.error = false;
+        
+        if ($scope.addToCollection.title == null || $scope.addToCollection.title.length == 0) {
+          // $scope.addToCollection.error = true;
+          return false;
+        }
+
+          $scope.addToCollection.processing2 = true;
+        
+        collectionSafe.title = String($scope.addToCollection.title).replace(/<[^>]+>/gm, '').trim();
+        
+        if (collectionSafe.title.length == 0) {
+          $scope.addToCollection.error = true;
+          return false;
+        }
+        
+          collectionSafe.description = String($scope.addToCollection.description).replace(/<[^>]+>/gm, '').trim();
+
+          collectionSafe.tags = $scope.addToCollection.tags.join(',');
+          
+          if($scope.addToCollection.products !== undefined){
+            collectionSafe.products = $.map($scope.addToCollection.products, function(k) {
+              return k.Name;
+            });
+          }else{
+            collectionSafe.products =[];
+          }
+          
+          collectionSafe.categories = $scope.getCollectionCategoryString($scope.addToCollection.categories);
+          
+          collectionSafe.content_lang = ($scope.addToCollection.content_lang.code != '') ? $scope.addToCollection.content_lang.code : '';
+                  
+      }
+      
+      // item to add to collection
+      collectionSafe.item = caasData;
+      
+      $.ajax({
+        method: 'POST',
+        url: '/profile/contributions/ajax/collection/update' + update_postfix,
+        data: collectionSafe,
+        headers: {
+          'X-Csrf-Token' : Drupal.settings.autodesk_collections_add_item.csrf_token,
+        },
+      }).success(function(data) {
+        
+        if (data.status == "OK") {
+          
+          $scope.$apply(function(){
+            // display next screen to view collection
+            $scope.addToCollection.viewLink = "/" + Drupal.settings.pathPrefix + "community/collection/" + data.node_id + "?preview";
+            $scope.addToCollection.collectionTitle = data.title;
+            $scope.addToCollection.created = true;
+            $scope.addToCollection.processing1 = false;
+            $scope.addToCollection.processing2 = false;
+          
+          });
+          
+        }
+        
+      }).error(function(data) {
+        var response = JSON.parse(data.responseText);
+        if (response.message != null && response.message == 'item already exists') {
+          $scope.$apply(function(){
+            $scope.addToCollection.duplicate = true;
+          });  
+        }
+        else if (response.message != null && response.message == 'max items reached') {
+          $scope.$apply(function(){
+            $scope.addToCollection.maxLimit = true;
+          });  
+        }  
+        else {
+          $scope.$apply(function(){
+            $scope.addToCollection.error = true;
+          });  
+        }
+        
+        $scope.$apply(function(){
+          $scope.addToCollection.processing1 = false;
+          $scope.addToCollection.processing2 = false;
+        });  
+        
+      });
+    }
+
+  }
+
+  $scope.placeholder=function(modelobj,defaultText){
+      if(modelobj.open){
+          return "";
+      }else{
+          return defaultText;
+      }
+  }
+}]);
+
+itemApp.factory('loginService', function() {
+    return {
+        needsSignIn: function() {
+          if (Cookies.get('user_logged_in') == undefined) {
+            return true;
+            }
+          return false;
+        },
+        makeSignin: function () {
+          /*setTimeout(function(){ 
+            var path = window.location.pathname;
+            // var hash = window.location.hash;
+            path = path[0] == '/' ? path.substr(1) : path;
+            // var parthPrefix = (typeof Drupal.settings.pathPrefix != 'undefined') ? Drupal.settings.pathPrefix : ''
+            var go_to = '/signin?redirectTo=' +  path; // parthPrefix + 
+          window.location.href = go_to;
+          }, 500);*/
+          
+          // pop up login box
+          if (typeof(autodeskAknUserServices_initLogin) == "function") {
+              log.debug('autodeskAknUserServices_init user services integration'); //dbg
+              autodeskAknUserServices_initLogin(Auth.authModSimpleLogin);
+          } else {
+              log.debug('autodeskAknUserServices_init Login was not defined 2'); //dbg
+              Auth.authModSimpleLogin();
+          }
+        }
+    };
+});
+
+angular.bootstrap(document.getElementById("add-item-collection"), ['itemAdd']);
+
+/**
+ * Trigger download finder modal/page from outside of anuglar context.
+ * The below code is to trigger Download finder from "Downloads & Upgrades" link 
+ * on the home page.
+ */
+(function($) {
+  $( "#addto-show-dom" ).click(function() {
+    $( "#init-add-item-modal" ).click();
+  });
+})(jQuery);
+
+
+;
+;
+(function($, window, document, undefined) {
+
+  var AutodeskSearchHelpful = function(element, options) {
+    this.options = $.extend(true, {}, this.defaultOptions, options || {});
+
+    var $element = $(element);
+
+    if ($element.hasClass('was-search-helpful')) {
+      this.element = $element;
+    } else {
+      this.element = $(document.createElement('div')).addClass(
+        'was-search-helpful');
+      $element.append(this.element);
+    }
+
+    this._create();
+  };
+
+  var resetSearchFeedbackStatus_BoundOnce = false;
+
+  $.extend(
+    AutodeskSearchHelpful.prototype, {
+      defaultOptions: {
+        server: '//beehive-dev.autodesk.com',
+        event: 'search_helpful',
+        i18n: Drupal.settings.feedback_l10n_app_strings,
+        cssClasses: {
+          base: 'helpful-container',
+          header: '',
+          question: '',
+          questionButtons: 'helpful-button small-button',
+          commentSubmitButton: ''
+        },
+        useTrackEvent: false,
+        commentsEnabled: true,
+        commentsMaxLength: 300
+      },
+
+      clearSelection: function() {
+        this._setValue(undefined);
+      },
+
+      _setValue: function(value) {
+        // setValue automatically calls eventlog
+            this.loggingHelper.setValue(value);
+      },
+
+      _disableButtons: function() {
+        this.buttonYes.detach();
+        this.buttonNo.detach();
+      },
+
+      _enableButtons: function() {
+        this.theButtons.append(this.buttonYes,
+          this.buttonNo);
+      },
+
+      _limitLength: function(textarea) {
+        var fn = {
+          commonFilter: function(e) {
+            var maxlen = parseInt(textarea
+              .attr('maxlength'), 10) || 300;
+            var val = $.trim(textarea.val());
+
+            if (val.length > maxlen) {
+              textarea.val(val.substring(0, maxlen));
+              e.preventDefault();
+            }
+          },
+          downFilter: function(e) {
+            var maxlen = parseInt(textarea
+              .attr('maxlength'), 10) || 300;
+            var val = $.trim(textarea.val());
+
+            if (val.length === maxlen && e.which > 32)
+              e.preventDefault();
+          }
+        };
+
+        return $(textarea).on({
+          keypress: fn.commonFilter,
+          keyup: fn.commonFilter,
+          blur: fn.commonFilter,
+          keydown: fn.downFilter
+        });
+      },
+
+      _onStateChange: function(value) {
+        if (value !== undefined)
+          this.__userStateChanged = true;
+
+        this.refresh(value);
+      },
+
+      _create: function() {
+        var pathPrefix = '';
+        if (typeof Drupal !== 'undefined' && typeof Drupal.settings !== 'undefined' && typeof Drupal.settings.l10n !== 'undefined'
+            && typeof Drupal.settings.l10n.language !== 'undefined') {
+          pathPrefix = (Drupal.settings.l10n.language !== 'en') ? "/" + Drupal.settings.l10n.language : '';
+        }
+        var template = '<div class="{{cssClasses.base}}">' +
+        '<h3 class="{{cssClasses.header}}">{{i18n.HELPFUL_HEADER}}</h3>' +
+        '<div class="helpful-body">' +
+        '<span class="helpful-text {{cssClasses.question}}">{{i18n.HELPFUL_QUESTION}}</span>' +
+        '<div class="helpful-action-buttons">' +
+        '<button class="helpful-action helpful-yes {{cssClasses.questionButtons}}">{{i18n.HELPFUL_YES}}</button>' +
+        '<button class="helpful-action helpful-no {{cssClasses.questionButtons}}">{{i18n.HELPFUL_NO}}</button>' +
+        '</div>' + '<div class="feedback-question">' +
+        '<select  name="feedback_options" id="feedback_option_select">' +
+        '<option value="">-- {{i18n.FEEDBACK_QN_PLACEHOLDER}} --</option>' +
+        '<option value="install">{{i18n.FEEDBACK_QN_INSTALL}}</option>' +
+        '<option value="technical">{{i18n.FEEDBACK_QN_TECHNICAL}}</option>' +
+        '<option value="download">{{i18n.FEEDBACK_QN_DOWNLOAD}}</option>' +
+        '<option value="narrow_search">{{i18n.FEEDBACK_QN_NARROW}}</option>' +
+        '<option value="customer_support">{{i18n.FEEDBACK_QN_CUST_SUPP}}</option>' +
+        '<option value="too_slow">{{i18n.FEEDBACK_QN_TOO_SLOW}}</option>' +
+        '<option value="irrelevant">{{i18n.FEEDBACK_QN_IRRELEVANT}}</option>' +
+        '<option value="same_info">{{i18n.FEEDBACK_QN_SAME_INFO}}</option>' +
+        '<option value="other">{{i18n.FEEDBACK_QN_OTHER}}</option><optgroup label=""></optgroup>' +
+        '</select>' +'</div>' +
+        '<div class="feedback_contactus"><div class="cs-cta-block search-feedback">'+
+        '<div class="cs-cta-image"><img alt="" src="/sites/all/themes/autodesk_foundation5/images/standard/contactUs_icon.png"></div>'+
+        '<div class="cs-cta-content"><div class="cs-cta-body"><h2>{{i18n.FEEDBACK_CONTACT_CTA_TITLE}} </h2>'+
+        '<p>{{i18n.FEEDBACK_CONTACT_CTA_COPY}}</p>'+
+        '</div><div class="cs-cta-button"><a class="button" href="' + pathPrefix + '/contact-support">{{i18n.FEEDBACK_CONTACT_CTA_BUTTON}}</a></div></div></div></div>' +
+        '</div>' + '<div class="helpful-comment-wrap">' + '<p class="helpful-comment-title"></p>' +
+        '<form class="helpful-comment-form">' +
+        '<textarea class="helpful-comment-field" maxlength="{{commentsMaxLength}}"></textarea>' +
+        '<span class="helpful-comment-counter"></span>' +
+        '<input type="hidden" id="selectOptionValue" class="selectedOptionValue">' +
+        '<button type="button" class="helpful-action helpful-comment-button {{cssClasses.commentSubmitButton}}">{{i18n.HELPFUL_COMMENT_SUBMIT}}</button>' +
+        '</form>' + '</div>' + '</div>';
+
+        this.element.empty().append(
+          AKPAnalytics.util.interpolateText(template,
+            this.options));
+
+        this.helpfulBody = this.element.find('.helpful-body');
+        this.theButtons = this.element.find('.helpful-action-buttons');
+        this.question = this.element.find('.helpful-text');
+
+        this.buttonYes = this.theButtons.find('.helpful-yes').data('adsk-ui-response', {
+          value: true
+        }).detach();
+        this.buttonNo = this.theButtons.find('.helpful-no')
+          .data('adsk-ui-response', {
+            value: false
+          }).detach();
+        this.buttonClear = this.theButtons.find(
+          '.helpful-reset').detach();
+
+        this.commentsWrap = this.element.find(
+          '.helpful-comment-wrap').detach();
+        this.commentsTitle = this.commentsWrap
+          .find('.helpful-comment-title');
+        this.commentsCounter = this.commentsWrap
+          .find('.helpful-comment-counter');
+        this.commentsField = this.commentsWrap.find(
+          '.helpful-comment-field').val('');
+        this.feedbackQnOptions = this.helpfulBody.find(
+          'div.feedback-question').detach();
+        this.feedbackContactUs = this.helpfulBody.find(
+          'div.feedback_contactus').detach();
+
+        this._limitLength(this.commentsField);
+        this._bindEvents();
+
+        // initiate a logging helper
+        this.loggingHelper = new AKPAnalytics.LoggingHelper({
+          appId: this.options.appId,
+          server: this.options.server,
+          userId: this.options.userId,
+          event: this.options.event,
+          stateful: true,
+          data: this.options.data,
+          onStateChange: $.proxy(
+            this._onStateChange, this),
+          ADPData : this.options.ADPData,
+        });
+        return this.refresh();
+      },
+
+      _destroy: function() {
+        this.element.unbind();
+        this.element.empty();
+      },
+
+      _bindEvents: function() {
+        var self = this;
+
+        this.element.on('click',
+          '.helpful-action-buttons .helpful-action',
+          function() {
+            var data = $(this).data(
+              'adsk-ui-response') || {};
+              if(search_analytics_params!==undefined && analytics_data !==undefined){
+                resyncAnalyticDataForSearch(search_analytics_params);
+                self.loggingHelper.options.data=analytics_data;
+                self.loggingHelper._contentId=encodeURIComponent(self.loggingHelper.options.data.u); //Resetting the content Id that will be stored in local storage to retain the state.
+              }
+
+            self._setValue(data.value);
+          });
+
+        this.element
+          .on(
+            'click',
+            '.helpful-comment-wrap .helpful-comment-button',
+            function() {
+              var comment = $
+                .trim(self.commentsField
+                  .val());
+              var data = self.loggingHelper
+                .getData();
+
+              $.extend(data, {
+                uc: comment,
+                e: data.e + '_feedback'
+              });
+
+              self.loggingHelper
+                .log(data);
+              self.__userFeedbackGiven = true;
+
+              self.refresh();
+            });
+
+        this.element.on('submit', '.helpful-comment-form',
+          function(e) {
+            e.preventDefault();
+          });
+
+        /* This below listener will listen to the custom event triggered from
+         * autodes_faceted_search app whenever the user changed the search Facet
+         * (add facet filter or remove).
+         * */
+        if (!resetSearchFeedbackStatus_BoundOnce) {
+          $(document).on('resetSearchFeedbackStatus',
+            function(e) {
+              resetSearchFeedbackStatus_BoundOnce = true;
+              self.__userFeedbackGiven = false;
+              self.clearSelection();
+              self.clearSelection();
+              self._destroy();
+              self._create();
+              e.preventDefault();
+            });
+        }
+
+        this.element.on('keyup', '.helpful-comment-field',
+          function() {
+            self._updateCounter();
+          });
+        this.element
+          .on(
+            'change',
+            "#feedback_option_select",
+            function() {
+              self._showCSLink = false;
+              self._showCommentSection = false;
+              var feedbackValue = this.options[this.selectedIndex].value;
+              var feedbackIssue = this.options[this.selectedIndex].text;
+              var feedbackValue = this.value;
+              var data = self.loggingHelper
+                .getData();
+              if (feedbackValue !== "") {
+                if (feedbackValue === "customer_support") {
+                  self._showCSLink = true;
+                  self._showCommentSection = false;
+                } else {
+                  self._showCSLink = false;
+                  self._showCommentSection = true;
+                  $.extend(data, {
+                    si: feedbackIssue
+                  });
+                  self.loggingHelper.options.data=data;//to save the Feeback Issue value.
+                }
+              }
+              self.refresh();
+              document.getElementById('selectOptionValue').value = feedbackValue;
+            });
+
+      },
+
+      setOptions: function(options) {
+        $.extend(true, this.options, options);
+
+        if (options.i18n || options.server || options.event) {
+          return this._create();
+        } else {
+          return this.refresh();
+        }
+      },
+
+      _updateCounter: function() {
+        var comment = $.trim(this.commentsField.val());
+
+        this.commentsCounter.html(comment.length + '/' + this.options.commentsMaxLength);
+
+        if (comment.length === this.options.commentsMaxLength) {
+          this.commentsCounter.addClass('limit-reached');
+        } else {
+          this.commentsCounter
+            .removeClass('limit-reached');
+        }
+      },
+
+      refresh: function(currentValue) {
+        currentValue = (currentValue !== undefined) ? currentValue : this.loggingHelper.getValue();
+
+        if (currentValue !== undefined) {
+          var feedback = currentValue ? this.options.i18n.HELPFUL_POSITIVEFEEDBACK : this.options.i18n.HELPFUL_NEGATIVEFEEDBACK;
+
+          this.question
+            .html(this.options.i18n.HELPFUL_POSITIVEFEEDBACK);
+          this.buttonClear.appendTo(this.theButtons);
+          this._disableButtons();
+
+          if (!currentValue) {
+            if (this.options.commentsEnabled && this.__userStateChanged && !this.__userFeedbackGiven) {
+              this.question.html(feedback);
+              this.helpfulBody
+                .after(this.feedbackQnOptions);
+              if (this._showCSLink) {
+                this.feedbackQnOptions
+                  .after(this.feedbackContactUs);
+              } else {
+                this.feedbackContactUs.detach();
+              }
+              //Show Comments section
+              if (this._showCommentSection) {
+                var formTitle = this.options.i18n.HELPFUL_COMMENT;
+                this.commentsTitle.html(formTitle);
+                this.feedbackQnOptions
+                  .after(this.commentsWrap);
+              } else {
+                this.commentsWrap.detach();
+              }
+            } else {
+              this.feedbackQnOptions.detach();
+              this.commentsWrap.detach();
+
+              if (this.__userFeedbackGiven) {
+                this.helpfulBody
+                  .html('<span class="helpful-text">' + this.options.i18n.HELPFUL_COMMENT_SENT + '</span>');
+              }
+            }
+          }
+        } else {
+          this.question.html(this.options.i18n.HELPFUL_QUESTION);
+          this.buttonClear.detach();
+          this._enableButtons();
+          this.feedbackQnOptions.detach();
+          this.feedbackContactUs.detach();
+          this.commentsWrap.detach();
+        }
+        return this;
+      }
+    });
+
+  $.fn.searchHelpful = function(options) {
+    if (this.data('autodeskSearchHelpful')) {
+      if (options === 'option') {
+        return this.data('autodeskSearchHelpful').setOptions(arguments[1]);
+      } else {
+        return this.data('autodeskSearchHelpful');
+      }
+    } else {
+      var widget = new AutodeskSearchHelpful(this, options);
+
+      this.data('autodeskSearchHelpful', widget);
+      return widget;
+    }
+  };
+
+
+})(jQuery, window, document);
+;
+var AKN_MLT = {};
+(function ($, Drupal) {
+
+  AKN_MLT.init = function (src) {
+
+    var isForums = false;
+    if (typeof src != undefined && src == "forums") {
+      isForums = true;
+    }
+
+    log.info("MLT (Related Links) Init");
+
+    if(isForums) {
+      //$('.adsk-related-links-related-mlt .block-content').append('<span class="spinner-overlay"></span>');
+      //$('.adsk-related-links-related-two-mlt .block-content').append('<span class="spinner-overlay"></span>');
+    }
+    else {
+      $('.adsk-related-links-related-mlt .block-content').prepend('<span class="spinner-overlay"></span>');
+      $('.adsk-related-links-related-two-mlt .block-content').prepend('<span class="spinner-overlay"></span>');
+    }
+
+    if (
+        Drupal.settings.caas != null
+        && Drupal.settings.pathPrefix != null
+        && (Drupal.settings.analytics_params.site_context != null || Drupal.settings.caas.mltParams.nodeid != null)
+        && Drupal.settings.beehive.beehive_url != null
+        && (Drupal.settings.caas.mltParams.key != null || Drupal.settings.caas.mltParams.nodeid != null)
+    ) {
+      var domain = Drupal.settings.beehive.beehive_url;
+
+      if (isForums) {
+        var apiUrl = "/community/service/rest/caas/resource/mlt/forum?";
+      }
+      else {
+        var apiUrl = "/community/service/rest/caas/resource/mlt?";
+      }
+
+      var params = {
+          origin: 'upi',
+          //cb: isForums ? 'AKN_MLT.showMLTCallbackForums' : 'AKN_MLT.showMLTCallback'
+      };
+
+      if (Drupal.settings.caas.mltParams) {
+        $.each(Drupal.settings.caas.mltParams, function(key, val) {
+          params[key] = val;
+        });
+      }
+
+      if (isForums && typeof params.cg != undefined) {
+        delete params.cg;
+      }
+
+      if (Drupal.settings.caas.mltParams.key != null) {
+        AKN_MLT.site_context = Drupal.settings.analytics_params.site_context;
+      }
+      else if (Drupal.settings.caas.mltParams.nodeid != null) {
+        AKN_MLT.site_context = '/search-result/';
+      }
+
+      var paramStr = decodeURIComponent( $.param( params ) );
+      var getQuery = domain + apiUrl + paramStr;
+
+      log.debug("MLT", getQuery);
+
+      $.ajax({
+        url: getQuery,
+        dataType: "json",
+        success : isForums ? AKN_MLT.showMLTCallbackForums : AKN_MLT.showMLTCallback,
+        error : function() {
+            AKN_MLT.removeBlocks(isForums);
+          }
+        });
+    }
+    else {
+      $('.adsk-related-links-related-mlt').remove();
+      $('.adsk-related-links-related-two-mlt').remove();
+    }
+  }
+
+  AKN_MLT.removeBlocks = function(isForums) {
+      var blockName = (isForums) ? '.mlt-forums' : '.mlt-mlt';
+      var blockName2 = (!isForums) ? '.mlt-forums' : '.mlt-mlt';
+      $(blockName).remove();
+      if ($(blockName2).length === 0) {
+          $('.adsk-related-links-related-mlt').remove();
+          $('.adsk-related-links-related-two-mlt').remove();
+      }
+  }
+
+  AKN_MLT.showMLTCallbackForums = function(json){
+    console.log("showMLTCallbackForums", json);
+
+    if (json.status != null && json.status == 'completed' ) {
+      if (json.mlts != null && json.mlts.mlt != null && json.mlts.mlt.length) {
+        var link_list = '';
+        var ctr = 0;
+        var unqiue_titles = [];
+        $.each(json.mlts.mlt, function(key, mlt) {
+          if (mlt.caasKey != null && mlt.caasKey.length && mlt.title != null && mlt.title.length) {
+            if (unqiue_titles.indexOf(mlt.title) != -1 ) {
+              return true;
+            }
+            unqiue_titles.push(mlt.title);
+            var use_title = (mlt.title.length > 70) ? mlt.title.substr(0, 70) + '...' : mlt.title;
+
+            link_list = link_list + '<li>';
+            link_list = link_list + '<a target="_blank" href="'+ mlt.url + '">' + use_title + '</a><a target="_blank" href="'+ mlt.url + '" style="border-bottom: none;"><img style="padding-left: 5px;" src="/sites/all/themes/autodesk_foundation5/images/standard/externalLink.gif"></a>';
+            link_list = link_list + '</li>';
+
+            ctr = ctr + 1;
+            if (ctr == 3) return false;
+          }
+        });
+
+        if (link_list.length) {
+          var block_content = '<div class="item-list mlt-forums"><h2 class="rightrail">' + Drupal.settings.mlt_titles.forums + '</h2><ul>' + link_list +  '</ul></div>';
+
+          $('.adsk-related-links-related-mlt .block-content').append(block_content);
+          $('.adsk-related-links-related-two-mlt .block-content').append(block_content);
+        }
+        /*else {
+          $('.adsk-related-links-related-mlt').remove();
+          $('.adsk-related-links-related-two-mlt').remove();
+        }*/
+      } else {
+          AKN_MLT.removeBlocks(true);
+      }
+      /*else {
+        $('.adsk-related-links-related-mlt').remove();
+        $('.adsk-related-links-related-two-mlt').remove();
+      }*/
+    }
+
+    if ( $('.adsk-related-links-related-mlt .block-content .spinner-overlay').length ) {
+      $('.adsk-related-links-related-mlt .block-content .spinner-overlay').remove();
+    }
+    if ( $('.adsk-related-links-related-two-mlt .block-content .spinner-overlay').length ) {
+      $('.adsk-related-links-related-two-mlt .block-content .spinner-overlay').remove();
+    }
+
+    if( !$.trim( $('.adsk-related-links-related-mlt .block-content').html() ).length && $('#forums-callout-block').length == 0) {
+      $('.adsk-related-links-related-mlt').remove();
+      $('.adsk-related-links-related-two-mlt').remove();
+      $('.block-autodesk-needassistance').css('margin-top', 0);
+    }
+  }
+
+  AKN_MLT.showMLTCallback = function(json){
+    if (json.status != null && json.status == 'completed' ) {
+      if (json.mlts != null && json.mlts.mlt != null && json.mlts.mlt.length) {
+        var link_list = '';
+        var ctr = 0;
+        var unqiue_titles = [];
+        $.each(json.mlts.mlt, function(key, mlt) {
+          if (mlt.caasKey != null && mlt.caasKey.length && mlt.title != null && mlt.title.length) {
+            if (unqiue_titles.indexOf(mlt.title) != -1 ) {
+              return true;
+            }
+            unqiue_titles.push(mlt.title);
+            var use_title = (mlt.title.length > 70) ? mlt.title.substr(0, 70) + '...' : mlt.title;
+
+            link_list = link_list + '<li>';
+
+            if (typeof mlt.contentType != "undefined" && mlt.contentType.length && mlt.contentType[0] == "Link" && typeof mlt.url != "undefined" && mlt.url.length) {
+              link_list = link_list + '<a target="_blank" href="'+ mlt.url + '">' + use_title + '</a><a target="_blank" href="'+ mlt.url + '" style="border-bottom: none;"><img style="padding-left: 5px;" src="/sites/all/themes/autodesk_foundation5/images/standard/externalLink.gif"></a>';
+            }
+            else {
+              var add_params = (location.search.length) ? location.search : '';
+              var use_lang = (Drupal.settings.pathPrefix.length) ? "/" + Drupal.settings.pathPrefix.substring(0, Drupal.settings.pathPrefix.length - 1) : '';
+              link_list = link_list + '<a href="'+ use_lang + AKN_MLT.site_context + mlt.caasKey + add_params + '">' + use_title + '</a>';
+            }
+
+            if (typeof mlt.knowledgeSource != "undefined" && mlt.knowledgeSource.length) {
+              var addClass = (mlt.knowledgeSource == 'Screencast') ? '<span class="fa fa-play-circle" style="margin-left:5px; display: inline; font-size: 14px;"></span>' : '';
+              link_list = link_list + '<h4 class="rightrail">' + mlt.knowledgeSource[0]  + addClass + '</h4>';
+            }
+
+            link_list = link_list + '</li>';
+
+            ctr = ctr + 1;
+            if (ctr == 3) return false;
+          }
+        });
+
+        if (link_list.length) {
+          var block_content = '<div class="item-list mlt-mlt"><h2 class="rightrail">' + Drupal.settings.mlt_titles.mlt + '</h2><ul>' + link_list +  '</ul></div>';
+          if ( $('.adsk-related-links-related-mlt .block-content .spinner-overlay').length ) {
+            $('.adsk-related-links-related-mlt .block-content .spinner-overlay').remove();
+          }
+          if ( $('.adsk-related-links-related-two-mlt .block-content .spinner-overlay').length ) {
+            $('.adsk-related-links-related-two-mlt .block-content .spinner-overlay').remove();
+          }
+          $('.adsk-related-links-related-mlt .block-content').prepend(block_content);
+          $('.adsk-related-links-related-two-mlt .block-content').prepend(block_content);
+        }
+        /*else {
+          $('.adsk-related-links-related-mlt').remove();
+          $('.adsk-related-links-related-two-mlt').remove();
+        }*/
+      } else {
+          AKN_MLT.removeBlocks(false);
+      }
+      /*else {
+        $('.adsk-related-links-related-mlt').remove();
+        $('.adsk-related-links-related-two-mlt').remove();
+      }*/
+    }
+    /*else {
+      $('.adsk-related-links-related-mlt').remove();
+      $('.adsk-related-links-related-two-mlt').remove();
+    }*/
+
+    AKN_MLT.init('forums');
+  }
+
+  $(document).ready(function() {
+    if (AKN_MLT.init != null ) {
+      AKN_MLT.init();
+    }
+    else {
+      $('.adsk-related-links-related-mlt').remove();
+      $('.adsk-related-links-related-two-mlt').remove();
+    }
+  });
+
+})(jQuery, Drupal);
+;

@@ -1,0 +1,3 @@
+var OX_a412ea5e = '';
+OX_a412ea5e += "<"+"script type=\"text/javascript\" src=\"\"><"+"/script><"+"a href=\'//gg1.51cto.com/www/delivery/ck.php?oaparams=2__bannerid=3546__zoneid=631__cb=990bae2cd2__oadest=http%3A%2F%2Fedu.51cto.com%2Fpx%2Ftrain%2F94%3Fwzl\' target=\'_blank\'><"+"font color=\'red\'>Python实战,快速提高编程能力<"+"/font><"+"/a><"+"div id=\'beacon_990bae2cd2\' style=\'position: absolute; left: 0px; top: 0px; visibility: hidden;\'><"+"img src=\'//gg.51cto.com/www/delivery/lg.php?bannerid=3546&amp;campaignid=780&amp;zoneid=631&amp;loc=1&amp;referer=http%3A%2F%2Fmobile.51cto.com%2Fnews-415805.htm&amp;cb=990bae2cd2\' width=\'0\' height=\'0\' alt=\'\' style=\'width: 0px; height: 0px;\' /><"+"/div>\n";
+document.write(OX_a412ea5e);

@@ -1,0 +1,14 @@
+WRMCB=function(e){var c=console;if(c&&c.log&&c.error){c.log('Error running batched script.');c.error(e);}}
+;
+try {
+/* module-key = 'com.atlassian.plugins.atlassian-connect-plugin:confluence-macro-api-v5', location = 'v5/js/confluence/utils.js' */
+define("ac/confluence/utils",["document"],function(a){return{isFabricEditor:function(){return 0<a.querySelectorAll("[data-fabric-mode]").length}}});
+}catch(e){WRMCB(e)};
+;
+try {
+/* module-key = 'com.atlassian.plugins.atlassian-connect-plugin:confluence-macro-api-v5', location = 'v5/js/confluence/macro/macro.js' */
+define("ac/confluence/macro",["confluence/root","ajs","ac/confluence/utils"],function(k,g,l){function h(){var a=require("confluence-macro-browser/macro-browser");void 0===a&&(a={getMacroName:function(a){},getMacroParams:function(a){},getMacroBody:function(){throw Error("confluence-macro-browser/macro-browser is unavailable");}});return a}var e=void 0,b={};return{getMacroBody:function(a){if(b&&"string"===typeof b.body)a(b.body);else{var c;try{var d=h().getMacroBody();c=a._context.extension.options.productContext["macro.id"];
+var f=$($.parseXML('\x3croot xmlns:ac\x3d"guid"\x3e'+d+"\x3c/root\x3e")).find("[ac\\:macro-id\x3d'"+c+"']");1==f.length?a(f.html().replace('xmlns:ac\x3d"guid"',"")):a(d)}catch(m){c=a._context.extension.options.productContext,"false"===c["macro.truncated"]?a(c["macro.body"]):(d=c["page.id"],f=c["page.version"],c=c["macro.id"],g.$.ajax({url:g.contextPath()+"/rest/api/content/"+d+"/history/"+f+"/macro/id/"+c,dataType:"json",success:function(b){a(b.body)}}))}}},closeCurrentMacroPropertyPanel:function(){g.Confluence.PropertyPanel.destroy()},
+setLastSelectedConnectMacroNode:function(a){b.locationToInsert=void 0;b.params=void 0;b.body=void 0;b.name=void 0;e=void 0!==h().getMacroName(a)?a:void 0},setUnsavedMacroData:function(a,c,d,f){b.body=c;b.params=d;b.locationToInsert=f;b.name=a},getCurrentMacroParameters:function(){return void 0===e?b.params:h().getMacroParams(e)},saveMacro:function(){return tinymce.confluence.MacroUtils.updateMacro.apply(this,arguments)},saveCurrentMacro:function(a,c){if(l.isFabricEditor())return require("confluence-macro-browser/macro-browser-facade").insert({name:b.name,
+params:a});if(void 0===e)return b.params=a,b.body=c,a={contentId:k.getContentId(),macro:{name:b.name,params:b.params,body:null===b.body?"":b.body}},g.Rte.getEditor().selection.moveToBookmark(b.locationToInsert),tinymce.confluence.MacroUtils.insertMacro(a).done(function(a){e=a});var d=h().getMacroName(e);if(void 0!==d)return tinymce.confluence.MacroUtils.updateMacro(a,c,d,e).done(function(a){e=a})}}});
+}catch(e){WRMCB(e)};

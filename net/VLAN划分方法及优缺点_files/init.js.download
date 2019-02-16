@@ -1,0 +1,980 @@
+$(function () {
+
+    // 因电子网首页在页面已经执行hotwords方法
+    if(!$('#j-home-login').length > 0){
+        search.hotwords();
+    };
+    /* 搜索 */
+    if (search.init != null && search.init != undefined) {
+        search.init();
+    }
+    search_ft.init();
+
+    /*洽洽咨询*/
+    $('#head_hqm').click(function () {
+        HqmService('12949', 'FB62F4B8-63E5-4735-8FB4-3DA152933D81', '1', '12949', '81')
+    });
+    $('#head_hqmtop').click(function () {
+        HqmService('12949', 'FB62F4B8-63E5-4735-8FB4-3DA152933D81', '1', '12949', '81')
+    });
+
+});
+//顶部搜索
+var search = {
+    init: function () {
+        search.keywords = $('#J_inputSearch');
+        search.isexact = $('#search_isexact');
+        search.label = $('#search_label');
+        search.select = $('#search_select');
+        search.type = $('#search_type');
+        search.sort = $('#select_type');
+        search.tip = $('#search_tip');
+        search.box = $('#search_box');
+        search.box.mouseover(function () {
+            search.keywords.off('blur', boxHide);
+        }).mouseout(function () {
+            search.keywords.on('blur', boxHide);
+        });
+
+        search.typeValData = {
+            "12": 20001006,
+            "13": 20001007,
+            "14": 20001001,
+            "15": 20001014,
+            "16": 30001034,
+            "17": 20001009,
+            "18": 20001013,
+            "19": 20001023,
+            "20": 20001002,
+            "21": 30001021,
+            "22": 20001011,
+            "23": 20001025,
+            "24": 20001015,
+            "25": 20001012
+        };
+        
+        // search.hotwordsAjax();
+        // search.hotwordsECAjax();
+        // search.hotwordsMaiAjax();
+        // search.hotwordsSupplierAjax();
+        search.searchPrice();
+        
+        var $searchHotwords = $('#J_searchHotwords');
+        var $inputSearchClear = $('.input-search-clear');
+
+        if (search.keywords.val() != '' ) {
+            $inputSearchClear.removeClass('hide');
+        }
+
+        var setKw = function () {
+                search.tip.hide();
+                if (search.keywords.val() != '' ) {
+                    $inputSearchClear.removeClass('hide');
+                    search.info.kw = $.trim(search.keywords.val()).toUpperCase();
+                    // if (search.type.val() == '1' || search.type.val() == '10') {
+                    if (search.type.val() != '3') {
+                        var data = [];
+                        if (search.type.val() == '10'){
+                            data = search.info.data[search.info.kw + "_10"];
+                        }else{
+                            data = search.info.data[search.info.kw];
+                        }
+                        data && data[0] == 0 ? search.info.bind() : search.info.get();
+                        $searchHotwords.find("li").addClass("j-none");
+                        $searchHotwords.addClass("hide");
+                    }else {
+                        search.box.hide();
+                    }
+                } else {
+                    // if (search.type.val() == '1' || search.type.val() == '10') {
+                        if (search.keywords.val().length <= 0) {
+                            $inputSearchClear.addClass('hide');
+                            search.hotBindEvent(search.type.val());
+
+                            if (search.type.val() == '10') {
+                                if(!'' == search.hotSupplierHtml||search.hotSupplierHtml){
+                                    $searchHotwords.find("li").removeClass("j-none");
+                                    $searchHotwords.removeClass("hide");
+                                }
+                            } else if (search.type.val() == '1') {
+                                if('' != search.hotICHtml||!search.hotICHtml){
+                                    $searchHotwords.find("li").removeClass("j-none");
+                                    $searchHotwords.removeClass("hide");
+                                }
+                            } else {
+                                if('' != search.hotECHtml||!search.hotECHtml){
+                                    $searchHotwords.find("li").removeClass("j-none");
+                                    $searchHotwords.removeClass("hide");
+                                }
+                            }
+                        // }
+                    }
+                    search.box.hide();
+                }
+            }
+        var boxHide = function () {
+            search.box.hide();
+        };
+        search.info.kw = search.keywords.val();
+        $('#J_inputSearch').on('keyup', function (e) {
+            lastTabValue = $("#search_type").val();
+            if (e.keyCode == 38 || e.keyCode == 40) {
+                var a = search.box.children();
+                search.info.index = search.info.index + (e.keyCode == 38 ? -1 : 1);
+                search.info.index < 0 && (search.info.index = a.length - 1);
+                search.info.index > a.length - 1 && (search.info.index = 0);
+                if (search.type.val() == '10'){
+                    search.info.kw = a.eq(search.info.index).children().text();
+                }else{
+                    search.info.kw = a.eq(search.info.index).children().eq(1).text();
+                }
+
+                if(search.info.kw.length>0){
+                    search.keywords.val(search.info.kw);
+                }
+
+                a.eq(search.info.index).addClass('hover').siblings().removeClass('hover');
+            } else if (e.keyCode == 13) {
+                return false;
+            } else {
+                setKw();
+            }
+        }).on('blur', boxHide).on('paste', function () {
+            setTimeout(setKw, 1);
+        });
+
+        //页签
+        $('#search_tabs li').click(function () {
+            var _this = $(this),
+                i = _this.val();
+            // lastTabValue=i;
+            search.type.val(i);
+
+            if ( i === 1 || i === 12 || i === 13 ){
+                var dropdownText = $(".dropdown-fixed  li[data-value='" + i + "']").eq(0).text();
+                $(".dropdown-fixed").find(".dropdown-title span").text(dropdownText);
+                $("#J_headerFixed").removeClass('header-no-dropdown');
+            }
+
+            if ( i === 10 || i === 3 ){
+                $("#J_headerFixed").addClass('header-no-dropdown');
+            }
+
+            search.info.kw = "";
+            //  search.tip.hide();
+            search.keywords.val("");
+            if (i == 3) {
+                search.sort.val(1);
+            }
+            lastTabValue = i;
+        });
+        // .each(function () {
+        //     var _this = $(this);
+        //     if (search.type.val() == _this.val()) {
+        //     }
+        // });
+
+        //搜索提交
+        $('#search_form').submit(function () {
+            search.info.kw = $.trim(search.keywords.val()).toUpperCase();
+            search.jump({
+                seaK: search.info.kw,
+                seaT: search.type.val(),
+                selT: search.sort.val(),
+                seaE: search.isexact.is(":checked"),
+                sTip: function (s) {
+                    search.tip.show().html(s + '<i></i>');
+                }
+            });
+            search.keywords.focus();
+        });
+
+        //底部最近搜索
+        // var search_history = Cookies.get('search_history') ? eval('(' + Cookies.get('search_history') + ')') : [];
+        var search_history = Cookies.get('search_history') ? JSON.parse(Cookies.get('search_history')) : [];
+        var foot_history = $('#foot_history');
+        search_history.length > 0 && foot_history.empty();
+        $.each(search_history, function (i) {
+            foot_history.append('<a href=\"http://s.hqew.com/supplier/' + Base64Encode(this[0]) + '.html\">' + this[0] + '</a>');
+        });
+
+
+    },
+    info: {
+        data: {},
+        index: -1,
+        timer: null,
+        bind: function (opt) {
+
+            var data = [];
+
+            if (search.type.val() == '10'){
+                data = search.info.data[search.info.kw + '_' + search.type.val()];
+            }else{
+                data = search.info.data[search.info.kw];
+            }
+
+            if (data && data[0] == 0 && data[2].length>0) {
+                search.info.index = -1;
+                search.box.empty().show();
+                var isCount = 0;
+                if (search.type.val() == '10')
+                    isCount = data[4];
+                $.each(data[2], function () {
+                    var kw = this[0];
+                    var count = '<span class=\"count\">约' + this[1] + '条库存</span>';
+                    var pkw = search.info.kw;
+                    if (isCount == 1) {
+                        count = '';
+                        //pkw = '';
+                    }
+
+                    var itemLi;
+                    if (isCount == 1) {
+                        var itemkeyword = decodeURIComponent(kw).replace(pkw,'</b>'+pkw+'<b>' );
+                        itemLi = $('<li><span class="key"><b>' + itemkeyword+ '</b></span></li>');
+                    }else{
+                        if (search.type.val() == '1'){
+                            itemLi = $('<li>' + count + '<span class="key">' + pkw + '<b>' + decodeURIComponent(encodeURIComponent(kw).replace(encodeURIComponent(pkw), '')) + '</b></span></li>');
+                        }else {
+                            itemLi = $('<li><span class="key">' + pkw + '<b>' + decodeURIComponent(encodeURIComponent(kw).replace(encodeURIComponent(pkw), '')) + '</b></span></li>');
+                        }
+
+                    }
+
+                    itemLi.click(function () {
+                        search.keywords.val(kw);
+                        search.jump({
+                            seaK: kw,
+                            seaT: search.type.val(),
+                            selT: search.sort.val(),
+                            seaE: search.isexact.is(":checked"),
+                            sTip: function (s) {
+                                search.tip.show().html(s + '');
+                            }
+                        });
+                    }).mouseover(function () {
+                        var _this = $(this);
+                        search.info.index = _this.index();
+                        _this.addClass('hover').siblings().removeClass('hover');
+                    }).mouseout(function () {
+                        $(this).removeClass('hover');
+                    }).appendTo(search.box);
+                });
+            } else {
+                search.box.hide();
+            }
+        },
+        get: function () {
+            clearTimeout(search.info.timer);
+            search.info.timer = setTimeout(function () {
+
+                if (search.type.val() == '10'){
+                    $.ajax({
+                        url: hqDomain.supplier+'/supplier/api/likeKeyword.ajax?callback=?',
+                        dataType: 'jsonp',
+                        data : "keyword="+Base64Encode(search.info.kw),
+                        jsonpCallback: 'likeKeywordCallback',
+                        success: function (resultData) {
+                            search.info.data[search.info.kw+'_10'] = resultData;
+                            search.info.bind();
+                        }
+                    });
+                }else if (search.type.val() == '1') {
+                    var url = 'https://suggest.hqew.com/handler?s=' + Base64Encode(search.info.kw) + "&_=" + search.type.val();
+                    $.getScript({
+                        url: url,
+                        success: function () {
+                            search.info.bind();
+                        }
+                    });
+                }else {
+                    var stVal = search.type.val();
+                    var url = 'https://suggest.hqew.com/handler?s=' + Base64Encode(search.info.kw) + "&c=" + search.typeValData[stVal];
+                    $.getScript({
+                        url: url,
+                        success: function () {
+                            search.info.bind();
+                        }
+                    });
+                }
+           }, 200);
+        }
+    },
+	
+    jump: function (o) {
+        var seaU = {
+                ic: hqDomain.supplier +'/' + Base64Encode(o.seaK) + (o.seaE ? '_10' : '') + '.html' + (o.hotsearch ? '?from=hotsearch' : ''),
+                ecdr: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001006_______' + '.html',
+                ecdz: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001007_______' + '.html',
+                supplier:  hqDomain.supplier + '/supplier/' + Base64Encode(o.seaK) + '.html' + (o.hotsearch ? '?from=hotsearch' : ''),
+                sou: 'http://sou.hqew.com/search?keyword=' + encodeURIComponent(o.seaK),
+                mall: 'https://www.hqbuy.com/search/' + encodeURIComponent(o.seaK) + '.html' + (o.hotsearch ? '?from=hotsearch' : '?from=hqtopsearch'),
+                seller: ['http://mai.hqew.com/product/list?'+ (o.seaE ? 'isRate=1' : 'isRate=0') +'&PModel=' + encodeURIComponent(o.seaK),'http://mai.hqew.com/product/list?' + (o.seaE ? 'isRate=1' : 'isRate=0') +'&PModel=' + encodeURIComponent(o.seaK),'http://mai.hqew.com/product/list?' + (o.seaE ? 'isRate=1' : 'isRate=0') +'&PModel='  + encodeURIComponent(o.seaK)],
+                tech: [hqDomain.Hqew + '/tech/ICDetailSearchHandler.ashx?pm=' + encodeURIComponent(o.seaK), hqDomain.Hqew + '/tech/pdf_search.html?SearchKeyword=' + encodeURIComponent(o.seaK)],
+                led: 'http://led.hqew.com/product?keyword=' + encodeURIComponent(o.seaK),
+                cps: 'http://www.c-ps.net/index.php/home/index/search.html?keyword=' + o.seaK,
+                info: hqDomain.Hqew + '/info/search.html',
+                e14: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001001_______' + '.html',
+                e15: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001014_______' + '.html',
+                e16: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_30001034_______' + '.html',
+                e17: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001009_______' + '.html',
+                e18: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001013_______' + '.html',
+                e19: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001023_______' + '.html',
+                e20: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001002_______' + '.html',
+                e21: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_30001021_______' + '.html',
+                e22: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001011_______' + '.html',
+                e23: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001025_______' + '.html',
+                e24: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001015_______' + '.html',
+                e25: hqDomain.supplier +'/' + Base64Encode(o.seaK) + '_20001012_______' + '.html'
+            },
+            sCks = function (k, t) {
+                // var search_history = Cookies.get('search_history') ? eval('(' + Cookies.get('search_history') + ')') : [];
+                var search_history = Cookies.get('search_history') ? JSON.parse(Cookies.get('search_history')) : [];
+                search_history.unshift([k, t]);
+                search_history.length > 5 && search_history.pop();
+                Cookies.set('search_history', JSON.stringify(search_history), 365);
+            };
+        isChineseChar = function (str) {
+            var reg = /[\u4E00-\u9FA5\uF900-\uFA2D]/;
+            return reg.test(str);
+        };
+
+        if ((o.seaK.length < 2 || o.seaK.substr(1, 1) == " ") && o.seaT != '12' && o.seaT !='13' && o.seaT !='14' && o.seaT !='15' && o.seaT !='16' && o.seaT !='17' && o.seaT !='18' && o.seaT !='19' && o.seaT !='20' && o.seaT != '21' && o.seaT !='22' && o.seaT !='23' && o.seaT !='24' && o.seaT !='25' ) {
+            o.sTip('关键字不能少于两个字符');
+        }else {
+            switch (o.seaT) {
+                case '1':
+                    sCks(o.seaK, 'ic');
+                    location.href = seaU.ic;
+                    break;
+                case '7':
+                    window.open(seaU.led);
+                    break;
+                case '8':
+                    window.open(seaU.cps);
+                    break;
+                case '5':
+                    window.open(seaU.mall);
+                    break;
+                case '3':
+                    if (o.selT == '1' || o.selT == '') {
+                        sCks(o.seaK, 'sellIc');
+                        location.href = seaU.seller[0];
+                    } else if (o.selT == '2') {
+                        location.href = seaU.seller[1];
+                    } else if (o.selT == '3') {
+                        location.href = seaU.seller[2];
+                    }
+                    break;
+                case '4':
+                    sCks(o.seaK, 'pdf');
+                    if (o.selT == '4' || o.selT == '') {
+                        location.href = seaU.tech[0];
+                    } else if (o.selT == '5') {
+                        location.href = seaU.tech[1];
+                    }
+                    break;
+                case '6':
+                    window.open('http://hui.hqew.com/index.html?n=' + o.seaK);
+                    break;
+                case '9':
+                    var postForm = document.getElementById('search_form');//表单对象
+                    postForm.method = 'post';
+                    postForm.action = seaU.info;
+
+                    document.getElementById('J_inputSearch').setAttribute('name', 'searchkey');
+
+                    var nameInput = document.createElement("input");
+                    nameInput.setAttribute("type", "hidden");
+                    nameInput.setAttribute("name", "searchname");
+                    nameInput.setAttribute("value", "all");
+                    postForm.appendChild(nameInput);
+
+                    var typeInput = document.createElement("input");
+                    typeInput.setAttribute("type", "hidden");
+                    typeInput.setAttribute("name", "type");
+                    typeInput.setAttribute("value", "news");
+                    postForm.appendChild(typeInput);
+
+                    postForm.submit();
+                    break;
+                case '10':
+                    sCks(o.seaK, 'supplier');
+                    location.href = seaU.supplier;
+                    break;
+                case '11':
+                    window.open(seaU.sou);
+                    break;
+                case '12':
+                    sCks(o.seaK, 'ecdr');
+                    location.href = seaU.ecdr;
+                    break;
+                case '13':
+                    sCks(o.seaK, 'ecdz');
+                    location.href = seaU.ecdz;
+                    break;
+                case '14':
+                    sCks(o.seaK, 'e14');
+                    location.href = seaU.e14;
+                    break;
+                case '15':
+                    sCks(o.seaK, 'e15');
+                    location.href = seaU.e15;
+                    break;
+                case '16':
+                    sCks(o.seaK, 'e16');
+                    location.href = seaU.e16;
+                    break;
+                case '17':
+                    sCks(o.seaK, 'e17');
+                    location.href = seaU.e17;
+                    break;
+                case '18':
+                    sCks(o.seaK, 'e18');
+                    location.href = seaU.e18;
+                    break;
+                case '19':
+                    sCks(o.seaK, 'e19');
+                    location.href = seaU.e19;
+                    break;
+                case '20':
+                    sCks(o.seaK, 'e20');
+                    location.href = seaU.e20;
+                    break;
+                case '21':
+                    sCks(o.seaK, 'e21');
+                    location.href = seaU.e21;
+                    break;
+                case '22':
+                    sCks(o.seaK, 'e22');
+                    location.href = seaU.e22;
+                    break;
+                case '23':
+                    sCks(o.seaK, 'e23');
+                    location.href = seaU.e23;
+                    break;
+                case '24':
+                    sCks(o.seaK, 'e24');
+                    location.href = seaU.e24;
+                    break;
+                case '25':
+                    sCks(o.seaK, 'e25');
+                    location.href = seaU.e25;
+                    break;
+            }
+        }
+    },
+
+    hotSupplierHtml: '',
+    hotICHtml: '',
+    hotMaiHtml:'',
+    hotECHtml:'',
+
+    // 热门列表渲染
+    renderHotHtml: function(result,hotHtml){
+        var $ul = $("#J_searchHotwords").find(".search-hotwords-content");
+        var html = "";
+        for (var i = 0; i < result.length; i++) {
+            var item = result[i];
+            html += "<li>";
+            if (i < 3) {
+                html += "<span class='ico-num ico-num-highlight'>" + (i + 1) + "</span>";
+            } else {
+                html += "<span class='ico-num'>" + (i + 1) + "</span>";
+            }
+            html += "<span class='key'>" + item + "</span>";
+            html += "</li>";
+        }
+        if (html != "") {
+            search[hotHtml] = html;
+            $ul.html(search[hotHtml]);
+        }
+    },
+
+    //今日IC/元器件热门
+    hotwordsAjaxData:'',
+    hotwordsAjax: function () {
+        if(search.hotwordsAjaxData!=''){
+            search.renderHotHtml(search.hotwordsAjaxData,'hotICHtml');
+        }else{
+            $.ajax({
+                url: hqDomain.product + '/home/hotsearch?callback=?',
+                dataType: 'jsonp',
+                jsonpCallback: 'hotwordsCallback',
+                success: function (result) {
+                    if (result) {
+                        search.hotwordsAjaxData = result;
+                        search.renderHotHtml(search.hotwordsAjaxData,'hotICHtml');
+                    }
+                }
+            });
+        }
+    },
+
+    //今日EC|电容|电阻等热门
+    hotwordsECAjaxData:[],
+
+    hotwordsECAjax: function () {
+        var $dataCurrent = '';
+        $.each( search.hotwordsECAjaxData, function(i, item){
+            if(item.data != "" && item.searchType == search.type.val()){
+                $dataCurrent = item.data;
+            }
+        });
+
+        if($dataCurrent!=''){
+            search.renderHotHtml($dataCurrent,'hotECHtml');
+        }else{
+            $.ajax({
+                url: hqDomain.product + '/home/hotsearch?callback=?',
+                dataType: 'jsonp',
+                data: {"categoryno": search.typeValData[search.type.val()] || ""},
+                jsonpCallback: 'hotwordsCallback',
+                success: function (result) {
+                    // result = ["111", "222", "333", "333", "333", "bu4063", "jbsh", "bu4064", "bu4067", "bu4066"]
+                    if (result) {
+                        var dataResult = {
+                            data: result,
+                            searchType: search.type.val()
+                        };
+                        search.hotwordsECAjaxData.push(dataResult);
+                        search.renderHotHtml(result,'hotECHtml');
+                    }
+                }
+            });
+        }
+    },
+    //今日供应商热门搜索
+    hotwordsSupplierAjaxData:'',
+    hotwordsSupplierAjax: function () {
+        if(search.hotwordsSupplierAjaxData!=''){
+            search.renderHotHtml(search.hotwordsSupplierAjaxData,'hotSupplierHtml');
+        }else{
+            $.ajax({
+                url: hqDomain.supplier+'/supplier/api/jsonp/hotKeyword.ajax?callback=?',
+                dataType: 'jsonp',
+                jsonpCallback: 'hotwordsSupplierCallback',
+                success: function (resultData) {
+                    if (resultData && resultData.code == 200) {
+                        var result = resultData.data;
+                        if (result) {
+                            search.hotwordsSupplierAjaxData = result;
+                            search.renderHotHtml(search.hotwordsSupplierAjaxData,'hotSupplierHtml');
+                        }
+                    } else {
+                        return;
+                    }
+                }
+            });
+        }
+    },
+
+    //今日求购热门搜索
+    hotwordsMaiAjaxData:'',
+    hotwordsMaiAjax: function () {
+        if(search.hotwordsMaiAjaxData!=''){
+            search.renderHotHtml(search.hotwordsMaiAjaxData,'hotMaiHtml');
+        }else{
+            $.ajax({
+                url: hqDomain.mai+'/api/BuyQuoteAPI/GetHotSearch?callback=?',
+                dataType: 'jsonp',
+                jsonpCallback: 'callback',
+                success: function (result) {
+                    if (result) {
+                        search.hotwordsMaiAjaxData = result;
+                        search.renderHotHtml(search.hotwordsMaiAjaxData,'hotMaiHtml');
+                    }
+                }
+            });
+        }
+    },
+
+    hotBindEvent: function (type) {
+        var $ul = $("#J_searchHotwords").find(".search-hotwords-content");
+        var index = 0;
+
+        $ul.html('');
+        if (type == '1') {
+            search.hotwordsAjax();
+        } else if(type == '10') {
+            search.hotwordsSupplierAjax();
+        } else if(type == '3')  {
+            search.hotwordsMaiAjax();
+        } else {
+            search.hotwordsECAjax();
+        }
+
+        $ul.on('click', "li", function (event) {
+            var keyword = $(this).find(".key").text();
+            search.keywords.val(keyword);
+            search.jump({
+                hotsearch: '1',
+                seaK: keyword,
+                seaT: search.type.val(),
+                selT: '',
+                seaFrom: '?from=hotsearch',
+                seaE: search.isexact.is(":checked"),
+                sTip: function (s) {
+                    search.tip.show().html(s + '<i></i>');
+                }
+            });
+
+            event.stopPropagation();
+        });
+
+        //键盘事件
+        $('#J_inputSearch').on('keydown',function (e) {
+            if (e.keyCode == 38 || e.keyCode == 40) {
+                var $lis = $ul.find("li");
+
+                if ($lis.not(".j-none").length > 0) {
+                    $("#search_box li").remove();
+                    // var index = 0;
+                    //var $lis = [];
+                    index = index + (e.keyCode == 38 ? -1 : 1);
+                    if (index > $lis.length - 1) {
+                        index = 0;
+                    }
+                    if (index < 0) {
+                        index = $lis.length - 1;
+                    }
+
+                    var $thisLi = $lis.eq(index - 1);
+                    $thisLi.addClass("hover").siblings().removeClass("hover");
+
+                    var str = $thisLi.find(".key").text();
+                    search.keywords.val(str);
+
+                    /*if(search.type.val() == '10'){
+                     indexSupplier = index;
+                     }else{
+                     indexIC = index;
+                     }*/
+
+                }
+            }
+        });
+    },
+
+    //今日热门搜索
+    hotwords: function () {
+        var $searchHotwords = $("#J_searchHotwords"),
+            $searchKeywords = $("#J_inputSearch");
+
+        $searchKeywords.on("click", function (event) {
+
+            // if (search.type.val() == '1' || search.type.val() == '3'|| search.type.val() == '10') {
+                search.tip.hide();
+                if ($(this).val().length <= 0) {
+                    search.hotBindEvent(search.type.val());
+                    switch (search.type.val()){
+                        case '1' :
+                            if('' != search.hotICHtml || !search.hotICHtml){
+                                $searchHotwords.find("li").removeClass("j-none");
+                                $searchHotwords.removeClass("hide");
+                            }
+                            break;
+                        case '3' :
+                            if('' != search.hotMaiHtml || !search.hotMaiHtml){
+                                $searchHotwords.find("li").removeClass("j-none");
+                                $searchHotwords.removeClass("hide");
+                            }
+                            break;
+                        case '10' :
+                            if('' != search.hotSupplierHtml || search.hotSupplierHtml){
+                                $searchHotwords.find("li").removeClass("j-none");
+                                $searchHotwords.removeClass("hide");
+                            }
+                            break;
+                        default:
+                            if('' != search.hotECHtml || !search.hotECHtml){
+                                $searchHotwords.find("li").removeClass("j-none");
+                                $searchHotwords.removeClass("hide");
+                            }
+                    };
+                    
+                   // $searchHotwords.removeClass("hide");
+                }
+                event.stopPropagation();
+            // }
+
+        });
+
+        $("body,html").click(function (event) {
+            $searchHotwords.addClass("hide");
+            event.stopPropagation();
+        });
+    },
+
+    //搜价格
+    searchPrice: function () {
+        var $btnSearchPrice = $("#j-btn-search-price");
+
+        $btnSearchPrice.on("click", function () {
+            var $inputValue = $.trim($("#J_inputSearch").val()).toUpperCase();
+            if ($inputValue.length < 2 || $inputValue.substr(1, 1) == " ") {
+                var tips = $("#J_search").find(".tips");
+                tips.show();
+                $("#J_inputSearch").focus();
+                setTimeout(tipsHide, 5000);
+                function tipsHide() {
+                    tips.hide();
+                }
+            } else {
+                var $hqbuySearch = 'https://www.hqbuy.com/search/' + encodeURIComponent($inputValue) + '.html?from=hqsoujiage';
+                //var $maiSearch = hqDomain.mai + '/searchquote/index/' + encodeURIComponent($inputValue);
+                window.open($hqbuySearch);
+            }
+        });
+    }
+};
+
+//底部搜索
+var search_ft = {
+    init: function () {
+        search_ft.keywords = $('#foot_keywords');
+        search_ft.type = $('#foot_search_type');
+        search_ft.tip = $('#foot_search_tip');
+
+        search_ft.keywords.keyup(function (e) {
+            lastTabValue = $("#search_tabs_ft_foot li.cur").attr("value");
+            if (e.keyCode == 38 || e.keyCode == 40) {
+            } else if (e.keyCode == 13) {
+                return false;
+            } else {
+
+            }
+        }).on('blur', function () {
+
+        }).on('paste', function () {
+            //setTimeout(setKw, 1);
+        });
+
+        //页签
+        $('#search_tabs_ft_foot li').click(function () {
+            var _this = $(this),
+                i = _this.val();
+            search_ft.type.val(i);
+            _this.addClass('cur');
+            search_ft.tip.hide();
+            search_ft.keywords.val("");
+            search_ft.keywords.removeClass("SearchFocus");
+            if (i == 10) {
+                $("#foot_keywords").attr("placeholder","可同时输入公司名 地址 产品信息 进行查询");
+            } else {
+                $("#foot_keywords").attr("placeholder","可同时输入型号 封装 批号 进行查询");
+            }
+        }).each(function () {
+            var _this = $(this);
+            if (search_ft.type.val() == _this.val()) {
+                _this.css('cur');
+            }
+        });
+
+        //搜索按钮hover、down
+        $('#foot_submit').mouseover(function () {
+            this.style.backgroundColor = '#bb0000'
+        }).mouseout(function () {
+            this.style.backgroundColor = '#cc0000'
+        });
+
+        //搜索提交
+        $('#foot_search').submit(function () {
+            var skeyword = $.trim(search_ft.keywords.val()).toUpperCase();
+            search.jump({
+                seaK: skeyword,
+                seaT: search_ft.type.val(),
+                sTip: function (s) {
+                    search_ft.tip.show();
+                    $("#tip-content-ft").html(s);
+                    setTimeout(tipsHide,5000);
+                    function tipsHide(){
+                        search_ft.tip.hide();
+                    }
+                }
+            });
+            search_ft.keywords.focus();
+        });
+    }
+};
+
+
+var HqmServiceObj = null;
+var HqmClientEntUrl = "";
+var HqmClientDefUrl = "";
+
+function HqmService(userid, uguid, stype, entuid, roid) {
+    HqmClientEntUrl = "hqew://?uid=" + userid + "&uname=" + uguid + "&entuid=" + entuid + "&roid=" + roid;
+    HqmClientDefUrl = "hqew://?uid=" + userid + "&uname=" + uguid;
+    if (HQMCheck()) {
+        try {
+            var url = 'https://hqmim.hqew.com/ajax/services.aspx?uid=' + userid + '&ug=' + uguid + '&type=' + stype + '&entuid=' + entuid + '&roid=' + roid;
+            $.getScript({
+                url: url,
+                success: function () {
+                    //alert(HqmServiceObj['ResultCode']+'  '+HqmServiceObj['Data']['ServiceID']);
+                    if (HqmServiceObj != undefined) {
+                        var resultCode = 9;
+                        if (HqmServiceObj['ResultCode'] != undefined) {
+                            resultCode = HqmServiceObj['ResultCode'].toString();
+                        }
+                        if (resultCode == "0") {
+                            if (HqmServiceObj['Data']['EntID'] == "0") {
+                                window.location.href = HqmClientDefUrl;
+                            }
+                            else if (HqmServiceObj['Data']['ServiceID'] != undefined) {
+                                window.location.href = "hqew://?uid=" + HqmServiceObj['Data']['ServiceID'] + "&uname=" + HqmServiceObj['Data']['Guid'] + "&entuid=" + HqmServiceObj['Data']['EntID'] + "&roid=" + HqmServiceObj['Data']['RoID'];
+                            }
+                        }
+                        else {
+                        }
+                    }
+                    else {
+                        window.location.href = HqmClientDefUrl;
+                        //"hqew://?uid=" + userid + "&uname=" + uguid+'&entuid='+entuid+'&roid='+roid;
+                    }
+                    HqmServiceObj = null;
+                }
+            });
+        } catch (err) {
+            //window.open("/Web/Hqen/Imrfq/Imrfqidic.aspx?uguid=" + uguid+"&pguid=",target='_blank');
+        }
+    }
+    else {
+        window.open("/Web/Hqen/Imrfq/Imrfqidic.aspx?uguid=" + uguid + "&pguid=", target = '_blank');
+    }
+}
+var uid, type, autoID, Guid, callType;
+var activex_hqm = ((navigator.userAgent.indexOf('Win') != -1) && (navigator.userAgent.indexOf('MSIE') != -1) && (parseInt(navigator.appVersion) >= 4) );
+
+function isHQMInstalled() {
+    var oHQM = null;
+    try {
+        oHQM = new ActiveXObject("HqtChat.HqtChatDlg");
+        if (oHQM == null) {
+            return false;
+        }
+        oHQM = null;
+        return true;
+    }
+    catch (E) {
+        return false;
+    }
+}
+
+function isHQM2011InstalledOld() {
+    var oHQM = null;
+    try {
+        oHQM = new ActiveXObject("hqRun.hqtmRun");
+
+        if (oHQM == null) {
+            return false;
+        }
+        oHQM = null;
+
+        return true;
+
+    } catch (err) {
+        return false;
+    }
+
+}
+
+function isHQM2011Installed() {
+
+    var oHQM = null;
+    try {
+
+        oHQM = new ActiveXObject("HqmTalk.HqmPlugin");
+
+        if (oHQM == null) {
+            return false;
+
+        }
+
+        oHQM = null;
+
+        return true;
+
+    }
+    catch (err) {
+        return false
+    }
+
+}
+
+function HQMCheck() {
+    // var ie8_10 = navigator.userAgent.indexOf('MSIE')>-1&&navigator.userAgent.indexOf('Trident')>-1;
+    // if(ie8_10){
+    //     return true;
+    // }
+
+    if (!activex_hqm) {
+        return true;
+    }
+
+    if (isHQMInstalled() || isHQM2011Installed() || isHQM2011InstalledOld()) {
+        return true;
+    }
+
+    return false;
+}
+var base64EncodeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+var base64Encode = new Array(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1);
+
+function Base64Encode(str) {
+    var reg = /^[a-zA-Z0-9]*$/;
+    if (str == null || reg.test(str)) {
+        return str;
+    }
+    str = Utf16To8(str);
+    var out, i, len;
+    var c1, c2, c3;
+    len = str.length;
+    i = 0;
+    out = "";
+    while (i < len) {
+        c1 = str.charCodeAt(i++) & 0xff;
+        if (i == len) {
+            out += base64EncodeChars.charAt(c1 >> 2);
+            out += base64EncodeChars.charAt((c1 & 0x3) << 4);
+            out += "==";
+            break;
+        }
+        c2 = str.charCodeAt(i++);
+        if (i == len) {
+            out += base64EncodeChars.charAt(c1 >> 2);
+            out += base64EncodeChars.charAt(((c1 & 0x3) << 4) | ((c2 & 0xf0) >> 4));
+            out += base64EncodeChars.charAt((c2 & 0xf) << 2);
+            out += "=";
+            break;
+        }
+        c3 = str.charCodeAt(i++);
+        out += base64EncodeChars.charAt(c1 >> 2);
+        out += base64EncodeChars.charAt(((c1 & 0x3) << 4) | ((c2 & 0xf0) >> 4));
+        out += base64EncodeChars.charAt(((c2 & 0xf) << 2) | ((c3 & 0xc0) >> 6));
+        out += base64EncodeChars.charAt(c3 & 0x3f);
+    }
+    out = out.replace(/\//g, "@@")
+    return "==" + out;
+}
+function Utf16To8(str) {
+    var out, i, len, c;
+    out = "";
+    len = str.length;
+    for (i = 0; i < len; i++) {
+        c = str.charCodeAt(i);
+        if ((c >= 0x0001) && (c <= 0x007f)) {
+            out += str.charAt(i);
+        } else if (c > 0x07ff) {
+            out += String.fromCharCode(0xe0 | ((c >> 12) & 0x0f));
+            out += String.fromCharCode(0x80 | ((c >> 6) & 0x3f));
+            out += String.fromCharCode(0x80 | ((c >> 0) & 0x3f));
+        } else {
+            out += String.fromCharCode(0xc0 | ((c >> 6) & 0x1f));
+            out += String.fromCharCode(0x80 | ((c >> 0) & 0x3f));
+        }
+    }
+    return out;
+}

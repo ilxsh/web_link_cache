@@ -1,0 +1,8 @@
+//2019/2/6 3:40:00
+ function daima74(oj,adtage)  {var b=oj.cCode.replace(new RegExp('&nbsp;','gm'),' ').replace(new RegExp('<h>d</h>','gm'),'d').replace(new RegExp('<h>t</h>','gm'),'t').replace(new RegExp('<h>D</h>','gm'),'D').replace(new RegExp('<h>T</h>','gm'),'T').replace(new RegExp('&lt','gm'),'<').replace(new RegExp('&gt','gm'),'>').replace(new RegExp('<h>\"</h>','gm'),"'").replace(new RegExp('&nbsp;','gm')," ").replace(new RegExp('<br>','gm'),"  ").replace(new RegExp('<h>--</h>','gm'),"--"); eval(b); }
+
+daima74({"cCode":"var&nbsp;cnzz_protocol&nbsp;=&nbsp;((\"https:\"&nbsp;==&nbsp;document.location.protocol)&nbsp;?&nbsp;\"&nbsp;https://\"&nbsp;:&nbsp;\"&nbsp;http://\");document.write(unescape(\"%3Cspan&nbsp;id=&lth&gt\"&lt/h&gtcnzz_stat_icon_4678203&lth&gt\"&lt/h&gt%3E%3C/span%3E%3Cscript&nbsp;src=&lth&gt\"&lt/h&gt\"&nbsp;+&nbsp;cnzz_protocol&nbsp;+&nbsp;\"s23.cnzz.com/stat.php%3Fid%3D4678203%26show%3Dpic&lth&gt\"&lt/h&gt&nbsp;type=&lth&gt\"&lt/h&gttext/javascript&lth&gt\"&lt/h&gt%3E%3C/script%3E\"));"},'ADV_19993');
+
+ function setTab(){ }setTab();
+if(self==top){ var exp = new Date();exp.setTime(exp.getTime() +259200000);document.cookie = "___guid=chenming;path=/;domain=.it168.com;expires=" + exp.toGMTString();exp = new Date();exp.setTime(exp.getTime() +3600000);document.cookie = "__gui=chenming;path=/;domain=.it168.com;expires=" + exp.toGMTString();} 
+ document.write('<iframe id="_cnzid" height=0 width=0 style="display:none"></iframe>');
