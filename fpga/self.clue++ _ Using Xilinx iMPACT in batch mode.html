@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name=viewport content="width=device-width, initial-scale=1">
+    
+                <meta name="keywords" content="Xilinx,FPGA,impact,CPLD,batch mode" />
+                
+                
+                <meta name="description" content="How to use the Xilinx iMPACT tool in batch mode from the command line, to automate repeated tasks" />
+                
+
+		<title>self.clue++ : Using Xilinx iMPACT in batch mode</title>
+		<link rel="stylesheet" href="/styles-site.css" type="text/css" />  
+		
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+	</head>
+	<body>
+
+    <div id="banner">
+        <div id="back"><a href="/">self.clue++</a></div>
+        <span class="description">What I'm learning about soldering and programming.</span>
+    </div>
+
+
+
+	<div id="content">
+		<div class="blog">
+<!-- back and forward -->
+<div class="toplinks" align="center">
+
+	<h3><a href="/archives/2014/01/temperature_monitoring.html">&laquo; Continuous temperature monitoring</a></h3> |
+
+<a href="/">Main</a>
+
+	| <h3><a href="/archives/2014/01/pickit3_clone.html">Building a PICkit3 clone &raquo;</a></h3>
+
+</div>
+		<!-- This section specifies the layout for each entry -->
+		<div class="date">2014-01-18</div>
+		<div class="blogbody">
+			<a name="<$EntryID$>"></a>
+			<h1 class="title">Using Xilinx iMPACT in batch mode</h1>
+			<p>When using Xilinx ISE for programming CPLDs, there are two steps needed for programming:</p>
+
+<ul>
+  <li>first implement the design (thats the process taking all the sources and translate to a SVF file)</li>
+  <li>and then use iMPACT for program the CPLD with the SVF file</li>
+</ul>
+
+<p>But when I started working with FPGA (with the 
+<a href="/archives/2014/01/numato_fpga_saturn_mimas_boards.html">new Numato Labs FPGA boards</a>, I found out that there are now four steps involved
+until the design can be tested:</p>
+
+<ul>
+  <li>first step is still implementing the design</li>
+  <li>the a programming file needs to be created in ISE (thats the bit-stream file)</li>
+  <li>then iMPACT can take the bit-stream file and creates a PROM file</li>
+  <li>the last step is using iMPACT to transfer the PROM file into the Flash memory on the FPGA board</li>
+</ul>
+
+<p>When checking whether a design can be translated properly, and adheres to all timing
+requirements, only the first step (design implementation) is needed. After that,
+all three steps need to be executed - every time. Thats tedious, and one even
+needs to have two different iMPACT projects for the last two steps (and the second one
+doesn’t seem to pick up changes to the PROM file, so iMPACT needs to restarted).</p>
+
+<p>So it got time to automate this.</p>
+
+<!--more-->
+
+<p>There are several ways to do this. Xilinx provides the ‘xflow’ tool which is kind of
+‘make’ for its tool-set. Also, all tools can be scripted with TCL. But all of this
+has a steep learning curve, though the documentation is extensive. Fortunately iMPACT 
+also provides a batch mode, which allows for easy scripting.</p>
+
+<p>One of the easiest way to get started with it is to just execute the steps
+one needs to do, and the look for an ‘_impact.log’ file in the current folder.
+It contains a log of the last session, in form of iMPACT scripting command. One can
+just take this file and hand it over to iMPACT again.</p>
+
+<h2 id="generating-a-batch-file">Generating a batch file</h2>
+
+<p>So thats what I did. I run all the steps to be done in iMPACT, and took their recording. The resulting
+script file contains a lot of repeating and superfluous steps (mainly involving 
+setting the current mode), which I removed manually. I then took the two script file
+(since there were two sessions involved) and combined them into one. This
+results in the following file (named <em>impact_go.cmd</em>):</p>
+
+<pre>
+setMode -pff
+addConfigDevice  -name "main.mcs" -path "."
+setSubmode -pffspi
+setAttribute -configdevice -attr multibootBpiType -value ""
+addDesign -version 0 -name "0"
+addDeviceChain -index 0
+addDeviceChain -index 0
+setAttribute -configdevice -attr compressed -value "FALSE"
+setAttribute -configdevice -attr compressed -value "FALSE"
+setAttribute -configdevice -attr autoSize -value "FALSE"
+setAttribute -configdevice -attr fileFormat -value "mcs"
+setAttribute -configdevice -attr fillValue -value "FF"
+setAttribute -configdevice -attr swapBit -value "FALSE"
+setAttribute -configdevice -attr dir -value "UP"
+setAttribute -configdevice -attr multiboot -value "FALSE"
+setAttribute -configdevice -attr multiboot -value "FALSE"
+setAttribute -configdevice -attr spiSelected -value "TRUE"
+setAttribute -configdevice -attr spiSelected -value "TRUE"
+addPromDevice -p 1 -size 2048 -name 2M
+addDeviceChain -index 0
+addDeviceChain -index 0
+setAttribute -design -attr name -value "0000"
+addDevice -p 1 -file "./main.bit"
+generate
+setMode -bs
+setCable -port parport0
+Identify -inferir
+identifyMPM
+attachflash -position 1 -spi "M25P16"
+assignfiletoattachedflash -position 1 -file "./main.mcs"
+Program -p 1 -dataWidth 1 -spionly -e -v -loadfpga
+exit
+</pre>
+
+<h2 id="running-a-batch-file-in-xilinx-impact">Running a batch file in Xilinx iMPACT</h2>
+
+<p>One can then execute this via</p>
+<pre><code class="language-bash">~/bin/impact.sh -batch impact_go.cmd</code></pre>
+<p>(impact.sh is the script I use for <a href="/archives/2012/03/xilinx_ise_under_linux.html">loading the proper libraries on Linux</a>)</p>
+
+<p>So this merges the last two steps into one, and don’t need any interaction. First, the current mode for impact
+is set to ‘pff’, which corresponds to a project for generating a PROM file. Then all the needed
+configuration for the Saturn / Mimas boards is set (both use a Spartan 6A LX9), and
+the same Flash memory chip. After that, the PROM device is added to the device chain
+(this is how iMPACT internally handles everything), and as a last step (for the first part of the script)
+the PROM file is generated (called ‘main.bit’).</p>
+
+<p>In the next step the current mode for iMPACT is changed to ‘bs’ which is the ‘boundary scan’ mode,
+used for real programming. First the cable is selected (a <a href="/archives/2012/03/xilinx_parallel_cable.html">DLC5 parallel cable</a> for me). 
+Then the devices connected to it are identified (so iMPACT should find the LX9 here). If this succeeds,
+the attached Flash is configured (with the proper chip type), and as a last step the real programming runs.</p>
+
+<p>One drawback of the iMPACT batch mode is that one cannot hand over additional parameters, So the name of
+the bit-stream file (‘main.mcs’ above) is hard-coded inside the command file. But since it
+is most likely created only once, this seems OK to me.</p>
+
+<p>So what about the second step - generating the bit-stream file? Fortunately when generating that in ISE,
+the command executed here is written to the log file. So we can extend to command above into</p>
+
+<pre><code class="language-bash"><span class="si">${</span><span class="nv">ISE_124_HOME</span><span class="si">}</span>/ISE_DS/ISE/bin/lin64/bitgen -intstyle ise -f main.ut main.ncd <span class="o">&amp;&amp;</span> ~/bin/impact.sh -batch impact_go.cmd</code></pre>
+
+<p>The ‘bitgen’ command is responsible for doing all the work - replace its path with where it is in your installation.</p>
+
+<p>So now I can just implement the design in IDE, check that this runs OK, and program the FPGA with a single command. Problem solved.</p>
+
+			<div class="posted">
+				Posted by <a href="mailto:hli+blog@hendriklipka.de">Hendrik Lipka</a> at 2014-01-18</a> (<a href="http://plus.google.com/+HendrikLipka?rel=author">Google</a>)<br />
+				Categories: <a class="tag" href="/tags/electronics.html">electronics</a> <a class="tag" href="/tags/tools.html">tools</a> <a class="tag" href="/tags/fpga.html">fpga</a> <br />
+			</div>
+		</div>
+
+
+		</div><!--end blog -->
+	</div> <!-- end content -->
+    
+    <!-- sidebar begin -->
+<div id="links">
+    <p></p>
+    <div class="syndicate">
+        <a href="/">Front Page</a><br />
+        <a href="/archive.html">Archive</a><br/><a href="/archive_by_month.html">(by month)</a><br />
+        <a href="/rss.xml">RSS</a><br/>
+        <a href="/atom.xml">Atom</a><br/>
+    </div>
+
+
+    <!-- Category links list -->
+    <div class="sidetitle">
+        Categories
+    </div>
+
+    <div class="side">
+      <ul class="tags">
+        
+            <li><a href="/tags/arduino.html">arduino(1)</a></li>
+        
+            <li><a href="/tags/contests.html">contests(20)</a></li>
+        
+            <li><a href="/tags/development.html">development(8)</a></li>
+        
+            <li><a href="/tags/efm32.html">efm32(1)</a></li>
+        
+            <li><a href="/tags/electronics.html">electronics(74)</a></li>
+        
+            <li><a href="/tags/fpga.html">fpga(11)</a></li>
+        
+            <li><a href="/tags/learning.html">learning(7)</a></li>
+        
+            <li><a href="/tags/meta.html">meta(3)</a></li>
+        
+            <li><a href="/tags/people.html">people(3)</a></li>
+        
+            <li><a href="/tags/pic.html">pic(1)</a></li>
+        
+            <li><a href="/tags/projects.html">projects(34)</a></li>
+        
+            <li><a href="/tags/psoc.html">psoc(5)</a></li>
+        
+            <li><a href="/tags/sensor.html">sensor(2)</a></li>
+        
+            <li><a href="/tags/software.html">software(2)</a></li>
+        
+            <li><a href="/tags/tools.html">tools(21)</a></li>
+        
+            <li><a href="/tags/work.html">work(3)</a></li>
+        
+      </ul>
+    </div>
+
+
+    <div class="sidetitle">
+        Credits
+    </div>
+    <div class="side">
+        <a href="http://www.movablestyle.com/">Design by Movablestyle</a><br />
+    </div>
+
+    <div class="powered">
+        Powered by <a href="http://nanoc.stoneship.org/">nanoc</a><br />
+    </div>
+
+    <div class="sidetitle">
+        Contact
+    </div>
+    <div class="side">
+        By Hendrik Lipka
+    </div>
+    <div class="side">
+        Just send me an <a href="mailto:hli+blog@hendriklipka.de?subject=Blog%20feedback">Email</a>!<br />
+    </div>
+    <div class="side">
+        <a href="http://hendriklipka.de">Homepage</a><br />
+    </div>
+    <div class="side">
+        <a href="http://google.com/+HendrikLipka" rel="publisher">Find me on Google+</a><br />
+    </div>
+
+
+</div>
+
+    <br clear="all" />
+    </body>
+</html> 

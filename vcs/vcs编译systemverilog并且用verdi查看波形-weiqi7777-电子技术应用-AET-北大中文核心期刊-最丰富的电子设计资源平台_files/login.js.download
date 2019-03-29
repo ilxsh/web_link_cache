@@ -1,0 +1,84 @@
+﻿var ChinaaetLogin = function () { };
+
+ChinaaetLogin.LoginFormText = '<div class="dialog-div">' +
+                                '<input type="text" id="uname" name="uname" placeholder="用户名或注册时Email" class="dialog-input" autofocus /><br/>'
+                                + '<input type="password" id="pwd" name="pwd" class="dialog-input" placeholder="密码" /><br/>'
+                                + '<div id="diatip" class="dialog-tip"></div>'
+                                + '<button type="button" id="btnsub" onclick="javascript:ChinaaetLogin.CheckLogin();return false;" class="dialog-btn">登录</button>'
+                                + '<span class="dialog-reg">没有账户？<a href="http://www.chinaaet.com/user/register/?returnurl=' + encodeURIComponent(location.href) + '">立即注册</a></span>'
+                                + '<div style="margin-top: 15px;font-size: 12px;">其他账号登录:'
+                                + '<a href="http://authproxy.chinaaet.com/qq/login?returnUrl=' + encodeURIComponent(location.href) + '" style="margin-left:10px;">'
+                                + '<i class="icon icon-l-qq"></i>QQ'
+                                + '</a>'
+                                + '<span style="margin-left:10px;">|</span>'
+                                + '<a href="http://authproxy.chinaaet.com/weixin/login?returnUrl=' + encodeURIComponent(location.href) + '" style="margin-left:10px;">'
+                                +   '<i class="icon icon-l-wx"></i>微信'
+                                + '</a>'
+                                + '<span style="margin-left:10px;">|</span>'
+                                + '<a href="http://authproxy.chinaaet.com/weibo/login?returnUrl=' + encodeURIComponent(location.href) + '" style="margin-left:10px;">'
+                                +   '<i class="icon icon-l-wb"></i>微博'
+                                + '</a>'
+                                + '</div>'
+                                +'</div>';
+
+ChinaaetLogin.logincallback = null;
+
+ChinaaetLogin.ShowAlertMessage = function (message) {
+    $('#diatip').html(message);
+};
+
+
+ChinaaetLogin.ShowLogin = function (title, callback) {
+    layer.open({
+        type: 1,        
+        title: '登录',
+        shadeClose: true,
+        area: ['400px','300px'],
+        content: ChinaaetLogin.LoginFormText
+    });
+
+
+    if (callback) {
+        ChinaaetLogin.logincallback = callback;
+    }
+
+};
+ChinaaetLogin.CheckLogin = function () {
+    var u = $("#uname").val();
+    var p = $("#pwd").val();
+    if (u == '') {
+        
+        ChinaaetLogin.ShowAlertMessage("请输入用户名");
+        $("#uname").focus();
+        return false;
+    }
+    if (p == '') {
+        ChinaaetLogin.ShowAlertMessage("请输入密码");
+        $("#pwd").focus();
+        return false;
+    }
+    var formdata = {
+        UserName: u,
+        Password: p
+    };    
+
+    //登录
+    $.ajax({
+        url: "/Blog/LoginDialog",
+        type: "Post",
+        dataType: "json",
+        cache: false,
+        data: formdata,
+        success: function (data) {
+            if (data.isSuccess) {
+                layer.closeAll();
+                if (ChinaaetLogin.logincallback)
+                    ChinaaetLogin.logincallback(data);
+            }
+            else {
+                ChinaaetLogin.ShowAlertMessage(data.ErrorMessage);
+            }
+        }
+    });
+
+};

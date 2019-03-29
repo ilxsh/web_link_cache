@@ -1,0 +1,2819 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="origin">
+    <title>学习CRC32、CRC16、CRC原理和算法的总结 - rookieeeeee - 博客园</title>
+<meta property="og:description" content="我学习CRC32、CRC16、CRC原理和算法的总结（与WINRAR结果一致）发布时间：2010-09-02 11:26:15 整理好的PDF可以在BAIDU免费下载：http://wenku.bai">
+    <link type="text/css" rel="stylesheet" href="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-LessIsMore.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-LessIsMore-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/Ray-chen/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/Ray-chen/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/Ray-chen/wlwmanifest.xml">
+    <script src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_313.js"></script><script async="" src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script>var currentBlogId=101650;var currentBlogApp='Ray-chen',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js" type="text/javascript"></script>
+<link rel="preload" href="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_313.js" async=""></script></head>
+<body>
+<a name="top"></a>
+
+
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+		
+<!--done-->
+<div class="title"><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/Ray-chen/">rookieeeeee</a></div>
+<div class="subtitle"></div>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li id="nav_sitehome"><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+<li id="nav_myhome"><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/Ray-chen/">首页</a></li>
+<li id="nav_newpost"><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+<li id="nav_contact"><a id="blog_nav_contact" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/rookieeeeee">联系</a></li>
+<li id="nav_rss"><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/Ray-chen/rss">订阅</a>
+<!--<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/Ray-chen/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a>--></li>
+<li id="nav_admin"><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+</ul>
+
+		<div class="blogStats">
+			
+			<div id="blog_stats">
+<!--done-->
+随笔-50&nbsp;
+文章-0&nbsp;
+评论-3&nbsp;
+</div>
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/Ray-chen/archive/2011/11/28/2266628.html">学习CRC32、CRC16、CRC原理和算法的总结</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><p><span class="title"><strong>我学习CRC32、CRC16、CRC原理和算法的总结（与WINRAR结果一致）</strong></span><span class="time">发布时间：2010-09-02 11:26:15</span> <span style="text-align: right; float: right;">&nbsp; </span></p>
+<!--???????? ????--><!--???????? ?á??-->
+<div class="fn_blog">
+<p>整理好的PDF可以在BAIDU免费下载：</p>
+<br>
+<p><a href="http://wenku.baidu.com/view/fb791c0203d8ce2f006623f5.html">http://wenku.baidu.com/view/fb791c0203d8ce2f006623f5.html</a></p>
+<br>
+<p><strong></strong>&nbsp;</p>
+<a href="http://bbs.ednchina.com/BLOG_ARTICLE_1828885.HTM">http://bbs.ednchina.com/BLOG_ARTICLE_1828885.HTM</a><br>
+<p><strong></strong>&nbsp;</p>
+<br>
+<p><strong>我学习CRC32、CRC16、CRC原理和算法的总结（与WINRAR结果一致）</strong></p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>wxleasyland(wxlwww@gmail.com)</p>
+<br>
+<p>2010年9月2日</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>比较愚钝，学了CRC校验好几天，很痛苦的过程，现终于有眉目了，总结一下。</p>
+<br>
+<p>国外版的“轻松无痛苦学习CRC指南”，在</p>
+<br>
+<p>http://www.repairfaq.org/filipg/LINK/F_crc_v31.html</p>
+<br>
+<p>（为什么好的资料都是老外写的？）我的英文有限，这种专业性太强的文章，很多都看不太明白，所以没办法翻译，靠参考国内的翻译和自己瞎琢磨的。</p>
+<br>
+<p>国内的翻译比较不全，而且有点误导，能看英文的还是看英文吧，国内版资料比较零散，可参考：</p>
+<br>
+<p>http://www.q.cc/2001/12/08/10190.html</p>
+<br>
+<p>http://www.360doc.com/content/10/0703/12/1317564_36621098.shtml</p>
+<br>
+<p>http://www.yuanma.org/data/2006/1010/article_1637.htm</p>
+<br>
+<p>我结合国内资料和英文原版进行总结，达到和WINRAR一样的CRC32计算结果。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>一、&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CRC原理</strong></p>
+<br>
+<p>可参考http://www.luocong.com/articles/show_article.asp?Article_ID=15</p>
+<br>
+<p>计算CRC的过程，就是用一个特殊的“除法”，来得到余数，这个余数就是CRC。</p>
+<br>
+<p>它不是真正的算术上的除法！过程和算术除法过程一样，只是加减运算变成了XOR（异或）运算！</p>
+<br>
+<p><strong>&nbsp;</strong></p>
+<br>
+<p><strong>&nbsp;</strong></p>
+<br>
+<p><strong>算术上的除法：</strong></p>
+<br>
+<p>120÷9＝13 余 3，120是被除数，9是除数，13是商，3是余数。念作120除以9，或者9除120，或者9去除120！（除法的过程就不写了）</p>
+<br>
+<p>这个除法计算机当然会做，但是做起来很麻烦，因为减法有借位，很耗时间和指令!</p>
+<br>
+<p>所以，计算CRC也是除法，但是用XOR来代替减法，这就简单多了！</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>CRC的除法：</strong></p>
+<br>
+<p>120÷9＝14 余 6，商、余数和算术除法不一定相同！！因为除法用的是XOR，而不是真正的减法。</p>
+<br>
+<p>以二进制模拟这个计算过程：</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1110&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 商为1110，即14，商有4位，表示进行了4次XOR</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; ________</p>
+<br>
+<p>1001/1111000&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 被除数120是1111000，除数9是1001</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 1001&nbsp;&nbsp;&nbsp; ^</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; ----</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1100&nbsp;&nbsp;&nbsp;&nbsp; 第一次XOR后得到011，加入下一位0。最高位的0可以消掉了，这样最高位是1,所以下个商是1</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1001&nbsp;&nbsp;&nbsp; ^</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ----</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1010&nbsp;&nbsp;&nbsp; 第二次XOR后得到0101，加入下一位0。最高位的0可以消掉了，这样最高位是1,所以下个商是1</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1001&nbsp;&nbsp;&nbsp; ^</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ----</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0110&nbsp; &nbsp;第三次XOR后得到0011，加入下一位0。最高位的0可以消掉了，这样最高位是0,所以下个商是0</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0000&nbsp;&nbsp;&nbsp; ^</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ----</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 110 -&gt; &nbsp;最后一次XOR后得到0110，最高位的0可以消掉了，得到余数为110，即6</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ 注意，余数不是0110，而是110，因为最前面那个0已经被XOR后消掉了！</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>可见，除法（XOR）的目的是逐步消掉最高位的1或0！</p>
+<br>
+<p>由于过程是XOR的，所以商是没有意义的，我们不要。我们要的是余数。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>余数110是1111000的CRC吗？不是！</p>
+<br>
+<p>余数110是1111（即十进制15）的CRC！！！</p>
+<br>
+<p>为什么？因为CRC是和数据一起传送的，所以数据后面要加上CRC。</p>
+<br>
+<p>数据1111加上CRC110后，变成1111110，再传送。接收机收到1111110后，除以除数1001，余数为000，正确；如果余数不为0，则说明传送的数据有误！这样完成CRC校验。</p>
+<br>
+<p>即发送端要发送1111，先在1111后加000，变成1111000，再除以1001得到余数110，这个110就是CRC，将110加到数据后面，变成1111110，发送出去。</p>
+<br>
+<p>接收端收到1111110，用它除以1001，计算得余数为000，就说明收到的数据正确。</p>
+<br>
+<p>所以原始数据后面要先扩展出3位0，以容纳CRC值！</p>
+<br>
+<p>会发现，在上面的除法过程中，这3位0，能保证所有的4个数据位在除法时都能够被处理到！不然做一次除法就到结果了，那是不对的。这个概念后面要用到。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>所以，实际上，数据是1111，CRC是110。</p>
+<br>
+<p>对于除数1001，我们叫它生成多项式，即生成项，或POLY，即g(x)。</p>
+<br>
+<p>数据1111根据POLY1001，计算得到CRC110。</p>
+<br>
+<p>如果POLY不是1001，而是1011，那得到的CRC也是不同的！</p>
+<br>
+<p>所以生成项不同，得到的CRC也不同。要预先定义好POLY，发送端和接收端要用一样的POLY！</p>
+<br>
+<p><br clear="all">&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>二、&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 生成项</strong></p>
+<br>
+<p>上面例子中，生成项是1001，共4位比特，最高位的1，实际上在除法的每次XOR时，都要消掉，所以这个1可不做参考，后3位001才是最重要的！001有3位，所以得到的余数也是3位，因为最后一次除法XOR时，最高位消掉了。所以CRC就是3位比特的。</p>
+<br>
+<p>CRC是3比特，表示它的宽度W＝3。也就是说，原始数据后面要加上W=3比特的0进行扩展！</p>
+<br>
+<p>生成项的最低位也必须是1，这是规定的。</p>
+<br>
+<p>生成项1001，就等效于g(x)=x2+1</p>
+<br>
+<p>生成项也可以倒过来写，即颠倒过来，写成1001，这里倒过来的值是一样的。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>再如CRC32的生成项是：</p>
+<br>
+<p>1 0000 0100 1100 0001 0001 1101 1011 0111&nbsp; （33个比特）</p>
+<br>
+<p>即g(x)= x32+x26+x23+x22+x16+x12+x11+x10+x8+x7+x5+x4+x2+x+1</p>
+<br>
+<p>颠倒过来，就可以写成1110 1101 1011 1000 1000 0011 0010 0000 1</p>
+<br>
+<p>一般生成项简写时不写最高位的1，故生成项是0x04C11DB7，颠倒后的生成项是0xEDB88320</p>
+<br>
+<p>CRC32的生成项是33比特，最高位是消掉的，即CRC值是32比特（4个字节），即宽度W=32，就是说，在计算前，原始数据后面要先扩展W=32个比特0，即4个0x00字节。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>注意：我看到网上CRC32的POLY有0x04C10DB7这个值的，它和正规的POLY值不同，需要注意！</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>颠倒过来，即是镜像，为什么要颠倒，后述。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><br clear="all">&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>三、&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 直接计算法&nbsp; &nbsp;Straightforward CRC Implementation</strong></p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>“直接计算法”就是<strong>直接模拟上面的除法的过程</strong>，来得到余数即CRC！</p>
+<br>
+<p>上面的例子中，除数是4位，但最高位是要一直消掉的，所以我们只需要一个3位的寄存器就好了。</p>
+<br>
+<p>计算过程：</p>
+<br>
+<p>待测数据后扩展W=3个比特0，变成1111000；</p>
+<br>
+<p>寄存器初始化置0；</p>
+<br>
+<p>先在寄存器中移入数据111；</p>
+<br>
+<p>寄存器左移一位，并且右边移入下一位数据1。这样最高位1移出，由于最高位是1，故本次的商是1，要用除数1001来进行XOR，最高位肯定XOR
+得0，故不管它，只要用低3位001来进行XOR就可以，即001对寄存器进行XOR，寄存器中得到110，即第一次XOR后的结果（相当于是数据
+1111与生成项1001进行了一次XOR，并把最高位0消掉了）。 如果移出的最高位是0，则用0000来进行XOR（0 XOR 
+后，得到的还是原值）。</p>
+<br>
+<p>一直重复这个过程，就能得到最后余数了。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>总共处理次数＝商的位数＝待测数据的位数－生成项位数＋1＋宽度W＝待测数据的位数＝4次。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>我们假设待测数据是1101 0110 11，生成项是10011，假设有一个4 bits的寄存器，通过反复的移位和进行CRC的除法，最终该寄存器中的值就是我们所要求的余数。</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3&nbsp;&nbsp; 2&nbsp;&nbsp; 
+1&nbsp;&nbsp; 0&nbsp;&nbsp; Bits</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;+---+---+---+---+</p>
+<br>
+<p>&nbsp;Pop&nbsp;&nbsp; &lt;-- |&nbsp;&nbsp; |&nbsp;&nbsp; |&nbsp;&nbsp; |&nbsp;&nbsp; | &lt;----- Augmented message（已加0扩张的原始数据）</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+---+---+---+---+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp; 
+0&nbsp;&nbsp; 0&nbsp;&nbsp; 1&nbsp;&nbsp; 1&nbsp;&nbsp; = The Poly 生成项</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>依据这个模型，我们得到了一个最最简单的算法：</p>
+<br>
+<p>&nbsp;&nbsp; 把register中的值置0.</p>
+<br>
+<p>&nbsp;&nbsp; 把原始的数据后添加w个0.</p>
+<br>
+<p>&nbsp;&nbsp; While (还有剩余没有处理的数据)</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Begin</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 把register中的值左移一位，读入一个新的数据并置于register最低位的位置。</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If (如果上一步的左移操作中的移出的一位是1)</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; register = register XOR Poly.</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>实际上就是模拟XOR除法的过程，即被测数据一位一位放到寄存器中来做除法。</p>
+<br>
+<p>比如生成项是10011，则生成的余数是4位XXXX，所以寄存器是4位。</p>
+<br>
+<p>待测数据是1101 0110 11，后面加上0000，即扩张4位，以容纳余数。</p>
+<br>
+<p>只要与生成项的0011做XOR就好了，最高位经过XOR肯定出0，可不用最高位。</p>
+<br>
+<p>过程如下：</p>
+<br>
+<p>待测数据先移4位即1101到寄存器中，准备开始除法。</p>
+<br>
+<p>第1次除法：寄存器中是1101，先从寄存器移出最高位1，移进下一位待测数据位0，则寄存器中是1010，由于移出的位是1，则需要与生成项的0011做XOR，得到1001，即做了第1次除法后，寄存器中是1001，这个就是余数。</p>
+<br>
+<p>第2次除法：寄存器中是1001，从寄存器移出最高位1，移进下一位待测数据位1，则寄存器中是0011，由于移出的位是1，则需要与生成项的0011做XOR，得到0000，即做了第2次除法后，寄存器中是0000，这个就是余数。</p>
+<br>
+<p>第3次除法：寄存器中是0000，从寄存器移出最高位0，移进下一位待测数据位1，则寄存器中是0001，由于移出的位是0，则需要不做XOR，直
+接下一步移位。也可以等同于：本次的商是0,0*生成项＝0，即是0000与寄存器做XOR，得到寄存器的数不变，还是0001，即做了第3次除法后，寄
+存器中是0001，这个就是余数。</p>
+<br>
+<p>第4次除法：寄存器中是0001，从寄存器移出最高位0，移进下一位待测数据位0，则寄存器中是0010，由于移出的位是0，则需要不做XOR，直接下一步移位。</p>
+<br>
+<p>第5次除法：移位，不用做XOR，得到寄存器中是0101</p>
+<br>
+<p>第6次除法：移位，不用做XOR，得到寄存器中是1011</p>
+<br>
+<p>第7次除法：移位，移出的位是1，又要与生成项做XOR了</p>
+<br>
+<p>一直做下去。。。。。。直到最后，寄存器中的就是整个计算后的余数了。即CRC值。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>注意：</strong></p>
+<br>
+<p>这个算法，计算出的CRC32值,与WINRAR计算出来的不一样，为什么？算法是正确的，不用怀疑！只是CRC32正式算法还涉及到数据颠倒和初始化预置值等，后述。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>程序实现：</strong></p>
+<br>
+<p><strong>程序1：</strong></p>
+<br>
+<p>（注：网上下的程序是有错的，我有修改了，这里是正确的）</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp; //网上的程序经修改</p>
+<br>
+<p>BYTE 
+POLY=0x13;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ //生成项，13H＝10011，这样CRC是4比特</p>
+<br>
+<p>unsigned short data = 0x035B;&nbsp;&nbsp;&nbsp; //待测数据是35BH，12比特，注意，数据不是16比特</p>
+<br>
+<p>unsigned short regi = 0x0000;&nbsp;&nbsp;&nbsp; // load the register with zero bits</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// augment the data by appending W(4) zero bits to the end of it.</p>
+<br>
+<p>//按CRC计算的定义，待测数据后加入4个比特0，以容纳4比特的CRC；</p>
+<br>
+<p>//这样共有16比特待测数据，从第5比特开始做除法，就要做16－5＋1＝12次XOR</p>
+<br>
+<p>data &lt;&lt;= 4;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// we do it bit after bit</p>
+<br>
+<p>for ( int cur_bit = 15; cur_bit &gt;= 0; -- cur_bit )&nbsp;&nbsp; //处理16次，前4次实际上只是加载数据</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // test the highest bit which will be poped later.</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+///&nbsp;&nbsp;&nbsp;&nbsp; in fact, the 5th bit from right is the 
+hightest bit here</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; if ( ( ( regi &gt;&gt; 4 ) &amp; 0x0001 ) == 0x1 )&nbsp;&nbsp;&nbsp;&nbsp; regi = regi ^ POLY;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; regi &lt;&lt;= 1;&nbsp;&nbsp; // shift the register</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // reading the next bit of the augmented data</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; unsigned short tmp = ( data &gt;&gt; cur_bit ) &amp; 0x0001;&nbsp; //加载待测数据1比特到tmp中，tmp只有1比特</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; regi |= tmp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //这1比特加载到寄存器中</p>
+<br>
+<p>}</p>
+<br>
+<p>if ( ( ( regi &gt;&gt; 4 ) &amp; 0x0001 ) == 0x1 )&nbsp;&nbsp; regi =
+ regi ^ POLY;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //做最后一次XOR</p>
+<br>
+<p>//这时， regi中的值就是CRC</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>程序2：我做的通用CRC计算程序：</strong></p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>_int64&nbsp; POLY = 0x104C11DB7;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //生成项，需要含有最高位的"1"，这样CRC是32比特</p>
+<br>
+<p>int crcbitnumber=32;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //crc是32比特</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>_int64&nbsp; data = 0x31323334;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //待测数据，为字串"1234"</p>
+<br>
+<p>int&nbsp; databitnumber=32;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //数据是32比特</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>_int64&nbsp; regi = 
+0x0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ // load the register with zero bits</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// augment the data by appending W zero bits to the end of it.</p>
+<br>
+<p>//按CRC计算的定义，加入32个比特0，以容纳32比特的CRC；</p>
+<br>
+<p>//这样共有64比特待测数据，从第33比特开始做除法，就要做64－33＋1＝32次XOR</p>
+<br>
+<p>data &lt;&lt;= crcbitnumber;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// we do it bit after bit</p>
+<br>
+<p>for ( int cur_bit = databitnumber+crcbitnumber-1; cur_bit &gt;= 0; -- cur_bit )&nbsp;&nbsp; //处理64次（32比特待测数据＋32比特扩展0），前32次是加载数据</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // test the highest bit which will be poped later.</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+///&nbsp;&nbsp;&nbsp;&nbsp; in fact, the 5th bit from right is the 
+hightest bit here</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; if ( ( ( regi &gt;&gt; crcbitnumber ) &amp; 0x0001 ) == 0x1 )&nbsp;&nbsp;&nbsp;&nbsp; regi = regi ^ POLY;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; regi &lt;&lt;= 1;&nbsp;&nbsp; // shift the register</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // reading the next bit of the augmented data</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; unsigned short tmp = ( data &gt;&gt; cur_bit ) 
+&amp; 0x0001;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+//加载待测数据1比特到tmp中，tmp只有1比特</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; regi |= tmp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //这1比特加载到寄存器中</p>
+<br>
+<p>}</p>
+<br>
+<p>if ( ( ( regi &gt;&gt; crcbitnumber ) &amp; 0x0001 ) == 0x1 
+)&nbsp;&nbsp; regi = regi ^ POLY;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+//做最后一次XOR</p>
+<br>
+<p>//这时， regi中的值就是CRC</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><br clear="all">&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>四、&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 驱动表法&nbsp; &nbsp;Table-Driven Implementation</strong></p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>上面的“<strong>直接计算法</strong>”很直观，却非常的低效。为了加快它的速度，我们使它一次能处理大于4 bit的数据。一次能处理一个字节的数据的话，那就方便多了。</p>
+<br>
+<p>我们想要实现的32 bit的CRC校验。我们还是假设有和原来一样的一个4 "bit"的register，但它的每一位是一个8 bit的字节。</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ 3&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp; 
+0&nbsp;&nbsp; Bytes</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;Pop! &lt;-- |&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 
+|&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; | &lt;----- Augmented 
+message（扩展0后的数据）</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 &lt;------32 bits------&gt;&nbsp; （生成项，暗含了一个最高位的“1”）</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>根据同样的原理我们可以得到如下的算法：</p>
+<br>
+<p>&nbsp; While (还有剩余没有处理的数据)</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Begin</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 检查register头字节，并取得它的值</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 求不同偏移处多项式的XOR</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; register左移一个字节，最右处存入新读入的一个字节</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 把register的值 和 多项式的XOR结果 进行XOR运算</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>可是为什么要这样作呢？ 同样我们还是以一个简单的例子说明问题：</p>
+<br>
+<p>为了简单起见，我们假设一次只移出4个比特！而不是8个比特。</p>
+<br>
+<p>生成多项式为： 1 0101 1100，即宽度W=8，即CRC8，这样寄存器为8位</p>
+<br>
+<p>待测数据是1011 0100 1101</p>
+<br>
+<p><strong>&nbsp;</strong></p>
+<br>
+<p><strong>按正常的算法做：</strong></p>
+<br>
+<p>将1011 0100放入寄存器中，然后开始计算CRC。</p>
+<br>
+<p>先将高4位移出寄存器：</p>
+<br>
+<p>当前register中的值： &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0100 1101</p>
+<br>
+<p>4 bit应该被移出的值：&nbsp; 1011</p>
+<br>
+<p>生成多项式为：&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1010 1110 0</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>第一步：</p>
+<br>
+<p>&nbsp; Top&nbsp; Register&nbsp;&nbsp; （top指移出的数据）</p>
+<br>
+<p>&nbsp; ---- --------</p>
+<br>
+<p>&nbsp; 1011 0100 1101&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;待测数</p>
+<br>
+<p>&nbsp; 1010 1110 0&nbsp;&nbsp; + (CRC XOR)&nbsp;&nbsp;&nbsp; POLY</p>
+<br>
+<p>&nbsp; -------------</p>
+<br>
+<p>&nbsp; 0001 1010 1101 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;第一次XOR后的值</p>
+<br>
+<p>第二步：</p>
+<br>
+<p>这时，首4 bits 不为0说明没有除尽，要继续除:</p>
+<br>
+<p>&nbsp; 0001 1010 1101&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 1 0101 1100 + (CRC XOR)&nbsp;&nbsp;&nbsp; 将POLY右移3位后，再做XOR</p>
+<br>
+<p>&nbsp; -------------</p>
+<br>
+<p>&nbsp; 0000 1111 0001 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;第二次XOR后的值</p>
+<br>
+<p>&nbsp; <strong>^^^^</strong></p>
+<br>
+<p>这时，首4 bits 全0说明不用继续除了，结果满足要求了。</p>
+<br>
+<p>也就是说：待测数据与POLY相XOR，得到的结果再与POLY相XOR，POLY要适当移位，以消掉1。重复进行，直到结果满足要求。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>下面，我们换一种算法，来达到相同的目的：</strong></p>
+<br>
+<p>POLY与POLY自已先进行XOR，当然POLY要进行适当移位。使得得到的结果值的高4位与待测数据相同。</p>
+<br>
+<p>第一步：</p>
+<br>
+<p>&nbsp;1010 1110 0&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;POLY</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; 1 0101 1100 + &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;右移3位后的POLY</p>
+<br>
+<p>&nbsp;-------------</p>
+<br>
+<p>&nbsp;1011 1011 1100&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;POLY与POLY自已进行XOR后得到的值</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><br clear="all">&nbsp;</p>
+<br>
+<p>第二步：</p>
+<br>
+<p>&nbsp;1011 1011 1100&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; POLY相XOR后得到的值</p>
+<br>
+<p>&nbsp;1011 0100 1101+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;待测数据</p>
+<br>
+<p>&nbsp;-------------</p>
+<br>
+<p>&nbsp;0000 11110001&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 得到的结果值和上面是一样的（说明可以先把POLY预先XOR好，再与待测数据XOR，就能得到结果）</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>结论：</strong></p>
+<br>
+<p>现在我们看到，这二种算法计算的结果是一致的！这是基于XOR的交换律，即(a XOR b) XOR c = a XOR (b XOR c)。而后一种算法可以通过查表来快速完成，叫做<strong>“驱动表法”</strong>算法。</p>
+<br>
+<p>也就是说，根据4 bit被移出的值1011，我们就可以知道要用POLY自身XOR后得到的 1011 1011 1100 
+来对待测数据1011 0100 
+1101进行XOR，这样一次就能消掉4BIT待测数据。（注意蓝色的最高4位要一样，这样XOR后才能得0000，就能消掉了）</p>
+<br>
+<p>即1011对应1011 1011 1100，实际只需要用到后8位，即1011对应1011 1100</p>
+<br>
+<p>用查表法来得到，即1011作为索引值，查表，得到表值1011 1100。</p>
+<br>
+<p>表格可以预先生成。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>这里是每次移出4位，则POLY与POLY进行XOR的组合有2^4＝16种，即从0000到1111。</p>
+<br>
+<p>注意，POLY自身与自身相XOR时，要先对齐到和寄存器一样的长度，再XOR。相当于有12位进行XOR。</p>
+<br>
+<p>组合后的结果有16种：（黑色的0表示对齐到和寄存器一样的长度）</p>
+<br>
+<p>1.&nbsp;&nbsp;&nbsp; 0000 0000 0000&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;即表示待测数据移出的4位都是0，不需要与POLY相XOR，即相当于待测数据移出的4位后，与0000 0000 
+0000相XOR</p>
+<br>
+<p>2.&nbsp;&nbsp;&nbsp; 0001 0101 1100&nbsp;&nbsp; 即表示待测数据移出的4位是0001，需要与右移过3位的POLY相XOR</p>
+<br>
+<p>3.&nbsp;&nbsp;&nbsp; 0010 1011 1000&nbsp;</p>
+<br>
+<p>4.&nbsp;&nbsp;&nbsp; 0010 1011 1000 与 0001 0101 1100&nbsp; 相XOR，XOR后前4位为0011&nbsp; 即表示待测数据移出的4位后，需要与POLY进行二次相XOR，结果才能满足要求。</p>
+<br>
+<p>5.&nbsp;&nbsp;&nbsp; 0101 0111 0000 与 0001 0101 
+1100相XOR，&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+XOR后前4位为0100</p>
+<br>
+<p>6.&nbsp;&nbsp;&nbsp; 0101 0111 0000 
+，&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ &nbsp;&nbsp;&nbsp; 前4位为&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0101</p>
+<br>
+<p>7.&nbsp;&nbsp;&nbsp; 0101 0111 0000 与 0010 1011 1000、0001 0101 1100 相XOR， XOR后前4位为0110</p>
+<br>
+<p>8.&nbsp;&nbsp;&nbsp; 0101 0111 0000 与 0010 1011 
+1000，&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ XOR后前4位为0111</p>
+<br>
+<p>9.&nbsp;&nbsp;&nbsp; 1010 1110 0000 与 0010 1011 
+1000相
+XOR，&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ XOR后前4位为1000</p>
+<br>
+<p>10.1010 1110 0000 与 0010 1011 1000、0001 0101 1100相XOR，&nbsp; XOR后前4位为1001</p>
+<br>
+<p>11.1010 1110 
+0000，&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ 前4位为&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1010</p>
+<br>
+<p>12.1010 1110 0000 与 0001 0101 
+1100相
+XOR，&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ XOR后前4位为1011</p>
+<br>
+<p>13.1010 1110 0000 与 0101 0111 0000、0010 1011 1000、0001 0101 1100相XOR， XOR后前4位为1100</p>
+<br>
+<p>14.1010 1110 0000 与 0101 0111 0000、0010 1011 1000相XOR，&nbsp; XOR后前4位为1101</p>
+<br>
+<p>15.1010 1110 0000 与 0101 0111 0000、0001 0101 1100相XOR，&nbsp; XOR后前4位为1110</p>
+<br>
+<p>16.1010 1110 0000 与 0101 0111 
+0000相
+XOR，&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ XOR后前4位为1111</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>以XOR后得到的结果的前4位做为索引值，以XOR后得到的结果的后8位做为表值，生成一张表，即：</p>
+<br>
+<p>TABLE[0]=0000 0000B;</p>
+<br>
+<p>TABLE[1]=0101 1100B;</p>
+<br>
+<p>TABLE[2]=1011 1000B;</p>
+<br>
+<p>TABLE[3]=[(0010 1011 1000B ^ 0001 0101 1100B) &gt;&gt; 4 ] &amp; 0xff</p>
+<br>
+<p>....</p>
+<br>
+<p>这张表我叫它为“<strong>直接查询表</strong>”。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>就是说，一次移出的待测数据的4位bit，有2^4个值，即0000,0001,0010,....,1111，根据这个值来查表，找到相应的表值，再用表值来XOR寄存器中的待测数据。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>所以，如果一次移出待测数据的8位bit，即一次进行一个字节的计算，则表格有2^8＝256个表值。</p>
+<br>
+<p>CRC16和CRC32都是一次处理一个字节的，所以它们的查询表有256个表值。</p>
+<br>
+<p><strong>&nbsp;</strong></p>
+<br>
+<p><strong>“驱动表法”算法为：</strong></p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ 3&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp; 0 
+&nbsp;&nbsp;Bytes</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; +-----&lt;|&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 
+|&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; | &lt;----- Augmented 
+message（扩展0后的数据）</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+MSB&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LSB</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp; &nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; XOR</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 0+----+----+----+----+</p>
+<br>
+<p>查表v &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; +-----&gt;+----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 255+----+----+----+----+</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>描述：</p>
+<br>
+<p>1：register左移一个字节,从原始数据中读入一个新的字节.</p>
+<br>
+<p>2：利用刚从register移出的字节作为下标定位 table 中的一个32位的值</p>
+<br>
+<p>3：把这个值XOR到register中。</p>
+<br>
+<p>4：如果还有未处理的数据则回到第一步继续执行。</p>
+<br>
+<p>用C可以写成这样：</p>
+<br>
+<p>&nbsp;&nbsp; r=0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;//r是寄存器，先初始化为0</p>
+<br>
+<p>&nbsp;&nbsp; while (len--)&nbsp;&nbsp; //len是已扩展0之后的待测数据的长度</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; {</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; byte t = (r &gt;&gt; 24) &amp; 0xFF;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r = (r &lt;&lt; 8) | *p++;&nbsp;&nbsp;&nbsp;&nbsp; //p是指向待测数据的指针（待测数据需已经扩展过0）</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r^=table[t];&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; //table是查询表</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+<br>
+<p>这个代码可以优化为：</p>
+<br>
+<p>&nbsp; r=0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //r是寄存器，先初始化为0</p>
+<br>
+<p>&nbsp;&nbsp; while (len--) //len是已扩展0之后的待测数据的字节长度</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r = ((r 
+&lt;&lt; 8) | *p++) ^ t[(r &gt;&gt; 24) &amp; 0xFF]; 
+//p是指向待测数据的指针（待测数据需已经扩展过0）,t是查询表</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>注意：</strong></p>
+<br>
+<p>这个<strong>“驱动表法”</strong>算法和“<strong>直接计算法”</strong>是完全一样的，不仅结果完全一样，处理方式也是完全一样的，所以<strong>“驱动表法”可以完全替代</strong>“<strong>直接计算法”</strong>！</p>
+<br>
+<p>原始数据都需要先用0扩展W位；最开始的几次循环的实质都只是先将待测数据移动到寄存器中去而已；</p>
+<br>
+<p>会发现，这个算法用到的“<strong>直接查询表</strong>”的表值，和网上公开的查询表（我叫它“<strong>正规查询表</strong>”）的表值不一样！为什么？因为网上公开的正规查询表是用于“颠倒”算法的！后述。</p>
+<br>
+<p>会发现，这个算法，计算出的CRC32值，同样与WINRAR计算出来的不一样。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>生成的“直接查询表”的内容是：</strong></p>
+<br>
+<p><strong>CRC16直接查询表</strong></p>
+<br>
+<p>00H&nbsp;&nbsp;&nbsp; 0000&nbsp; 8005&nbsp; 800F&nbsp; 000A</p>
+<br>
+<p>04H&nbsp;&nbsp;&nbsp; 801B&nbsp; 001E&nbsp; 0014&nbsp; 8011</p>
+<br>
+<p>08H&nbsp;&nbsp;&nbsp; 8033&nbsp; 0036&nbsp; 003C&nbsp; 8039</p>
+<br>
+<p>0CH&nbsp;&nbsp;&nbsp; 0028&nbsp; 802D&nbsp; 8027&nbsp; 0022</p>
+<br>
+<p>10H&nbsp;&nbsp;&nbsp; 8063&nbsp; 0066&nbsp; 006C&nbsp; 8069</p>
+<br>
+<p>14H&nbsp;&nbsp;&nbsp; 0078&nbsp; 807D&nbsp; 8077&nbsp; 0072</p>
+<br>
+<p>18H&nbsp;&nbsp;&nbsp; 0050&nbsp; 8055&nbsp; 805F&nbsp; 005A</p>
+<br>
+<p>1CH&nbsp;&nbsp;&nbsp; 804B&nbsp; 004E&nbsp; 0044&nbsp; 8041</p>
+<br>
+<p>20H&nbsp;&nbsp;&nbsp; 80C3&nbsp; 00C6&nbsp; 00CC&nbsp; 80C9</p>
+<br>
+<p>24H&nbsp;&nbsp;&nbsp; 00D8&nbsp; 80DD&nbsp; 80D7&nbsp; 00D2</p>
+<br>
+<p>28H&nbsp;&nbsp;&nbsp; 00F0&nbsp; 80F5&nbsp; 80FF&nbsp; 00FA</p>
+<br>
+<p>2CH&nbsp;&nbsp;&nbsp; 80EB&nbsp; 00EE&nbsp; 00E4&nbsp; 80E1</p>
+<br>
+<p>30H&nbsp;&nbsp;&nbsp; 00A0&nbsp; 80A5&nbsp; 80AF&nbsp; 00AA</p>
+<br>
+<p>34H&nbsp;&nbsp;&nbsp; 80BB&nbsp; 00BE&nbsp; 00B4&nbsp; 80B1</p>
+<br>
+<p>38H&nbsp;&nbsp;&nbsp; 8093&nbsp; 0096&nbsp; 009C&nbsp; 8099</p>
+<br>
+<p>3CH&nbsp;&nbsp;&nbsp; 0088&nbsp; 808D&nbsp; 8087&nbsp; 0082</p>
+<br>
+<p>40H&nbsp;&nbsp;&nbsp; 8183&nbsp; 0186&nbsp; 018C&nbsp; 8189</p>
+<br>
+<p>44H&nbsp;&nbsp;&nbsp; 0198&nbsp; 819D&nbsp; 8197&nbsp; 0192</p>
+<br>
+<p>48H&nbsp;&nbsp;&nbsp; 01B0&nbsp; 81B5&nbsp; 81BF&nbsp; 01BA</p>
+<br>
+<p>4CH&nbsp;&nbsp;&nbsp; 81AB&nbsp; 01AE&nbsp; 01A4&nbsp; 81A1</p>
+<br>
+<p>50H&nbsp;&nbsp;&nbsp; 01E0&nbsp; 81E5&nbsp; 81EF&nbsp; 01EA</p>
+<br>
+<p>54H&nbsp;&nbsp;&nbsp; 81FB&nbsp; 01FE&nbsp; 01F4&nbsp; 81F1</p>
+<br>
+<p>58H&nbsp;&nbsp;&nbsp; 81D3&nbsp; 01D6&nbsp; 01DC&nbsp; 81D9</p>
+<br>
+<p>5CH&nbsp;&nbsp;&nbsp; 01C8&nbsp; 81CD&nbsp; 81C7&nbsp; 01C2</p>
+<br>
+<p>60H&nbsp;&nbsp;&nbsp; 0140&nbsp; 8145&nbsp; 814F&nbsp; 014A</p>
+<br>
+<p>64H&nbsp;&nbsp;&nbsp; 815B&nbsp; 015E&nbsp; 0154&nbsp; 8151</p>
+<br>
+<p>68H&nbsp; &nbsp;&nbsp;8173&nbsp; 0176&nbsp; 017C&nbsp; 8179</p>
+<br>
+<p>6CH&nbsp;&nbsp;&nbsp; 0168&nbsp; 816D&nbsp; 8167&nbsp; 0162</p>
+<br>
+<p>70H&nbsp;&nbsp;&nbsp; 8123&nbsp; 0126&nbsp; 012C&nbsp; 8129</p>
+<br>
+<p>74H&nbsp;&nbsp;&nbsp; 0138&nbsp; 813D&nbsp; 8137&nbsp; 0132</p>
+<br>
+<p>78H&nbsp;&nbsp;&nbsp; 0110&nbsp; 8115&nbsp; 811F&nbsp; 011A</p>
+<br>
+<p>7CH&nbsp;&nbsp;&nbsp; 810B&nbsp; 010E&nbsp; 0104&nbsp; 8101</p>
+<br>
+<p>80H&nbsp;&nbsp;&nbsp; 8303&nbsp; 0306&nbsp; 030C&nbsp; 8309</p>
+<br>
+<p>84H&nbsp;&nbsp;&nbsp; 0318&nbsp; 831D&nbsp; 8317&nbsp; 0312</p>
+<br>
+<p>88H&nbsp;&nbsp;&nbsp; 0330&nbsp; 8335&nbsp; 833F&nbsp; 033A</p>
+<br>
+<p>8CH&nbsp;&nbsp;&nbsp; 832B&nbsp; 032E&nbsp; 0324&nbsp; 8321</p>
+<br>
+<p>90H&nbsp;&nbsp;&nbsp; 0360&nbsp; 8365&nbsp; 836F&nbsp; 036A</p>
+<br>
+<p>94H&nbsp;&nbsp;&nbsp; 837B&nbsp; 037E&nbsp; 0374&nbsp; 8371</p>
+<br>
+<p>98H&nbsp;&nbsp;&nbsp; 8353&nbsp; 0356&nbsp; 035C&nbsp; 8359</p>
+<br>
+<p>9CH&nbsp;&nbsp;&nbsp; 0348&nbsp; 834D&nbsp; 8347&nbsp; 0342</p>
+<br>
+<p>A0H&nbsp;&nbsp;&nbsp; 03C0&nbsp; 83C5&nbsp; 83CF&nbsp; 03CA</p>
+<br>
+<p>A4H&nbsp;&nbsp;&nbsp; 83DB&nbsp; 03DE&nbsp; 03D4&nbsp; 83D1</p>
+<br>
+<p>A8H&nbsp;&nbsp;&nbsp; 83F3&nbsp; 03F6&nbsp; 03FC&nbsp; 83F9</p>
+<br>
+<p>ACH&nbsp;&nbsp;&nbsp; 03E8&nbsp; 83ED&nbsp; 83E7&nbsp; 03E2</p>
+<br>
+<p>B0H&nbsp;&nbsp;&nbsp; 83A3&nbsp; 03A6&nbsp; 03AC&nbsp; 83A9</p>
+<br>
+<p>B4H&nbsp;&nbsp;&nbsp; 03B8&nbsp; 83BD&nbsp; 83B7&nbsp; 03B2</p>
+<br>
+<p>B8H&nbsp;&nbsp;&nbsp; 0390&nbsp; 8395&nbsp; 839F&nbsp; 039A</p>
+<br>
+<p>BCH&nbsp;&nbsp;&nbsp; 838B&nbsp; 038E&nbsp; 0384&nbsp; 8381</p>
+<br>
+<p>C0H&nbsp;&nbsp;&nbsp; 0280&nbsp; 8285&nbsp; 828F&nbsp; 028A</p>
+<br>
+<p>C4H&nbsp;&nbsp;&nbsp; 829B&nbsp; 029E&nbsp; 0294&nbsp; 8291</p>
+<br>
+<p>C8H&nbsp;&nbsp;&nbsp; 82B3&nbsp; 02B6&nbsp; 02BC&nbsp; 82B9</p>
+<br>
+<p>CCH&nbsp;&nbsp;&nbsp; 02A8&nbsp; 82AD&nbsp; 82A7&nbsp; 02A2</p>
+<br>
+<p>D0H&nbsp;&nbsp;&nbsp; 82E3&nbsp; 02E6&nbsp; 02EC&nbsp; 82E9</p>
+<br>
+<p>D4H&nbsp;&nbsp;&nbsp; 02F8&nbsp; 82FD&nbsp; 82F7&nbsp; 02F2</p>
+<br>
+<p>D8H&nbsp;&nbsp;&nbsp; 02D0&nbsp; 82D5&nbsp; 82DF&nbsp; 02DA</p>
+<br>
+<p>DCH&nbsp;&nbsp;&nbsp; 82CB&nbsp; 02CE&nbsp; 02C4&nbsp; 82C1</p>
+<br>
+<p>E0H&nbsp;&nbsp;&nbsp; 8243&nbsp; 0246&nbsp; 024C&nbsp; 8249</p>
+<br>
+<p>E4H&nbsp;&nbsp;&nbsp; 0258&nbsp; 825D&nbsp; 8257&nbsp; 0252</p>
+<br>
+<p>E8H&nbsp;&nbsp;&nbsp; 0270&nbsp; 8275&nbsp; 827F&nbsp; 027A</p>
+<br>
+<p>ECH&nbsp;&nbsp;&nbsp; 826B&nbsp; 026E&nbsp; 0264&nbsp; 8261</p>
+<br>
+<p>F0H&nbsp;&nbsp;&nbsp; 0220&nbsp; 8225&nbsp; 822F&nbsp; 022A</p>
+<br>
+<p>F4H&nbsp;&nbsp;&nbsp; 823B&nbsp; 023E&nbsp; 0234&nbsp; 8231</p>
+<br>
+<p>F8H&nbsp;&nbsp;&nbsp; 8213&nbsp; 0216&nbsp; 021C&nbsp; 8219</p>
+<br>
+<p>FCH&nbsp;&nbsp;&nbsp; 0208&nbsp; 820D&nbsp; 8207&nbsp; 0202</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>CRC32直接查询表</strong></p>
+<br>
+<p>00H&nbsp;&nbsp;&nbsp; 00000000&nbsp; 04C11DB7&nbsp; 09823B6E&nbsp; 0D4326D9</p>
+<br>
+<p>04H&nbsp;&nbsp;&nbsp; 130476DC&nbsp; 17C56B6B&nbsp; 1A864DB2&nbsp; 1E475005</p>
+<br>
+<p>08H&nbsp;&nbsp;&nbsp; 2608EDB8&nbsp; 22C9F00F&nbsp; 2F8AD6D6&nbsp; 2B4BCB61</p>
+<br>
+<p>0CH&nbsp;&nbsp;&nbsp; 350C9B64&nbsp; 31CD86D3&nbsp; 3C8EA00A&nbsp; 384FBDBD</p>
+<br>
+<p>10H&nbsp;&nbsp;&nbsp; 4C11DB70&nbsp; 48D0C6C7&nbsp; 4593E01E&nbsp; 4152FDA9</p>
+<br>
+<p>14H&nbsp;&nbsp;&nbsp; 5F15ADAC&nbsp; 5BD4B01B&nbsp; 569796C2&nbsp; 52568B75</p>
+<br>
+<p>18H&nbsp;&nbsp;&nbsp; 6A1936C8&nbsp; 6ED82B7F&nbsp; 639B0DA6&nbsp; 675A1011</p>
+<br>
+<p>1CH&nbsp;&nbsp;&nbsp; 791D4014&nbsp; 7DDC5DA3&nbsp; 709F7B7A&nbsp; 745E66CD</p>
+<br>
+<p>20H&nbsp;&nbsp;&nbsp; 9823B6E0&nbsp; 9CE2AB57&nbsp; 91A18D8E&nbsp; 95609039</p>
+<br>
+<p>24H&nbsp;&nbsp;&nbsp; 8B27C03C&nbsp; 8FE6DD8B&nbsp; 82A5FB52&nbsp; 8664E6E5</p>
+<br>
+<p>28H&nbsp;&nbsp;&nbsp; BE2B5B58&nbsp; BAEA46EF&nbsp; B7A96036&nbsp; B3687D81</p>
+<br>
+<p>2CH&nbsp;&nbsp;&nbsp; AD2F2D84&nbsp; A9EE3033&nbsp; A4AD16EA&nbsp; A06C0B5D</p>
+<br>
+<p>30H&nbsp;&nbsp;&nbsp; D4326D90&nbsp; D0F37027&nbsp; DDB056FE&nbsp; D9714B49</p>
+<br>
+<p>34H&nbsp;&nbsp;&nbsp; C7361B4C&nbsp; C3F706FB&nbsp; CEB42022&nbsp; CA753D95</p>
+<br>
+<p>38H&nbsp;&nbsp;&nbsp; F23A8028&nbsp; F6FB9D9F&nbsp; FBB8BB46&nbsp; FF79A6F1</p>
+<br>
+<p>3CH&nbsp;&nbsp;&nbsp; E13EF6F4&nbsp; E5FFEB43&nbsp; E8BCCD9A&nbsp; EC7DD02D</p>
+<br>
+<p>40H&nbsp;&nbsp;&nbsp; 34867077&nbsp; 30476DC0 &nbsp;3D044B19&nbsp; 39C556AE</p>
+<br>
+<p>44H&nbsp;&nbsp;&nbsp; 278206AB&nbsp; 23431B1C&nbsp; 2E003DC5&nbsp; 2AC12072</p>
+<br>
+<p>48H&nbsp;&nbsp;&nbsp; 128E9DCF&nbsp; 164F8078&nbsp; 1B0CA6A1&nbsp; 1FCDBB16</p>
+<br>
+<p>4CH&nbsp;&nbsp;&nbsp; 018AEB13&nbsp; 054BF6A4&nbsp; 0808D07D&nbsp; 0CC9CDCA</p>
+<br>
+<p>50H&nbsp;&nbsp;&nbsp; 7897AB07&nbsp; 7C56B6B0&nbsp; 71159069&nbsp; 75D48DDE</p>
+<br>
+<p>54H&nbsp;&nbsp;&nbsp; 6B93DDDB&nbsp; 6F52C06C&nbsp; 6211E6B5&nbsp; 66D0FB02</p>
+<br>
+<p>58H&nbsp;&nbsp; &nbsp;5E9F46BF&nbsp; 5A5E5B08&nbsp; 571D7DD1&nbsp; 53DC6066</p>
+<br>
+<p>5CH&nbsp;&nbsp;&nbsp; 4D9B3063&nbsp; 495A2DD4&nbsp; 44190B0D&nbsp; 40D816BA</p>
+<br>
+<p>60H&nbsp;&nbsp;&nbsp; ACA5C697&nbsp; A864DB20&nbsp; A527FDF9&nbsp; A1E6E04E</p>
+<br>
+<p>64H&nbsp;&nbsp;&nbsp; BFA1B04B&nbsp; BB60ADFC&nbsp; B6238B25&nbsp; B2E29692</p>
+<br>
+<p>68H&nbsp;&nbsp;&nbsp; 8AAD2B2F&nbsp; 8E6C3698&nbsp; 832F1041&nbsp; 87EE0DF6</p>
+<br>
+<p>6CH&nbsp;&nbsp;&nbsp; 99A95DF3&nbsp; 9D684044&nbsp; 902B669D&nbsp; 94EA7B2A</p>
+<br>
+<p>70H&nbsp;&nbsp;&nbsp; E0B41DE7&nbsp; E4750050&nbsp; E9362689&nbsp; EDF73B3E</p>
+<br>
+<p>74H&nbsp;&nbsp;&nbsp; F3B06B3B&nbsp; F771768C&nbsp; FA325055&nbsp; FEF34DE2</p>
+<br>
+<p>78H&nbsp;&nbsp;&nbsp; C6BCF05F&nbsp; C27DEDE8&nbsp; CF3ECB31&nbsp; CBFFD686</p>
+<br>
+<p>7CH&nbsp;&nbsp;&nbsp; D5B88683&nbsp; D1799B34&nbsp; DC3ABDED&nbsp; D8FBA05A</p>
+<br>
+<p>80H&nbsp;&nbsp;&nbsp; 690CE0EE&nbsp; 6DCDFD59&nbsp; 608EDB80&nbsp; 644FC637</p>
+<br>
+<p>84H&nbsp;&nbsp;&nbsp; 7A089632&nbsp; 7EC98B85&nbsp; 738AAD5C&nbsp; 774BB0EB</p>
+<br>
+<p>88H&nbsp;&nbsp;&nbsp; 4F040D56&nbsp; 4BC510E1&nbsp; 46863638&nbsp; 42472B8F</p>
+<br>
+<p>8CH&nbsp;&nbsp;&nbsp; 5C007B8A&nbsp; 58C1663D&nbsp; 558240E4&nbsp; 51435D53</p>
+<br>
+<p>90H&nbsp;&nbsp;&nbsp; 251D3B9E&nbsp; 21DC2629&nbsp; 2C9F00F0&nbsp; 285E1D47</p>
+<br>
+<p>94H&nbsp;&nbsp;&nbsp; 36194D42&nbsp; 32D850F5&nbsp; 3F9B762C&nbsp; 3B5A6B9B</p>
+<br>
+<p>98H&nbsp;&nbsp;&nbsp; 0315D626&nbsp; 07D4CB91&nbsp; 0A97ED48&nbsp; 0E56F0FF</p>
+<br>
+<p>9CH&nbsp;&nbsp;&nbsp; 1011A0FA&nbsp; 14D0BD4D&nbsp; 19939B94&nbsp; 1D528623</p>
+<br>
+<p>A0H&nbsp;&nbsp;&nbsp; F12F560E&nbsp; F5EE4BB9&nbsp; F8AD6D60&nbsp; FC6C70D7</p>
+<br>
+<p>A4H&nbsp;&nbsp;&nbsp; E22B20D2&nbsp; E6EA3D65&nbsp; EBA91BBC&nbsp; EF68060B</p>
+<br>
+<p>A8H&nbsp;&nbsp;&nbsp; D727BBB6&nbsp; D3E6A601&nbsp; DEA580D8&nbsp; DA649D6F</p>
+<br>
+<p>ACH&nbsp;&nbsp;&nbsp; C423CD6A&nbsp; C0E2D0DD&nbsp; CDA1F604&nbsp; C960EBB3</p>
+<br>
+<p>B0H&nbsp;&nbsp;&nbsp; BD3E8D7E&nbsp; B9FF90C9&nbsp; B4BCB610&nbsp; B07DABA7</p>
+<br>
+<p>B4H&nbsp;&nbsp;&nbsp; AE3AFBA2&nbsp; AAFBE615&nbsp; A7B8C0CC&nbsp; A379DD7B</p>
+<br>
+<p>B8H&nbsp;&nbsp;&nbsp; 9B3660C6&nbsp; 9FF77D71&nbsp; 92B45BA8&nbsp; 9675461F</p>
+<br>
+<p>BCH&nbsp;&nbsp;&nbsp; 8832161A&nbsp; 8CF30BAD&nbsp; 81B02D74&nbsp; 857130C3</p>
+<br>
+<p>C0H&nbsp;&nbsp;&nbsp; 5D8A9099&nbsp; 594B8D2E&nbsp; 5408ABF7&nbsp; 50C9B640</p>
+<br>
+<p>C4H&nbsp;&nbsp;&nbsp; 4E8EE645&nbsp; 4A4FFBF2&nbsp; 470CDD2B&nbsp; 43CDC09C</p>
+<br>
+<p>C8H&nbsp;&nbsp;&nbsp; 7B827D21&nbsp; 7F436096&nbsp; 7200464F&nbsp; 76C15BF8</p>
+<br>
+<p>CCH&nbsp;&nbsp;&nbsp; 68860BFD&nbsp; 6C47164A&nbsp; 61043093&nbsp; 65C52D24</p>
+<br>
+<p>D0H&nbsp;&nbsp;&nbsp; 119B4BE9&nbsp; 155A565E&nbsp; 18197087&nbsp; 1CD86D30</p>
+<br>
+<p>D4H&nbsp;&nbsp;&nbsp; 029F3D35&nbsp; 065E2082&nbsp; 0B1D065B&nbsp; 0FDC1BEC</p>
+<br>
+<p>D8H&nbsp;&nbsp;&nbsp; 3793A651&nbsp; 3352BBE6&nbsp; 3E119D3F&nbsp; 3AD08088</p>
+<br>
+<p>DCH&nbsp;&nbsp;&nbsp; 2497D08D&nbsp; 2056CD3A&nbsp; 2D15EBE3&nbsp; 29D4F654</p>
+<br>
+<p>E0H&nbsp;&nbsp;&nbsp; C5A92679&nbsp; C1683BCE&nbsp; CC2B1D17&nbsp; C8EA00A0</p>
+<br>
+<p>E4H&nbsp;&nbsp;&nbsp; D6AD50A5&nbsp; D26C4D12&nbsp; DF2F6BCB&nbsp; DBEE767C</p>
+<br>
+<p>E8H&nbsp;&nbsp;&nbsp; E3A1CBC1&nbsp; E760D676&nbsp; EA23F0AF&nbsp; EEE2ED18</p>
+<br>
+<p>ECH&nbsp;&nbsp;&nbsp; F0A5BD1D&nbsp; F464A0AA&nbsp; F9278673&nbsp; FDE69BC4</p>
+<br>
+<p>F0H&nbsp;&nbsp;&nbsp; 89B8FD09&nbsp; 8D79E0BE&nbsp; 803AC667&nbsp; 84FBDBD0</p>
+<br>
+<p>F4H &nbsp;&nbsp;&nbsp;9ABC8BD5&nbsp; 9E7D9662&nbsp; 933EB0BB&nbsp; 97FFAD0C</p>
+<br>
+<p>F8H&nbsp;&nbsp;&nbsp; AFB010B1&nbsp; AB710D06&nbsp; A6322BDF&nbsp; A2F33668</p>
+<br>
+<p>FCH&nbsp;&nbsp;&nbsp; BCB4666D&nbsp; B8757BDA&nbsp; B5365D03&nbsp; B1F740B4</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>“驱动表法”的程序：</strong></p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 注意：因生成项POLY最高位一定为“1”，故略去最高位的"1"，</p>
+<br>
+<p>unsigned short cnCRC_16 = 0x8005;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // CRC-16 = X16 + X15 + X2 + X0</p>
+<br>
+<p>unsigned short cnCRC_CCITT = 0x1021; // CRC-CCITT = X16 + X12 + X5 + X0，据说这个 16 位 CRC 多项式比上一个要好</p>
+<br>
+<p>unsigned long cnCRC_32 = 0x04C11DB7; //采用正规的CRC32的POLY</p>
+<br>
+<p>unsigned long Table_CRC16[256];&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // CRC16 表</p>
+<br>
+<p>unsigned long Table_CRC32[256];&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // CRC32 表</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 构造 16 位 CRC 表 "直接查询表"</p>
+<br>
+<p>unsigned short i16, j16;</p>
+<br>
+<p>unsigned short nData16;</p>
+<br>
+<p>unsigned short nAccum16;</p>
+<br>
+<p>for ( i16 = 0; i16 &lt; 256; i16++ )</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; nData16 = ( unsigned short )( i16 &lt;&lt; 8 );</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; nAccum16 = 0;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; for ( j16 = 0; j16 &lt; 8; j16++ )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; {</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if ( ( nData16 ^ nAccum16 ) &amp; 0x8000 )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nAccum16 = ( nAccum16 &lt;&lt; 1 ) ^ cnCRC_16;&nbsp;&nbsp; //也可以用cnCRC_CCITT</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nAccum16 &lt;&lt;= 1;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nData16 &lt;&lt;= 1;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Table_CRC16[i16] = ( unsigned long )nAccum16;</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 构造 32 位 CRC 表 "直接查询表"</p>
+<br>
+<p>unsigned long i32, j32;</p>
+<br>
+<p>unsigned long nData32;</p>
+<br>
+<p>unsigned long nAccum32;</p>
+<br>
+<p>for ( i32 = 0; i32 &lt; 256; i32++ )</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; nData32 = ( unsigned long )( i32 &lt;&lt; 24 );</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; nAccum32 = 0;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; for ( j32 = 0; j32 &lt; 8; j32++ )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; {</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if ( ( nData32 ^ nAccum32 ) &amp; 0x80000000 )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nAccum32 = ( nAccum32 &lt;&lt; 1 ) ^ cnCRC_32;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; nAccum32 &lt;&lt;= 1;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nData32 &lt;&lt;= 1;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Table_CRC32[i32] = nAccum32;</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>unsigned char 
+aData[512]={0x31,0x32,0x33,0x34};&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ //待测数据，为字串"1234"</p>
+<br>
+<p>unsigned long aSize;</p>
+<br>
+<p>unsigned long i;</p>
+<br>
+<p>unsigned char *point;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 计算 16 位 CRC 值，CRC-16 或 CRC-CCITT</p>
+<br>
+<p>//Table-Driven驱动表法，需要用到“直接查询表”（不能用“正规查询表”）；待测数据需扩展0</p>
+<br>
+<p>unsigned short CRC16_1;</p>
+<br>
+<p>aSize=4;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //数据长度字节（不包含扩展0）</p>
+<br>
+<p>CRC16_1 = 0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //寄存器归0</p>
+<br>
+<p>point=aData;</p>
+<br>
+<p>while (aSize--)&nbsp;&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; CRC16_1 = ((CRC16_1 &lt;&lt; 8) | *point++) ^ Table_CRC16[(CRC16_1 &gt;&gt; 8) &amp; 0xFF];&nbsp;</p>
+<br>
+<p>for ( i = 0; i &lt; 2; i++ )&nbsp;&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; CRC16_1 = ((CRC16_1 &lt;&lt; 8) ) ^ Table_CRC16[(CRC16_1 &gt;&gt; 8) &amp; 0xFF];&nbsp; //加入2字节的扩展0</p>
+<br>
+<p>//这时， CRC16_1中的值就是CRC</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 计算 32 位 CRC-32 值</p>
+<br>
+<p>//Table-Driven驱动表法，需要用到“直接查询表”（不能用“正规查询表”）；待测数据需扩展0</p>
+<br>
+<p>unsigned long CRC32_1;</p>
+<br>
+<p>aSize=4;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //数据长度字节（不包含扩展0）</p>
+<br>
+<p>CRC32_1=0x0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //寄存器归0</p>
+<br>
+<p>point=aData;</p>
+<br>
+<p>while (aSize--)&nbsp;&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; CRC32_1 = ((CRC32_1 &lt;&lt; 8) | *point++) ^ Table_CRC32[(CRC32_1 &gt;&gt; 24) &amp; 0xFF];&nbsp;</p>
+<br>
+<p>for ( i = 0; i &lt; 4; i++ )&nbsp;&nbsp; CRC32_1 = ((CRC32_1 &lt;&lt;
+ 8) ) ^ Table_CRC32[(CRC32_1 &gt;&gt; 24) &amp; 0xFF];//加入4字节的扩展0</p>
+<br>
+<p>//这时， CRC32_1中的值就是CRC</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>&nbsp;</strong></p>
+<br>
+<p><strong>打印查询表的语句：（在TC中实现）</strong></p>
+<br>
+<p>for ( i16 = 0; i16 &lt; 256; i16++ )</p>
+<br>
+<p>{</p>
+<br>
+<p>printf("%02xh&nbsp;&nbsp;&nbsp; %04x&nbsp; %04x&nbsp; %04x&nbsp; 
+%04x\n",i16,( unsigned short)Table_CRC16[i16],( unsigned 
+short)Table_CRC16[i16+1],( unsigned short)Table_CRC16[i16+2],( unsigned 
+short)Table_CRC16[i16+3]);</p>
+<br>
+<p>i16++;</p>
+<br>
+<p>i16++;</p>
+<br>
+<p>i16++;</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>for ( i16 = 0; i16 &lt; 256; i16++ )</p>
+<br>
+<p>{</p>
+<br>
+<p>printf("%02xh&nbsp;&nbsp;&nbsp; %08lx&nbsp; %08lx&nbsp; %08lx&nbsp; 
+%08lx\n",i16,Table_CRC32[i16],Table_CRC32[i16+1],Table_CRC32[i16+2],Table_CRC32[i16+3]);</p>
+<br>
+<p>i16++;</p>
+<br>
+<p>i16++;</p>
+<br>
+<p>i16++;</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><br clear="all">&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>五、&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 直驱表法&nbsp; DIRECT TABLE ALGORITHM</strong></p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>对于上面的算法：</p>
+<br>
+<p>1．对于尾部的w/8个扩展0字节，事实上它们的作用只是确保所有的原始数据都已被送入register，并且被算法处理。</p>
+<br>
+<p>2．如果register中的初始值是0，那么开始的4次循环，作用只是把原始数据的头4个字节送入寄存器，而没有进行真正的除法操作。就算初始值
+不是0（我注：这里并没有说是“寄存器的初始值”，而是指算法开始时的“初始化值”），开始的4次循环也只是把原始数据的头4个字节移入到
+register中，然后再把它们和一个特定常数相XOR（我注：即这时进行初始化操作，后述）。</p>
+<br>
+<p>3．因为有交换律：(A xor B) xor C = A xor (B xor C)</p>
+<br>
+<p>这些信息意味着，上面提到的算法可以被优化，待测数据不需要先循环几次进入到寄存器中后再进行处理，而是数据直接就可以处理到寄存器中。</p>
+<br>
+<p>可以这样：数据可以先与刚从寄存器移出的字节相XOR，用得到的结果值进行查表，再用表值XOR寄存器。这引出了以下<strong>“直驱表法”</strong>算法：</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; +-----&lt;Message (non augmented) 待测数据（不用扩展0）</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; v&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3&nbsp;&nbsp;&nbsp; 
+2&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; Bytes</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp; XOR----&lt;|&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+MSB&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LSB</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; XOR</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 0+----+----+----+----+</p>
+<br>
+<p>查表v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; +-----&gt;+----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 255+----+----+----+----+</p>
+<br>
+<p><strong>&nbsp;</strong></p>
+<br>
+<p><strong>&nbsp;</strong></p>
+<br>
+<p><strong>“直驱表法”算法：</strong></p>
+<br>
+<p>1.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Shift the 
+register left by one byte, reading in a new message 
+byte.（我注：老外的这句话有问题，应只是Shift the register left by one 
+byte，而不将新的信息字节读入register中。所以翻译为：寄存器左移一个字节）</p>
+<br>
+<p>2.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; XOR the top 
+byte just rotated out of the register with the next message byte to 
+yield an index into the table ([0,255]). 
+将刚从register移出的字节与新的信息字节相XOR，结果值作为定位索引，从查询表中取得相应的表值。</p>
+<br>
+<p>3.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; XOR the table value into the register. 把表值XOR到register中</p>
+<br>
+<p>4.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Goto 1 iff more augmented message bytes. 如果还有未处理的数据则回到第一步继续执行。</p>
+<br>
+<p>用C可以写成这样：</p>
+<br>
+<p>&nbsp;&nbsp; r=0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //r是寄存器，先初始化为0</p>
+<br>
+<p>&nbsp;&nbsp; while (len--)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //len是待测数据（不用扩展0）的字节长度</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r = (r&lt;&lt;8) ^ t[(r &gt;&gt; 24) ^ *p++]; &nbsp;//p是指向待测数据的指针,t是查询表</p>
+<br>
+<p>算法相当于：</p>
+<br>
+<p>寄存器左移出1字节，右边补0；</p>
+<br>
+<p>移出的字节与待测信息字节进行XOR，根据结果值查表，得表值</p>
+<br>
+<p>表值与寄存器进行XOR</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>注意：</strong></p>
+<br>
+<p>这个<strong>“直驱表法”</strong>算法的数学原理我也不明白，但它肯定是从<strong>“驱动表法”</strong>算法推导出来的，得到的CRC结果值是完全一样的！只是它们的处理方式是不一样的。</p>
+<br>
+<p>这个算法很方便，原始数据不需要先用0扩展W位；</p>
+<br>
+<p>这个算法很方便，第一次循环就能够处理待测数据并在寄存器中生成结果，而不单纯只是将数据移动到寄存器中去而已；</p>
+<br>
+<p>这个算法，用的是和<strong>“驱动表法”</strong>同样的“直接查询表”，而不是“正规查询表”。</p>
+<br>
+<p>正是由于处理方式不一样，所以如果寄存器初始化预置值不为0，那么本算法可不受影响，而<strong>“驱动表法”</strong>则需要将预置值再另外XOR到寄存器中。后述。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>“直驱表法”的程序：</strong></p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 注意：因生成项POLY最高位一定为“1”，故略去最高位的"1"，</p>
+<br>
+<p>unsigned short cnCRC_16 = 0x8005;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // CRC-16 = X16 + X15 + X2 + X0</p>
+<br>
+<p>unsigned short cnCRC_CCITT = 0x1021; // CRC-CCITT = X16 + X12 + X5 + X0，据说这个 16 位 CRC 多项式比上一个要好</p>
+<br>
+<p>unsigned long cnCRC_32 = 0x04C11DB7; //采用正规的CRC32的POLY</p>
+<br>
+<p>unsigned long Table_CRC16[256];&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // CRC16 表</p>
+<br>
+<p>unsigned long Table_CRC32[256];&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // CRC32 表</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 构造 16 位 CRC 表 "直接查询表"</p>
+<br>
+<p>unsigned short i16, j16;</p>
+<br>
+<p>unsigned short nData16;</p>
+<br>
+<p>unsigned short nAccum16;</p>
+<br>
+<p>for ( i16 = 0; i16 &lt; 256; i16++ )</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; nData16 = ( unsigned short )( i16 &lt;&lt; 8 );</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; nAccum16 = 0;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; for ( j16 = 0; j16 &lt; 8; j16++ )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; {</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if ( ( nData16 ^ nAccum16 ) &amp; 0x8000 )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nAccum16 = ( nAccum16 &lt;&lt; 1 ) ^ cnCRC_16;&nbsp;&nbsp; //也可以用cnCRC_CCITT</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nAccum16 &lt;&lt;= 1;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nData16 &lt;&lt;= 1;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Table_CRC16[i16] = ( unsigned long )nAccum16;</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 构造 32 位 CRC 表 "直接查询表"</p>
+<br>
+<p>unsigned long i32, j32;</p>
+<br>
+<p>unsigned long nData32;</p>
+<br>
+<p>unsigned long nAccum32;</p>
+<br>
+<p>for ( i32 = 0; i32 &lt; 256; i32++ )</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; nData32 = ( unsigned long )( i32 &lt;&lt; 24 );</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; nAccum32 = 0;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; for ( j32 = 0; j32 &lt; 8; j32++ )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; {</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if ( ( nData32 ^ nAccum32 ) &amp; 0x80000000 )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nAccum32 = ( nAccum32 &lt;&lt; 1 ) ^ cnCRC_32;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nAccum32 &lt;&lt;= 1;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nData32 &lt;&lt;= 1;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Table_CRC32[i32] = nAccum32;</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>unsigned char 
+aData[512]={0x31,0x32,0x33,0x34};&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ //待测数据，为字串"1234"</p>
+<br>
+<p>unsigned long aSize;</p>
+<br>
+<p>unsigned long i;</p>
+<br>
+<p>unsigned char *point;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 计算 16 位 CRC 值，CRC-16 或 CRC-CCITT</p>
+<br>
+<p>//DIRECT TABLE直驱表法，需要用到“直接查询表”（不能用“正规查询表”）；待测数据不需要扩展0</p>
+<br>
+<p>unsigned short CRC16_2;</p>
+<br>
+<p>aSize=4;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //数据长度字节（数据不用扩展0了）</p>
+<br>
+<p>CRC16_2 = 0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //寄存器中预置初始值</p>
+<br>
+<p>point=aData;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<br>
+<p>for ( i = 0; i &lt; aSize; i++ )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; CRC16_2 = ( CRC16_2 &lt;&lt; 8 ) ^ ( unsigned short ) Table_CRC16[( CRC16_2 &gt;&gt; 8 ) ^ *point++];</p>
+<br>
+<p>//这时， CRC16_2中的值就是CRC</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 计算 32 位 CRC-32 值</p>
+<br>
+<p>//DIRECT TABLE直驱表法，需要用到“直接查询表”（不能用“正规查询表”）；待测数据不需要扩展0</p>
+<br>
+<p>unsigned long CRC32_2;</p>
+<br>
+<p>aSize=4;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //数据长度字节（数据不用扩展0了）</p>
+<br>
+<p>CRC32_2 = 0x0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //寄存器中预置初始值</p>
+<br>
+<p>point=aData;</p>
+<br>
+<p>for ( i = 0; i &lt; aSize; i++ )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; CRC32_2 = ( CRC32_2 &lt;&lt; 8 ) ^ Table_CRC32[( CRC32_2 &gt;&gt; 24 ) ^ *point++];</p>
+<br>
+<p>//这时， CRC32_2中的值就是CRC</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><br clear="all">&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>六、&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CRC的参数模型</strong></p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>实际上，这时已经可以计算出与WINRAR相同的CRC32值了。但是会发现，算出的结果和WINRAR是不一样的，为什么？因为不仅仅是生成项POLY会影响到CRC值，还有很多参数会影响到最终的CRC值！</p>
+<br>
+<p>CRC计算，需要有CRC参数模型，比如CRC32的参数模型是：</p>
+<br>
+<p>&nbsp;&nbsp; Name&nbsp;&nbsp; : "CRC-32"</p>
+<br>
+<p>&nbsp;&nbsp; Width&nbsp; : 32</p>
+<br>
+<p>&nbsp;&nbsp; Poly&nbsp;&nbsp; : 04C11DB7</p>
+<br>
+<p>&nbsp;&nbsp; Init&nbsp;&nbsp; : FFFFFFFF</p>
+<br>
+<p>&nbsp;&nbsp; RefIn&nbsp; : True</p>
+<br>
+<p>&nbsp;&nbsp; RefOut : True</p>
+<br>
+<p>&nbsp;&nbsp; XorOut : FFFFFFFF</p>
+<br>
+<p>&nbsp;&nbsp; Check&nbsp; : CBF43926</p>
+<br>
+<p><strong>解释：</strong></p>
+<br>
+<p><strong>NAME</strong></p>
+<br>
+<p>名称</p>
+<br>
+<p><strong>WIDTH</strong></p>
+<br>
+<p>宽度，即CRC比特数</p>
+<br>
+<p><strong>POLY</strong></p>
+<br>
+<p>生成项的简写。以16进制表示，即是0x04C11DB7。忽略了最高位的"1"，即完整的生成项是0x104C11DB7。</p>
+<br>
+<p>重要的一点是，这是“未颠倒”的生成项！前面说过，“颠倒的”生成项是0xEDB88320。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>INIT</strong></p>
+<br>
+<p>这是算法开始时寄存器的初始化预置值，十六进制表示。</p>
+<br>
+<p>这个值可以直接赋值给“直驱表法”算法中的寄存器，作为寄存器的初始值！</p>
+<br>
+<p>而对于“驱动表法”算法及“直接计算法”，寄存器的初始值必须是0！前面几次循环先将待测数据移入到寄存器中，当寄存器装满后，再用这个初始化预置值去XOR寄存器，这样寄存器就被这个值初始化了！</p>
+<br>
+<p>这点很重要！！如果在“驱动表法”算法开始时，寄存器的初始值不为0，那么寄存器中的值就会相当于是待测数据了，这样算出的CRC结果就不对了！我们的目的是用预置值去初始化寄存器，而不是将预置值作为待测数据去处理！</p>
+<br>
+<p><strong>REFIN</strong></p>
+<br>
+<p>这个值是真TRUE或假FALSE。</p>
+<br>
+<p>如果这个值是FALSE，表示待测数据的每个字节都不用“颠倒”，即BIT7仍是作为最高位，BIT0作为最低位。</p>
+<br>
+<p>如果这个值是TRUE，表示待测数据的每个字节都要先“颠倒”，即BIT7作为最低位，BIT0作为最高位。</p>
+<br>
+<p><strong>REFOUT</strong></p>
+<br>
+<p>这个值是真TRUE或假FALSE。</p>
+<br>
+<p>如果这个值是FALSE，表示计算结束后，寄存器中的值直接进入XOROUT处理即可。</p>
+<br>
+<p>如果这个值是TRUE，表示计算结束后，寄存器中的值要先“颠倒”，再进入XOROUT处理。注意，这是将<strong>整个寄存器的值颠倒</strong>，因为寄存器的各个字节合起来表达了一个值，如果只是对各个字节各自颠倒，那结果值就错误了。</p>
+<br>
+<p><strong>XOROUT</strong></p>
+<br>
+<p>这是W位长的16进制数值。</p>
+<br>
+<p>这个值与经REFOUT后的寄存器的值相XOR，得到的值就是最终正式的CRC值！</p>
+<br>
+<p>CHECK</p>
+<br>
+<p>这不是定义值的一部分，这只是字串"123456789"用这个CRC参数模型计算后得到的CRC值，作为参考。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>我们发现，CRC32模型的Init=0xFFFFFFFF，就是说寄存器要用0xFFFFFFFF进行初始化，而不是0。</p>
+<br>
+<p>为什么？因为待测数据的内容和长度是随机的，如果寄存器初始值为0，那么，待测字节是1字节的0x00，与待测字节是N字节的0x00，计算出来的CRC32值都是0，那CRC值就没有意义了！所以寄存器用0xFFFFFFFF进行初始化，就可以避免这个问题了！</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>RefIn=True，表示输入数据的每个字节需要“颠倒”！为什么要“颠倒”，因为很多硬件在发送时是先发送最低位LSB的！比如UART等。</p>
+<br>
+<p>字节顺序不用颠倒，只是每个字节内部的比特进行颠倒。例如待测的字串是"1234"，这时也是一样先处理"1"，再处理"2"，一直到处理"4"。
+处理字符"1"时，它是0x31，即0011 0001，需要先将它颠倒，变成低位在前，即1000 1100，即0x8C，再进行处理。</p>
+<br>
+<p>也就是说，待处理的数据是0x31 32 33 34，颠倒后就变成0x8C 4C CC 2C，再进行CRC计算。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>RefOut=True，表示计算完成后，要将寄存器中的值再颠倒。注意，这是将<strong>整个寄存器</strong>的值颠倒，即如果寄存器中的值是0x31 32 33 34，颠倒后就变成0x2C CC 4C 8C！</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>XorOut=FFFFFFFF，表示还需要将结果值与0xffffffff进行XOR，这样就得到最终的CRC32值了！</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>我们直接用“<strong>直驱表法</strong>”，计算字串"1234"的CRC32值。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>程序如下：</strong></p>
+<br>
+<p><strong>要先做一个颠倒比特的子程序：</strong></p>
+<br>
+<p>unsigned long int Reflect(unsigned long int ref, char ch)</p>
+<br>
+<p>{</p>
+<br>
+<p>unsigned long int value=0;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; // 交换bit0和bit7，bit1和bit6，类推</p>
+<br>
+<p>for(int i = 1; i &lt; (ch + 1); i++)</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; if(ref &amp; 1)</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; value |= 1 &lt;&lt; (ch - i);</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; ref &gt;&gt;= 1;</p>
+<br>
+<p>}</p>
+<br>
+<p>return value;</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>在主程序中的程序：</strong></p>
+<br>
+<p>// 注意：因生成项POLY最高位一定为“1”，故略去最高位的"1"，</p>
+<br>
+<p>unsigned long cnCRC_32 = 0x04C11DB7; //采用正规的CRC32的POLY</p>
+<br>
+<p>unsigned long Table_CRC32[256];&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // CRC32 表</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>// 构造 32 位 CRC 表 "直接查询表"</p>
+<br>
+<p>unsigned long i32, j32;</p>
+<br>
+<p>unsigned long nData32;</p>
+<br>
+<p>unsigned long nAccum32;</p>
+<br>
+<p>for ( i32 = 0; i32 &lt; 256; i32++ )</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; nData32 = ( unsigned long )( i32 &lt;&lt; 24 );</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; nAccum32 = 0;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; for ( j32 = 0; j32 &lt; 8; j32++ )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; {</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if ( ( nData32 ^ nAccum32 ) &amp; 0x80000000 )</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nAccum32 = ( nAccum32 &lt;&lt; 1 ) ^ cnCRC_32;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nAccum32 &lt;&lt;= 1;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nData32 &lt;&lt;= 1;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Table_CRC32[i32] = nAccum32;</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>unsigned char 
+aData[512]={0x31,0x32,0x33,0x34};&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ //待测数据，为字串"1234"</p>
+<br>
+<p>unsigned long aSize;</p>
+<br>
+<p>unsigned long i;</p>
+<br>
+<p>unsigned char *point;</p>
+<br>
+<p>unsigned char chtemp;</p>
+<br>
+<p>// 计算 32 位 CRC-32 值</p>
+<br>
+<p>//Table-Driven驱动表法，需要用到“直接查询表”（不能用“正规查询表”）；待测数据需扩展0</p>
+<br>
+<p>unsigned long ii;</p>
+<br>
+<p>unsigned long CRC32_1;</p>
+<br>
+<p>aSize=4;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //数据长度字节（不包含扩展0）</p>
+<br>
+<p>CRC32_1=0x0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //寄存器归0</p>
+<br>
+<p>point=aData;</p>
+<br>
+<p>ii=0;</p>
+<br>
+<p>while (aSize--)&nbsp;&nbsp;</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; chtemp=*point++;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; chtemp=(unsigned char)Reflect(chtemp, 8);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //将数据字节内部的比特进行颠倒</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; CRC32_1 = ((CRC32_1 &lt;&lt; 8) | chtemp) ^ Table_CRC32[(CRC32_1 &gt;&gt; 24) &amp; 0xFF];&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; ii++;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; if (ii==4) CRC32_1=CRC32_1^0xffffffff;//当寄存器装满4个字节后，用预置值0xffffffff去XOR寄存器，这样寄存器就被这个值初始化了！</p>
+<br>
+<p>}</p>
+<br>
+<p>for ( i = 0; i &lt; 4; i++ )&nbsp;&nbsp;</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; CRC32_1 = ((CRC32_1 &lt;&lt; 8) ) ^ Table_CRC32[(CRC32_1 &gt;&gt; 24) &amp; 0xFF];&nbsp; //加入4字节的扩展0</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; ii++;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; if (ii==4) CRC32_1=CRC32_1^0xffffffff;//如果待测数据小于4字节，则只有在这里寄存器才会装满4个字节，才进行初始化</p>
+<br>
+<p>}</p>
+<br>
+<p>CRC32_1=Reflect(CRC32_1, 32);&nbsp;&nbsp;&nbsp; //颠倒寄存器的值</p>
+<br>
+<p>CRC32_1=CRC32_1^0xffffffff;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //寄存器的值与0xffffffff异或</p>
+<br>
+<p>//这时， CRC32_1中的值就是CRC</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>//DIRECT TABLE直驱表法，需要用到“直接查询表”（不能用“正规查询表”）；待测数据不需要扩展0</p>
+<br>
+<p>unsigned long CRC32_2;</p>
+<br>
+<p>aSize=4;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //数据长度字节（数据不用扩展0了）</p>
+<br>
+<p>CRC32_2 = 0xffffffff;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //寄存器中直接预置初始值0xffffffff即可</p>
+<br>
+<p>point=aData;</p>
+<br>
+<p>for ( i = 0; i &lt; aSize; i++ )</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; chtemp=*point++;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; chtemp=(unsigned char)Reflect(chtemp, 8);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //将数据字节内部的比特进行颠倒</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; CRC32_2 = ( CRC32_2 &lt;&lt; 8 ) ^ Table_CRC32[( CRC32_2 &gt;&gt; 24 ) ^ chtemp];</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>CRC32_2=Reflect(CRC32_2, 32);&nbsp;&nbsp;&nbsp; //颠倒寄存器的值</p>
+<br>
+<p>CRC32_2=CRC32_2^0xffffffff;&nbsp;&nbsp;&nbsp;&nbsp; //寄存器的值与0xffffffff异或</p>
+<br>
+<p>//这时， CRC32_2中的值就是CRC</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>得到的结果与WINRAR的计算结果是完全一样的！成功了！</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>其它的CRC参数模型：</strong></p>
+<br>
+<p>&nbsp;&nbsp; Name&nbsp;&nbsp; : "CRC-16"</p>
+<br>
+<p>&nbsp;&nbsp; Width&nbsp; : 16</p>
+<br>
+<p>&nbsp;&nbsp; Poly&nbsp;&nbsp; : 8005</p>
+<br>
+<p>&nbsp;&nbsp; Init&nbsp;&nbsp; : 0000</p>
+<br>
+<p>&nbsp;&nbsp; RefIn&nbsp; : True</p>
+<br>
+<p>&nbsp;&nbsp; RefOut : True</p>
+<br>
+<p>&nbsp;&nbsp; XorOut : 0000</p>
+<br>
+<p>&nbsp;&nbsp; Check&nbsp; : BB3D</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp; Name&nbsp;&nbsp; : "CRC-16/CITT"</p>
+<br>
+<p>&nbsp;&nbsp; Width&nbsp; : 16</p>
+<br>
+<p>&nbsp;&nbsp; Poly&nbsp;&nbsp; : 1021</p>
+<br>
+<p>&nbsp;&nbsp; Init&nbsp;&nbsp; : FFFF</p>
+<br>
+<p>&nbsp;&nbsp; RefIn&nbsp; : False</p>
+<br>
+<p>&nbsp;&nbsp; RefOut : False</p>
+<br>
+<p>&nbsp;&nbsp; XorOut : 0000</p>
+<br>
+<p>&nbsp;&nbsp; Check&nbsp; : ?</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp; Name&nbsp;&nbsp; : "XMODEM"</p>
+<br>
+<p>&nbsp;&nbsp; Width&nbsp; : 16</p>
+<br>
+<p>&nbsp;&nbsp; Poly&nbsp;&nbsp; : 8408</p>
+<br>
+<p>&nbsp;&nbsp; Init&nbsp;&nbsp; : 0000</p>
+<br>
+<p>&nbsp;&nbsp; RefIn&nbsp; : True</p>
+<br>
+<p>&nbsp;&nbsp; RefOut : True</p>
+<br>
+<p>&nbsp;&nbsp; XorOut : 0000</p>
+<br>
+<p>&nbsp;&nbsp; Check&nbsp; : ?</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp; Name&nbsp;&nbsp; : "ARC"</p>
+<br>
+<p>&nbsp;&nbsp; Width&nbsp; : 16</p>
+<br>
+<p>&nbsp;&nbsp; Poly&nbsp;&nbsp; : 8005</p>
+<br>
+<p>&nbsp;&nbsp; Init&nbsp;&nbsp; : 0000</p>
+<br>
+<p>&nbsp;&nbsp; RefIn&nbsp; : True</p>
+<br>
+<p>&nbsp;&nbsp; RefOut : True</p>
+<br>
+<p>&nbsp;&nbsp; XorOut : 0000</p>
+<br>
+<p>&nbsp;&nbsp; Check&nbsp; : ?</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><br clear="all">&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>七、&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 最后的战斗－“颠倒的直驱表法”算法 "Reflected" Table-Driven Implementations</strong></p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>颠倒，也就是镜像！</p>
+<br>
+<p>CRC32要求输入的字节要颠倒，那么在程序中，在对每个字节处理前，还要先把这个字节先颠倒一下，再处理，那不是超级麻烦！</p>
+<br>
+<p>所以就把“<strong>直驱表法</strong>”算法颠倒一下（查询表颠倒），那么算法就可以直接处理不颠倒的字节了，就方便多了。</p>
+<br>
+<p>我们把算法照镜子：</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;“<strong>直驱表法</strong>”&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ 镜子 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>“颠倒的直驱表法”</strong></p>
+<br>
+<p>&nbsp;</p>
+<table cellspacing="0" cellpadding="0">
+<tbody>
+<tr>
+<td><br>
+<div><br>
+<p>&nbsp;&nbsp;&nbsp; +-----&lt;Message (non augmented) 待测数据（要颠倒）</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+3&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp; 
+0&nbsp;&nbsp; Bytes</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp; XOR----&lt;|&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+MSB&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LSB</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; XOR</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp; &nbsp;00H +----+----+----+----+</p>
+<br>
+<p>查表v &nbsp;01H +----+----+----+----+ 04C11DB7H</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp; &nbsp;02H +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp; &nbsp;03H +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;+----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;+----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;+----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp; +-----&gt; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;+----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;80H +----+----+----+----+ 690CE0EEH</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;+----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;+----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;FFH +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 索引值和表值都不颠倒</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>待测数据（不颠倒）Message (non augmented) &gt;-----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Bytes&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp; 
+2&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp; 
+0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+|&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 
+|&nbsp;&nbsp;&nbsp; |&gt;----XOR</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MSB 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ LSB&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ 
+|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ 
+XOR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ 
+|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+ 00H&nbsp; |</p>
+<br>
+<p>&nbsp;EDB88320H +----+----+----+----+ 80H&nbsp; v查表</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+ C0H&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+ 20H&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+ A0H&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+&lt;-----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>77073096H +----+----+----+----+ 01H</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+255</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;索引值和表值都颠倒</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+&nbsp;
+<p>&nbsp;</p>
+<br>
+<p><br clear="all">&nbsp;</p>
+<br>
+<p>“颠倒的直驱表法”用的查询表，是网上可以找到的查询表，我叫它“<strong>正规查询表</strong>”，实际就是“<strong>颠倒的直接查询表</strong>”。对应关系是：</p>
+<br>
+<p>“直接查询
+表”&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ “正规查询表”（颠倒的查询表）</p>
+<br>
+<p>0000 0000（00H）&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0000
+ 0000（00H）</p>
+<br>
+<p>0000 0001（01H）表值04C11DB7H&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1000 0000（80H）表值EDB88320H</p>
+<br>
+<p>0000 
+0010（02H）&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0100 0000（C0H）</p>
+<br>
+<p>0000 
+0011（03H）&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1100
+ 0000（20H）</p>
+<br>
+<p>0000 
+0100（04H）&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010 0000（A0H）</p>
+<br>
+<p>...</p>
+<br>
+<p>1000 0000（80H）表值690CE0EEH&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0000 0001（01H）表值77073096H</p>
+<br>
+<p>...</p>
+<br>
+<p>1111 1111（FFH）&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FFFF
+ FFFF（FFH）</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>也就是说，将“直接查询表”的索引值和表值直接镜像就是“正规查询表”。</p>
+<br>
+<p>比如，直接查询表的[01H]= 04C11DB7H，因为01H镜像后是80H，04C11DB7H镜像后是EDB88320H，就得到正规查询表的[80H]= EDB88320H。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>举例来说，假设待测的原始数据是10H，简单起见，不考虑寄存器移出的字节的影响（即假设它是00H）：</p>
+<br>
+<p>“直驱表法”，原始数据先颠倒为01H，根据01H查表得04C11DB7H，寄存器移出的字节是向左移。</p>
+<br>
+<p>“颠倒的直驱表法”，&nbsp;&nbsp;&nbsp; 直接根据原始数据10H查表得EDB88320H，寄存器移出的字节是向右移。</p>
+<br>
+<p>可见，这时这二个方法本质上是一样的。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>对于“直驱表法”，颠倒的数据用不颠倒的表索引值、得到不颠倒的表值寄存器进入寄存器，得到的寄存器结果值是不颠倒的，还要再颠倒，变成“颠倒的CRC”。</p>
+<br>
+<p>对于“颠倒的直驱表法”，不颠倒的数据用颠倒的表索引值、得到颠倒的表值寄存器进入寄存器，得到的寄存器结果值就已经是“颠倒的CRC”，不用再颠倒了。</p>
+<br>
+<p>可见，对于REFIN=TRUE并且REFOUT=TRUE的CRC模型来说（注意这个先决条件），就可以直接用“颠倒的直驱表法”来代替“直驱表法”，这样原始数据的比特不用镜像，处理起来就很简单。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>那是不是说：不颠倒的数据用不颠倒的表索引值和表值，把得到的寄存器结果值颠倒一下，就能得到和颠倒的数据一样的计算结果？不可能的。颠倒的数据和不颠倒的数据是完全不一样的数据，得到的结果完全两码事。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>注意：</strong></p>
+<br>
+<p>先决条件是<strong>REFIN=TRUE</strong>并且<strong>REFOUT=TRUE</strong>的CRC参数模型。</p>
+<br>
+<p>“<strong>颠倒的直驱表法</strong>”用的是“<strong>正规查询表</strong>”。</p>
+<br>
+<p>寄存器的初始化预置值也要颠倒。</p>
+<br>
+<p>待测数据每个字节的比特不用颠倒，因为算法的其他部分都做过颠倒处理了。</p>
+<br>
+<p>待测数据串肯定不用颠倒，即待测的字串是"1234"，这时也是一样先处理"1"，再处理"2"，一直到处理"4"。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>算法如下:</strong></p>
+<br>
+<p>1. 将寄存器向右移动一个字节。</p>
+<br>
+<p>2. 将刚移出的那个字节与待测数据中的新字节做XOR运算，得到一个指向查询表的索引值。</p>
+<br>
+<p>3. 将索引所指的表值与寄存器做XOR运算。</p>
+<br>
+<p>4. 如数据没有全部处理完，则跳到步骤1。</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>用C可以写成这样：</strong></p>
+<br>
+<p>&nbsp;&nbsp; r=0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //r是寄存器，先初始化为0</p>
+<br>
+<p>for(i=0;&nbsp; i &lt;len;&nbsp; i++) &nbsp;&nbsp;//len是待测数据（不用扩展0）的字节长度</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp; r = t[( r^(*(p+i)) ) &amp; 0xff] ^ (r &gt;&gt; 8);&nbsp; //p是指向待测数据的指针,t是查询表</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>“正规查询表”的内容是：</strong></p>
+<br>
+<p><strong>CRC16正规查询表</strong></p>
+<br>
+<p>&nbsp; 00h&nbsp;&nbsp; 0000 C0C1 C181 0140 C301 03C0 0280 C241</p>
+<br>
+<p>&nbsp; 08h&nbsp;&nbsp; C601 06C0 0780 C741 0500 C5C1 C481 0440</p>
+<br>
+<p>&nbsp; 10h&nbsp;&nbsp; CC01 0CC0 0D80 CD41 0F00 CFC1 CE81 0E40</p>
+<br>
+<p>&nbsp; 18h&nbsp;&nbsp; 0A00 CAC1 CB81 0B40 C901 09C0 0880 C841</p>
+<br>
+<p>&nbsp; 20h&nbsp;&nbsp; D801 18C0 1980 D941 1B00 DBC1 DA81 1A40</p>
+<br>
+<p>&nbsp; 28h&nbsp;&nbsp; 1E00 DEC1 DF81 1F40 DD01 1DC0 1C80 DC41</p>
+<br>
+<p>&nbsp; 30h&nbsp;&nbsp; 1400 D4C1 D581 1540 D701 17C0 1680 D641</p>
+<br>
+<p>&nbsp; 38h&nbsp;&nbsp; D201 12C0 1380 D341 1100 D1C1 D081 1040</p>
+<br>
+<p>&nbsp; 40h&nbsp;&nbsp; F001 30C0 3180 F141 3300 F3C1 F281 3240</p>
+<br>
+<p>&nbsp; 48h&nbsp;&nbsp; 3600 F6C1 F781 3740 F501 35C0 3480 F441</p>
+<br>
+<p>&nbsp; 50h&nbsp;&nbsp; 3C00 FCC1 FD81 3D40 FF01 3FC0 3E80 FE41</p>
+<br>
+<p>&nbsp; 58h&nbsp;&nbsp; FA01 3AC0 3B80 FB41 3900 F9C1 F881 3840</p>
+<br>
+<p>&nbsp; 60h&nbsp;&nbsp; 2800 E8C1 E981 2940 EB01 2BC0 2A80 EA41</p>
+<br>
+<p>&nbsp; 68h&nbsp;&nbsp; EE01 2EC0 2F80 EF41 2D00 EDC1 EC81 2C40</p>
+<br>
+<p>&nbsp; 70h&nbsp;&nbsp; E401 24C0 2580 E541 2700 E7C1 E681 2640</p>
+<br>
+<p>&nbsp; 78h&nbsp;&nbsp; 2200 E2C1 E381 2340 E101 21C0 2080 E041</p>
+<br>
+<p>&nbsp; 80h&nbsp;&nbsp; A001 60C0 6180 A141 6300 A3C1 A281 6240</p>
+<br>
+<p>&nbsp; 88h&nbsp;&nbsp; 6600 A6C1 A781 6740 A501 65C0 6480 A441</p>
+<br>
+<p>&nbsp; 90h&nbsp;&nbsp; 6C00 ACC1 AD81 6D40 AF01 6FC0 6E80 AE41</p>
+<br>
+<p>&nbsp; 98h&nbsp;&nbsp; AA01 6AC0 6B80 AB41 6900 A9C1 A881 6840</p>
+<br>
+<p>&nbsp; A0h&nbsp;&nbsp; 7800 B8C1 B981 7940 BB01 7BC0 7A80 BA41</p>
+<br>
+<p>&nbsp; A8h&nbsp;&nbsp; BE01 7EC0 7F80 BF41 7D00 BDC1 BC81 7C40</p>
+<br>
+<p>&nbsp; B0h&nbsp;&nbsp; B401 74C0 7580 B541 7700 B7C1 B681 7640</p>
+<br>
+<p>&nbsp; B8h&nbsp;&nbsp; 7200 B2C1 B381 7340 B101 71C0 7080 B041</p>
+<br>
+<p>&nbsp; C0h&nbsp;&nbsp; 5000 90C1 9181 5140 9301 53C0 5280 9241</p>
+<br>
+<p>&nbsp; C8h&nbsp;&nbsp; 9601 56C0 5780 9741 5500 95C1 9481 5440</p>
+<br>
+<p>&nbsp; D0h&nbsp;&nbsp; 9C01 5CC0 5D80 9D41 5F00 9FC1 9E81 5E40</p>
+<br>
+<p>&nbsp; D8h&nbsp;&nbsp; 5A00 9AC1 9B81 5B40 9901 59C0 5880 9841</p>
+<br>
+<p>&nbsp; E0h&nbsp;&nbsp; 8801 48C0 4980 8941 4B00 8BC1 8A81 4A40</p>
+<br>
+<p>&nbsp; E8h&nbsp;&nbsp; 4E00 8EC1 8F81 4F40 8D01 4DC0 4C80 8C41</p>
+<br>
+<p>&nbsp; F0h&nbsp;&nbsp; 4400 84C1 8581 4540 8701 47C0 4680 8641</p>
+<br>
+<p>&nbsp; F8h&nbsp;&nbsp; 8201 42C0 4380 8341 4100 81C1 8081 4040</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>CRC32正规查询表</strong></p>
+<br>
+<p>&nbsp; 00h&nbsp;&nbsp; 00000000 77073096 EE0E612C 990951BA</p>
+<br>
+<p>&nbsp; 04h&nbsp;&nbsp; 076DC419 706AF48F E963A535 9E6495A3</p>
+<br>
+<p>&nbsp; 08h&nbsp;&nbsp; 0EDB8832 79DCB8A4 E0D5E91E 97D2D988</p>
+<br>
+<p>&nbsp; 0Ch&nbsp;&nbsp; 09B64C2B 7EB17CBD E7B82D07 90BF1D91</p>
+<br>
+<p>&nbsp; 10h&nbsp;&nbsp; 1DB71064 6AB020F2 F3B97148 84BE41DE</p>
+<br>
+<p>&nbsp; 14h&nbsp;&nbsp; 1ADAD47D 6DDDE4EB F4D4B551 83D385C7</p>
+<br>
+<p>&nbsp; 18h&nbsp;&nbsp; 136C9856 646BA8C0 FD62F97A 8A65C9EC</p>
+<br>
+<p>&nbsp; 1Ch&nbsp;&nbsp; 14015C4F 63066CD9 FA0F3D63 8D080DF5</p>
+<br>
+<p>&nbsp; 20h&nbsp;&nbsp; 3B6E20C8 4C69105E D56041E4 A2677172</p>
+<br>
+<p>&nbsp; 24h&nbsp;&nbsp; 3C03E4D1 4B04D447 D20D85FD A50AB56B</p>
+<br>
+<p>&nbsp; 28h&nbsp;&nbsp; 35B5A8FA 42B2986C DBBBC9D6 ACBCF940</p>
+<br>
+<p>&nbsp; 2Ch&nbsp;&nbsp; 32D86CE3 45DF5C75 DCD60DCF ABD13D59</p>
+<br>
+<p>&nbsp; 30h&nbsp;&nbsp; 26D930AC 51DE003A C8D75180 BFD06116</p>
+<br>
+<p>&nbsp; 34h&nbsp;&nbsp; 21B4F4B5 56B3C423 CFBA9599 B8BDA50F</p>
+<br>
+<p>&nbsp; 38h&nbsp;&nbsp; 2802B89E 5F058808 C60CD9B2 B10BE924</p>
+<br>
+<p>&nbsp; 3Ch&nbsp;&nbsp; 2F6F7C87 58684C11 C1611DAB B6662D3D</p>
+<br>
+<p>&nbsp; 40h&nbsp;&nbsp; 76DC4190 01DB7106 98D220BC EFD5102A</p>
+<br>
+<p>&nbsp; 44h&nbsp;&nbsp; 71B18589 06B6B51F 9FBFE4A5 E8B8D433</p>
+<br>
+<p>&nbsp; 48h&nbsp;&nbsp; 7807C9A2 0F00F934 9609A88E E10E9818</p>
+<br>
+<p>&nbsp; 4Ch&nbsp;&nbsp; 7F6A0DBB 086D3D2D 91646C97 E6635C01</p>
+<br>
+<p>&nbsp; 50h&nbsp;&nbsp; 6B6B51F4 1C6C6162 856530D8 F262004E</p>
+<br>
+<p>&nbsp; 54h&nbsp;&nbsp; 6C0695ED 1B01A57B 8208F4C1 F50FC457</p>
+<br>
+<p>&nbsp; 58h&nbsp;&nbsp; 65B0D9C6 12B7E950 8BBEB8EA FCB9887C</p>
+<br>
+<p>&nbsp; 5Ch&nbsp;&nbsp; 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65</p>
+<br>
+<p>&nbsp; 60h&nbsp;&nbsp; 4DB26158 3AB551CE A3BC0074 D4BB30E2</p>
+<br>
+<p>&nbsp; 64h&nbsp;&nbsp; 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB</p>
+<br>
+<p>&nbsp; 68h&nbsp;&nbsp; 4369E96A 346ED9FC AD678846 DA60B8D0</p>
+<br>
+<p>&nbsp; 6Ch&nbsp;&nbsp; 44042D73 33031DE5 AA0A4C5F DD0D7CC9</p>
+<br>
+<p>&nbsp; 70h&nbsp;&nbsp; 5005713C 270241AA BE0B1010 C90C2086</p>
+<br>
+<p>&nbsp; 74h&nbsp;&nbsp; 5768B525 206F85B3 B966D409 CE61E49F</p>
+<br>
+<p>&nbsp; 78h&nbsp;&nbsp; 5EDEF90E 29D9C998 B0D09822 C7D7A8B4</p>
+<br>
+<p>&nbsp; 7Ch&nbsp;&nbsp; 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD</p>
+<br>
+<p>&nbsp; 80h&nbsp;&nbsp; EDB88320 9ABFB3B6 03B6E20C 74B1D29A</p>
+<br>
+<p>&nbsp; 84h&nbsp;&nbsp; EAD54739 9DD277AF 04DB2615 73DC1683</p>
+<br>
+<p>&nbsp; 88h&nbsp;&nbsp; E3630B12 94643B84 0D6D6A3E 7A6A5AA8</p>
+<br>
+<p>&nbsp; 8Ch&nbsp;&nbsp; E40ECF0B 9309FF9D 0A00AE27 7D079EB1</p>
+<br>
+<p>&nbsp; 90h&nbsp;&nbsp; F00F9344 8708A3D2 1E01F268 6906C2FE</p>
+<br>
+<p>&nbsp; 94h&nbsp;&nbsp; F762575D 806567CB 196C3671 6E6B06E7</p>
+<br>
+<p>&nbsp; 98h&nbsp;&nbsp; FED41B76 89D32BE0 10DA7A5A 67DD4ACC</p>
+<br>
+<p>&nbsp; 9Ch&nbsp;&nbsp; F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5</p>
+<br>
+<p>&nbsp; A0h&nbsp;&nbsp; D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252</p>
+<br>
+<p>&nbsp; A4h&nbsp;&nbsp; D1BB67F1 A6BC5767 3FB506DD 48B2364B</p>
+<br>
+<p>&nbsp; A8h&nbsp;&nbsp; D80D2BDA AF0A1B4C 36034AF6 41047A60</p>
+<br>
+<p>&nbsp; ACh&nbsp;&nbsp; DF60EFC3 A867DF55 316E8EEF 4669BE79</p>
+<br>
+<p>&nbsp; B0h&nbsp;&nbsp; CB61B38C BC66831A 256FD2A0 5268E236</p>
+<br>
+<p>&nbsp;&nbsp;B4h&nbsp;&nbsp; CC0C7795 BB0B4703 220216B9 5505262F</p>
+<br>
+<p>&nbsp; B8h&nbsp;&nbsp; C5BA3BBE B2BD0B28 2BB45A92 5CB36A04</p>
+<br>
+<p>&nbsp; BCh&nbsp;&nbsp; C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D</p>
+<br>
+<p>&nbsp; C0h&nbsp;&nbsp; 9B64C2B0 EC63F226 756AA39C 026D930A</p>
+<br>
+<p>&nbsp; C4h&nbsp;&nbsp; 9C0906A9 EB0E363F 72076785 05005713</p>
+<br>
+<p>&nbsp; C8h&nbsp;&nbsp; 95BF4A82 E2B87A14 7BB12BAE 0CB61B38</p>
+<br>
+<p>&nbsp; CCh&nbsp;&nbsp; 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21</p>
+<br>
+<p>&nbsp; D0h&nbsp;&nbsp; 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E</p>
+<br>
+<p>&nbsp; D4h&nbsp;&nbsp; 81BE16CD F6B9265B 6FB077E1 18B74777</p>
+<br>
+<p>&nbsp; D8h&nbsp;&nbsp; 88085AE6 FF0F6A70 66063BCA 11010B5C</p>
+<br>
+<p>&nbsp; DCh&nbsp;&nbsp; 8F659EFF F862AE69 616BFFD3 166CCF45</p>
+<br>
+<p>&nbsp; E0h&nbsp;&nbsp; A00AE278 D70DD2EE 4E048354 3903B3C2</p>
+<br>
+<p>&nbsp; E4h&nbsp;&nbsp; A7672661 D06016F7 4969474D 3E6E77DB</p>
+<br>
+<p>&nbsp; E8h&nbsp;&nbsp; AED16A4A D9D65ADC 40DF0B66 37D83BF0</p>
+<br>
+<p>&nbsp; ECh&nbsp;&nbsp; A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9</p>
+<br>
+<p>&nbsp; F0h&nbsp;&nbsp; BDBDF21C CABAC28A 53B39330 24B4A3A6</p>
+<br>
+<p>&nbsp; F4h&nbsp;&nbsp; BAD03605 CDD70693 54DE5729 23D967BF</p>
+<br>
+<p>&nbsp; F8h&nbsp;&nbsp; B3667A2E C4614AB8 5D681B02 2A6F2B94</p>
+<br>
+<p>&nbsp; FCh&nbsp;&nbsp; B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>“颠倒的直驱表法”的程序：</strong></p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>同样要先做一个颠倒比特的子程序：</strong></p>
+<br>
+<p>unsigned long int Reflect(unsigned long int ref, char ch)</p>
+<br>
+<p>{</p>
+<br>
+<p>unsigned long int value=0;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; // 交换bit0和bit7，bit1和bit6，类推</p>
+<br>
+<p>for(int i = 1; i &lt; (ch + 1); i++)</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; if(ref &amp; 1)</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; value |= 1 &lt;&lt; (ch - i);</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; ref &gt;&gt;= 1;</p>
+<br>
+<p>}</p>
+<br>
+<p>return value;</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>在主程序中的程序：</strong></p>
+<br>
+<p>unsigned long int crc32_table[256];</p>
+<br>
+<p>unsigned long int ulPolynomial = 0x04c11db7;</p>
+<br>
+<p>unsigned long int crc,temp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>for(int i = 0; i &lt;= 0xFF; i++)&nbsp;&nbsp; // 生成CRC32“正规查询表”</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; temp=Reflect(i, 8);</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; crc32_table[i]= temp&lt;&lt; 24;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; for (int j = 0; j &lt; 8; j++)</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; {</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; unsigned long int t1,t2;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; unsigned long int flag=crc32_table[i]&amp;0x80000000;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; t1=(crc32_table[i] &lt;&lt; 1);</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(flag==0)</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; t2=0;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; t2=ulPolynomial;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; crc32_table[i] =t1^t2 ;</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; crc=crc32_table[i];</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; crc32_table[i] = Reflect(crc32_table[i], 32);</p>
+<br>
+<p>}</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>&nbsp;&nbsp; //计算CRC32值</p>
+<br>
+<p>unsigned&nbsp;&nbsp; long&nbsp;&nbsp; CRC32;</p>
+<br>
+<p>BYTE&nbsp; DataBuf[512]={0x31,0x32,0x33,0x34};&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //待测数据，为字串"1234"</p>
+<br>
+<p>unsigned&nbsp;&nbsp; long&nbsp;&nbsp; len;</p>
+<br>
+<p>unsigned&nbsp;&nbsp; long&nbsp;&nbsp; ii;</p>
+<br>
+<p>unsigned&nbsp;&nbsp; long&nbsp;&nbsp; m_CRC = 0xFFFFFFFF;&nbsp;&nbsp;&nbsp;&nbsp; //寄存器中预置初始值</p>
+<br>
+<p>BYTE&nbsp;&nbsp; *p;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p>len=4;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //待测数据的字节长度</p>
+<br>
+<p>p = DataBuf;</p>
+<br>
+<p>for(ii=0;&nbsp; ii &lt;len;&nbsp; ii++)</p>
+<br>
+<p>{</p>
+<br>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; m_CRC = crc32_table[( m_CRC^(*(p+ii)) ) &amp; 0xff] ^ (m_CRC &gt;&gt; 8);&nbsp; //计算</p>
+<br>
+<p>}</p>
+<br>
+<p>CRC32= ~m_CRC;&nbsp;&nbsp;&nbsp;&nbsp; //取反。经WINRAR对比，CRC32值正确！！</p>
+<br>
+<p>//这时， CRC32中的值就是CRC</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><br clear="all">&nbsp;</p>
+<br>
+<p>&nbsp;</p>
+<br>
+<p><strong>八、&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 结束</strong></p>
+<br>
+<p>以上程序均在VC6中测试成功，很多程序是直接抄网上的再修改。</p>
+<br>
+<p>CRC计算其实很简单，也就才4个算法，移来移去、优化来优化去而已。</p>
+<br>
+<p>但是就是这么简单的东西，国内网上好像没有文章能说得完全明白。搞得我这种笨人花了整整5天才整理出来。</p>
+<br>
+<p>书上的都是理论一大堆，这个式子那个式子的，一头雾水，我这个非专业人士更看不懂。</p>
+<br>
+<p>应该说，用程序实现和优化算法是容易的，创造出CRC方法的人才是真正的强人。</p>
+</div></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(2266628,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow('fa00f88b-bc0a-e111-b7b9-842b2b196315');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/Ray-chen/" target="_blank"><img src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/sample_face.gif" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/Ray-chen/">rookieeeeee</a><br>
+            <a href="http://home.cnblogs.com/u/Ray-chen/followees">关注 - 1</a><br>
+            <a href="http://home.cnblogs.com/u/Ray-chen/followers">粉丝 - 2</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('fa00f88b-bc0a-e111-b7b9-842b2b196315');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(2266628,'Digg')">
+        <span class="diggnum" id="digg_count">2</span>
+    </div>
+    <div class="buryit" onclick="votePost(2266628,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/27/2265360.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/27/2265360.html" title="发布于2011-11-27 22:15">指针数组/数组指针</a><br><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/29/2266918.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/29/2266918.html" title="发布于2011-11-29 00:08">C++模板使用介绍</a><br></div>
+</div>
+
+
+		</div>
+		<div class="postDesc">posted @ <span id="post-date">2011-11-28 19:31</span> <a href="https://www.cnblogs.com/Ray-chen/">rookieeeeee</a> 阅读(<span id="post_view_count">8525</span>) 评论(<span id="post_comment_count">2</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=2266628" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(2266628);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=101650,cb_entryId=2266628,cb_blogApp=currentBlogApp,cb_blogUserGuid='fa00f88b-bc0a-e111-b7b9-842b2b196315',cb_entryCreatedDate='2011/11/28 19:31:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"><div id="comments_pager_top"></div>
+<!--done-->
+<div class="feedback_area_title">评论列表</div>
+<div class="feedbackNoItems"></div>
+	
+
+		<div class="feedbackItem">
+			<div class="feedbackListSubtitle">
+				<div class="feedbackManage">
+					&nbsp;&nbsp;<span class="comment_actions"></span>
+				</div>
+				<a href="#3579621" class="layer">#1楼</a><a name="3579621" id="comment_anchor_3579621"></a>  <span class="comment_date">2016-12-13 17:43</span> <a id="a_comment_author_3579621" href="http://home.cnblogs.com/u/942976/" target="_blank">不高兴你咬我</a> <a href="http://msg.cnblogs.com/send/%E4%B8%8D%E9%AB%98%E5%85%B4%E4%BD%A0%E5%92%AC%E6%88%91" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+			</div>
+			<div class="feedbackCon">
+				<div id="comment_body_3579621" class="blog_comment_body">这才叫教程，简单明了，让没有接触过的人一下能明白怎么回事，其他人写的些啥玩意</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(3579621,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(3579621,'Bury',this)">反对(0)</a></div>
+			</div>
+		</div>
+	
+		<div class="feedbackItem">
+			<div class="feedbackListSubtitle">
+				<div class="feedbackManage">
+					&nbsp;&nbsp;<span class="comment_actions"></span>
+				</div>
+				<a href="#4157105" class="layer">#2楼</a><a name="4157105" id="comment_anchor_4157105"></a><span id="comment-maxId" style="display:none;">4157105</span><span id="comment-maxDate" style="display:none;">2019/1/7 10:55:01</span>  <span class="comment_date">2019-01-07 10:55</span> <a id="a_comment_author_4157105" href="https://www.cnblogs.com/FlyAway2013/" target="_blank">CanntBelieve</a> <a href="http://msg.cnblogs.com/send/CanntBelieve" title="发送站内短消息" class="sendMsg2This">&nbsp;</a>
+			</div>
+			<div class="feedbackCon">
+				<div id="comment_body_4157105" class="blog_comment_body">这排版。<br><br>一个问题， 请问生成多项式是如何 的来的？ 固定的吗？ 何种算法计算得出的？<br><br>V(x)=A(x)g(x)=xRm(x) 是什么意思？</div><div class="comment_vote"><a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4157105,'Digg',this)">支持(0)</a><a href="javascript:void(0);" class="comment_bury" onclick="return voteComment(4157105,'Bury',this)">反对(0)</a></div><span id="comment_4157105_avatar" style="display:none;">http://pic.cnblogs.com/face/493842/20160218175622.png</span>
+			</div>
+		</div>
+	<div id="comments_pager_bottom"></div></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万C++/C#源码: 大型实时仿真HMI组态CAD\GIS图形源码！</a><br><a href="https://gitee.com/enterprises?from=bky-2" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-gitee')">【推荐】专业便捷的企业级代码托管服务 - Gitee 码云</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="%E5%AD%A6%E4%B9%A0CRC32%E3%80%81CRC16%E3%80%81CRC%E5%8E%9F%E7%90%86%E5%92%8C%E7%AE%97%E6%B3%95%E7%9A%84%E6%80%BB%E7%BB%93%20-%20rookieeeeee%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CLTTwN_i7-ACFUtevQodcvgJmw"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_news" style="display: none;"></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CJDXwN_i7-ACFcF7vQod9ZMD2Q"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/621160/" target="_blank">“少年强则腾讯强”？腾讯想摘掉这帽子</a><br> ·  <a href="https://news.cnblogs.com/n/621159/" target="_blank">南抖音，北快手，变现路上走一走</a><br> ·  <a href="https://news.cnblogs.com/n/621155/" target="_blank">.NET高级代码审计之XmlSerializer反序列化漏洞</a><br> ·  <a href="https://news.cnblogs.com/n/621167/" target="_blank">Lyft抢先一步IPO，滴滴该何去何从？</a><br> ·  <a href="https://news.cnblogs.com/n/621157/" target="_blank">敏捷开发入门教程</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/Ray-chen/">rookieeeeee</a><br>园龄：<a href="https://home.cnblogs.com/u/Ray-chen/" title="入园时间：2011-11-09">7年3个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/Ray-chen/followers/">2</a><br>关注：<a href="https://home.cnblogs.com/u/Ray-chen/followees/">1</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow('fa00f88b-bc0a-e111-b7b9-842b2b196315')">+加关注</a></div><script>getFollowStatus('fa00f88b-bc0a-e111-b7b9-842b2b196315')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="calendar"><div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar('2011/10/01');return false;">&lt;</a></td><td align="center">2011年11月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar('2011/12/01');return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" abbr="日" scope="col" align="center">日</th><th class="CalDayHeader" abbr="一" scope="col" align="center">一</th><th class="CalDayHeader" abbr="二" scope="col" align="center">二</th><th class="CalDayHeader" abbr="三" scope="col" align="center">三</th><th class="CalDayHeader" abbr="四" scope="col" align="center">四</th><th class="CalDayHeader" abbr="五" scope="col" align="center">五</th><th class="CalDayHeader" abbr="六" scope="col" align="center">六</th></tr><tr><td class="CalOtherMonthDay" align="center">30</td><td class="CalOtherMonthDay" align="center">31</td><td align="center">1</td><td align="center">2</td><td align="center">3</td><td align="center">4</td><td class="CalWeekendDay" align="center">5</td></tr><tr><td class="CalWeekendDay" align="center">6</td><td align="center">7</td><td align="center">8</td><td align="center">9</td><td align="center">10</td><td align="center">11</td><td class="CalWeekendDay" align="center">12</td></tr><tr><td class="CalWeekendDay" align="center"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/13.html"><u>13</u></a></td><td align="center"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/14.html"><u>14</u></a></td><td align="center"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/15.html"><u>15</u></a></td><td align="center">16</td><td align="center">17</td><td align="center">18</td><td class="CalWeekendDay" align="center">19</td></tr><tr><td class="CalWeekendDay" align="center">20</td><td align="center"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/21.html"><u>21</u></a></td><td align="center">22</td><td align="center"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/23.html"><u>23</u></a></td><td align="center"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/24.html"><u>24</u></a></td><td align="center">25</td><td class="CalWeekendDay" align="center">26</td></tr><tr><td class="CalWeekendDay" align="center"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/27.html"><u>27</u></a></td><td align="center"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/28.html"><u>28</u></a></td><td align="center"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/29.html"><u>29</u></a></td><td align="center">30</td><td class="CalOtherMonthDay" align="center">1</td><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td></tr><tr><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td><td class="CalOtherMonthDay" align="center">7</td><td class="CalOtherMonthDay" align="center">8</td><td class="CalOtherMonthDay" align="center">9</td><td class="CalOtherMonthDay" align="center">10</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script></div>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<div class="catListLink">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/Ray-chen/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/Ray-chen/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/Ray-chen/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/Ray-chen/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/Ray-chen/tag/" title="我的博客的标签列表">我的标签</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div></div><div id="sidebar_toptags" class="sidebar-block"></div><div id="sidebar_categories">
+<div class="catListPostArchive">
+<h3 class="catListTitle">随笔档案</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/Ray-chen/archive/2013/01.html">2013年1月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/Ray-chen/archive/2012/01.html">2012年1月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/Ray-chen/archive/2011/12.html">2011年12月 (26)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/Ray-chen/archive/2011/11.html">2011年11月 (15)</a> </li>
+
+</ul>
+
+</div>
+
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/28/2266628.html#4157105">1. Re:学习CRC32、CRC16、CRC原理和算法的总结</a></li>
+        <li class="recent_comment_body">这排版。<br><br>一个问题， 请问生成多项式是如何 的来的？ 固定的吗？ 何种算法计算得出的？<br><br>V(x)=A(x)g(x)=xRm(x) 是什么意思？</li>
+        <li class="recent_comment_author">--CanntBelieve</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/28/2266628.html#3579621">2. Re:学习CRC32、CRC16、CRC原理和算法的总结</a></li>
+        <li class="recent_comment_body">这才叫教程，简单明了，让没有接触过的人一下能明白怎么回事，其他人写的些啥玩意</li>
+        <li class="recent_comment_author">--不高兴你咬我</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/Ray-chen/archive/2011/12/27/2303115.html#2395187">3. Re:同步/异步与阻塞/非阻塞的区别消息</a></li>
+        <li class="recent_comment_body">学习了。。。</li>
+        <li class="recent_comment_author">--wxl</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/28/2266628.html">1. 学习CRC32、CRC16、CRC原理和算法的总结(8525)</a></li><li><a href="https://www.cnblogs.com/Ray-chen/archive/2011/12/14/2287812.html">2. MFC之HTTP客户端应用程序(6110)</a></li><li><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/14/2248496.html">3. API读取写入 ini文件内容的方法函数详解 【转】(4852)</a></li><li><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/13/2247414.html">4. VC 查找目录中是否已经存在该文件(4831)</a></li><li><a href="https://www.cnblogs.com/Ray-chen/archive/2011/12/06/2277915.html">5. LPTSTR与string互相转化 byte*和char(4739)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/28/2266628.html">1. 学习CRC32、CRC16、CRC原理和算法的总结(2)</a></li><li><a href="https://www.cnblogs.com/Ray-chen/archive/2011/12/27/2303115.html">2. 同步/异步与阻塞/非阻塞的区别消息(1)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/Ray-chen/archive/2011/11/28/2266628.html">1. 学习CRC32、CRC16、CRC原理和算法的总结(2)</a></li><li><a href="https://www.cnblogs.com/Ray-chen/archive/2011/12/08/2280897.html">2. #pragma 预处理指令详解(1)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright ©2019 rookieeeeee
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+</body></html>

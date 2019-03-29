@@ -1,0 +1,2 @@
+
+# Style for APF bash scripts:pre tags with class "apf" pre.apf{background-color:black;color:grey;font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New,monospace}
