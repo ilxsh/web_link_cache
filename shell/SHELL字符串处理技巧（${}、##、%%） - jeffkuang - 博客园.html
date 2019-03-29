@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="origin">
+    <title>SHELL字符串处理技巧（${}、##、%%） - jeffkuang - 博客园</title>
+<meta property="og:description" content="在SHELL编程中，经常要处理一些字符串变量。比如，计算长度啊、截取子串啊、字符替换啊等等，常常要用到awk、expr、sed、tr等命令。下面给大家介绍个简单的字符串处理方法，用不着嵌套复杂的子命令">
+    <link type="text/css" rel="stylesheet" href="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-LessIsMoreRight.html">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-LessIsMoreRight-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/jeffkuang/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/jeffkuang/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/jeffkuang/wlwmanifest.xml">
+    <script src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/osd.js"></script><script src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_2019032501.js"></script><script async="" src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script>var currentBlogId=102765;var currentBlogApp='jeffkuang',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js" type="text/javascript"></script>
+<link rel="preload" href="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2019032501.js" async=""></script></head>
+<body>
+<a name="top"></a>
+
+
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+		
+<!--done-->
+<div class="title"><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/jeffkuang/">jeffkuang</a></div>
+<div class="subtitle"></div>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li id="nav_sitehome"><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+<li id="nav_myhome"><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/jeffkuang/">首页</a></li>
+<li id="nav_newpost"><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+<li id="nav_contact"><a id="blog_nav_contact" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/jeffkuang">联系</a></li>
+<li id="nav_rss"><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/jeffkuang/rss">订阅</a>
+<!--<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/jeffkuang/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a>--></li>
+<li id="nav_admin"><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+</ul>
+
+		<div class="blogStats">
+			
+			<div id="blog_stats">
+<!--done-->
+随笔-9&nbsp;
+文章-303&nbsp;
+评论-3&nbsp;
+</div>
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/jeffkuang/articles/3715397.html">SHELL字符串处理技巧（${}、##、%%）</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><p>在SHELL编程中，经常要处理一些字符串变量。比如，计算长度啊、截取子串啊、字符替换啊等等，常常要用到awk、expr、sed、tr等命令。下面给大家介绍个简单的字符串处理方法，用不着嵌套复杂的子命令。</p>
+<ol>
+<li><span style="font-size: 12px;"><strong>${#VALUE</strong></span><span style="font-size: 12px;"><strong>}</strong>：计算VALUE字符串的字符数量。</span></li>
+<li><span style="font-size: 12px;"><strong>${VALUE</strong></span><span style="color: #e53333; font-size: 12px;"><strong>%</strong></span><span style="font-size: 12px;"><strong>.*}</strong>或<strong>${VALUE</strong></span><span style="color: #e53333; font-size: 12px;"><strong>%%</strong></span><span style="font-size: 12px;"><strong>.*}</strong>：</span><span style="font-size: 12px;">删除VALUE字符串中以分隔符“.”</span><span style="font-size: 12px;">匹配的右</span><span style="font-size: 12px;">边字符，保留左边字符</span>。</li>
+<li><span style="font-size: 12px;"><strong>${VALUE</strong></span><span style="color: #e53333; font-size: 12px;"><strong>#</strong></span><span style="font-size: 12px;"><strong>*.}</strong>或<strong>${VALUE</strong></span><span style="color: #e53333; font-size: 12px;"><strong>##</strong></span><span style="font-size: 12px;"><strong>*.}</strong>：</span><span style="font-size: 12px;">删除VALUE字符串中以分隔符“.”</span><span style="font-size: 12px;">匹配的左</span><span style="font-size: 12px;">边字符，保留右边字符</span>。</li>
+<li><span style="font-size: 12px;"><strong>${VALUE</strong></span><span style="color: #e53333; font-size: 12px;"><strong>/</strong></span><span style="font-size: 12px;"><strong>OLD/NEW}</strong>或<strong>${VALUE</strong></span><span style="color: #e53333; font-size: 12px;"><strong>//</strong></span><span style="font-size: 12px;"><strong>OLD/NEW}</strong>：用NEW子串</span><span style="font-size: 12px;">替换VALUE字符串中</span><span style="font-size: 12px;">匹配的OLD</span><span style="font-size: 12px;">子串。</span></li>
+</ol>
+<p><span style="font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;</span><strong><span style="font-size: 12px;">补充：</span></strong><span style="font-size: 12px;">“*”表示通配符，用于匹配字符串将被删除的字串。“.”表示字符串中分隔符，可以为任意一个或多个字符。“%”表示从左向右匹配，“#”表示从右向左匹配，“\”表示替换，都属于非贪婪匹配，即匹配符合通配符的最短结果。与“%”、“#”和</span><span style="font-size: 12px;">“/”类似的有“%%”、“##”和“//”，都属于贪婪匹配，即匹配符合通配符的最长结果。</span></p>
+<ol>
+<li><span style="font-size: 12px;"><strong>${VALUE</strong></span><span style="font-size: 12px;"><strong>:OFFSET</strong></span><span style="font-size: 12px;"><strong>}</strong>或</span><span style="font-size: 12px;"><strong>${VALUE</strong></span><span style="font-size: 12px;"><strong>:OFFSET:LENGTH}</strong></span><span style="font-size: 12px;">：</span><span style="font-size: 12px;">从VALUE字符串的左边开始中截取子串</span>。</li>
+<li><span style="font-size: 12px;"><strong>${VALUE</strong></span><span style="font-size: 12px;"><strong>:0-OFFSET</strong></span><span style="font-size: 12px;"><strong>}</strong>或</span><span style="font-size: 12px;"><strong>${VALUE</strong></span><span style="font-size: 12px;"><strong>:0-OFFSET:LENGTH}</strong>：</span><span style="font-size: 12px;">从VALUE字符串的右边开始中截取子串</span>。</li>
+</ol>
+<p><span style="font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;</span><strong><span style="font-size: 12px;">补充：</span></strong><span style="font-size: 12px;">左边第一个字符从“0”开始，右边第一个字符从“0-1”开始。 表示偏移OFFSET个字符开始，LENGTH表示要截取字符的长度。如果没有LENGTH变量，</span><span style="font-size: 12px;">表示偏移OFFSET个字符开始到字符串结束。</span></p>
+<ol>
+<li><span style="line-height: normal;"><span style="line-height: normal;"><span style="line-height: normal; font-size: 14px;"><span style="font-size: 12px;"><strong>${VALUE</strong><strong>:-WORD}</strong></span><span style="font-size: 12px;">：</span></span></span></span><span style="line-height: 22px; font-size: 12px;">当变量未定义或者值为空时，返回值为WORD的内容，否则返回变量的值。</span></li>
+<li><span style="line-height: 22px; font-size: 12px;"><span style="line-height: normal; font-size: 12px;"><span style="line-height: normal; font-size: 12px;"><strong>${VALUE</strong><strong>:=WORD}</strong>：当</span></span></span><span style="line-height: 22px; font-size: 12px;"><span style="line-height: normal; font-size: 12px;">变量未定义或者值为空时，返回WORD的值的同时并将WORD</span></span><span style="line-height: 22px; font-size: 12px;">赋值给VALUE，否则返回变量的值。</span></li>
+<li><span style="line-height: 22px; font-size: 12px;"><span style="line-height: 22px; font-size: 12px;"><span style="line-height: normal; font-size: 12px;"><span style="line-height: normal; font-size: 12px;"><strong>${VALUE</strong><strong>:+WORD}</strong>：当</span></span></span><span style="line-height: 22px; font-size: 14px;"><span style="font-size: 12px;">变量</span><span style="font-size: 12px;">已</span><span style="font-size: 12px;">赋值时，其值才用WORD替换，否则不进行任何替换。</span></span></span></li>
+<li><span style="line-height: 22px; font-size: 12px;"><span style="line-height: normal; font-size: 12px;"><span style="line-height: normal; font-size: 12px;"><strong>${VALUE</strong><strong>:?MESSAGE}</strong>：当</span></span></span><span style="line-height: 22px; font-size: 12px;"><span style="line-height: normal; font-size: 12px;">变量已赋值时，正常替换。否则将消息MESSAGE送到标准错误输出（若</span></span><span style="line-height: 22px; font-size: 12px;">此替换出现在SHELL程序中，那么该程序将终止运行）</span>。</li>
+</ol>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;<strong>补充：</strong>WORD可以为一个字符串，也可以为一个变量。当为变量时，需要用“$”引用该变量。</p></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory">分类: <a href="https://www.cnblogs.com/jeffkuang/category/574631.html" target="_blank">Linux</a></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(3715397,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow('17aad097-6d16-e111-b422-842b2b196315');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/jeffkuang/" target="_blank"><img src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/sample_face.gif" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/jeffkuang/">jeffkuang</a><br>
+            <a href="http://home.cnblogs.com/u/jeffkuang/followees">关注 - 0</a><br>
+            <a href="http://home.cnblogs.com/u/jeffkuang/followers">粉丝 - 11</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('17aad097-6d16-e111-b422-842b2b196315');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(3715397,'Digg')">
+        <span class="diggnum" id="digg_count">1</span>
+    </div>
+    <div class="buryit" onclick="votePost(3715397,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/jeffkuang/articles/3709158.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/jeffkuang/articles/3709158.html" title="发布于2014-05-05 14:20">Ubuntu安装Vmware Tools后hgfs无法看到共享文件的解决方法</a><br><a href="https://www.cnblogs.com/jeffkuang/articles/3731436.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/jeffkuang/articles/3731436.html" title="发布于2014-05-16 09:13">Ubuntu  如何安装VMware tools</a><br></div>
+</div>
+
+
+		</div>
+		<div class="postDesc">posted @ <span id="post-date">2014-05-08 09:08</span> <a href="https://www.cnblogs.com/jeffkuang/">jeffkuang</a> 阅读(<span id="post_view_count">4698</span>) 评论(<span id="post_comment_count">0</span>) &nbsp;<a href="https://i.cnblogs.com/EditArticles.aspx?postid=3715397" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(3715397);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=102765,cb_entryId=3715397,cb_blogApp=currentBlogApp,cb_blogUserGuid='17aad097-6d16-e111-b422-842b2b196315',cb_entryCreatedDate='2014/5/8 9:08:00';loadViewCount(cb_entryId);var cb_postType=2;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="https://cloud.baidu.com/campaign/purchase-2019/index.html?track=cp:dsp|pf:pc|pp:chui-bokeyuan-huodong-19caigouji-BCC-neiyeCH-190311|pu:neiyeCH-wenzilian|ci:2019cgj|kw:2105959" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-百度云')">【推荐】百度云“猪”你开年行大运，红包疯狂拿，低至1折</a><br><a href="https://gitee.com/enterprises?from=bky-2" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-gitee')">【推荐】专业便捷的企业级代码托管服务 - Gitee 码云</a><br><a href="https://www.bagevent.com/event/2468856" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-GAITC')">【活动】2019第四届全球人工技术大会解码“智能+时代”</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="SHELL%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A4%84%E7%90%86%E6%8A%80%E5%B7%A7%EF%BC%88$%7B%7D%E3%80%81%23%23%E3%80%81%%%EF%BC%89%20-%20jeffkuang%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CNv6xLXppuECFQ68lgodW-UL9Q"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>相关博文：</b><br>·  <a href="https://www.cnblogs.com/pmars/archive/2013/02/17/2914444.html" target="_blank" onclick="clickRecomItmem(2914444)">SHELL字符串处理技巧（${}、##、%%）</a><br>·  <a href="https://www.cnblogs.com/stephen-liu74/archive/2011/12/20/2285454.html" target="_blank" onclick="clickRecomItmem(2285454)">Linux Shell常用技巧(目录)</a><br>·  <a href="https://www.cnblogs.com/cdyboke/p/7300276.html" target="_blank" onclick="clickRecomItmem(7300276)">shell 字符串处理</a><br>·  <a href="https://www.cnblogs.com/tychyg/p/5067453.html" target="_blank" onclick="clickRecomItmem(5067453)">shell字符串操作技巧</a><br>·  <a href="https://www.cnblogs.com/stephen-liu74/archive/2011/12/22/2271167.html" target="_blank" onclick="clickRecomItmem(2271167)">Linux Shell高级技巧(一)</a><br></div></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CNz6xLXppuECFQ68lgodW-UL9Q"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/622981/" target="_blank">消息称顺丰优选社区店内部已过会停止运营</a><br> ·  <a href="https://news.cnblogs.com/n/622982/" target="_blank">Chromium版Edge浏览器来了！它到底体验如何</a><br> ·  <a href="https://news.cnblogs.com/n/622994/" target="_blank">新AirPods评测：我戴了24小时，体验到这6大变化</a><br> ·  <a href="https://news.cnblogs.com/n/622990/" target="_blank">社交软件不“社交”？00后用来搞灰产</a><br> ·  <a href="https://news.cnblogs.com/n/622989/" target="_blank">推特治国算什么？数字化先锋爱沙尼亚开启了AI治国</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/jeffkuang/">jeffkuang</a><br>园龄：<a href="https://home.cnblogs.com/u/jeffkuang/" title="入园时间：2011-11-24">7年4个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/jeffkuang/followers/">11</a><br>关注：<a href="https://home.cnblogs.com/u/jeffkuang/followees/">0</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow('17aad097-6d16-e111-b422-842b2b196315')">+加关注</a></div><script>getFollowStatus('17aad097-6d16-e111-b422-842b2b196315')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="calendar"><div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/02/01');return false;">&lt;</a></td><td align="center">2019年3月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/04/01');return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" abbr="日" scope="col" align="center">日</th><th class="CalDayHeader" abbr="一" scope="col" align="center">一</th><th class="CalDayHeader" abbr="二" scope="col" align="center">二</th><th class="CalDayHeader" abbr="三" scope="col" align="center">三</th><th class="CalDayHeader" abbr="四" scope="col" align="center">四</th><th class="CalDayHeader" abbr="五" scope="col" align="center">五</th><th class="CalDayHeader" abbr="六" scope="col" align="center">六</th></tr><tr><td class="CalOtherMonthDay" align="center">24</td><td class="CalOtherMonthDay" align="center">25</td><td class="CalOtherMonthDay" align="center">26</td><td class="CalOtherMonthDay" align="center">27</td><td class="CalOtherMonthDay" align="center">28</td><td align="center">1</td><td class="CalWeekendDay" align="center">2</td></tr><tr><td class="CalWeekendDay" align="center">3</td><td align="center">4</td><td align="center">5</td><td align="center">6</td><td align="center">7</td><td align="center">8</td><td class="CalWeekendDay" align="center">9</td></tr><tr><td class="CalWeekendDay" align="center">10</td><td align="center">11</td><td align="center">12</td><td align="center">13</td><td align="center">14</td><td align="center">15</td><td class="CalWeekendDay" align="center">16</td></tr><tr><td class="CalWeekendDay" align="center">17</td><td align="center">18</td><td align="center">19</td><td align="center">20</td><td align="center">21</td><td align="center">22</td><td class="CalWeekendDay" align="center">23</td></tr><tr><td class="CalWeekendDay" align="center">24</td><td align="center">25</td><td align="center">26</td><td align="center">27</td><td align="center">28</td><td class="CalTodayDay" align="center">29</td><td class="CalWeekendDay" align="center">30</td></tr><tr><td class="CalWeekendDay" align="center">31</td><td class="CalOtherMonthDay" align="center">1</td><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script></div>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<div class="catListLink">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/jeffkuang/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/jeffkuang/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/jeffkuang/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/jeffkuang/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/jeffkuang/tag/" title="我的博客的标签列表">我的标签</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div></div><div id="sidebar_toptags" class="sidebar-block">
+<div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/jeffkuang/tag/java/">java</a>(1)</li>
+</ul>
+</div></div><div id="sidebar_categories">
+<div class="catListPostCategory">
+<h3 class="catListTitle">随笔分类</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/jeffkuang/category/583434.html">android(2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/jeffkuang/category/616532.html">android学习</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/jeffkuang/category/583430.html">C</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/jeffkuang/category/583429.html">C++</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_4" href="https://www.cnblogs.com/jeffkuang/category/583440.html">Hardware</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_5" href="https://www.cnblogs.com/jeffkuang/category/583428.html">Java</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_6" href="https://www.cnblogs.com/jeffkuang/category/583427.html">Linux(3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_7" href="https://www.cnblogs.com/jeffkuang/category/583439.html">matlab(1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_8" href="https://www.cnblogs.com/jeffkuang/category/583431.html">Other(2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_9" href="https://www.cnblogs.com/jeffkuang/category/583438.html">Python(1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_10" href="https://www.cnblogs.com/jeffkuang/category/655141.html">数据库</a> </li>
+
+</ul>
+
+</div>
+
+<div class="catListPostArchive">
+<h3 class="catListTitle">随笔档案</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_1_Link_0" href="https://www.cnblogs.com/jeffkuang/archive/2014/09.html">2014年9月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_1_Link_1" href="https://www.cnblogs.com/jeffkuang/archive/2014/05.html">2014年5月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_1_Link_2" href="https://www.cnblogs.com/jeffkuang/archive/2012/01.html">2012年1月 (4)</a> </li>
+
+</ul>
+
+</div>
+
+<div class="catListArticleCategory">
+<h3 class="catListTitle">文章分类</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_2_Link_0" href="https://www.cnblogs.com/jeffkuang/category/446259.html">android(7)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_1" href="https://www.cnblogs.com/jeffkuang/category/586553.html">ARM(34)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_2" href="https://www.cnblogs.com/jeffkuang/category/1009458.html">BLE(3)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_3" href="https://www.cnblogs.com/jeffkuang/category/446257.html">C++(19)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_4" href="https://www.cnblogs.com/jeffkuang/category/769193.html">Django(30)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_5" href="https://www.cnblogs.com/jeffkuang/category/804497.html">Flask(1)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_6" href="https://www.cnblogs.com/jeffkuang/category/693574.html">Git(7)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_7" href="https://www.cnblogs.com/jeffkuang/category/446253.html">JAVA(11)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_8" href="https://www.cnblogs.com/jeffkuang/category/574631.html">Linux(40)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_9" href="https://www.cnblogs.com/jeffkuang/category/586552.html">MDK(2)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_10" href="https://www.cnblogs.com/jeffkuang/category/446261.html">MFC(9)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_11" href="https://www.cnblogs.com/jeffkuang/category/673891.html">Python(28)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_12" href="https://www.cnblogs.com/jeffkuang/category/955833.html">QT(12)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_13" href="https://www.cnblogs.com/jeffkuang/category/1041851.html">VIM(5)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_14" href="https://www.cnblogs.com/jeffkuang/category/767640.html">Web前端(9)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_15" href="https://www.cnblogs.com/jeffkuang/category/446262.html">windows编程(2)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_16" href="https://www.cnblogs.com/jeffkuang/category/446267.html">编程趣文(17)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_17" href="https://www.cnblogs.com/jeffkuang/category/972487.html">机器视觉(5)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_18" href="https://www.cnblogs.com/jeffkuang/category/446258.html">面向对象编程(6)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_19" href="https://www.cnblogs.com/jeffkuang/category/446256.html">设计模式(27)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_20" href="https://www.cnblogs.com/jeffkuang/category/446264.html">数据结构(17)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_21" href="https://www.cnblogs.com/jeffkuang/category/655142.html">数据库(5)</a> </li>
+
+<li><a id="CatList_LinkList_2_Link_22" href="https://www.cnblogs.com/jeffkuang/category/1111865.html">硬件设计 (1)</a> </li>
+
+</ul>
+
+</div>
+
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/jeffkuang/articles/5051097.html#3766942">1. Re:Bootstrap学习入门（7）--登录界面案例</a></li>
+        <li class="recent_comment_body">大哥，把代码沾上啊~~后台好辛苦的</li>
+        <li class="recent_comment_author">--揽星</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/jeffkuang/archive/2011/11/25/2263051.html#2569192">2. Re:C++ 一个网络编程实例</a></li>
+        <li class="recent_comment_body">很不错.</li>
+        <li class="recent_comment_author">--孤独的夜枭</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/jeffkuang/archive/2011/11/25/2263469.html#2534599">3. Re:java学习路线的经验之谈</a></li>
+        <li class="recent_comment_body">学习一下，多谢了。</li>
+        <li class="recent_comment_author">--wushang1987</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/jeffkuang/archive/2012/01/06/2314256.html">1. Python编程语言中调用Matlab绘制保存数据的方案(404)</a></li><li><a href="https://www.cnblogs.com/jeffkuang/archive/2012/01/06/2314252.html">2. 浅析将matlab函数编译成dll供Cpp调用的方法(383)</a></li><li><a href="https://www.cnblogs.com/jeffkuang/p/3757114.html">3. linux下串口调试工具xgcom安装(283)</a></li><li><a href="https://www.cnblogs.com/jeffkuang/p/2376267.html">4. monkeyrunner(118)</a></li><li><a href="https://www.cnblogs.com/jeffkuang/p/2376229.html">5. android测试教程(103)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap" style="display: none;">
+<div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock"></div>
+</div>
+</div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap" style="display: none;">
+<div class="catListView">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div id="TopDiggPostsBlock"></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright ©2019 jeffkuang
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+<iframe id="google_osd_static_frame_6714214113079" name="google_osd_static_frame" style="display: none; width: 0px; height: 0px;"></iframe></body></html>
