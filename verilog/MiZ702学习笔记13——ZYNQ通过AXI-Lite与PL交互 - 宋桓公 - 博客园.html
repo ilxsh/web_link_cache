@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="origin">
+    <title>MiZ702学习笔记13——ZYNQ通过AXI-Lite与PL交互 - 宋桓公 - 博客园</title>
+<meta property="og:description" content="在《MiZ702学习笔记7——尝试自制带总线IP》，我曾提到了AXI4-Lite的简单用法，驱动了下流水灯，只涉及到了写总线。今天，我想利用之前的VGA模块，将AXI4-Lite的读写都应用上。这篇文">
+    <link type="text/css" rel="stylesheet" href="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-SimpleMemory.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-SimpleMemory-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/douzi2/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/douzi2/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/douzi2/wlwmanifest.xml">
+    <script src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/osd.js"></script><script src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_2019032501.js"></script><script async="" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script>var currentBlogId=117681;var currentBlogApp='douzi2',cb_enable_mathjax=true;var isLogined=false;</script>
+    <script type="text/x-mathjax-config;executed=true">
+    MathJax.Hub.Config({
+        tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']], processClass: 'math', processEscapes: true },
+        TeX: { 
+            equationNumbers: { autoNumber: ['AMS'], useLabelIds: true }, 
+            extensions: ['extpfeil.js'],
+            Macros: {bm: "\\boldsymbol"}
+        },
+        'HTML-CSS': { linebreaks: { automatic: true } },
+        SVG: { linebreaks: { automatic: true } }
+        });
+    </script><script src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/MathJax.js"></script>
+<script src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js" type="text/javascript"></script>
+<style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Menu_Button .MathJax_Hover_Arrow {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px; font-family: 'Courier New',Courier; font-size: 9px; color: #F0F0F0}
+.MathJax_Menu_Button .MathJax_Hover_Arrow span {display: block; background-color: #AAA; border: 1px solid; border-radius: 3px; line-height: 0; padding: 4px}
+.MathJax_Hover_Arrow:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_Hover_Arrow:hover span {background-color: #CCC!important}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_About.MathJax_MousePost {outline: none}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 5px 0px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 5px; -webkit-border-radius: 5px; -moz-border-radius: 5px; -khtml-border-radius: 5px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 1px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; padding-top: .25em; color: #666666; font-size: .75em}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuArrow.RTL {left: .5em; right: auto}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuRadioCheck {position: absolute; left: .7em}
+.MathJax_MenuRadioCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuLabel {padding: 1px 2em 3px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #DDDDDD; margin: 4px 3px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: #606872; color: white}
+.MathJax_MenuDisabled:focus, .MathJax_MenuLabel:focus {background-color: #E8E8E8}
+.MathJax_ContextMenu:focus {outline: none}
+.MathJax_ContextMenu .MathJax_MenuItem:focus {outline: none}
+#MathJax_AboutClose {top: .2em; right: .2em}
+.MathJax_Menu .MathJax_MenuClose {top: -10px; left: -10px}
+.MathJax_MenuClose {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; font-family: 'Courier New',Courier; font-size: 24px; color: #F0F0F0}
+.MathJax_MenuClose span {display: block; background-color: #AAA; border: 1.5px solid; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; line-height: 0; padding: 8px 0 6px}
+.MathJax_MenuClose:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_MenuClose:hover span {background-color: #CCC!important}
+.MathJax_MenuClose:hover:focus {outline: none}
+</style><style type="text/css">.MathJax_Preview .MJXf-math {color: inherit!important}
+</style><style type="text/css">.MJX_Assistive_MathML {position: absolute!important; top: 0; left: 0; clip: rect(1px, 1px, 1px, 1px); padding: 1px 0 0 0!important; border: 0!important; height: 1px!important; width: 1px!important; overflow: hidden!important; display: block!important; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none}
+.MJX_Assistive_MathML.MJX_Assistive_MathML_Block {width: 100%!important}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1px; bottom: 2px; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><style type="text/css">.MJXp-script {font-size: .8em}
+.MJXp-right {-webkit-transform-origin: right; -moz-transform-origin: right; -ms-transform-origin: right; -o-transform-origin: right; transform-origin: right}
+.MJXp-bold {font-weight: bold}
+.MJXp-italic {font-style: italic}
+.MJXp-scr {font-family: MathJax_Script,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-frak {font-family: MathJax_Fraktur,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-sf {font-family: MathJax_SansSerif,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-cal {font-family: MathJax_Caligraphic,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-mono {font-family: MathJax_Typewriter,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-largeop {font-size: 150%}
+.MJXp-largeop.MJXp-int {vertical-align: -.2em}
+.MJXp-math {display: inline-block; line-height: 1.2; text-indent: 0; font-family: 'Times New Roman',Times,STIXGeneral,serif; white-space: nowrap; border-collapse: collapse}
+.MJXp-display {display: block; text-align: center; margin: 1em 0}
+.MJXp-math span {display: inline-block}
+.MJXp-box {display: block!important; text-align: center}
+.MJXp-box:after {content: " "}
+.MJXp-rule {display: block!important; margin-top: .1em}
+.MJXp-char {display: block!important}
+.MJXp-mo {margin: 0 .15em}
+.MJXp-mfrac {margin: 0 .125em; vertical-align: .25em}
+.MJXp-denom {display: inline-table!important; width: 100%}
+.MJXp-denom > * {display: table-row!important}
+.MJXp-surd {vertical-align: top}
+.MJXp-surd > * {display: block!important}
+.MJXp-script-box > *  {display: table!important; height: 50%}
+.MJXp-script-box > * > * {display: table-cell!important; vertical-align: top}
+.MJXp-script-box > *:last-child > * {vertical-align: bottom}
+.MJXp-script-box > * > * > * {display: block!important}
+.MJXp-mphantom {visibility: hidden}
+.MJXp-munderover {display: inline-table!important}
+.MJXp-over {display: inline-block!important; text-align: center}
+.MJXp-over > * {display: block!important}
+.MJXp-munderover > * {display: table-row!important}
+.MJXp-mtable {vertical-align: .25em; margin: 0 .125em}
+.MJXp-mtable > * {display: inline-table!important; vertical-align: middle}
+.MJXp-mtr {display: table-row!important}
+.MJXp-mtd {display: table-cell!important; text-align: center; padding: .5em 0 0 .5em}
+.MJXp-mtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-mlabeledtr {display: table-row!important}
+.MJXp-mlabeledtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mlabeledtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MJXp-scale0 {-webkit-transform: scaleX(.0); -moz-transform: scaleX(.0); -ms-transform: scaleX(.0); -o-transform: scaleX(.0); transform: scaleX(.0)}
+.MJXp-scale1 {-webkit-transform: scaleX(.1); -moz-transform: scaleX(.1); -ms-transform: scaleX(.1); -o-transform: scaleX(.1); transform: scaleX(.1)}
+.MJXp-scale2 {-webkit-transform: scaleX(.2); -moz-transform: scaleX(.2); -ms-transform: scaleX(.2); -o-transform: scaleX(.2); transform: scaleX(.2)}
+.MJXp-scale3 {-webkit-transform: scaleX(.3); -moz-transform: scaleX(.3); -ms-transform: scaleX(.3); -o-transform: scaleX(.3); transform: scaleX(.3)}
+.MJXp-scale4 {-webkit-transform: scaleX(.4); -moz-transform: scaleX(.4); -ms-transform: scaleX(.4); -o-transform: scaleX(.4); transform: scaleX(.4)}
+.MJXp-scale5 {-webkit-transform: scaleX(.5); -moz-transform: scaleX(.5); -ms-transform: scaleX(.5); -o-transform: scaleX(.5); transform: scaleX(.5)}
+.MJXp-scale6 {-webkit-transform: scaleX(.6); -moz-transform: scaleX(.6); -ms-transform: scaleX(.6); -o-transform: scaleX(.6); transform: scaleX(.6)}
+.MJXp-scale7 {-webkit-transform: scaleX(.7); -moz-transform: scaleX(.7); -ms-transform: scaleX(.7); -o-transform: scaleX(.7); transform: scaleX(.7)}
+.MJXp-scale8 {-webkit-transform: scaleX(.8); -moz-transform: scaleX(.8); -ms-transform: scaleX(.8); -o-transform: scaleX(.8); transform: scaleX(.8)}
+.MJXp-scale9 {-webkit-transform: scaleX(.9); -moz-transform: scaleX(.9); -ms-transform: scaleX(.9); -o-transform: scaleX(.9); transform: scaleX(.9)}
+.MathJax_PHTML .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style><link rel="preload" href="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2019032501.js" async=""></script><link rel="prefetch" href="https://tpc.googlesyndication.com/safeframe/1-0-32/html/container.html"></head>
+<body><div id="MathJax_Message" style="display: none;"></div>
+<a name="top"></a>
+
+
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a id="lnkBlogLogo" href="https://www.cnblogs.com/douzi2/"><img id="blogLogo" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.gif" alt="返回主页"></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/douzi2/">宋桓公</a></h1>
+<h2>勇于尝试，才有突破。选择是一种乐趣，期待产生的结果～～</h2>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+<li><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/douzi2/">首页</a></li>
+<li></li>
+<li><a id="blog_nav_contact" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/%E5%AE%8B%E6%A1%93%E5%85%AC">联系</a></li>
+<li><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/douzi2/rss">订阅</a>
+<!--<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/douzi2/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a>--></li>
+<li><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+</ul>
+		<div class="blogStats">
+			
+			<div id="blog_stats">
+<span id="stats_post_count">随笔 - 84&nbsp; </span>
+<span id="stats_article_count">文章 - 1&nbsp; </span>
+<span id="stats-comment_count">评论 - 41</span>
+</div>
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/douzi2/p/5155243.html">MiZ702学习笔记13——ZYNQ通过AXI-Lite与PL交互</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><p>在《MiZ702学习笔记7——尝
+试自制带总线IP》，我曾提到了AXI4-Lite的简单用法，驱动了下流水灯，只涉及到了写总线。今天，我想利用之前的VGA模块，将AXI4-
+Lite的读写都应用上。这篇文章主要是思想的介绍，以及AXI4-Lite读的方法。一些细节请先阅读《MiZ702学习笔记7——尝试自制带总线
+IP》。</p>
+<p>具体思路为如下框图所示：</p>
+<p><a href="http://images2015.cnblogs.com/blog/407610/201601/407610-20160124153433218-1731704804.jpg"><img style="background-image: none; margin: 0px; padding-left: 0px; padding-right: 0px; display: inline; padding-top: 0px; border: 0px;" title="clip_image002" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/407610-20160124153433812-1536452404.jpg" alt="clip_image002" width="518" height="226" border="0"></a></p>
+<p>所以这次，我们需要两条AXI4-Lite总线，一条负责给VGA模块提供RGB数据（写），一条读取VGA模块提供的扫描的坐标信息（读）。</p>
+<p>点击下图中的加号，就能为我们额外的添加一条AXI4-Lite总线：</p>
+<p><a href="http://images2015.cnblogs.com/blog/407610/201601/407610-20160124153434390-483384540.jpg"><img style="background-image: none; margin: 0px; padding-left: 0px; padding-right: 0px; display: inline; padding-top: 0px; border: 0px;" title="clip_image004" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/407610-20160124153435031-677583127.jpg" alt="clip_image004" width="691" height="528" border="0"></a></p>
+<p>因此在我们的IP工程里可以看到两套总线框架：</p>
+<p><a href="http://images2015.cnblogs.com/blog/407610/201601/407610-20160124153435515-1286258828.jpg"><img style="background-image: none; margin: 0px; padding-left: 0px; padding-right: 0px; display: inline; padding-top: 0px; border: 0px;" title="clip_image006" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/407610-20160124153436172-1382378275.jpg" alt="clip_image006" width="352" height="51" border="0"></a></p>
+<p>IP打包好之后是这个样子：</p>
+<p><a href="http://images2015.cnblogs.com/blog/407610/201601/407610-20160124153436656-2009933776.jpg"><img style="background-image: none; margin: 0px; padding-left: 0px; padding-right: 0px; display: inline; padding-top: 0px; border: 0px;" title="clip_image008" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/407610-20160124153437156-751412431.jpg" alt="clip_image008" width="275" height="253" border="0"></a></p>
+<p>我们将S00这条总线作为写数据用，将S01作为读数据总线。当然一条总线是既可以读也可以写的，但是VGA这个工程决定了读和写必须是同行进行的不可复用。</p>
+<p>其他的就和之前讲到一样了，接下来AXI4-Lite的读和写。PL为了和PS通讯，是需要一些逻辑去支持的。而这些逻辑在我们生成AXI4-
+Lite 
+IP的时候，vivado就帮我们自动生成了。我们要做的部分很少，只需要增改一些内容即可，就如《MiZ702学习笔记7——尝试自制带总线IP》提到
+的那样。</p>
+<p>这个工程中，对于总线的写而言就是给VGA模块送去RGB数据，“写”我们只需要增加自己的逻辑即可：</p>
+<p>reg [11:0]rlcd_rgb;</p>
+<p>always @( posedge S_AXI_ACLK )</p>
+<p>begin</p>
+<p>if ( S_AXI_ARESETN == 1'b0 )</p>
+<p>begin</p>
+<p>rlcd_rgb &lt;= 12'd0;</p>
+<p>end</p>
+<p>else</p>
+<p>begin</p>
+<p>rlcd_rgb &lt;= S_AXI_WDATA[11:0];</p>
+<p>end</p>
+<p>end</p>
+<p>assign lcd_rgb = rlcd_rgb;</p>
+<p>对于总线的读而言，我们需要将框架进行稍微的改动：</p>
+<p>//写总线测试修改！！！！！！！！！</p>
+<p>wire[31:0]wlcd_xy;// = {10'd0,lcd_xy};</p>
+<p>assign wlcd_xy = {10'd0,lcd_xy};</p>
+<p>assign slv_reg_rden = axi_arready &amp; S_AXI_ARVALID &amp; ~axi_rvalid;</p>
+<p>always @(*)</p>
+<p>begin</p>
+<p>// Address decoding for reading registers</p>
+<p>case ( axi_araddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] )</p>
+<p>2'h0 : reg_data_out &lt;= wlcd_xy;//slv_reg0;</p>
+<p>2'h1 : reg_data_out &lt;= slv_reg1;</p>
+<p>2'h2 : reg_data_out &lt;= slv_reg2;</p>
+<p>2'h3 : reg_data_out &lt;= slv_reg3;</p>
+<p>default : reg_data_out &lt;= 0;</p>
+<p>endcase</p>
+<p>end</p>
+<p>这里其实，也就改了一个地方，本来是reg_data_out &lt;= slv_reg0;被我改成了reg_data_out &lt;= wlcd_xy;这样就能通过总线读取wlcd_xy的值了。</p>
+<p>在回到这张框架图：</p>
+<p><a href="http://images2015.cnblogs.com/blog/407610/201601/407610-20160124153437640-336660542.jpg"><img style="background-image: none; margin: 0px; padding-left: 0px; padding-right: 0px; display: inline; padding-top: 0px; border: 0px;" title="clip_image002[1]" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/407610-20160124153438031-429422552.jpg" alt="clip_image002[1]" width="518" height="226" border="0"></a></p>
+<p>到这了，我们的AXI IP已经具备了和ZYNQ以及VGA交互的能力，它就是PS和PL之间的桥梁，现在我们只差一个VGA 
+IP，而这个IP就是个普通IP，没错就是《MiZ702学习笔记12——封装一个普通的VGA 
+IP》讲的那样，我们将程序稍加修改，在进行IP打包，就能得到。</p>
+<p>最后，我们分别添加这几个IP，进行连线就完成了硬件的搭建。其实我提一些细节。</p>
+<p>我们配置下ZNYQ的输出时钟：</p>
+<p><a href="http://images2015.cnblogs.com/blog/407610/201601/407610-20160124153438828-1363325334.jpg"><img style="background-image: none; margin: 0px; padding-left: 0px; padding-right: 0px; display: inline; padding-top: 0px; border: 0px;" title="clip_image010" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/407610-20160124153439734-1356791033.jpg" alt="clip_image010" width="554" height="277" border="0"></a></p>
+<p>其中FCLK0一般添加zynq核时是默认引出的，这里主要是给AXI4-Lite IP提供时钟，大小我设置是250M，再高就提示出错了。</p>
+<p>FCLK1将其设置为25M，主要给VGA IP提供时钟，应为VGA扫描是25M。</p>
+<p>硬件平台准备好之后，就可以开始SDK的编程了。首先，我们得根据地址访问到AXI4-Lite IP，通过xparameter.h这个头文件可以得知S00这条总线的地址：</p>
+<p>/* Definitions for driver MYVGAIP */</p>
+<p><strong>#define</strong> XPAR_MYVGAIP_NUM_INSTANCES 1</p>
+<p>/* Definitions for peripheral MYVGAIP_0 */</p>
+<p><strong>#define</strong> XPAR_MYVGAIP_0_DEVICE_ID 0</p>
+<p><strong>#define</strong> XPAR_MYVGAIP_0_S00_AXI_BASEADDR 0x43C00000</p>
+<p><strong>#define</strong> XPAR_MYVGAIP_0_S00_AXI_HIGHADDR 0x43C0FFFF</p>
+<p>但是头文件并未看到S01这条总线的地址，不过可以猜想，S00总线宽带是32位的，且首地址是0x43C00000，那么如果地址是连续的总线S01的首地址应该就是0x43C1ffff。</p>
+<p>通过查看system.hdf可以确定以上推测是正确的：</p>
+<p><a href="http://images2015.cnblogs.com/blog/407610/201601/407610-20160124153440547-1507857036.jpg"><img style="background-image: none; margin: 0px; padding-left: 0px; padding-right: 0px; display: inline; padding-top: 0px; border: 0px;" title="clip_image012" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/407610-20160124153441047-1014604758.jpg" alt="clip_image012" width="330" height="69" border="0"></a></p>
+<p>于是定义如下：</p>
+<p><strong>#define</strong> RGB_AXI_BASEADDR 0x43C00000</p>
+<p><strong>#define</strong> LCDXY_AXI_BASEADDR 0x43C10000</p>
+<p>首先进行彩条的测试，先通过Xil_In32，这个函数读总线，得到VGA模块输出的坐标值。其中低11位是Y坐标的值，高11位是X坐标的值：</p>
+<p>temp = Xil_In32(LCDXY_AXI_BASEADDR);</p>
+<p>lcd_ypos = temp &amp; 0x7ff;</p>
+<p>lcd_xpos = (temp&gt;&gt;11) &amp; 0x7ff;</p>
+<p>就可以测试横向彩条：</p>
+<p>//横向彩条</p>
+<p><strong>if</strong> (lcd_ypos &gt;= 0 &amp;&amp; lcd_ypos &lt; (V_DISP/8)*1)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, RED);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_ypos &gt;= (V_DISP/8)*1 &amp;&amp; lcd_ypos &lt; (V_DISP/8)*2)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, GREEN);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_ypos &gt;= (V_DISP/8)*2 &amp;&amp; lcd_ypos &lt; (V_DISP/8)*3)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, BLUE);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_ypos &gt;= (V_DISP/8)*3 &amp;&amp; lcd_ypos &lt; (V_DISP/8)*4)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, WHITE);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_ypos &gt;= (V_DISP/8)*4 &amp;&amp; lcd_ypos &lt; (V_DISP/8)*5)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, BLACK);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_ypos &gt;= (V_DISP/8)*5 &amp;&amp; lcd_ypos &lt; (V_DISP/8)*6)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, YELLOW);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_ypos &gt;= (V_DISP/8)*6 &amp;&amp; lcd_ypos &lt; (V_DISP/8)*7)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, CYAN);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_ypos &gt;= (V_DISP/8)*7 &amp;&amp; lcd_ypos &lt; (V_DISP/8)*8)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, ROYAL);</p>
+<p>结果和想象中一样完美~~~</p>
+<p>接下来测试，总线彩条：</p>
+<p>//竖向扫描有点问题，</p>
+<p><strong>if</strong> (lcd_xpos &gt;= 0 &amp;&amp; lcd_xpos &lt; (H_DISP/8)*1)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, RED);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_xpos &gt;= (H_DISP/8)*1 &amp;&amp; lcd_xpos &lt; (H_DISP/8)*2)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, GREEN);</p>
+<p><strong>else</strong> <strong>if</strong>(<span style="text-decoration: underline;">lcd_xpos</span> &gt;= (H_DISP/8)*2 &amp;&amp; lcd_xpos &lt; (H_DISP/8)*3)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, BLUE);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_xpos &gt;= (H_DISP/8)*3 &amp;&amp; lcd_xpos &lt; (H_DISP/8)*4)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, WHITE);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_xpos &gt;= (H_DISP/8)*4 &amp;&amp; lcd_xpos &lt; (H_DISP/8)*5)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, BLACK);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_xpos &gt;= (H_DISP/8)*5 &amp;&amp; lcd_xpos &lt; (H_DISP/8)*6)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, YELLOW);</p>
+<p><strong>else</strong> <strong>if</strong>(lcd_xpos &gt;= (H_DISP/8)*6 &amp;&amp; lcd_xpos &lt; (H_DISP/8)*7)</p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, CYAN);</p>
+<p><strong>else</strong></p>
+<p>Xil_Out32(RGB_AXI_BASEADDR, ROYAL);</p>
+<p>结果就不想想象中那么完美了：</p>
+<p><a href="http://images2015.cnblogs.com/blog/407610/201601/407610-20160124153441468-793240754.jpg"><img style="background-image: none; margin: 0px; padding-left: 0px; padding-right: 0px; display: inline; padding-top: 0px; border: 0px;" title="clip_image014" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/407610-20160124153441906-853853818.jpg" alt="clip_image014" width="434" height="258" border="0"></a></p>
+<p>我们发现彩条的边缘有锯齿，这是为什么呢？原因是横向彩条的扫描依据是lcd_ypos的值，纵向彩条的扫描依据是lcd_xpos。而VGA扫描是水平扫描，这意味着X的更新频率是Y更新频率的N倍。</p>
+<p>也就是说AXI4-Lite的读写速度跟上了lcd_ypos的变化，却没能完全跟上lcd_xpos的值。</p>
+<p>有的读者可能要发问了，之前给AXI4-Lite IP提供了250M的时钟吗，而VGA扫描才25M,怎么可能速度上跟不上？</p>
+<p>这只能说AXI4-Lite本身，并不适合做大量传输数据这件事。AXI4-Lite只适合做一些简单的IO控制，配置寄存器用。</p>
+<p>还记得在选择总线类型的时候吗？</p>
+<p><a href="http://images2015.cnblogs.com/blog/407610/201601/407610-20160124153442500-1411944460.jpg"><img style="background-image: none; margin: 0px; padding-left: 0px; padding-right: 0px; display: inline; padding-top: 0px; border: 0px;" title="clip_image016" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/407610-20160124153442937-323006901.jpg" alt="clip_image016" width="284" height="153" border="0"></a></p>
+<p>我们选择的是Lite，其实还有其他类型可选，如：AXI4，以及AXIStream类型。这些就是我们接下来的任务了。</p>
+<p>最近，路飞开4档了，实在太帅了，我最终的目的本来是想将他显示在VGA上的，奈何一开始选错了总线类型，只能将就着看了：</p>
+<p><a href="http://images2015.cnblogs.com/blog/407610/201601/407610-20160124153443468-1075506670.jpg"><img style="background-image: none; padding-left: 0px; padding-right: 0px; display: inline; padding-top: 0px; border: 0px;" title="clip_image018" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/407610-20160124153443875-1893080330.jpg" alt="clip_image018" width="511" height="147" border="0"></a></p>
+<p>总结：</p>
+<p>虽然最终的结果不算成功，但是过程还是能学到不少东西，这里例子可以很好的体现ZYNQ的优势：</p>
+<p>1、利用PL部分驱动VGA，充分的发挥FPGA的优势。为PS分担的不小的任务。</p>
+<p>2、利用PS完成数据的提供，数据方便存储，且更加多变，正好弥补了FPGA这方面的缺点。</p>
+<p>接下来的教程里，就开始探究AXI4以及AXIStream，必将完善次项目，就到这里吧。东莞今天居然下雪了，不说了拿电吹风取暖去了。明天回家了，祝我一路顺风吧~~</p>
+<p>工程文件，待会上传~~~</p></div><div id="MySignature" style="display: block;"><p style="background: rgb(230, 250, 230); padding: 10px 10px 10px 10px; border: 1px dashed rgb(224, 224, 224); font-family: 微软雅黑; font-size: 13px; text-indent: 0em;">作者:<a href="http://www.cnblogs.com/douzi2/" target="_blank">宋桓公</a>
+<br>
+出处：<a href="http://www.cnblogs.com/douzi2/" target="_blank">http://www.cnblogs.com/douzi2/</a>
+<br>
+如果您觉得阅读本文对您有帮助，请点一下“推荐”按钮，您的“推荐”将是我最大的写作动力！欢迎各位转载，但是未经作者本人同意，转载文章之后必须在文章页面明显位置给出作者和原文连接，否则保留追究法律责任的权利。</p></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory">分类: <a href="https://www.cnblogs.com/douzi2/category/700002.html" target="_blank">FPGA系列博文</a></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(5155243,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow('4a4357ae-769a-e111-aa3f-842b2b196315');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/douzi2/" target="_blank"><img src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/20131107101715.png" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/douzi2/">宋桓公</a><br>
+            <a href="http://home.cnblogs.com/u/douzi2/followees">关注 - 56</a><br>
+            <a href="http://home.cnblogs.com/u/douzi2/followers">粉丝 - 67</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('4a4357ae-769a-e111-aa3f-842b2b196315');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(5155243,'Digg')">
+        <span class="diggnum" id="digg_count">1</span>
+    </div>
+    <div class="buryit" onclick="votePost(5155243,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/douzi2/p/5154870.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/douzi2/p/5154870.html" title="发布于2016-01-24 11:30">MiZ702学习笔记12——封装一个普通的VGA IP</a><br><a href="https://www.cnblogs.com/douzi2/p/5394597.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/douzi2/p/5394597.html" title="发布于2016-04-15 11:06">记录   第一次体验安装python第三方库的全过程</a><br></div>
+</div>
+
+
+		</div>
+		<div class="postDesc">posted @ <span id="post-date">2016-01-24 15:35</span> <a href="https://www.cnblogs.com/douzi2/">宋桓公</a> 阅读(<span id="post_view_count">2867</span>) 评论(<span id="post_comment_count">0</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=5155243" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(5155243);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=117681,cb_entryId=5155243,cb_blogApp=currentBlogApp,cb_blogUserGuid='4a4357ae-769a-e111-aa3f-842b2b196315',cb_entryCreatedDate='2016/1/24 15:35:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="https://cloud.baidu.com/campaign/purchase-2019/index.html?track=cp:dsp|pf:pc|pp:chui-bokeyuan-huodong-19caigouji-BCC-neiyeCH-190311|pu:neiyeCH-wenzilian|ci:2019cgj|kw:2105959" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-百度云')">【推荐】百度云“猪”你开年行大运，红包疯狂拿，低至1折</a><br><a href="https://gitee.com/enterprises?from=bky-2" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-gitee')">【推荐】专业便捷的企业级代码托管服务 - Gitee 码云</a><br><a href="https://www.bagevent.com/event/2468856" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-GAITC')">【活动】2019第四届全球人工技术大会解码“智能+时代”</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="MiZ702%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B013%E2%80%94%E2%80%94ZYNQ%E9%80%9A%E8%BF%87AXI-Lite%E4%B8%8EPL%E4%BA%A4%E4%BA%92%20-%20%E5%AE%8B%E6%A1%93%E5%85%AC%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CO6TnNTap-ECFVUklgodbOAHqQ"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>相关博文：</b><br>·  <a href="https://www.cnblogs.com/craftor/p/4117293.html" target="_blank" onclick="clickRecomItmem(4117293)">Zynq学习笔记（1）</a><br>·  <a href="https://www.cnblogs.com/chensimin1990/p/8176972.html" target="_blank" onclick="clickRecomItmem(8176972)">AXI_LITE源码学习笔记</a><br>·  <a href="https://www.cnblogs.com/hai5111/p/6273558.html" target="_blank" onclick="clickRecomItmem(6273558)">zynq里面的AXI总线（2017-1-11）</a><br>·  <a href="https://www.cnblogs.com/surpassal/archive/2012/10/09/Zynq_Lab4.html" target="_blank" onclick="clickRecomItmem(2715073)">(原创)一步一步学ZedBoard &amp; Zynq(四)：基于AXI Lite 总线的从设备IP设计</a><br>·  <a href="https://www.cnblogs.com/xiabodan/p/4038646.html" target="_blank" onclick="clickRecomItmem(4038646)">一步一步学ZedBoard &amp; Zynq(四)：基于AXI Lite 总线的从设备IP设计</a><br></div></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CO-TnNTap-ECFVUklgodbOAHqQ"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/623039/" target="_blank">团贷网一夜陨落：上周六称40亿元资金将到位，四天后唐军竟投案自首</a><br> ·  <a href="https://news.cnblogs.com/n/623037/" target="_blank">我计划收购200个公共厕所，谋求科创板上市</a><br> ·  <a href="https://news.cnblogs.com/n/623018/" target="_blank">小鹏汽车取消等速续航宣传：将带头宣传真续航</a><br> ·  <a href="https://news.cnblogs.com/n/623020/" target="_blank">蔚来汽车阻止为其进行IPO的8家投行为竞争对手服务</a><br> ·  <a href="https://news.cnblogs.com/n/623021/" target="_blank">阿里巴巴成立技术公益委员会，号召工程师用技术做公益</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/douzi2/">宋桓公</a><br>园龄：<a href="https://home.cnblogs.com/u/douzi2/" title="入园时间：2012-05-10">6年10个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/douzi2/followers/">67</a><br>关注：<a href="https://home.cnblogs.com/u/douzi2/followees/">56</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow('4a4357ae-769a-e111-aa3f-842b2b196315')">+加关注</a></div><script>getFollowStatus('4a4357ae-769a-e111-aa3f-842b2b196315')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/02/01');return false;">&lt;</a></td><td align="center">2019年3月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/04/01');return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" abbr="日" scope="col" align="center">日</th><th class="CalDayHeader" abbr="一" scope="col" align="center">一</th><th class="CalDayHeader" abbr="二" scope="col" align="center">二</th><th class="CalDayHeader" abbr="三" scope="col" align="center">三</th><th class="CalDayHeader" abbr="四" scope="col" align="center">四</th><th class="CalDayHeader" abbr="五" scope="col" align="center">五</th><th class="CalDayHeader" abbr="六" scope="col" align="center">六</th></tr><tr><td class="CalOtherMonthDay" align="center">24</td><td class="CalOtherMonthDay" align="center">25</td><td class="CalOtherMonthDay" align="center">26</td><td class="CalOtherMonthDay" align="center">27</td><td class="CalOtherMonthDay" align="center">28</td><td align="center">1</td><td class="CalWeekendDay" align="center">2</td></tr><tr><td class="CalWeekendDay" align="center">3</td><td align="center">4</td><td align="center">5</td><td align="center">6</td><td align="center">7</td><td align="center">8</td><td class="CalWeekendDay" align="center">9</td></tr><tr><td class="CalWeekendDay" align="center">10</td><td align="center">11</td><td align="center">12</td><td align="center">13</td><td align="center">14</td><td align="center">15</td><td class="CalWeekendDay" align="center">16</td></tr><tr><td class="CalWeekendDay" align="center">17</td><td align="center">18</td><td align="center">19</td><td align="center">20</td><td align="center">21</td><td align="center">22</td><td class="CalWeekendDay" align="center">23</td></tr><tr><td class="CalWeekendDay" align="center">24</td><td align="center">25</td><td align="center">26</td><td align="center">27</td><td align="center">28</td><td class="CalTodayDay" align="center">29</td><td class="CalWeekendDay" align="center">30</td></tr><tr><td class="CalWeekendDay" align="center">31</td><td class="CalOtherMonthDay" align="center">1</td><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_toptags" class="sidebar-block">
+<div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/douzi2/tag/arm/">arm</a>(6)</li><li><a href="https://www.cnblogs.com/douzi2/tag/C%2B%2B/">C++</a>(5)</li><li><a href="https://www.cnblogs.com/douzi2/tag/FPGA/">FPGA</a>(5)</li><li><a href="https://www.cnblogs.com/douzi2/tag/zynq/">zynq</a>(5)</li><li><a href="https://www.cnblogs.com/douzi2/tag/Miz702/">Miz702</a>(5)</li><li><a href="https://www.cnblogs.com/douzi2/tag/python/">python</a>(3)</li><li><a href="https://www.cnblogs.com/douzi2/tag/MFC/">MFC</a>(3)</li><li><a href="https://www.cnblogs.com/douzi2/tag/C/">C</a>(3)</li><li><a href="https://www.cnblogs.com/douzi2/tag/verilog/">verilog</a>(2)</li><li><a href="https://www.cnblogs.com/douzi2/tag/VIM/">VIM</a>(1)</li><li><a href="https://www.cnblogs.com/douzi2/tag/">更多</a></li>
+</ul>
+</div></div><div id="sidebar_categories">
+<div id="sidebar_postcategory" class="catListPostCategory sidebar-block">
+<h3 class="catListTitle">随笔分类</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/douzi2/category/751181.html">C#/WPF系列博文(3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/douzi2/category/751182.html">C++/MFC系列博文(17)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/douzi2/category/751180.html">C及ARM裸机系列博文(29)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/douzi2/category/700002.html">FPGA系列博文(15)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_4" href="https://www.cnblogs.com/douzi2/category/751183.html">python系列博文(11)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_5" href="https://www.cnblogs.com/douzi2/category/849867.html">Uboot 的系列博文</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_6" href="https://www.cnblogs.com/douzi2/category/849863.html">Window SDK编程(2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_7" href="https://www.cnblogs.com/douzi2/category/751184.html">随感而发(1)</a> </li>
+
+</ul>
+
+</div>
+
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/douzi2/p/3974959.html#4134771">1. Re:error C4996: 'sprintf': This function or variable may be unsafe.</a></li>
+        <li class="recent_comment_body">mark</li>
+        <li class="recent_comment_author">--liuyaoyaoyao</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/douzi2/p/5579651.html#4040649">2. Re:python 字符串的split()函数详解</a></li>
+        <li class="recent_comment_body">博主比喻形象生动，赞一个</li>
+        <li class="recent_comment_author">--悠哉独自在</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/douzi2/p/5112743.html#4026790">3. Re:浅析arm的异常、中断和arm工作模式的联系</a></li>
+        <li class="recent_comment_body">arm中断机制的实验视频希望能够有更多的启发：<a href="" target="_blank"></a></li>
+        <li class="recent_comment_author">--华清粉丝1号</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/douzi2/p/5590715.html#3893670">4. Re:C++ 对引用的深入理解</a></li>
+        <li class="recent_comment_body">great!</li>
+        <li class="recent_comment_author">--Reidkm</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/douzi2/p/5579651.html#3888210">5. Re:python 字符串的split()函数详解</a></li>
+        <li class="recent_comment_body">最后一刀右面什么也没有了，所以为‘ ’空<br><br>我感觉</li>
+        <li class="recent_comment_author">--毛桃_zero</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/douzi2/p/5579651.html">1. python 字符串的split()函数详解(235970)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/3974959.html">2. error C4996: 'sprintf': This function or variable may be unsafe.(15416)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/5147151.html">3. MiZ702学习笔记11——如何使用vivado isim仿真(12395)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/5394597.html">4. 记录   第一次体验安装python第三方库的全过程(7513)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/4876551.html">5. 冯诺依曼结构和哈佛结构(6658)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/douzi2/p/5491976.html">1. 前++和后++引发的血案~~！！(17)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/4210342.html">2. 【原创】指针与实例的问题(6)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/5590715.html">3. C++ 对引用的深入理解(4)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/5579651.html">4. python 字符串的split()函数详解(3)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/4285289.html">5. 总结 : C#事件理解(3)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/douzi2/p/5579651.html">1. python 字符串的split()函数详解(12)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/4285277.html">2. 总结：C# 委托的全面理解(6)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/4285289.html">3. 总结 : C#事件理解(3)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/5491976.html">4. 前++和后++引发的血案~~！！(3)</a></li><li><a href="https://www.cnblogs.com/douzi2/p/5590715.html">5. C++ 对引用的深入理解(2)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright ©2019 宋桓公
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+<iframe id="google_osd_static_frame_3123111880260" name="google_osd_static_frame" style="display: none; width: 0px; height: 0px;"></iframe></body></html>
