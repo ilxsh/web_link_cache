@@ -1,0 +1,635 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+  
+  
+<!-- <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh-hans" lang="zh-hans" dir="ltr"> -->
+<html xmlns:wb="http://open.weibo.com/wb">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="canonical" href="http://xilinx.eetrend.com/d6-xilinx/blog/2013-09/4646.html" />
+<link rel="shortcut icon" href="/files-eetrend-xilinx/corolla_favicon.ico" type="image/x-icon" />
+  <title>在EDK下如何设计三态inout端口 | 电子创新网赛灵思中文社区</title>
+  <link rel="alternate" type="application/rss+xml" title="xilinx中文社区" href="http://xilinx.eetrend.com/rss" />
+  <link type="text/css" rel="stylesheet" media="all" href="/sites/xilinx.eetrend.com/themes/corolla/reset.css" />
+  <link type="text/css" rel="stylesheet" media="all" href="/files-eetrend-xilinx/css/css_e9c4dc7b3729639b2c4689830ef76765.css" />
+<link type="text/css" rel="stylesheet" media="print" href="/files-eetrend-xilinx/css/css_376856f35d25c98b307f55cb8b1a9521.css" />
+  <style type="text/css" media="all">/* Base font size */
+html {
+  font-size: 14px;
+}
+
+/* Layout width */
+body.two-sidebars #header-menu,
+body.two-sidebars #header,
+body.two-sidebars #main-columns {
+  width: ;
+  min-width:800px;
+  max-width: 1220px;
+}
+body.one-sidebar #header-menu,
+body.one-sidebar #header,
+body.one-sidebar #main-columns {
+  width: ;
+  min-width: 800px;
+  max-width: 1220px;
+}
+body.no-sidebars #header-menu,
+body.no-sidebars #header,
+body.no-sidebars #main-columns {
+  width: ;
+  min-width: 800px;
+  max-width: 1220px;
+}
+
+/**
+ * Color schemes
+ */
+
+/* Background */
+body {
+  background-color: #ffffff;
+}
+#header-menu .content > ul > li.active-trail {
+  background-color: #ffffff;
+}
+/* Text (black) */
+body,
+#site-name a,
+#header-menu .content li.active a,
+h1.page-title,
+.node h2.node-title,
+.node h1.node-title a,
+.node h2.node-title a,
+.comment h3.title a,
+.tabs ul.tabs li a,
+pre,
+code,
+samp,
+var,
+table.update tr,
+table.system-status-report tr {
+  color: #2e2e2e;
+}
+#site-name a::-moz-selection {
+  background-color: #2e2e2e;
+}
+#site-name a::selection {
+  background-color: #2e2e2e;
+}
+.node-title a::-moz-selection {
+  background-color: #2e2e2e;
+}
+.node-title a::selection {
+  background-color: #2e2e2e;
+}
+/* Link (blue) */
+a,
+a.active,
+li a.active {
+  color: #086782;
+}
+legend {
+  background-color: #086782;
+}
+/* Link hovered (orange) */
+a:hover,
+a:focus,
+a.active:hover,
+a.active:focus,
+li a.active:hover,
+li a.active:focus {
+  color: #e25401;
+  border-bottom-color: #e25401;
+}
+.node h1.node-title a:hover,
+.node h2.node-title a:hover {
+  color: #e25401;
+}
+/* Link underline (light blue) */
+a {
+  border-bottom: 1px solid #cfdde5;
+}
+/* Header menu (black) */
+#header-menu-wrapper {
+  background-color: #ffffff;
+}
+/* Header menu hovered (orange) */
+#header-menu .content li a:hover,
+#header-menu .content li a:active,
+#header-menu .content li a:focus {
+  background-color: #e25402;
+}
+/* Slogan (orange) */
+#site-slogan {
+  color: #e25400;
+}
+#site-slogan::selection {
+  background-color: #e25402;
+}
+#site-slogan::-moz-selection {
+  background-color: #e25402;
+}
+.poll .bar .foreground {
+  background-color: #e25402;
+}
+/* Border (gray) */
+#page {
+  border: 0px solid #e1e1e1;
+}
+/* Border strong (dark gray) */
+#sidebar-first input,
+#sidebar-second input {
+  border: 1px solid #c4c4c4;
+}
+.tabs ul.tabs li a {
+  border: 1px solid #c4c4c4;
+}
+/* Tab */
+.tabs ul.tabs li a {
+  background-color: #f5f4f3;
+}
+ul.vertical-tabs-list li a {
+  background-color: #f5f4f3;
+}
+/* Block title (green) */
+.block h2,
+h2 {
+  color: #779125;
+}
+.block h2::selection {
+  color: #fff;
+  background-color: #779125;
+}
+.block h2::-moz-selection {
+  background-color: #779125;
+  color: #fff;
+}
+/* Fieldset (gray) */
+fieldset {
+  background-color: #fbfbfb;
+}
+/* Fieldset border (dark gray) */
+fieldset {
+  border: 1px solid #e1e1e2;
+}
+
+</style> 
+
+  <!--[if lte IE 8]>
+  <link type="text/css" rel="stylesheet" href="/sites/xilinx.eetrend.com/themes/corolla/ie8.css" media="all" />
+  <![endif]-->
+
+  <!--[if lte IE 7]>
+  <link type="text/css" rel="stylesheet" href="/sites/xilinx.eetrend.com/themes/corolla/ie7.css" media="all" />
+  <![endif]-->
+
+    <meta property="wb:webmaster" content="805bfea205ee31b3" />
+ <script src="http://tjs.sjs.sinajs.cn/open/api/js/wb.js?appkey=3939014814" type="text/javascript" charset="utf-8"></script>
+</head>
+<body class="not-front not-logged-in page-node node-type-blog  two-sidebars">
+
+
+      <div id="header-menu-wrapper">
+      <div id="header-menu">
+        <div id="block-block-18" class="block block-block">
+  <div class="inner">
+  
+    <div class="content">
+      <p><a href="http://xilinx.eetrend.com/"><img src="http://xilinx.eetrend.com/sites/xilinx.eetrend.com/themes/corolla/images/xilinx-eetrend-logo2.png" /></a></p>
+    </div>
+  </div>
+</div>
+<div id="block-block-19" class="block block-block">
+  <div class="inner">
+  
+    <div class="content">
+      <div id="my-user-bar"><div class="item-list"><ul><li class="first"><a href='/rss.xml'><img src='/misc/feed.png' border='0'></a></li>
+<li><a href='/user/register?destination=node%2F4646' rel='nofollow'>免费注册</a></li>
+<li class="last"><a href='/user/login?destination=node%2F4646' rel='nofollow'>登 录</a></li>
+</ul></div></div>    </div>
+  </div>
+</div>
+<div id="block-menu-primary-links" class="block block-menu">
+  <div class="inner">
+  
+    <div class="content">
+      <ul class="menu"><li class="leaf first"><a href="/" title="">首页</a></li>
+<li class="leaf"><a href="/news" title="Xilinx News">新闻</a></li>
+<li class="leaf"><a href="/webinar" title="webinar">视频</a></li>
+<li class="leaf"><a href="/blog" title="Blog">博客</a></li>
+<li class="leaf"><a href="/forum" title="">互动专区</a></li>
+<li class="leaf"><a href="/article" title="article">技术文章</a></li>
+<li class="leaf"><a href="/download" title="download">下载中心</a></li>
+<li class="leaf"><a href="/d6-xilinx/category/4858.html" title="xilinx午后加油站，提供启迪FPGA开发小故事、小技巧和快资讯，助您在午后获得FPGA开发动力，解决开发难题！">Xilinx 午后加油站</a></li>
+<li class="leaf"><a href="http://www.wiki.xilinx.com" title="">Xilinx Wiki</a></li>
+<li class="leaf"><a href="/d6-xilinx/news/2010-04/615.html" title="">Xilinx 大学计划</a></li>
+<li class="leaf"><a href="/activity" title="activity">活动</a></li>
+<li class="leaf last"><a href="http://mall.eetrend.com/" title="">商城</a></li>
+</ul>    </div>
+  </div>
+</div>
+      </div>
+    </div>
+  
+
+  <div id="header-wrapper">
+    <div id="header" class="clear-block">
+      
+      
+    </div> <!-- /#header -->
+  </div> <!-- /#header-wrapper -->
+
+  <div id="main-columns-wrapper">
+    <div id="main-columns">
+      
+      
+    <div id="sidebar-first" class="clear-block first">
+    <div class="region region-sidebar-first">
+      <div id="block-block-28" class="block block-block">
+  <div class="inner">
+      <div class="hd"><h2>开发者专区</h2></div>
+  
+    <div class="content">
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://china.xilinx.com/products/design-tools/software-zone.html">软件开发专区</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://china.xilinx.com/products/design-tools/hardware-zone.html">硬件开发专区</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://china.xilinx.com/products/design-tools/system-zone.html">系统开发专区</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://china.xilinx.com/products/design-tools/acceleration-zone.html">加速专区</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://china.xilinx.com/products/design-tools/cloud-based-acceleration.html">加速云服务</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://china.xilinx.com/products/design-tools/embedded-vision-zone.html">reVISION专区</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://china.xilinx.com/applications/megatrends/machine-learning.html">机器学习</a></p>
+    </div>
+  </div>
+</div>
+<div id="block-block-2" class="block block-block">
+  <div class="inner">
+      <div class="hd"><h2>技术与方案</h2></div>
+  
+    <div class="content">
+      <div class='taxonomy_tree'>
+<ul>
+<li>  <a href="/d6-xilinx/category/19.html">DSP</a> </li>
+<li>  <a href="/d6-xilinx/category/22.html">低功耗</a> </li>
+<li>  <a href="/d6-xilinx/category/21.html">存储器</a> </li>
+<li>  <a href="/d6-xilinx/category/1050.html">时序/验证</a> </li>
+<li>  <a href="/d6-xilinx/category/18.html">嵌入式处理</a> </li>
+<li>  <a href="/d6-xilinx/category/24.html">设计安全性</a> </li>
+<li>  <a href="/d6-xilinx/category/20.html">连接</a> </li>
+<li>  <a href="/d6-xilinx/category/23.html">配置</a> </li>
+</ul>
+
+
+</div>    </div>
+  </div>
+</div>
+<div id="block-block-1" class="block block-block">
+  <div class="inner">
+      <div class="hd"><h2>产品与工具</h2></div>
+  
+    <div class="content">
+      <div class='taxonomy_tree'>
+<ul>
+<li>  <a href="/d6-xilinx/category/8096.html">reVISION</a> </li>
+<li>  <a href="/d6-xilinx/category/5959.html">SDAccel开发环境</a> </li>
+<li>  <a href="/d6-xilinx/category/6243.html">SDSoC开发环境</a> </li>
+<li>  <a href="/d6-xilinx/category/7884.html">SDNet</a> </li>
+<li>  <a href="/d6-xilinx/category/7886.html">Kintex UltraScale</a> </li>
+<li>  <a href="/d6-xilinx/category/7887.html">Virtex UltraScale</a> </li>
+<li>  <a href="/d6-xilinx/category/7888.html">Zynq MPSoC</a> </li>
+<li>  <a href="/d6-xilinx/category/7885.html">UltraScale+</a> </li>
+<li>  <a href="/d6-xilinx/category/6418.html">UltraFast </a> </li>
+<li>  <a href="/d6-xilinx/category/4549.html">UltraScale</a> </li>
+<li>  <a href="/d6-xilinx/category/8691.html">RFSoc</a> </li>
+<li>  <a href="/d6-xilinx/category/8692.html">机器学习</a> </li>
+<li>  <a href="/d6-xilinx/category/1210.html">ZYNQ</a> </li>
+<li>  <a href="/d6-xilinx/category/1522.html">Vivado设计套件</a> </li>
+<li>  <a href="/d6-xilinx/category/768.html">Artix-7</a> </li>
+<li>  <a href="/d6-xilinx/category/769.html">Kintex-7</a> </li>
+<li>  <a href="/d6-xilinx/category/770.html">Virtex-7</a> </li>
+<li>  <a href="/d6-xilinx/category/6.html">Virtex-6</a> </li>
+<li>  <a href="/d6-xilinx/category/568.html">Virtex-5</a> </li>
+<li>  <a href="/d6-xilinx/category/569.html">Virtex-4</a> </li>
+<li>  <a href="/d6-xilinx/category/7763.html">Spartan-7</a> </li>
+<li>  <a href="/d6-xilinx/category/7.html">Spartan-6</a> </li>
+<li>  <a href="/d6-xilinx/category/11.html">MicroBlaze核</a> </li>
+<li>  <a href="/d6-xilinx/category/6080.html">JESD204B</a> </li>
+</ul>
+
+
+</div>    </div>
+  </div>
+</div>
+    </div>
+  </div> <!-- /#sidebar-first -->
+
+<div id="main-wrapper" class="">
+  <div id="main">
+    <div id="page" class="clear-block">
+      <!--<div id="breadcrumb"><div class="breadcrumb"><a href="/">首页</a> » <a href="/blog">Blogs</a> » <a href="/d6-xilinx/blogs/judyzhong.html">judyzhong&#039;s blog</a></div></div>-->
+      
+      
+      
+      
+      <a id="main-content"></a>
+              <h1 class="page-title"><div style="padding:10px;">在EDK下如何设计三态inout端口</div></h1>
+      
+      
+              <div class="region region-content">
+          <div id="node-4646" class="node">
+
+  <div class="node-header">
+
+          <span class="submitted">由 <a href="/d6-xilinx/users/judyzhong.html" title="浏览用户信息">judyzhong</a> 于 星期日, 09/22/2013 - 11:28 发表</span>
+  
+
+  </div> <!-- /.node-header -->
+
+  <div class="content">
+        <p> 在Xilinx的EDK下，Platform generator是不直接支持三态的inout端口的。意思说我在设计中定义了三态的inout端口，如果不经过特殊的配置话，是无法综合的。</p>
+<p>例如：</p>
+<p>我需要在总线上添加一个外围设备，该设备是通过IIC来配置板间设备，如CH7301（DVI输出芯片），AD9980（8bit 显示接口芯片）。这个时候我得定义IIC的两个接口：SCL和SDA；</p>
+<p>一般的三态inout端口在VHDL下可以这样定义：</p>
+<p>signal SCL : inout std_logic;<br />
+signal SDA : inout std_logic;<br />
+…..<br />
+SCL &lt;= SCL_PAD_O when (SCL_OE='0’) else ‘Z’;        -- ‘Z’必须大写，<br />
+SDA &lt;= SDA_PAD_O when(SDA_OE=‘0’) else ‘Z’;<br />
+SCL_PAD_I &lt;= SCL;<br />
+SDA_PAD_I &lt;= SDA;<br />
+<center><img src="http://xilinx.eetrend.com/files-eetrend-xilinx/blog/201309/4646-9477-scl2.png" alt="图1. SCL三态端口" /></center>  </p>
+<p align="center"><strong>图1. SCL三态端口</strong></p>
+<p><center><img src="http://xilinx.eetrend.com/files-eetrend-xilinx/blog/201309/4646-9478-sda3.png" alt="图2.SDA三态端口" /></center>  </p>
+<p align="center"><strong>图2.SDA三态端口</strong></p>
+<p>上面的定义在ISE工程下没有问题，会综合可以得到如图3的原理图。但是在EDK工程下需要做一定的修改。</p>
+<p>首先在顶层中定义如下端口（以VHDL为例）：</p>
+<p>SDA_PAD_I           : in  std_logic;<br />
+SDA_PAD_O         : out std_logic;<br />
+SDA_OE              : out std_logic;<br />
+SCL_PAD_I          : in  std_logic;<br />
+SCL_PAD_O        : out std_logic;<br />
+SCL_EN             : out std_logic;</p>
+<p>最终这6个逻辑上的端口需要定义到2个三态的INOUT端口上，那应该如何修改呢？这个时候就需要*.mpd文件，即Microprocessor Peripheral Description文件（详见参考2）。</p>
+<p>自定义的IP core会在生成一个pcores 目录，下面一般有/data,/hdl,/netlist，*.mpd文件会在/data目录下面，需要添加的内容如下：</p>
+<p>PORT SDA_PAD_I = "", DIR = I<br />
+PORT SDA_PAD_O = "", DIR = O<br />
+PORT SDA_OE = "", DIR = O<br />
+PORT SCL_PAD_I = "", DIR = I<br />
+PORT SCL_PAD_O = "", DIR = O<br />
+PORT SCL_PAD_T = "", DIR = O<br />
+PORT SDA = "", DIR = IO, THREE_STATE = TRUE, TRI_I = SDA_PAD_I, TRI_O = SDA_PAD_O, TRI_T = SDA_OE, ENABLE=SINGLE<br />
+PORT SCL = "", DIR = IO, THREE_STATE = TRUE, TRI_I = SCLK_PAD_I, TRI_O = SCL_PAD_O, TRI_T = SCLK_OE, ENABLE=SINGLE</p>
+<p>然后将SDA和SCL端口设置为external port，即跟FPGA外部相连，最后的综合得到的物理端口为SDA和SCL，就是三态inout端口了。如图3 所示。<br />
+<center><img src="http://xilinx.eetrend.com/files-eetrend-xilinx/blog/201309/4646-9479-image2_066e4da4.png" alt="图3. 三态端口的BUF原理图" /></center>  </p>
+<p align="center"><strong>图3. 三态端口的BUF原理图</strong></p>
+<p>Ref：</p>
+<p>Problems about Tri-state INOUT ports in user-created peripheral with virtex5<br />
+Platform Specification Fotmat Reference Manual, Xilinx</p>
+<p>文章来源：KiKi的博客</p>
+  </div>
+
+  <div class="links-wrapper">
+          <div class="terms terms-inline"><ul class="links inline"><li class="taxonomy_term_227 first"><a href="/d6-xilinx/category/227.html" rel="tag" title="">EDK</a></li>
+<li class="taxonomy_term_3303"><a href="/d6-xilinx/category/3303.html" rel="tag" title="">inout端口</a></li>
+<li class="taxonomy_term_592 last"><a href="/d6-xilinx/category/592.html" rel="tag" title="">Xilinx</a></li>
+</ul></div>
+        <ul class="links inline"><li class="blog_usernames_blog first"><a href="/d6-xilinx/blogs/judyzhong.html" title="Read judyzhong&#039;s latest blog entries.">judyzhong&#039;s blog</a></li>
+<li class="comment_forbidden"><span>要发表评论，请先<a href="/user/login?destination=comment%2Freply%2F4646%23comment-form">登录</a> 或 <a href="/user/register?destination=comment%2Freply%2F4646%23comment-form">注册</a></span></li>
+<li class="statistics_counter last"><span>5255 次点击</span></li>
+</ul>  </div>
+
+</div>
+<div id="block-relevant_content-relate" class=" block-relevant_content">
+  <div class="inner">
+      <div class="hd"><h2>相关文章</h2></div>
+  
+    <div class="content">
+      <div class="item-list"><ul><li class="first"><a href="/d6-xilinx/blog/2013-09/4660.html">xilinx的EDK中调用ISE产生的IP core的方法 （转载）</a></li>
+<li><a href="/d6-xilinx/blog/2013-08/4505.html">Xilinx中EDK里面自定制用户IP的生成步骤</a></li>
+<li><a href="/d6-xilinx/forum/2013-08/4504.html">XILINX EDK运用启动不了SDK的问题解决办法 （已解答）</a></li>
+<li><a href="/d6-xilinx/blog/2012-06/2569.html">Xilinx FPGA嵌入式开发（一）—EDK及SDK部分术语 </a></li>
+<li><a href="/d6-xilinx/forum/2010-08/1003.html">视频：xilinx SP605的PCIe接口在EDK中的使用方法--PCIE核的设置</a></li>
+<li><a href="/d6-xilinx/news/2018-11/13875.html">独家专访：华裔CEO临危受命,Xilinx 10亿美元大杀器搏命英特尔/英伟达</a></li>
+<li><a href="/d6-xilinx/news/2018-10/13763.html">Xilinx助力Aupera带来互联网视频处理颠覆式创新</a></li>
+<li><a href="/d6-xilinx/news/2018-10/13762.html">Xilinx：让FFmpeg在FPGA上玩的爽</a></li>
+<li><a href="/d6-xilinx/blog/2018-10/13754.html">Xilinx基于PCIE的部分重配置实现（一）</a></li>
+<li class="last"><a href="/d6-xilinx/article/2018-10/13732.html">Xilinx Ten Giga Sub System IP 使用</a></li>
+</ul></div>    </div>
+  </div>
+</div>
+        </div>
+      
+                </div> <!-- /#page -->
+
+
+    <div id="closure">
+      <div id="info">
+        <a href="http://murata.eetrend.com" target="_blank">村田中文技术社区</a> |<a href="http://imgtec.eetrend.com">Imagiantion中文技术社区</a> | <a href="http://xilinx.eetrend.com">创新网Xilinx中文社区</a> | <a href="http://altium.eetrend.com">创新网Altium中文社区</a>
+<br />
+<a href="http://seminar.eetrend.com">研讨会大全</a> | <a href="http://www.sdnlab.com">SDN社区</a>
+<br />
+<div id="copyright"><a href="http://www.eetrend.com/about">关于我们</a> | <a href="http://www.eetrend.com/contact">联系我们</a> | <a href="http://www.eetrend.com/service">广告服务</a> | <a href="http://www.eetrend.com/legal">法律声明</a> | <a href="http://www.eetrend.com/sitemap">网站地图</a> | <a href="http://www.eetrend.com/link">友情链接</a><br />--电子创新网--<br /><a href="http://www.miibeian.gov.cn">粤ICP备12070055号</a></div>	 
+      </div>
+
+          </div> <!-- /#closure -->
+
+  </div> <!-- /#main -->
+</div> <!-- /#main-wrapper -->
+
+    <div id="sidebar-second" class="clear-block last">
+    <div class="region region-sidebar-second">
+      <div id="block-block-20" class="block block-block">
+  <div class="inner">
+  
+    <div class="content">
+      <p><a href="https://forums.xilinx.com/t5/Xcell-Daily-Blog/bg-p/Xcell"><img src="http://xilinx.eetrend.com/files-eetrend-xilinx/news/201804/12762-41210-6577-11095-350banner.jpg" /></a></p>
+<li><a href="http://xilinx.eetrend.com/d6-xilinx/forum/2015-06/8762.html">Xilinx午后加油站所有文章列表<img src="/files-eetrend/news/201001/100023707-10626-new-1.gif" alt="" /></a></li>
+<li><span lang="EN-US"><a href="http://cl.s7.exct.net/?qs=7bca481cc3090e5096baf470bde9e9fe09d76f12c2e82a36db05151cb05f87f316152cb299c7188a7527a7e26e8e2fc6">OKI IDS </a></span><a href="http://cl.s7.exct.net/?qs=7bca481cc3090e5096baf470bde9e9fe09d76f12c2e82a36db05151cb05f87f316152cb299c7188a7527a7e26e8e2fc6">和<span lang="EN-US"> Avnet </span>基于<span lang="EN-US"> Zynq UltraScale+ MPSoC </span>开发<span lang="EN-US"> ADAS</span>和<span lang="EN-US"> 4/5 </span>级自动驾驶电路板设计方案<span lang="EN-US"> </span></a></li>
+<li><a href="http://cl.s7.exct.net/?qs=7bca481cc3090e50ae86af5a28b331325f1dd50a122da8adffed891dfb6f3a4151972222528319fc009ff9be487e9481">何时（和为什么）在嵌入式系统设计中使用<span lang="EN-US"> FPGA </span>比较好？一位<span lang="EN-US">Xilinx DSP </span>现成应用工程师回应</a></li>
+<li><a href="http://cl.s7.exct.net/?qs=7bca481cc3090e501290886574f8ac852d31379051ed6805a1bcd279b2219387e5c231c91154a511b30fc56c74c50553">需要为<span lang="EN-US"> 5G </span>应用构建海量<span lang="EN-US"> MIMO RF </span>系统吗？最新<span lang="EN-US"> EDN </span>文章将告诉您如何使用<span lang="EN-US"> Xilinx Zynq UltraScale+ RFSoC</span></a></li>
+    </div>
+  </div>
+</div>
+<div id="block-block-31" class="block block-block">
+  <div class="inner">
+  
+    <div class="content">
+      <p><a href="//china.xilinx.com/products/design-tools/embedded-vision-zone.html"><img src="http://xilinx.eetrend.com/files-eetrend-xilinx/revision.jpg" alt="" align="middle" /></a></p>
+<li>  <a href="http://xilinx.eetrend.com/news/11097">reVISION惊艳登场， Xilinx让视觉导向机器学习更简单！</a></li>
+<li><a href="http://xilinx.eetrend.com/webinar/11082">视频：使用 reVISION 实现的 4K60 密集光流算法</a></li>
+<li><a href="http://xilinx.eetrend.com/article/11054">一文带你了解Xilinx reVISION堆栈</a></li>
+<li><a href="http://xilinx.eetrend.com/article/11044">reVISION: 将全可编程技术扩展至广泛的视觉导向机器学习应用</a></li>
+<li><a href="http://xilinx.eetrend.com/webinar/11050">【视频】reVISION：为视觉导向的机器学习应用铺平道路</a></li>
+    </div>
+  </div>
+</div>
+<div id="block-block-25" class="block block-block">
+  <div class="inner">
+      <div class="hd"><h2>热门推荐</h2></div>
+  
+    <div class="content">
+      <p><a href="http://china.xilinx.com"><img src="http://www.eetrend.com/sites/default/files/2018-12/cn300x169.jpg" /></a><br />
+<a href="http://www.eetrend.com/XILINX2016"><img src="http://xilinx.eetrend.com/files-eetrend-xilinx/download/201804/12811-36453-banner.jpg" /></a><br />
+<a href="http://www.eetrend.com/topics/2018-03/100077696.html"><img src="http://www.eetrend.com/files-eetrend/201608/newsletter/100065169-84442-xilinxsae300.jpg" alt="" align="middle" /></a><br />
+<a href="http://xilinx.eetrend.com/news/7989"><img src="http://xilinx.eetrend.com/files-eetrend-xilinx/news/201412/7989-15230-300x190.jpg" width="300" height="190" align="middle" /></a><br />
+<a href="http://xilinx.eetrend.com/files-eetrend-xilinx/download/201608/10406-25595-xcellruanjiankandisanqi.pdf"><img src="http://xilinx.eetrend.com/files-eetrend-xilinx/download/201804/12811-36455-xcell.jpg" width="300" height="407" align="middle" /></a></p>
+    </div>
+  </div>
+</div>
+<div id="block-block-24" class="block block-block">
+  <div class="inner">
+      <div class="hd"><h2>FPGA开发交流</h2></div>
+  
+    <div class="content">
+      <h3><img src="http://xilinx.eetrend.com/files-eetrend-xilinx/news/201711/12259-33803-weixin.jpg" /></h3>
+<p></p>
+<h3><img src="http://xilinx.eetrend.com/files-eetrend-xilinx/webinar/201409/7708-14142-fpgajiaoliuqun.jpg" /></h3>
+<p></p>
+    </div>
+  </div>
+</div>
+<div id="block-views-frontpage-block_1" class="block block-views">
+  <div class="inner">
+      <div class="hd"><h2>今日头条</h2></div>
+  
+    <div class="content">
+      <div class="view view-frontpage view-id-frontpage view-display-id-block_1 view-dom-id-1">
+    
+  
+  
+      <div class="view-content">
+      <div class="item-list">
+    <ol>
+          <li class="views-row views-row-1 views-row-odd views-row-first">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/news/2018-11/13936.html">【震撼！】赛灵思FPGA+华芯通ARM CPU比传统 x86+GPU方案能效提升10倍！</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-2 views-row-even">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/article/2018-11/13935.html">Video Codec – Xilinx EV系列Video Codec基本介绍</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-3 views-row-odd">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/news/2018-11/13917.html">一文了解 Xilinx 机器学习套件</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-4 views-row-even">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/webinar/2018-11/13906.html">【视频】Zynq-7000 SoC 动态功耗管理演示</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-5 views-row-odd">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/download/2018-11/13891.html">【数据手册】Alveo U200 和 U250 数据中心加速卡（DS962）</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-6 views-row-even">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/news/2018-11/13832.html">赛灵思蝶变之路：从FPGA进入ACAP世界</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-7 views-row-odd">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/download/2018-10/13781.html">【白皮书】赛灵思 AI 引擎及其应用</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-8 views-row-even">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/news/2018-10/13780.html">赛灵思强大FPGA加持，浪潮推出极致性能AI加速卡F37X</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-9 views-row-odd">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/news/2018-10/13772.html">AWS F1覆盖区域数量翻番 ——正式宣布落地中国</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-10 views-row-even">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/news/2018-10/13770.html">又一款7nm惊世产品发布！Xilinx发布颠覆性AI推理产品VersaL!</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-11 views-row-odd">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/news/2018-10/13768.html">Xilinx推出全球最快的数据中心和AI加速器卡</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-12 views-row-even">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/news/2018-10/13767.html">Xilinx推出首款新类别平台—— Versal ： 利用软件可编程性与可扩展的 AI 推断技术支持快速创新</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-13 views-row-odd">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/news/2018-10/13764.html">详细揭秘赛灵思第一款ACAP产品Versal</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-14 views-row-even">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/article/2018-09/13406.html">使用即用型开发板和开源软件快速开发定制的 HP 测试仪器</a></span>
+  </div>
+</li>
+          <li class="views-row views-row-15 views-row-odd views-row-last">  
+  <div class="views-field-title">
+                <span class="field-content"><a href="/d6-xilinx/download/2018-09/13387.html">实现更低功耗的更高吞吐量 —— Xilinx业界首款可配置集成型 SD-FEC</a></span>
+  </div>
+</li>
+      </ol>
+</div>    </div>
+  
+  
+  
+  
+  
+  
+</div>     </div>
+  </div>
+</div>
+<div id="block-comment-0" class="block block-comment">
+  <div class="inner">
+      <div class="hd"><h2>最新评论</h2></div>
+  
+    <div class="content">
+      <div class="item-list"><ul><li class="first"><a href="/d6-xilinx/forum/2017-03/11190.html#comment-2907">资料呢？？？？？？？？</a><br />1 周 2 天之前</li>
+<li><a href="/d6-xilinx/forum/2017-03/11201.html#comment-2906">怎么下载？</a><br />1 周 4 天之前</li>
+<li><a href="/d6-xilinx/forum/2017-03/11190.html#comment-2905">很好的资料</a><br />3 周 3 天之前</li>
+<li><a href="/d6-xilinx/forum/2017-03/11190.html#comment-2904">资料在哪呢？</a><br />4 周 2 天之前</li>
+<li><a href="/d6-xilinx/forum/2018-08/13315.html#comment-2903">小白也要学会看官方文档</a><br />4 周 3 天之前</li>
+<li><a href="/d6-xilinx/webinar/2016-08/10428.html#comment-2902">课件</a><br />4 周 4 天之前</li>
+<li><a href="/d6-xilinx/forum/2017-03/11190.html#comment-2901">666</a><br />4 周 6 天之前</li>
+<li><a href="/d6-xilinx/forum/2017-03/11190.html#comment-2900">666666666666</a><br />4 周 6 天之前</li>
+<li><a href="/d6-xilinx/forum/2017-03/11190.html#comment-2899">学习学习</a><br />5 周 4 天之前</li>
+<li class="last"><a href="/d6-xilinx/forum/2017-03/11190.html#comment-2898">那么在哪里可以看到资料呢？</a><br />5 周 4 天之前</li>
+</ul></div>    </div>
+  </div>
+</div>
+<div id="block-block-23" class="block block-block">
+  <div class="inner">
+      <div class="hd"><h2>微博</h2></div>
+  
+    <div class="content">
+      <p><iframe width="100%" height="550" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&amp;width=0&amp;height=550&amp;fansRow=1&amp;ptype=1&amp;speed=50&amp;skin=5&amp;isTitle=1&amp;noborder=1&amp;isWeibo=1&amp;isFans=1&amp;uid=2150910802&amp;verifier=cd63d472&amp;dpc=1"></iframe></p>
+    </div>
+  </div>
+</div>
+    </div>
+  </div> <!-- /#sidebar-second -->
+
+
+    </div> <!-- /#main-columns -->
+  </div> <!-- /#main-columns-wrapper -->
+  
+    
+<div style="display:none">
+<script type="text/javascript">
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3Febf3f0d33b30b519723f3a8fc76c9d94' type='text/javascript'%3E%3C/script%3E"));
+</script>
+</div>
+<!-- JiaThis Button BEGIN -->
+<!-- <script type="text/javascript" src="http://v3.jiathis.com/code/jiathis_r.js?uid=1357485142326395&move=0" charset="utf-8"></script> -->
+<!-- JiaThis Button END -->
+</body>
+</html>
