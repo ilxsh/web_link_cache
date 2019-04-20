@@ -1,0 +1,1100 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh-CN" dir="ltr">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>
+    Mount远程目录并让本地非root用户可读可写 -  - ITeye博客
+  </title>
+  <meta name="description" content=" 远程与本地是两台Linux机器，要实现如题效果，传统的nfs的mount方式虽然简单方便却不行  nfs的方式：  sudo mount -t nfs  -o rw 192.168.0.xx:/path  /mnt/test  在本地你会发现/mnt/test下的文件用户为nobody，普通用户可以读，但是非root用户写不了(不用sudo不用su)，  有的人想通过改/etc/fstab 或者远 ..." />
+  <meta name="keywords" content=" Mount远程目录并让本地非root用户可读可写" />
+  <link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+  <link rel="search" type="application/opensearchdescription+xml" href="/open_search.xml" title="ITeye" />
+  <link href="/rss" rel="alternate" title="" type="application/rss+xml" />
+  <link href="https://www.iteye.com/stylesheets/blog.css?1543400199" media="screen" rel="stylesheet" type="text/css" />
+<link href="https://www.iteye.com/stylesheets/themes/blog/blue.css?1543400199" media="screen" rel="stylesheet" type="text/css" />
+  <script src="https://www.iteye.com/javascripts/application.js?1544695506" type="text/javascript"></script>
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?e19a8b00cf63f716d774540875007664";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+<style>
+/* 折叠效果 */
+.hide-main-content{
+    position: relative;
+}
+.hide-article-box {
+    display: none;
+    position: absolute;
+    z-index: 9999;
+    bottom: -1px;
+    width: 100%;
+    padding-top: 160px;
+    background-image: -webkit-gradient(linear,left top, left bottom,from(rgba(255,255,255,0)),color-stop(70%, #fff));
+    background-image: linear-gradient(-180deg,rgba(255,255,255,0) 0%,#fff 70%);
+}
+.hide-article-box #btn-readmore{
+    color: #ca0c16;
+    border: 1px solid #ca0c16;
+    margin: 10px auto;
+    padding: 0 8px;
+    display: block;
+    font-size: 14px;
+    border-radius: 4px;
+    text-align: center;
+    background-color: transparent;
+    height: 34px;
+    width: 74px;
+    line-height: 32px;
+    min-width: 72px;
+    cursor: pointer;
+}
+.hide-article-box #btn-readmore:hover{
+    background: #ca0c16;
+    color:#fff;
+    text-decoration: none;
+}
+</style>
+<!-- 因INS广告原因 需要提前引入jquery -->
+<script src="//csdnimg.cn/public/common/libs/jquery/jquery-1.11.1.min.js" type="text/javascript"></script>
+<script type="text/javascript">var jQuery = jQuery.noConflict();// 解决jq与prototype.js命名空间冲突的问题</script>
+<script src="https://g.csdnimg.cn/fixed-sidebar/1.1.1/fixed-sidebar.js" type="text/javascript"></script>
+
+    <link href="https://www.iteye.com/javascripts/syntaxhighlighter/SyntaxHighlighter.css?1448702469" media="screen" rel="stylesheet" type="text/css" />
+  <script src="https://www.iteye.com/javascripts/syntaxhighlighter/shCoreCommon.js?1448702469" type="text/javascript"></script>
+<script src="https://www.iteye.com/javascripts/hotkey.js?1448702469" type="text/javascript"></script>
+  <script src="https://www.iteye.com/javascripts/code_favorites.js?1448702469" type="text/javascript"></script>
+<script src="https://www.iteye.com/javascripts/weiboshare.js?1448702469" type="text/javascript"></script>
+
+  <!-- 请置于所有广告位代码之前 -->
+  <script src="https://dup.baidustatic.com/js/ds.js"></script>
+  <link ref="canonical" href="http://ctwen.iteye.com/blog/2335211">
+  <script src="//msite.baidu.com/sdk/c.js?appid=1563894916825412"></script>
+  <script src="https://g.csdnimg.cn/recommend/1.3.1/recommend.js"></script>
+</head>
+
+<body>
+  <div id="header">
+    <div id="blog_site_nav">
+  <a href="https://www.iteye.com/" class="homepage">首页</a>
+  <a href="https://www.iteye.com/news">资讯</a>
+  <a href="https://www.iteye.com/magazines">精华</a>
+  <a href="https://www.iteye.com/forums">论坛</a>
+  <a href="https://www.iteye.com/ask">问答</a>
+  <a href="https://www.iteye.com/blogs">博客</a>
+  <a href="https://www.iteye.com/blogs/subjects">专栏</a>
+  <a href="https://www.iteye.com/groups">群组</a>
+<!--  <a href="#" onclick="return false;" id="msna"><u>更多</u> <small>▼</small></a>-->
+<!--  <div class="quick_menu" style="display:none;">-->
+<!--    <a target="_blank" href="https://job.iteye.com/iteye">知识库</a>-->
+<!--    <a href="https:///search">搜索</a>-->
+<!--  </div>-->
+</div>
+
+    <div id="user_nav">
+
+      <a href="/login" class="welcome" title="登录">您还未登录 !</a>
+    <a href="/login">登录</a>
+    <!--<a href="/signup" class="nobg">注册</a>-->
+    <!--<a href="https://passport.csdn.net/account/mobileregister?from=https://www.iteye.com">注册</a>-->
+  </div>
+
+
+  </div>
+
+  <div id="page">
+<!--    <div id="branding" class="clearfix">-->
+<!--      <div id="blog_name">-->
+<!--        <h1><a href="/">-->
+<!--            </a></h1>-->
+<!--      </div>-->
+<!--      <div id='fd'></div>-->
+<!--      <div id="blog_navbar">-->
+<!--        <ul>-->
+          
+          
+          
+          
+          
+          
+<!--        </ul>-->
+
+<!--        <div class="search">-->
+<!--          <form action="/blog/search" method="get">-->
+<!--            <input class="search_text" id="query" name="query" style="margin-left: 10px;width: 110px;" type="text"-->
+<!--              value="" />-->
+<!--            <input class="submit_search" type="submit" value="" />-->
+<!--          </form>-->
+<!--        </div>-->
+<!--        <div id="fd"></div>-->
+<!--      </div>-->
+<!--    </div>-->
+    `
+    <div id="content" class="clearfix">
+      <div id="local">
+        <div class="local_top"></div>
+        <div id="blog_owner">
+  <div id="blog_owner_logo"><a href='https://ctwen.iteye.com'><img alt="ctwen的博客" class="logo" src="https://www.iteye.com/upload/logo/user/225876/03f65408-2627-34b2-8c1c-893e799dbdd7.jpg?1269790965" title="ctwen的博客: " width="" /></a></div>
+  <div id="blog_owner_name">ctwen</div>
+</div>
+
+        <div id="blog_actions">
+          <ul>
+            <li>浏览:
+              360128 次</li>
+            
+            <li>性别:
+              <img alt="Icon_minigender_1" src="https://www.iteye.com/images/icon_minigender_1.gif?1448702469" title="男" />
+            </li>
+            
+            
+            <li>来自:
+              广州
+            </li>
+            
+            <li>
+              <img src='/images/status/offline.gif'/>
+            </li>
+            
+          </ul>
+        </div>
+
+        <div id="user_visits" class="clearfix">
+          <h5>最近访客 <span style='font-weight:normal;font-size:12px;padding-left:30px;'>
+              <a href="/blog/user_visits">更多访客&gt;&gt;</a></span></h5>
+          
+          <div class="user_visit">
+            <div class="logo"><a href='https://hotpopcao.iteye.com' target='_blank'><img alt="hotpopcao的博客" class="logo" src="https://www.iteye.com/images/user-logo-thumb.gif?1448702469" title="hotpopcao的博客: " width="48px" /></a></div>
+            <div class="left">
+              <a href='https://hotpopcao.iteye.com' target='_blank' title='hotpopcao'>hotpopcao</a>
+            </div>
+          </div>
+          
+          <div class="user_visit">
+            <div class="logo"><a href='https://qq502100724.iteye.com' target='_blank'><img alt="qq502100724的博客" class="logo" src="https://www.iteye.com/images/user-logo-thumb.gif?1448702469" title="qq502100724的博客: " width="48px" /></a></div>
+            <div class="left">
+              <a href='https://qq502100724.iteye.com' target='_blank' title='qq502100724'>qq502100724</a>
+            </div>
+          </div>
+          
+          <div class="user_visit">
+            <div class="logo"><a href='https://lockey.iteye.com' target='_blank'><img alt="lockey的博客" class="logo" src="https://www.iteye.com/images/user-logo-thumb.gif?1448702469" title="lockey的博客: lockey" width="48px" /></a></div>
+            <div class="left">
+              <a href='https://lockey.iteye.com' target='_blank' title='lockey'>lockey</a>
+            </div>
+          </div>
+          
+          <div class="user_visit">
+            <div class="logo"><a href='https://zhoudinghan.iteye.com' target='_blank'><img alt="zhoudinghan的博客" class="logo" src="https://www.iteye.com/images/user-logo-thumb.gif?1448702469" title="zhoudinghan的博客: " width="48px" /></a></div>
+            <div class="left">
+              <a href='https://zhoudinghan.iteye.com' target='_blank' title='zhoudinghan'>zhoudinghan</a>
+            </div>
+          </div>
+          
+        </div>
+
+        <div id="user_title_list" class="clearfix">
+          <h5>博主相关</h5>
+          <li>
+            <a href="https://ctwen.iteye.com">博客</a>
+          </li>
+
+          <li>
+            <a href="/weibo">微博</a>
+          </li>
+
+          <li>
+            <a href="/album">相册</a>
+          </li>
+
+          <li>
+            <a href="/link">收藏</a>
+          </li>
+
+          <li>
+            <a href="/blog/guest_book">留言</a>
+          </li>
+
+          <li>
+            <a href="/blog/profile">关于我</a>
+          </li>
+        </div>
+
+        
+
+                <div id="blog_menu">
+          <h5>文章分类</h5>
+          <ul>
+            <li>
+              <a href="/">全部博客 (138)</a>
+            </li>
+            
+            <li>
+              <a href="/category/152198">JAVA (20)</a>
+              </li>
+              
+            <li>
+              <a href="/category/152197">Database (11)</a>
+              </li>
+              
+            <li>
+              <a href="/category/152199">Flex (2)</a>
+              </li>
+              
+            <li>
+              <a href="/category/162387">OXM (1)</a>
+              </li>
+              
+            <li>
+              <a href="/category/162390">Oracle (17)</a>
+              </li>
+              
+            <li>
+              <a href="/category/162389">Persistence (2)</a>
+              </li>
+              
+            <li>
+              <a href="/category/162401">IDE (5)</a>
+              </li>
+              
+            <li>
+              <a href="/category/162399">Software Development (12)</a>
+              </li>
+              
+            <li>
+              <a href="/category/152200">Operation System (22)</a>
+              </li>
+              
+            <li>
+              <a href="/category/162402">Spring (1)</a>
+              </li>
+              
+            <li>
+              <a href="/category/178155">Computer (3)</a>
+              </li>
+              
+            <li>
+              <a href="/category/188642">WEB Server (6)</a>
+              </li>
+              
+            <li>
+              <a href="/category/206466">Industry Applications (11)</a>
+              </li>
+              
+            <li>
+              <a href="/category/220103">Project Management (1)</a>
+              </li>
+              
+            <li>
+              <a href="/category/220961">Web Service (1)</a>
+              </li>
+              
+            <li>
+              <a href="/category/227004">Linux (9)</a>
+              </li>
+              
+            <li>
+              <a href="/category/250931">HTML (2)</a>
+              </li>
+              
+            <li>
+              <a href="/category/306863">Crypto (1)</a>
+              </li>
+              
+            <li>
+              <a href="/category/344707">Lucene (3)</a>
+              </li>
+              
+            <li>
+              <a href="/category/345843">Hadoop (10)</a>
+              </li>
+              
+            <li>
+              <a href="/category/346696">Java Script (2)</a>
+              </li>
+              
+            <li>
+              <a href="/category/351425">Search (7)</a>
+              </li>
+              
+          </ul>
+        </div>
+        <div id='month_blogs'>
+          <h5>社区版块</h5>
+          <ul>
+            <li>
+              <a href="/blog/news">我的资讯</a> (
+              0)</li>
+            <li>
+              <a href="/blog/post">我的论坛</a> (
+              0)
+            </li>
+            <li>
+              <a href="/blog/answered_problems">我的问答</a> (
+              3)</li>
+          </ul>
+        </div>
+        <div id="month_blogs">
+          <h5>存档分类</h5>
+          <ul>
+            
+            <li>
+              <a href="/blog/monthblog/2017-03">2017-03</a>
+              (
+              10)</li>
+            
+            <li>
+              <a href="/blog/monthblog/2017-02">2017-02</a>
+              (
+              3)</li>
+            
+            <li>
+              <a href="/blog/monthblog/2017-01">2017-01</a>
+              (
+              1)</li>
+            
+            <li>
+              <a href="/blog/monthblog_more">更多存档...</a>
+            </li>
+          </ul>
+        </div>
+        
+        
+
+        <div id="guest_books">
+          <h5>最新评论</h5>
+          <ul>
+            
+            <li>
+              <a href='https://bcabchappy.iteye.com' target='_blank' title='bcabchappy'>bcabchappy</a>：
+              win7下面无效：当前盘符：%~d0原样输出了<br />
+              <a href="/blog/1172782#bc2403448">CMD获取当前目录的绝对路径</a>
+            </li>
+            
+            <li>
+              <a href='https://gpo.iteye.com' target='_blank' title='gpo'>gpo</a>：
+                       很好 <br />
+              <a href="/blog/724544#bc2232094">struts2文件上传如何限制上传文件类型(类型列表)</a>
+            </li>
+            
+            <li>
+              <a href='https://zl0828.iteye.com' target='_blank' title='zl0828'>zl0828</a>：
+              很好的东西，顶你，分享<br />
+              <a href="/blog/1172782#bc2227030">CMD获取当前目录的绝对路径</a>
+            </li>
+            
+          </ul>
+        </div>
+
+        <div class="local_bottom"></div>
+        
+        <div id="nav_show_top_stop">
+            <div>
+              <!-- 广告位：PC端-iteye博客详情页左侧Button1-200*200 -->
+              
+              <!-- Ads ID 423 -->
+              
+            </div>
+            <div>
+              <!-- 广告位：PC端-iteye博客详情页左侧Button2-200*200 -->
+              
+              <!-- Ads ID 424 -->
+              
+            </div>
+          </div>
+      </div>
+      
+      <div id="main" class="">
+        
+
+
+
+        
+
+
+<div class="h-entry" style='display:none'>
+  <a href="https://ctwen.iteye.com" class="p-author" target="_blank">ctwen</a>
+</div>
+
+
+<div class="blog_main">
+  <script type="application/ld+json">
+    {
+        "@context": "https://zhanzhang.baidu.com/contexts/cambrian.jsonld",
+        "@id": "http://ctwen.iteye.com/blog/2335211",
+        "title": "Mount远程目录并让本地非root用户可读可写",
+        "images": [],
+        "description": "",
+        "pubDate": "2016-11-03T22:07:23"
+    }
+  </script>
+  <div class="blog_title">
+    <h3>
+      <a href="/blog/2335211">Mount远程目录并让本地非root用户可读可写</a>
+      <em class="actions">      </em>
+    </h3>
+    <ul class='blog_categories'><strong>博客分类：</strong> <li><a href="/category/227004">Linux</a></li> </ul>
+        <div class='news_tag'>&nbsp;</div>
+  </div>
+
+  <div id="blog_content" class="hide-main-content">
+    <div class="hide-article-box text-center">
+      <a class="btn" id="btn-readmore">阅读更多</a>
+    </div>
+    <div style="font-size: 14px;" class="iteye-blog-content-contain">
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">远程与本地是两台<a target="_blank" href="http://lib.csdn.net/base/linux" title="Linux知识库" style="color: #df3434; font-weight: bold;" class="replace_word">Linux</a>机器，要实现如题效果，传统的nfs的mount方式虽然简单方便却不行</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">nfs的方式：</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">sudo mount -t nfs  -o rw 192.168.0.xx:/path  /mnt/test</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">在本地你会发现/mnt/test下的文件用户为nobody，普通用户可以读，但是非root用户写不了(不用sudo不用su)，</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">有的人想通过改/etc/fstab 或者远程主机的/etc/exports来实现，</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">我告诉你趁早放弃，nfs没有这个功能，它无法指定uid gid 用户名，密码。</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;"> </span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">cifs可以解决这个问题，通俗点讲就是samba的方式</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">远程主机安装samba服务</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">部分/etc/samba/smb.conf 内容</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">[testuser]<br>    path = /home/testuser/share<br>    read only = no<br>;    browseable = yes<br>    valid users = testuser</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">共享目录/home/testuser/share，有效用户为testuser</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;"> </span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">本地操作如下</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">安装 cifs-utils       sudo apt-get install  cifs-utils 神马的</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">命令id得到本地用户localuser的id,gid     <br></span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">比如得到uid=1000(localuser) gid=1000(localuser)   <br></span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">修改/etc/fstab</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">//192.168.0.xx/testuser/  /mnt/test/   cifs    rw,noauto,defaults,username=testuser,password=testuserpassword,uid=1000,gid=1000    0       0</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"><span style="font-size: 18px;">然后sudo mount /mnt/test就会挂载，此时localuser翻身做主人了,注意为了安全fstab中可以不写password=testuserpassword这段，然后在mount时手动输入密码，如果要开机自动挂载，可以把noauto改成auto,或者在启动脚本中mount</span></p>
+<p style="color: #333333; font-family: Arial; line-height: 26px;"> </p>
+<p><span style="color: #333333; font-family: Arial; line-height: 26px; font-size: 18px;">出自：</span><span style="color: #333333; font-family: Arial;"><span style="font-size: 18px; line-height: 26px;">http://blog.csdn.net/zmlovelx/article/details/17530741</span></span></p>
+</div>
+
+  
+
+  <div>
+    <!-- 广告位：PC端-iteye博客详情页底部banner2-728*90 -->
+    <script>
+      (function() {
+          var s = "_" + Math.random().toString(36).slice(2);
+          document.write('<div id="' + s + '"></div>');
+          (window.slotbydup=window.slotbydup || []).push({
+              id: '4774193',
+              container: s,
+              size: '728,90',
+              display: 'inlay-fix'
+          });
+      })();
+      jQuery(function(){
+        window.csdn.recommendSide({
+          contentBox: "recommend",
+          postBox: jQuery(".news-right-side"),
+          query:'Mount远程目录并让本地非root用户可读可写',
+          popu:'725'
+        })
+      });
+    </script>
+  </div>
+
+
+
+  <div id="bottoms" class="clearfix">
+    
+    <div id="share_weibo">分享到：
+      <a data-type='sina' href="javascript:;" title="分享到新浪微博"><img src="/images/sina.jpg"></a>
+      <a data-type='qq' href="javascript:;" title="分享到腾讯微博"><img src="/images/tec.jpg"></a>
+    </div>
+  </div>
+
+  <div class="blog_nav">
+    <div class="pre_next">
+      <a href="/blog/2339413" class="next" title="ES5安装Elasticsearch-head插件">ES5安装Elasticsearch-head插件</a>
+      |
+      <a href="/blog/2334025" class="pre" title="DB2数据库编目（catalog）概念的理解 ">DB2数据库编目（catalog）概念的理解 </a>
+    </div>
+  </div>
+  <div class="blog_bottom">
+    <ul>
+      <li>2016-11-03 22:07</li>
+      <li>浏览 284</li>
+      <li><a href="#comments">评论(0)</a></li>
+      
+      
+      <li>分类:<a href="https://www.iteye.com/blogs/category/os">操作系统</a></li>      
+      <li class='last'><a href="https://www.iteye.com/wiki/blog/2335211" target="_blank" class="more">查看更多</a></li>
+    </ul>    
+  </div>
+    
+  <div class="blog_comment">
+    <h5>评论</h5>
+    <a id="comments" name="comments"></a>
+    
+    
+    
+  </div>
+
+  <div class="blog_comment">
+    <h5>发表评论</h5>
+            <p style="text-align:center; margin-top:30px;margin-bottom:0px;"><a href="/login" style="background-color:white;"> <img src="/images/login_icon.png" style="vertical-align:middle; margin-right: 10px;" /></a><a href="/login">  您还没有登录,请您登录后再发表评论 </a></p>
+      </div>
+  </div>
+  
+      
+<div class="boutique-curr-box blog_comment">
+	  <div class="boutique-curr clearfix" id="album_detail_wrap">
+	    <h5 class="h3titles">相关资源推荐</h5>
+			<ul style="margin-top: 8px" class="clearfix">
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/ctwen/article/details/84824875" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/ctwen/article/details/84824875,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/ctwen/article/details/84824875,-&quot;}" target="_blank" title="Mount远程目录并让本地非root用户可读可写"><em class='related_suggestion_highlight'>Mount</em><em class='related_suggestion_highlight'>远程</em><em class='related_suggestion_highlight'>目录</em>并让<em class='related_suggestion_highlight'>本地</em>非<em class='related_suggestion_highlight'>root用户</em><em class='related_suggestion_highlight'>可读</em><em class='related_suggestion_highlight'>可写</em></a>
+              <p>
+                <em class='related_suggestion_highlight'>远程</em>与<em class='related_suggestion_highlight'>本地</em>是两台Linux机器，要实现如题效果，传统的nfs的<em class='related_suggestion_highlight'>mount</em>方式虽然简单方便却不行
+nfs的方式：
+sudo <em class='related_suggestion_highlight'>mount</em> -t nfs  -o rw 192.168.0.xx:/path  /mnt/test
+在<em class='related_suggestion_highlight'>本地</em>你会发现/mnt/test下的文件用户为nobody，普通用户可以读，但是非<em class='related_suggestion_highlight'>root用户</em>写不了(不用sudo不用su)，
+有的人想通过改/etc/fstab 或者...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/zmlovelx/article/details/17530741" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/zmlovelx/article/details/17530741,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/zmlovelx/article/details/17530741,-&quot;}" target="_blank" title="mount远程目录并让本地非root用户可读可写"><em class='related_suggestion_highlight'>mount</em><em class='related_suggestion_highlight'>远程</em><em class='related_suggestion_highlight'>目录</em>并让<em class='related_suggestion_highlight'>本地</em>非<em class='related_suggestion_highlight'>root用户</em><em class='related_suggestion_highlight'>可读</em><em class='related_suggestion_highlight'>可写</em></a>
+              <p>
+                <em class='related_suggestion_highlight'>远程</em>与<em class='related_suggestion_highlight'>本地</em>是两台linux机器，要实现如题效果，传统的nfs的<em class='related_suggestion_highlight'>mount</em>方式虽然简单方便却不行
+nfs的方式：
+sudo <em class='related_suggestion_highlight'>mount</em> -t nfs  -o rw 192.168.0.xx:/path  /mnt/test
+在<em class='related_suggestion_highlight'>本地</em>你会发现/mnt/test下的文件用户为nobody，普通用户可以读，但是非<em class='related_suggestion_highlight'>root用户</em>写不了(不用sudo不用su)，
+有的人想通过改/etc/fstab 或者远
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/daojin505/article/details/76816307" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/daojin505/article/details/76816307,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/daojin505/article/details/76816307,-&quot;}" target="_blank" title="把windows一个目录mount到Ubuntu下，非root用户没有写权限">把windows一个<em class='related_suggestion_highlight'>目录</em><em class='related_suggestion_highlight'>mount</em>到Ubuntu下，非<em class='related_suggestion_highlight'>root用户</em>没有写权限</a>
+              <p>
+                http://bbs.chinaunix.net/thread-1929832-1-1.html
+ 
+# <em class='related_suggestion_highlight'>mount</em>.cifs //192.168.10.213/<em class='related_suggestion_highlight'>mount</em> /home/gamester88/桌面/test -o guest,dir_mode=0777
+ 
+ 
+
+
+
+    #<em class='related_suggestion_highlight'>mount</em>.cifs //192.168.10.213/<em class='related_suggestion_highlight'>mount</em> /home/gamest
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/sunansheng/article/details/48373063" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/sunansheng/article/details/48373063,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/sunansheng/article/details/48373063,-&quot;}" target="_blank" title="把windows目录挂载mount到linux下，非root用户没有写权限解决方法">把windows<em class='related_suggestion_highlight'>目录</em>挂载<em class='related_suggestion_highlight'>mount</em>到linux下，非<em class='related_suggestion_highlight'>root用户</em>没有写权限解决方法</a>
+              <p>
+                <em class='related_suggestion_highlight'>mount</em> -t cifs //10.6.10.113/SHARE /u02 -o noatime -o nodiratime -o username=administrator,password=111111,rw,uid=0,gid=0,dir_mode=0777,file_mode=0777
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/huohongpeng/article/details/79221163" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/huohongpeng/article/details/79221163,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/huohongpeng/article/details/79221163,-&quot;}" target="_blank" title="mount后普通用户不能读写问题"><em class='related_suggestion_highlight'>mount</em>后普通用户不能读写问题</a>
+              <p>
+                sudo <em class='related_suggestion_highlight'>mount</em> //192.168.10.252/DEV1-huohongpeng -o username=huohongpeng,passwd=Awa7Ua8hqchD,uid=1000,gid=1000 /home/hhp/h
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/cs9dn003/article/details/45038919" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/cs9dn003/article/details/45038919,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/cs9dn003/article/details/45038919,-&quot;}" target="_blank" title="将系统mount 成读写权限">将系统<em class='related_suggestion_highlight'>mount</em> 成读写权限</a>
+              <p>
+                将系统<em class='related_suggestion_highlight'>mount</em> 成读写权限
+
+
+追问：
+
+能说说具体怎么做吗？本人是新手。谢谢
+
+
+
+追答：
+
+先用<em class='related_suggestion_highlight'>mount</em> 查看文件系统。得到类似如下信息
+/emmc@android /system ext4 ro,relatime
+然后
+
+ <em class='related_suggestion_highlight'>mount</em> -o re<em class='related_suggestion_highlight'>mount</em> /system
+system就可以读写了。
+按此处理你的系统就可以了。
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/JoeBlackzqq/article/details/40024647" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/JoeBlackzqq/article/details/40024647,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/JoeBlackzqq/article/details/40024647,-&quot;}" target="_blank" title="linux下挂载windows上的共享目录，并设置所有者为非root用户">linux下挂载windows上的共享<em class='related_suggestion_highlight'>目录</em>，并设置所有者为非<em class='related_suggestion_highlight'>root用户</em></a>
+              <p>
+                
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/shuaiAWP/article/details/51697803" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/shuaiAWP/article/details/51697803,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/shuaiAWP/article/details/51697803,-&quot;}" target="_blank" title="Android系统下的几个可读写目录">Android系统下的几个<em class='related_suggestion_highlight'>可读</em>写<em class='related_suggestion_highlight'>目录</em></a>
+              <p>
+                1.APK安装路径下：一般为/data/data/com.xxx.xxxx/
+2./sdcard
+3./system<em class='related_suggestion_highlight'>目录</em>一般不<em class='related_suggestion_highlight'>可写</em>，即便通过<em class='related_suggestion_highlight'>mount</em>命令以及chmod命令修改读写权限后，依然无法在APK中使用createNewFile()创建文件。（可能不同系统不同的结果）
+
+
+在Android系统启动过程中在启动脚本中添加chmod 777 <em class='related_suggestion_highlight'>目录</em>名 ，可以使<em class='related_suggestion_highlight'>目录</em>可以读写。
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/yuxuehandong/article/details/51143236" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/yuxuehandong/article/details/51143236,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/yuxuehandong/article/details/51143236,-&quot;}" target="_blank" title="使能android /system 文件夹为可读写">使能android /system 文件夹为<em class='related_suggestion_highlight'>可读</em>写</a>
+              <p>
+                以下操作都是在串口中完成使能/system<em class='related_suggestion_highlight'>可读</em>写命令 
+<em class='related_suggestion_highlight'>mount</em>  -o re<em class='related_suggestion_highlight'>mount</em> , rw /system有些android设备的系统设置程序是隐藏的，打开设置程序命令 
+am start com.android.settings
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/Aug0st/article/details/48054305" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/Aug0st/article/details/48054305,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/Aug0st/article/details/48054305,-&quot;}" target="_blank" title="windows 找可写目录">windows 找<em class='related_suggestion_highlight'>可写</em><em class='related_suggestion_highlight'>目录</em></a>
+              <p>
+                文章来源:http://www.nigesb.com/webshell-executeable-directory.html
+
+
+ecycler、temp<em class='related_suggestion_highlight'>目录</em>就不说了，特别是有aspx的权限，找不到exe执行<em class='related_suggestion_highlight'>目录</em>，都不好意思：
+
+
+
+?
+
+
+
+
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+
+
+
+C:\windows\system32\sp
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/qq_36500248/article/details/66970531" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/qq_36500248/article/details/66970531,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/qq_36500248/article/details/66970531,-&quot;}" target="_blank" title="adb进入root权限并修改系统文件目录为可读写">adb进入root权限并修改系统文件<em class='related_suggestion_highlight'>目录</em>为<em class='related_suggestion_highlight'>可读</em>写</a>
+              <p>
+                我用小米手机做实验获得root权限并修改文件<em class='related_suggestion_highlight'>目录</em>权限（手机已被刷机，系统有root权限，不知道有没有影响）
+1、首先adb shell 进入手机
+2、键入命令su获取root权限，获取到的标志是由$符号变成#号
+
+3、键入<em class='related_suggestion_highlight'>mount</em>查看系统<em class='related_suggestion_highlight'>目录</em>及是否<em class='related_suggestion_highlight'>可读</em>写rw为<em class='related_suggestion_highlight'>可读</em>写，ro为只读（read only）
+
+
+
+
+我修改的是rootfs / rootfs ro,relatime 0
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/MichaelPengCN/article/details/50789331" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/MichaelPengCN/article/details/50789331,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/MichaelPengCN/article/details/50789331,-&quot;}" target="_blank" title="Unity读取只读和可写目录的方法">Unity读取只读和<em class='related_suggestion_highlight'>可写</em><em class='related_suggestion_highlight'>目录</em>的方法</a>
+              <p>
+                使用Unity时，读取程序包内部资源的时候，如果使用了www的方法，需要注意在手机平台上的前缀转换.
+以下的代码可以获取程序包的<em class='related_suggestion_highlight'>目录</em>
+	public static string AppContentPath() {
+		string path = string.Empty;
+		switch (Application.platform) {
+		case RuntimePlatform.And
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/metasearch/article/details/2606901" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/metasearch/article/details/2606901,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/metasearch/article/details/2606901,-&quot;}" target="_blank" title="目录的可读可写可执行的意义"><em class='related_suggestion_highlight'>目录</em>的<em class='related_suggestion_highlight'>可读</em><em class='related_suggestion_highlight'>可写</em>可执行的意义</a>
+              <p>
+                在Linux中，文件有三种权限－－<em class='related_suggestion_highlight'>可读</em>，<em class='related_suggestion_highlight'>可写</em>，可执行。<em class='related_suggestion_highlight'>目录</em>也有三种权限－－<em class='related_suggestion_highlight'>可读</em>，<em class='related_suggestion_highlight'>可写</em>，可执行。但是实际上他们有着不同的意义。 对于文件： <em class='related_suggestion_highlight'>可读</em> ：表示可以读取文件里的数据； <em class='related_suggestion_highlight'>可写</em> ：表示可以改变和删除文件； 可执行：表示可以执行该程序。 对于<em class='related_suggestion_highlight'>目录</em>： <em class='related_suggestion_highlight'>可读</em>：表示，你可以列出<em class='related_suggestion_highlight'>目录</em>中有什么文件； <em class='related_suggestion_highlight'>可写</em>：表示可以在<em class='related_suggestion_highlight'>目录</em>中删除和增加文件； 可执行：表示可以列出<em class='related_suggestion_highlight'>目录</em>下文件的信息。
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/gzh0222/article/details/7634339" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/gzh0222/article/details/7634339,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/gzh0222/article/details/7634339,-&quot;}" target="_blank" title="linux下将远程磁盘mount到本地">linux下将<em class='related_suggestion_highlight'>远程</em>磁盘<em class='related_suggestion_highlight'>mount</em>到<em class='related_suggestion_highlight'>本地</em></a>
+              <p>
+                linux下将<em class='related_suggestion_highlight'>远程</em>磁盘<em class='related_suggestion_highlight'>mount</em>到<em class='related_suggestion_highlight'>本地</em>
+
+
+
+
+
+
+
+问题：
+现需要把一台服务器上的几个<em class='related_suggestion_highlight'>目录</em>共享给其他几台机器使用，这些机器的<em class='related_suggestion_highlight'>操作系统</em>都是Linux。
+实现的办法：
+使用nfs服务，在客户端<em class='related_suggestion_highlight'>mount</em>服务器的文件夹。
+操作步骤：
+1.在服务器端启动nfs和portmap服务。
+service nfs start
+service portmap start
+运行nts
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/guyongqiangx/article/details/70477030" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/guyongqiangx/article/details/70477030,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/guyongqiangx/article/details/70477030,-&quot;}" target="_blank" title="Ubuntu挂载远程共享目录到本地">Ubuntu挂载<em class='related_suggestion_highlight'>远程</em>共享<em class='related_suggestion_highlight'>目录</em>到<em class='related_suggestion_highlight'>本地</em></a>
+              <p>
+                Ubuntu 14.04通过cifs将<em class='related_suggestion_highlight'>远程</em>共享文件夹挂载到<em class='related_suggestion_highlight'>本地</em>
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/lazyGril_81/article/details/79538109" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/lazyGril_81/article/details/79538109,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/lazyGril_81/article/details/79538109,-&quot;}" target="_blank" title="正确理解文件与目录的可读、可写、可执行权限">正确理解文件与<em class='related_suggestion_highlight'>目录</em>的<em class='related_suggestion_highlight'>可读</em>、<em class='related_suggestion_highlight'>可写</em>、可执行权限</a>
+              <p>
+                文件权限详解
+
+大家在学习Linux或者aix的时候，一定会碰到文件权限问题，那么到底该如何正确理解文件与<em class='related_suggestion_highlight'>目录</em>的<em class='related_suggestion_highlight'>可读</em>、<em class='related_suggestion_highlight'>可写</em>、可执行权限呢？
+
+对于文件而言：
+
+
+读权限允许用户标识读取该文件；
+写权限允许用户修改该文件；
+执行权限允许用户标识执行该文件： 
+a. 对于一个不可执行的文件来说，拥有执行权限是没有任何意义的； 
+b. 如果文件是一个程序或者某种类型的脚本时，那么它就是可执行的 
+
+
+
+...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/okhymok/article/details/79351007" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/okhymok/article/details/79351007,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/okhymok/article/details/79351007,-&quot;}" target="_blank" title="本地非root用户mount"><em class='related_suggestion_highlight'>本地</em>非<em class='related_suggestion_highlight'>root用户</em><em class='related_suggestion_highlight'>mount</em></a>
+              <p>
+                <em class='related_suggestion_highlight'>远程</em>与<em class='related_suggestion_highlight'>本地</em>是两台linux机器，要实现如题效果，传统的nfs的<em class='related_suggestion_highlight'>mount</em>方式虽然简单方便却不行nfs的方式：sudo <em class='related_suggestion_highlight'>mount</em> -t nfs  -o rw 192.168.0.xx:/path  /mnt/test在<em class='related_suggestion_highlight'>本地</em>你会发现/mnt/test下的文件用户为nobody，普通用户可以读，但是非<em class='related_suggestion_highlight'>root用户</em>写不了(不用sudo不用su)，有的人想通过改/etc/fstab 或者<em class='related_suggestion_highlight'>远程</em>主机的/etc...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/ly890700/article/details/55224838" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/ly890700/article/details/55224838,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/ly890700/article/details/55224838,-&quot;}" target="_blank" title="非root用户执行mount命令的方法">非<em class='related_suggestion_highlight'>root用户</em>执行<em class='related_suggestion_highlight'>mount</em>命令的方法</a>
+              <p>
+                在<em class='related_suggestion_highlight'>mount</em>的man手册中有说明：
+       The non-superuser <em class='related_suggestion_highlight'>mount</em>s.
+              Normally, only the superuser can <em class='related_suggestion_highlight'>mount</em> filesystems.  However, when fstab contains the user option on a line, anybody can <em class='related_suggestion_highlight'>mount</em> the co
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/iteye_18107/article/details/82488957" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/iteye_18107/article/details/82488957,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/iteye_18107/article/details/82488957,-&quot;}" target="_blank" title="linux mount挂载共享目录">linux <em class='related_suggestion_highlight'>mount</em>挂载共享<em class='related_suggestion_highlight'>目录</em></a>
+              <p>
+                [b]挂载windows共享<em class='related_suggestion_highlight'>目录</em>或FTP:[/b]
+方式一：包含密码
+[code=&amp;quot;shell&amp;quot;]
+sudo <em class='related_suggestion_highlight'>mount</em> //192.168.10.22/FTPServer /windows -o username=user,password=abcdefg -t cifs
+[/code]
+方式二：密码单独输入
+[code=&amp;quot;shell&amp;quot;]
+sudo <em class='related_suggestion_highlight'>mount</em> //192.168....
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/zxj1988/article/details/48154515" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/zxj1988/article/details/48154515,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/zxj1988/article/details/48154515,-&quot;}" target="_blank" title="Linux下mount 远程Windows的文件夹">Linux下<em class='related_suggestion_highlight'>mount</em> <em class='related_suggestion_highlight'>远程</em>Windows的文件夹</a>
+              <p>
+                <em class='related_suggestion_highlight'>mount</em> -t cifs -o username=du,password=SYS2009health //10.240.196.10/du /mnt
+              </p>
+						</li>
+				
+			</ul>
+	  </div>
+</div>
+
+    
+
+</div>
+
+
+<script type="text/javascript">
+  dp.SyntaxHighlighter.HighlightAll('code', true, true);
+
+  $$('#main .blog_content pre[name=code]').each(function(pre, index){ // blog content
+    var post_id = 2335211;
+    var location = window.location;
+    source_url = location.protocol + "//" + location.host + location.pathname + location.search;
+    pre.writeAttribute('codeable_id', post_id);
+    pre.writeAttribute('codeable_type', "Blog");
+    pre.writeAttribute('source_url', source_url);
+    pre.writeAttribute('pre_index', index);
+    pre.writeAttribute('title', 'Mount远程目录并让本地非root用户可读可写');
+  });
+
+  fix_image_size($$('div.blog_content img'), 700);
+
+  function processComment() {
+    $$('#main .blog_comment > div').each(function(comment){// comment
+      var post_id = comment.id.substr(2);
+      $$("#"+comment.id+" pre[name=code]").each(function(pre, index){
+        var location = window.location;
+        source_url = location.protocol + "//" + location.host + location.pathname + location.search;
+        source_url += "#" + comment.id;
+        pre.writeAttribute('codeable_id', post_id);
+        pre.writeAttribute('codeable_type', "BlogComment");
+        pre.writeAttribute('source_url', source_url);
+        pre.writeAttribute('pre_index', index);
+        pre.writeAttribute('title', 'Mount远程目录并让本地非root用户可读可写');
+      });
+    });
+  }
+
+  function quote_comment(id) {
+    new Ajax.Request('/editor/quote', {
+      parameters: {'id':id, 'type':'BlogComment'},
+      onSuccess:function(response){editor.bbcode_editor.textarea.insertAfterSelection(response.responseText);
+        Element.scrollTo(editor.bbcode_editor.textarea.element);}
+    });
+  }
+
+  code_favorites_init();
+  processComment();
+  new WeiboShare({share_buttons: $('share_weibo'), img_scope: $('blog_content')});
+</script>
+
+
+
+
+      </div>
+      
+        <div class="blog-sidebar">
+          <div class="blog-sidebar-fixed">
+            <div class="news-right-side">
+
+            </div>
+            <div class="persion_article">
+
+            </div>
+          </div>
+        </div>
+            <script>
+        setTimeout(function () {
+          var naviga_offsetTop = 0;
+
+          function onload_function() {
+            naviga_offsetTop = jQuery("#nav_show_top_stop").position().top;
+            jQuery(window).bind("scroll", naviga_stay_top);
+            jQuery(window).bind("mousewheel", naviga_stay_top);
+            jQuery(document).bind("scroll", naviga_stay_top);
+            jQuery(document).bind("mousewheel", naviga_stay_top);
+          }
+
+          function naviga_stay_top() {
+
+            var scrollTop = jQuery(document).scrollTop();
+            if (scrollTop > (naviga_offsetTop + 250)) {
+              jQuery("#nav_show_top_stop").css({
+                "position": "fixed"
+              });
+              jQuery("#nav_show_top_stop").css({
+                "top": "0px"
+              });
+            } else {
+              jQuery("#nav_show_top_stop").css({
+                "position": "fixed"
+              });
+              jQuery("#nav_show_top_stop").css({
+                "top": naviga_offsetTop + 250 - scrollTop + "px"
+              });
+            }
+          }
+          jQuery(document).ready(onload_function());
+        }, 200);
+      </script>
+    </div>
+          <script>
+          setTimeout(function () {
+              not_loading = true;
+              pageNum = 3;
+              oList = jQuery("#album_detail_wrap");
+              jQuery(window).scroll(function() {
+                  var scrollTop = jQuery(this).scrollTop();
+                  var scrollHeight = jQuery(document).height() ;
+                  var windowHeight = jQuery(this).height();
+                  if (scrollTop + windowHeight >= scrollHeight) {
+                      if(not_loading){
+                          refreshMore();
+                          setTimeout(function(){
+                              getMore();
+                          },100);
+                      }else{
+                          jQuery(".dl_more").remove();
+                      }
+                  }
+              });
+
+              function getMore(){
+                  not_loading = false;
+                  console.log("getMore......");
+                  jQuery.ajax({
+                      type: 'get',
+                      url: "/blog/ajax_get_blog_recommends/2335211",
+                      data:{
+                          page:pageNum
+                      },
+                      //async: false,
+                      dataType: 'json',
+                      success: function (resobj) {
+                          var totalNum = resobj.total_pages;
+                          if(pageNum <= totalNum && resobj.oHtml != '' ){
+                              jQuery(".dl_more").remove();
+                              oList.find('ul').append(resobj.oHtml);
+                              refreshMore();
+                              not_loading = true;
+                              pageNum++;
+                          }else{
+                              not_loading = false;
+                              noMore();
+                          }
+                      },
+                      error: function (err) {
+                          console.log(err);
+                      }
+                  });
+              }
+
+              function noMore(){
+                  jQuery(".dl_more").remove();
+                  if(oList.find(".dl_no_more").length ==0){
+                      oList.append('<div class="dl_no_more" style="font-size:14px; color:#0F8AC6; text-align:center;padding-top:10px; ">我们是很有底线的</div>');
+                  }
+              }
+
+              function refreshMore(){
+                  if(oList.find(".dl_more").length ==0){
+                      oList.append('<div class="dl_more" style="font-size:14px; color:#0F8AC6; text-align:center;padding-top:10px;">上滑加载更多</div>');
+                  }
+              }
+          }, 200);
+      </script>
+  
+    <div id="footer" class="clearfix">
+      <!-- <div id="copyright">
+        <hr />
+        声明：ITeye文章版权属于作者，受法律保护。没有作者书面许可不得转载。若作者同意转载，必须以超链接形式标明文章原始出处和作者。<br />
+        &copy; 2003-
+        2019 ITeye.com. All rights reserved. [ 京ICP证110151号 京公网安备110105010620 ]
+      </div> -->
+      <div id="ad_pop">
+        <div class="J_adv" data-view="true" data-mod="ad_popu_64" data-mtp="62" data-order="21" data-con="ad_content_2070">
+          <script id="popuLayer_js_q" src="https://ads.csdn.net/js/popuLayer.js" defer="" type="text/javascript"></script>
+          <!-- 广告位：PC端-iteye博客详情右侧弹窗-300*250 -->
+          
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript">
+  document.write("<img src='https://stat.iteye.com/?url="+ encodeURIComponent(document.location.href) + "&referrer=" + encodeURIComponent(document.referrer) + "&user_id=' width='0' height='0' />");
+</script>
+
+
+
+   Global site tag (gtag.js) - Google Analytics
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-127895514-6"></script>
+  <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-127895514-6');
+  </script>
+
+  
+  
+  <link href="//csdnimg.cn/public/common/toolbar/content_toolbar_css/content_toolbar.css" rel="stylesheet" >
+<script src="//csdnimg.cn/public/common/libs/jquery/jquery-1.11.1.min.js" type="text/javascript"></script>
+<script src="https://csdnimg.cn/pubfooter/js/publib_footer-1.0.3.js" data-isfootertrack="false" type="text/javascript"></script>
+<script id="csdn-toolbar-id" btnId="header_notice_num" wrapId="note1" count="5" subCount="5" type="text/javascript" src="//csdnimg.cn/public/common/toolbar/js/content_toolbar.js"></script>
+<script src="//csdnimg.cn/asdf/tracking-1.0.1.js" type="text/javascript"></script>
+<script language="javascript" type="text/javascript" src="//csdnimg.cn/asdf/async-1.0.1.js"></script>
+<script type="text/javascript" charset="utf-8" src="https://g.csdnimg.cn/track/1.2.2/track.js"></script>
+<style>
+  .userinfo {display: none !important;}
+  .persion_article h3{
+    background: none !important;
+    border-bottom: none!important;
+    padding: 0!important;
+    margin-bottom: 0!important;
+    line-height: 1!important;
+  }
+  .persion_article .right_box{
+    margin-top: 0!important;
+  }
+  .persion_article .footer_box .feed_new_tit span{
+    padding-left: 0!important;
+  }
+</style>
+<script>
+(function($){
+  var windowHeight = $(window).height(),
+      contentHeight = $(".hide-main-content").height()
+      windowHeight = windowHeight * 1.2 //获得可视区域高度
+      if(contentHeight > windowHeight){
+        $(".hide-article-box").show()
+        $(".hide-main-content").css({'height': windowHeight,'overflow':'hidden'})
+        $(".hide-article-box").find("#btn-readmore").click(function(){
+          $(this).parents('.hide-main-content').removeAttr('style')
+          $(this).parent().hide()
+        })
+      }
+})(jQuery)
+</script>
+<script type="text/javascript">var $csdn_iteye_jq = jQuery.noConflict();// 解决jq与prototype.js命名空间冲突的问题</script>
+  
+  
+  <script src="https://www.iteye.com/javascripts/web-storage-cache.min.js?1461122561" type="text/javascript"></script>
+  <script src="https://www.iteye.com/javascripts/replace.min.js?1517971857" type="text/javascript"></script>
+  
+
+</body>
+<script>
+  var jQuery = jQuery.noConflict();
+  setTimeout(function($){
+    window.csdn.fixedSidebar({
+        targetBox: $('.persion_article'), //判断到达底部的div,公共footer可选 $('.persion_article'),$('.public_pc_right_footer2018')
+        mainBox: $("#main"), //侧边栏旁边的主体div,默认 $("main")
+        sidebar: $(".blog-sidebar-fixed"), //侧边栏,默认 $("aside")
+        direction: 'right', //侧边栏浮动方向,可选'right','left',
+        position: 'fixed',//定位方式
+        bottom: 0,
+        zIndex: 99,
+        sidebarRightMargin: 8,//direction为left,侧边栏距离mainbox的右边距
+        sidebarLeftMargin: 37,//direction为right,侧边栏距离mainbox的左边距
+    })
+  },200,jQuery)
+  </script>
+</html>

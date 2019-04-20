@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="referrer" content="origin" />
+    <title>使用git svn clone迁移svn仓库 - ShellNotes - 博客园</title>
+<meta property="og:description" content="git svn clone,迁移svn仓库,迁移git,使用git替代svn" />
+    <link type="text/css" rel="stylesheet" href="/bundles/blog-common.css?v=svlZeZMvc3He7PqOD4T7SOuQn0_kIfLBYiy3idqd35Y1"/>
+<link id="MainCss" type="text/css" rel="stylesheet" href="/skins/MTClean/bundle-MTClean.css?v=A4sgx-tcV5mqPq9wasevPAbBGnscmp2wrfuWlehfOX41"/>
+<link type="text/css" rel="stylesheet" href="/blog/customcss/22855.css?v=qfp1WBSKSwLrpa4%2fVANkafiXeBM%3d"/>
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/MTClean/bundle-MTClean-mobile.css?v=Go8Bj0ZU9gZXuPSKWcSQabps3E1njgJKYz4DiOq6-N41"/>
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/ronli/rss"/>
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/ronli/rsd.xml"/>
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/ronli/wlwmanifest.xml"/>
+    <script src="//common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script>var currentBlogId=22855;var currentBlogApp='ronli',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="/bundles/blog-common.js?v=OFBZTzkHKauV7mtIFLF9jlqrX-sesK9-mY9KjurLrq01" type="text/javascript"></script>
+</head>
+<body>
+<a name="top"></a>
+
+
+<div id="top">
+
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/ronli/">&copy;Shell&nbsp;Notes</a></h1>
+<p id="tagline"></p>
+</div>
+<div id="main">
+	
+        <div id="post_detail">
+	<div class="post">
+		<h2>
+			<a id="cb_post_title_url" href="https://www.cnblogs.com/ronli/p/git_svn_clone.html">使用git svn clone迁移svn仓库</a>
+		</h2>
+		<div id="cnblogs_post_body" class="blogpost-body cnblogs-markdown"><h3 id="使用git-svn-clone迁移svn仓库">使用git svn clone迁移svn仓库</h3>
+<p>clone命令可以指定很多参数，主要用到这些，你也可以使用git svn help查看完整的参数列表。</p>
+<pre><code> git svn clone https://172.16.0.241:8443/svn/wsgjp/ -r 76896:HEAD --no-metadata --authors-file=svnuser.text --trunk=svnproject --branches=svnbranch yourGitProject</code></pre>
+<ol>
+<li>r指定起止版本号。</li>
+<li>no-metadata阻止git导出SVN包含的一些无用信息。</li>
+<li>authors-file必须指定svn帐号在git中的映射。</li>
+<li>trunk指定导出仓库的主干项目路径。</li>
+<li>branches指定svn的分支项目路径。</li>
+</ol>
+<p><strong>注意</strong>：clone命令需要管理员权限，否则会遇到下面的异常：</p>
+<pre><code> couldn&#39;t truncate file .... at line 1393. </code></pre>
+<p>你要做的就是右键使用管理员身份运行CMD，然后使用fatch继续执行导出。</p>
+<pre><code> git svn fatch -r 76896:HEAD --authors-file=svnuser.text</code></pre>
+<p>当然这并不是唯一的坑，你还有可能会遇到下边的错误：</p>
+<pre><code> 0 [main] perl 24432 cygwin_exception::open_stackdumpfile: Dumping stack trace to perl.exe.stackdump
+ fatal: malformed index info 100644 362f1c18ceed5d593eb021432545685283a93 </code></pre>
+<p>要解决这个问题，请打开隐藏项目找到.git/config文件，文件大概长这个样子:</p>
+<pre><code>[core]
+    repositoryformatversion = 0
+    filemode = false
+    bare = false
+    logallrefupdates = true
+    symlinks = false
+    ignorecase = true
+    hideDotFiles = dotGitOnly
+    longpaths = true
+[svn-remote &quot;svn&quot;]
+...</code></pre>
+<p>重要的就是longpaths = true这一句，然后fatch继续。<br />
+接下来的就是等待，如果你的svn库比较大，像我要导出2w+的commit，会花费相当长的时间。<br />
+so, just do it！</p>
+<p>然然然后。。。</p>
+<p>fetch之后通过git log你会发现看不到新的log，这是因为fetch之后并不会自动将代码合并到当前master,我们查看一下所有的分支</p>
+<pre><code>$ git branch -a
+
+* master
+  remotes/origin/trunk</code></pre>
+<p>可以看到有一个远程分支，这个就是SVN产生的分支，查看一下log</p>
+<pre><code>git log remotes/origin/trunk</code></pre>
+<p>LOG中显示了SVN最新的提交日志，我们需要手动合并到master上,然后查看日志包含了最新的提交。</p>
+<pre><code>git merge remotes/origin/trunk
+git log</code></pre>
+<p>到此迁移已经完成，接下来添加GIT远程地址，放心将代码push到GIT服务器吧。</p>
+</div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info">
+</div>
+<div class="clear"></div>
+<div id="post_next_prev"></div>
+</div>
+
+
+		<p class="postfoot">
+			posted on <span id="post-date">2016-09-30 13:39</span> <a href='https://www.cnblogs.com/ronli/'>ShellNotes</a> 阅读(<span id="post_view_count">...</span>) 评论(<span id="post_comment_count">...</span>)  <a href ="https://i.cnblogs.com/EditPosts.aspx?postid=5923557" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(5923557);return false;">收藏</a>
+		</p>
+	</div>
+	<script src="//common.cnblogs.com/highlight/9.12.0/highlight.min.js"></script><script>markdown_highlight();</script><script type="text/javascript">var allowComments=true,cb_blogId=22855,cb_entryId=5923557,cb_blogApp=currentBlogApp,cb_blogUserGuid='8065360b-63cf-dd11-9e4d-001cf0cd104b',cb_entryCreatedDate='2016/9/30 13:39:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=true;</script>
+	
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id='comment_form' class='commentform'>
+<a name='commentform'></a>
+<div id='divCommentShow'></div>
+<div id='comment_nav'><span id='span_refresh_tips'></span><a href='javascript:void(0);' onclick='return RefreshCommentList();' id='lnk_RefreshComments' runat='server' clientidmode='Static'>刷新评论</a><a href='#' onclick='return RefreshPage();'>刷新页面</a><a href='#top'>返回顶部</a></div>
+<div id='comment_form_container'></div>
+<div class='ad_text_commentbox' id='ad_text_under_commentbox'></div>
+<div id='ad_t2'></div>
+<div id='opt_under_post'></div>
+<script async='async' src='https://www.googletagservices.com/tag/js/gpt.js'></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id='cnblogs_c1' class='c_ad_block'>
+    <div id='div-gpt-ad-1546353474406-0' style='height:250px; width:300px;'></div>
+</div>
+<div id='under_post_news'></div>
+<div id='cnblogs_c2' class='c_ad_block'>
+    <div id='div-gpt-ad-1539008685004-0' style='height:60px; width:468px;'></div>
+</div>
+<div id='under_post_kb'></div>
+<div id='HistoryToday' class='c_ad_block'></div>
+<script type='text/javascript'>
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+</div>
+<div id="leftmenu">
+
+	
+<h3>导航</h3>
+<ul>
+			<li><a id="blog_nav_sitehome" href="https://www.cnblogs.com/">博客园</a></li>
+			<li><a id="blog_nav_myhome" href="https://www.cnblogs.com/ronli/">首页</a></li>
+			<li><a id="blog_nav_contact" accesskey="9" rel="nofollow" href="https://msg.cnblogs.com/send/ShellNotes">联系</a></li>
+			<li><a id="blog_nav_rss" href="https://www.cnblogs.com/ronli/rss">订阅</a> <a id="blog_nav_rss_image" href="https://www.cnblogs.com/ronli/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a>
+			<li><a id="blog_nav_admin" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+</ul>
+	
+	
+<h3>News</h3>
+	<ul>
+	  <li><div id="blog-news"></div><script type="text/javascript">loadBlogNews();</script></li>
+	</ul>
+
+	<div id="blog-sidecolumn"></div><script type="text/javascript">loadBlogSideColumn();</script>
+
+</div>
+
+<p id="footer">
+	Powered by: 
+	<br />
+	
+	<a id="Footer1_Hyperlink3" NAME="Hyperlink1" href="https://www.cnblogs.com/" style="font-family:Verdana;font-size:12px;">博客园</a>
+	<br />
+	Copyright &copy; ShellNotes
+</p>
+
+<!--PageEndHtml Block Begin-->
+<div style="float:right;margin-right:10px;color:red">坚持走&nbsp;<script language="javascript" type="text/javascript" src="http://js.users.51.la/4929743.js"></script>
+<noscript><a href="http://www.51.la/?4929743" target="_blank">坚持走、不回头</a></noscript>不回头</div>
+<!--PageEndHtml Block End-->
+</body>
+</html>

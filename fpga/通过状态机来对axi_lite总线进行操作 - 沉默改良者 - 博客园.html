@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="referrer" content="origin" />
+    <title>通过状态机来对axi_lite总线进行操作 - 沉默改良者 - 博客园</title>
+<meta property="og:description" content="通过状态机来对axi_lite总线进行操作 状态跳转： 1.初始状态 将axi_lite读写两个信道分开进行控制，在初始状态，就根据读，写信号来判断应该跳转到那一个状态。 2.写状态 在写状态中不需要" />
+    <link type="text/css" rel="stylesheet" href="/bundles/blog-common.css?v=svlZeZMvc3He7PqOD4T7SOuQn0_kIfLBYiy3idqd35Y1"/>
+<link id="MainCss" type="text/css" rel="stylesheet" href="/skins/KJC/bundle-KJC.css?v=SBtLze_k2f8QMx9yu0UzPZOmkUXedeg_e6WBRIadVBo1"/>
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/KJC/bundle-KJC-mobile.css?v=Go8Bj0ZU9gZXuPSKWcSQabps3E1njgJKYz4DiOq6-N41"/>
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/chensimin1990/rss"/>
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/chensimin1990/rsd.xml"/>
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/chensimin1990/wlwmanifest.xml"/>
+    <script src="//common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script>var currentBlogId=293916;var currentBlogApp='chensimin1990',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="/bundles/blog-common.js?v=OFBZTzkHKauV7mtIFLF9jlqrX-sesK9-mY9KjurLrq01" type="text/javascript"></script>
+</head>
+<body>
+<a name="top"></a>
+
+
+<table class="Framework" cellspacing="0" cellpadding="0" width="100%">
+	<tr>
+		<td colspan="3">
+			
+<div id="top">
+<table cellpadding="10" cellspacing="0">
+	<tr>
+		<td nowrap>
+			<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/chensimin1990/">沉默改良者</a></h1>
+			
+		</td>
+	</tr>
+</table>
+</div>
+<div id="sub">
+	<div id="sub-right"><div id="blog_stats">
+<div class="BlogStats">posts - 224, comments - 33, trackbacks - 0, articles - 0</div></div></div>
+	
+&nbsp;
+<a id="blog_nav_sitehome" href="https://www.cnblogs.com/">博客园</a> :: 
+<a id="blog_nav_myhome" href="https://www.cnblogs.com/chensimin1990/">首页</a> ::
+<a id="blog_nav_newpost" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a> ::
+<a id="blog_nav_contact" accesskey="9" rel="nofollow" href="https://msg.cnblogs.com/send/%E6%B2%89%E9%BB%98%E6%94%B9%E8%89%AF%E8%80%85">联系</a> ::
+<a id="blog_nav_rss" href="https://www.cnblogs.com/chensimin1990/rss">订阅</a>
+<a id="blog_nav_rss_image" class="XMLLink" href="https://www.cnblogs.com/chensimin1990/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a> ::
+<a id="blog_nav_admin" rel="nofollow" href="https://i.cnblogs.com/">管理</a>
+
+</div>
+		</td>
+	</tr>
+	<tr>
+		<td class="LeftCell">
+			<div id="leftmenu">
+            	
+		            <div id="blog-calendar" style="display:none"></div><script type="text/javascript">loadBlogDefaultCalendar();</script>
+		            
+<div id=cell>
+<img src="/Skins/KJC/Images/icon-group.jpg" hspace=5 align=left vspace=2><h3>公告</h3>
+<div id=news>
+	<div id="blog-news"></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+</div>
+
+	            
+	            <div id="blog-sidecolumn"></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+		</td>
+		<td class="MainCell">
+			<div id="main">
+				
+        <div id="post_detail">
+	<div class="post">
+		<div class="posthead">
+			<h2>
+				<a id="cb_post_title_url" class="singleposttitle" href="https://www.cnblogs.com/chensimin1990/p/8526921.html">通过状态机来对axi_lite总线进行操作</a>
+			</h2>
+ 			Posted on <span id="post-date">2018-03-08 10:29</span> <a href='https://www.cnblogs.com/chensimin1990/'>沉默改良者</a> 阅读(<span id="post_view_count">...</span>) 评论(<span id="post_comment_count">...</span>)  <a href ="https://i.cnblogs.com/EditPosts.aspx?postid=8526921" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(8526921);return false;">收藏</a>
+			<script type="text/javascript">var allowComments=true,cb_blogId=293916,cb_entryId=8526921,cb_blogApp=currentBlogApp,cb_blogUserGuid='26133d9f-1f48-e611-9fc1-ac853d9f53cc',cb_entryCreatedDate='2018/3/8 10:29:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+			
+		</div>
+		<div class="postbody"><div id="cnblogs_post_body" class="blogpost-body"><p style="text-align: center;">通过状态机来对axi_lite总线进行操作</p>
+<p>状态跳转：</p>
+<p>1.初始状态</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308101653116-681056218.png" alt="" /></p>
+<p><span style="font-family: 宋体;">将</span>axi_lite<span style="font-family: 宋体;">读写两个信道分开进行控制，在初始状态，就根据读，写信号来判断应该跳转到那一个状态。</span></p>
+<p>2.写状态</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308101713873-2023523040.png" alt="" /></p>
+<p>在写状态中不需要跳转条件，即写状态只需要消耗一个时钟周期，然后自动跳转到下一个状态。</p>
+<p>3.写有效状态</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102023740-97944526.png" alt="" /></p>
+<p><span style="font-family: 宋体;">当接收到</span>slave<span style="font-family: 宋体;">端的</span><span style="font-family: Calibri;">awready </span><span style="font-family: 宋体;">和 </span><span style="font-family: Calibri;">wready </span><span style="font-family: 宋体;">即地址写准备和数据写准备信号后，跳转到</span><span style="font-family: Calibri;">write_ready</span><span style="font-family: 宋体;">状态。</span></p>
+<p>4.write_ready<span style="font-family: 宋体;">状态</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102040168-985623433.png" alt="" /></p>
+<p><span style="font-family: 宋体;">在</span>write_ready<span style="font-family: 宋体;">状态中，等到</span><span style="font-family: Calibri;">slave</span><span style="font-family: 宋体;">端</span><span style="font-family: Calibri;">bvalid</span><span style="font-family: 宋体;">信号的到来，然后跳转到</span><span style="font-family: Calibri;">write_bready</span><span style="font-family: 宋体;">状态。</span></p>
+<p>5.write_bready<span style="font-family: 宋体;">状态</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102054098-930180328.png" alt="" /></p>
+<p>WRITE_BREADY <span style="font-family: 宋体;">状态不需要状态跳转条件，只需要消耗一个时钟周期，同时在这个状态中，也没有相关信号需要输出。</span></p>
+<p>6.write_end<span style="font-family: 宋体;">状态</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102107362-876855306.png" alt="" /></p>
+<p>write_end<span style="font-family: 宋体;">状态也不需要状态跳转条件，写完数据之后，直接回到初始状态。</span></p>
+<p>7.read_start<span style="font-family: 宋体;">状态</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102120906-1465254514.png" alt="" /></p>
+<p><span style="font-family: 宋体;">类比</span>write_start<span style="font-family: 宋体;">状态</span></p>
+<p>8.read_valid<span style="font-family: 宋体;">状态</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102134147-1395816639.png" alt="" /></p>
+<p><span style="font-family: 宋体;">类比</span>write_valid<span style="font-family: 宋体;">信号，只是读数据的过程中不需要接收数据准备信号，在</span><span style="font-family: Calibri;">read_valid</span><span style="font-family: 宋体;">状态中，当接收到</span><span style="font-family: Calibri;">slave</span><span style="font-family: 宋体;">端的读地址准备信号后，跳转到</span><span style="font-family: Calibri;">read_ready</span><span style="font-family: 宋体;">状态。</span></p>
+<p>9.read_ready</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102152402-1622673719.png" alt="" /></p>
+<p><span style="font-family: 宋体;">当</span>slave<span style="font-family: 宋体;">端传回来读数据有效信号后，状态机跳转进</span><span style="font-family: Calibri;">read_finish</span><span style="font-family: 宋体;">状态。</span></p>
+<p>10.read_finish<span style="font-family: 宋体;">状态</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102204887-1881182677.png" alt="" /></p>
+<p><span style="font-family: 宋体;">类比</span>write_finish<span style="font-family: 宋体;">状态</span></p>
+<p>11.read_end<span style="font-family: 宋体;">状态</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102212777-795760649.png" alt="" /></p>
+<p><span style="font-family: 宋体;">类比</span>write_end<span style="font-family: 宋体;">状态</span></p>
+<p><span style="font-family: 宋体;">总结</span>axi_lite<span style="font-family: 宋体;">读写时序：</span></p>
+<p><span style="font-family: 宋体;">写：首先准备好访问地址，和需要写入的数据同时给出地址有效，数据有效，</span>bready<span style="font-family: 宋体;">信号，</span></p>
+<p><span style="font-family: 宋体;">当接收到</span>slave<span style="font-family: 宋体;">端的地址</span><span style="font-family: Calibri;">ready</span><span style="font-family: 宋体;">和数据</span><span style="font-family: Calibri;">ready</span><span style="font-family: 宋体;">信号后，表示可以进行下一写操作了，同时，还需要等待</span><span style="font-family: Calibri;">slave</span><span style="font-family: 宋体;">端的</span><span style="font-family: Calibri;">bvalid</span><span style="font-family: 宋体;">信号到来，表示一次写完成了，即</span><span style="font-family: Calibri;">slave</span><span style="font-family: 宋体;">端的一个写反馈过程</span></p>
+<p><span style="font-family: 宋体;">读：首先准备好访问地址，和地址有效信号先拉高，当接收到</span>slave<span style="font-family: 宋体;">端的地址</span><span style="font-family: Calibri;">ready</span><span style="font-family: 宋体;">信号后，表示可以进行下一次读操作了，同时，当</span><span style="font-family: Calibri;">slave</span><span style="font-family: 宋体;">端传过来</span><span style="font-family: Calibri;">valid</span><span style="font-family: 宋体;">信号的同时，才可以接受</span><span style="font-family: Calibri;">axi_lite</span><span style="font-family: 宋体;">上读取的数据。</span></p>
+<p>状态机输出控制：</p>
+<p>1.在完成一次完整的状态后，必须对相关信号进行清除</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102232622-439986792.png" alt="" /></p>
+<p>&nbsp;2.<span style="font-family: 宋体;">初始状态不需要数据信号，</span>write_start<span style="font-family: 宋体;">信号输出结果如下：</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102356018-40602533.png" alt="" /></p>
+<p>3.write_valid<span style="font-family: 宋体;">状态输出结果：</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102412218-2036735906.png" alt="" /></p>
+<p>4.write_ready<span style="font-family: 宋体;">状态输出结果：</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102431025-1642637575.png" alt="" /></p>
+<p>5.write_bready<span style="font-family: 宋体;">状态无需输出信号，</span><span style="font-family: Calibri;">write_end</span><span style="font-family: 宋体;">状态数据结果：</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102443399-1198896740.png" alt="" /></p>
+<p>6.read_start<span style="font-family: 宋体;">状态输出结果：</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102454784-649388992.png" alt="" /></p>
+<p>7.read_valid<span style="font-family: 宋体;">状态输出结果：</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102507136-113471161.png" alt="" /></p>
+<p>8.read_ready<span style="font-family: 宋体;">状态中不需要输出，</span><span style="font-family: Calibri;">read_finish</span><span style="font-family: 宋体;">输出结果：</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102525952-1402665531.png" alt="" /></p>
+<p>9.read_end<span style="font-family: 宋体;">状态中输出结果：</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102539429-1648078048.png" alt="" /></p>
+<p>axi_lite<span style="font-family: 宋体;">总线时序波形图具体分析（仿真版）</span></p>
+<p>写：</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102552943-945573654.png" alt="" /></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102556930-1868331921.png" alt="" /></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102601640-1187170196.png" alt="" /></p>
+<p><span style="font-family: 宋体;">观察</span>awvalid,wvalid,bready<span style="font-family: 宋体;">是怎么左对齐的，</span><span style="font-family: Calibri;">awready,wready</span><span style="font-family: 宋体;">是怎么对齐的，还有</span><span style="font-family: Calibri;">awready,wready,awvalid,wvalid</span><span style="font-family: 宋体;">是怎么右对齐的，</span><span style="font-family: Calibri;">bready</span><span style="font-family: 宋体;">和</span><span style="font-family: Calibri;">bvalid</span><span style="font-family: 宋体;">是怎么右对齐的，反正你需要知道这些信号之间的关系与实际的波形图。</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102624016-1016096028.png" alt="" /></p>
+<p>这次加上了地址与数据。</p>
+<p>读：</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102638742-1842985848.png" alt="" /></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102724270-685749044.png" alt="" /></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102733697-1443059194.png" alt="" /></p>
+<p><span style="font-family: 宋体;">注意</span>arvalid,rready<span style="font-family: 宋体;">信号的左边是怎么对齐的，右边的</span><span style="font-family: Calibri;">rready</span><span style="font-family: 宋体;">要多一个时钟周期。</span></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102745773-1703357191.png" alt="" /></p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://images2018.cnblogs.com/blog/991371/201803/991371-20180308102757191-1131011358.png" alt="" /></p>
+<p>&nbsp;</p>
+<div class="cnblogs_code">
+<pre><span style="color: #008080;">  1</span> `timescale 1ns /<span style="color: #000000;"> 1ps
+</span><span style="color: #008080;">  2</span> <span style="color: #808080;">/////////////////////////////////////////////////////////////////////////////////</span><span style="color: #008000;">/</span>
+<span style="color: #008080;">  3</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Company: 
+</span><span style="color: #008080;">  4</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Engineer: chensimin
+</span><span style="color: #008080;">  5</span> <span style="color: #008000;">//</span> 
+<span style="color: #008080;">  6</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Create Date: 2018/02/07 09:54:03
+</span><span style="color: #008080;">  7</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Design Name: 
+</span><span style="color: #008080;">  8</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Module Name: ipc_axi_spi
+</span><span style="color: #008080;">  9</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Project Name: 
+</span><span style="color: #008080;"> 10</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Target Devices: 
+</span><span style="color: #008080;"> 11</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Tool Versions: 
+</span><span style="color: #008080;"> 12</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Description: 
+</span><span style="color: #008080;"> 13</span> <span style="color: #008000;">//</span> 
+<span style="color: #008080;"> 14</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Dependencies: 
+</span><span style="color: #008080;"> 15</span> <span style="color: #008000;">//</span> 
+<span style="color: #008080;"> 16</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Revision:
+</span><span style="color: #008080;"> 17</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Revision 0.01 - File Created
+</span><span style="color: #008080;"> 18</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Additional Comments:
+</span><span style="color: #008080;"> 19</span> <span style="color: #008000;">//</span> 
+<span style="color: #008080;"> 20</span> <span style="color: #808080;">/////////////////////////////////////////////////////////////////////////////////</span><span style="color: #008000;">/</span>
+<span style="color: #008080;"> 21</span> 
+<span style="color: #008080;"> 22</span> 
+<span style="color: #008080;"> 23</span> <span style="color: #0000ff;">module</span><span style="color: #000000;"> axi_spi(
+</span><span style="color: #008080;"> 24</span>     
+<span style="color: #008080;"> 25</span>         <span style="color: #0000ff;">input</span><span style="color: #000000;">   clk_100M,
+</span><span style="color: #008080;"> 26</span>         <span style="color: #0000ff;">inout</span>   [<span style="color: #800080;">3</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]spi_dq,
+</span><span style="color: #008080;"> 27</span>         <span style="color: #0000ff;">inout</span><span style="color: #000000;">   spi_ss,
+</span><span style="color: #008080;"> 28</span> <span style="color: #008000;">//</span><span style="color: #008000;">-----------------------ipc_interface---------------------------</span>
+<span style="color: #008080;"> 29</span>         <span style="color: #0000ff;">input</span>   <span style="color: #0000ff;">wire</span>   [<span style="color: #800080;">11</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]    ipc_addr,
+</span><span style="color: #008080;"> 30</span>         <span style="color: #0000ff;">input</span>   <span style="color: #0000ff;">wire</span>   [<span style="color: #800080;">31</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]    ipc_wdata,
+</span><span style="color: #008080;"> 31</span>         <span style="color: #0000ff;">output</span>  <span style="color: #0000ff;">wire</span>   [<span style="color: #800080;">31</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]    ipc_rdata,    
+</span><span style="color: #008080;"> 32</span>         <span style="color: #0000ff;">input</span>   <span style="color: #0000ff;">wire</span><span style="color: #000000;">             ipc_rd,
+</span><span style="color: #008080;"> 33</span>         <span style="color: #0000ff;">input</span>   <span style="color: #0000ff;">wire</span><span style="color: #000000;">             ipc_wr,
+</span><span style="color: #008080;"> 34</span>         <span style="color: #0000ff;">output</span>  <span style="color: #0000ff;">wire</span><span style="color: #000000;">             ipc_ack
+</span><span style="color: #008080;"> 35</span> 
+<span style="color: #008080;"> 36</span> <span style="color: #000000;">    );
+</span><span style="color: #008080;"> 37</span> 
+<span style="color: #008080;"> 38</span> 
+<span style="color: #008080;"> 39</span> <span style="color: #008000;">//</span><span style="color: #008000;">--------------------------------------------------------------</span>
+<span style="color: #008080;"> 40</span> 
+<span style="color: #008080;"> 41</span> <span style="color: #000000;">    ila_0 your_instance_name (
+</span><span style="color: #008080;"> 42</span>         .clk(clk_100M), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire clk</span>
+<span style="color: #008080;"> 43</span>         .probe0(ipc_wr_rise), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe0  </span>
+<span style="color: #008080;"> 44</span>         .probe1(ipc_rd_rise), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe1 </span>
+<span style="color: #008080;"> 45</span>         .probe2(m_axi_awvalid), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe2 </span>
+<span style="color: #008080;"> 46</span>         .probe3(m_axi_wvalid), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe3 </span>
+<span style="color: #008080;"> 47</span>         .probe4(m_axi_arvalid), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe4 </span>
+<span style="color: #008080;"> 48</span>         .probe5(m_axi_rready), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe5 </span>
+<span style="color: #008080;"> 49</span>         .probe6(m_axi_bready), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe6 </span>
+<span style="color: #008080;"> 50</span>         .probe7(s_axi_awready), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe7 </span>
+<span style="color: #008080;"> 51</span>         .probe8(s_axi_arready), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe8 </span>
+<span style="color: #008080;"> 52</span>         .probe9(s_axi_wready), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe9 </span>
+<span style="color: #008080;"> 53</span>         .probe10(s_axi_rvalid), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe10 </span>
+<span style="color: #008080;"> 54</span>         .probe11(s_axi_bvalid), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe11 </span>
+<span style="color: #008080;"> 55</span>         .probe12(io0_i), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe12 </span>
+<span style="color: #008080;"> 56</span>         .probe13(io0_o), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe13 </span>
+<span style="color: #008080;"> 57</span>         .probe14(io0_t), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe14 </span>
+<span style="color: #008080;"> 58</span>         .probe15(io1_i), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe15 </span>
+<span style="color: #008080;"> 59</span>         .probe16(io1_o), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe16 </span>
+<span style="color: #008080;"> 60</span>         .probe17(io1_t), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe17 </span>
+<span style="color: #008080;"> 61</span>         .probe18(io2_i), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe18 </span>
+<span style="color: #008080;"> 62</span>         .probe19(io2_o), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe19 </span>
+<span style="color: #008080;"> 63</span>         .probe20(io2_t), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe20 </span>
+<span style="color: #008080;"> 64</span>         .probe21(io3_i), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe21 </span>
+<span style="color: #008080;"> 65</span>         .probe22(io3_o), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe22 </span>
+<span style="color: #008080;"> 66</span>         .probe23(io3_t), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe23 </span>
+<span style="color: #008080;"> 67</span>         .probe24(ss_i), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe24 </span>
+<span style="color: #008080;"> 68</span>         .probe25(ss_o), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe25 </span>
+<span style="color: #008080;"> 69</span>         .probe26(ss_t), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe26</span>
+<span style="color: #008080;"> 70</span>         .probe27(m_axi_awaddr), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [6:0]  probe27 </span>
+<span style="color: #008080;"> 71</span>         .probe28(m_axi_araddr), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [6:0]  probe28 </span>
+<span style="color: #008080;"> 72</span>         .probe29(current_state), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [6:0]  probe29 </span>
+<span style="color: #008080;"> 73</span>         .probe30(next_state), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [6:0]  probe30 </span>
+<span style="color: #008080;"> 74</span>         .probe31(m_axi_wdata), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [31:0]  probe31 </span>
+<span style="color: #008080;"> 75</span>         .probe32(m_axi_rdata), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [31:0]  probe32 </span>
+<span style="color: #008080;"> 76</span>         .probe33(s_axi_rdata), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [31:0]  probe33</span>
+<span style="color: #008080;"> 77</span>         .probe34(ipc_addr), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [11:0]  probe34 </span>
+<span style="color: #008080;"> 78</span>         .probe35(ipc_wdata), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [31:0]  probe35 </span>
+<span style="color: #008080;"> 79</span>         .probe36(ipc_rdata), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [31:0]  probe36 </span>
+<span style="color: #008080;"> 80</span>         .probe37(ipc_rd), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe37 </span>
+<span style="color: #008080;"> 81</span>         .probe38(ipc_wr), <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe38 </span>
+<span style="color: #008080;"> 82</span>         .probe39(ipc_ack) <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0:0]  probe39</span>
+<span style="color: #008080;"> 83</span> <span style="color: #000000;">    );
+</span><span style="color: #008080;"> 84</span> 
+<span style="color: #008080;"> 85</span> 
+<span style="color: #008080;"> 86</span> 
+<span style="color: #008080;"> 87</span> 
+<span style="color: #008080;"> 88</span> 
+<span style="color: #008080;"> 89</span> 
+<span style="color: #008080;"> 90</span> 
+<span style="color: #008080;"> 91</span> 
+<span style="color: #008080;"> 92</span> 
+<span style="color: #008080;"> 93</span> <span style="color: #008000;">//</span><span style="color: #008000;">--------------------------------------------------------------</span>
+<span style="color: #008080;"> 94</span> 
+<span style="color: #008080;"> 95</span>     <span style="color: #0000ff;">reg</span><span style="color: #000000;"> ipc_rd_delay_1;
+</span><span style="color: #008080;"> 96</span>     <span style="color: #0000ff;">reg</span><span style="color: #000000;"> ipc_wr_delay_1;
+</span><span style="color: #008080;"> 97</span>     <span style="color: #0000ff;">reg</span><span style="color: #000000;"> ipc_rd_delay_2;
+</span><span style="color: #008080;"> 98</span>     <span style="color: #0000ff;">reg</span><span style="color: #000000;"> ipc_wr_delay_2;
+</span><span style="color: #008080;"> 99</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> ipc_rd_rise;
+</span><span style="color: #008080;">100</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> ipc_wr_rise;
+</span><span style="color: #008080;">101</span>     <span style="color: #0000ff;">always</span> @(<span style="color: #0000ff;">posedge</span> clk_100M <span style="color: #0000ff;">or</span> <span style="color: #0000ff;">posedge</span><span style="color: #000000;"> rst)
+</span><span style="color: #008080;">102</span>     <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">103</span>         <span style="color: #0000ff;">if</span><span style="color: #000000;">(rst)
+</span><span style="color: #008080;">104</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">105</span>             ipc_rd_delay_1 &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">106</span>             ipc_wr_delay_1 &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">107</span>             ipc_rd_delay_2 &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">108</span>             ipc_wr_delay_2 &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">109</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">110</span>         <span style="color: #0000ff;">else</span> 
+<span style="color: #008080;">111</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">112</span>             ipc_rd_delay_1 &lt;=<span style="color: #000000;"> ipc_rd;
+</span><span style="color: #008080;">113</span>             ipc_wr_delay_1 &lt;=<span style="color: #000000;"> ipc_wr;
+</span><span style="color: #008080;">114</span>             ipc_rd_delay_2 &lt;=<span style="color: #000000;"> ipc_rd_delay_1;
+</span><span style="color: #008080;">115</span>             ipc_wr_delay_2 &lt;=<span style="color: #000000;"> ipc_wr_delay_1;
+</span><span style="color: #008080;">116</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">117</span>     <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">118</span> 
+<span style="color: #008080;">119</span>     <span style="color: #0000ff;">assign</span> ipc_rd_rise = !ipc_rd_delay_2 &amp;&amp;<span style="color: #000000;"> ipc_rd_delay_1;
+</span><span style="color: #008080;">120</span>     <span style="color: #0000ff;">assign</span> ipc_wr_rise = !ipc_wr_delay_2 &amp;&amp;<span style="color: #000000;"> ipc_wr_delay_1;
+</span><span style="color: #008080;">121</span> 
+<span style="color: #008080;">122</span> <span style="color: #008000;">//</span><span style="color: #008000;">--------------------------------------------------------------</span>
+<span style="color: #008080;">123</span>     <span style="color: #0000ff;">reg</span> [<span style="color: #800080;">6</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]current_state;
+</span><span style="color: #008080;">124</span>     <span style="color: #0000ff;">reg</span> [<span style="color: #800080;">6</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]next_state;
+</span><span style="color: #008080;">125</span>     <span style="color: #0000ff;">always</span> @ (<span style="color: #0000ff;">posedge</span> clk_100M <span style="color: #0000ff;">or</span> <span style="color: #0000ff;">posedge</span><span style="color: #000000;"> rst)
+</span><span style="color: #008080;">126</span>     <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">127</span>         <span style="color: #0000ff;">if</span><span style="color: #000000;">(rst)
+</span><span style="color: #008080;">128</span>             current_state &lt;=<span style="color: #000000;"> IDLE;
+</span><span style="color: #008080;">129</span>         <span style="color: #0000ff;">else</span>
+<span style="color: #008080;">130</span>             current_state &lt;=<span style="color: #000000;"> next_state;
+</span><span style="color: #008080;">131</span>     <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">132</span> 
+<span style="color: #008080;">133</span> <span style="color: #008000;">//</span><span style="color: #008000;">--------------------------------------------------------------</span>
+<span style="color: #008080;">134</span>     <span style="color: #0000ff;">parameter</span>   [<span style="color: #800080;">4</span>:<span style="color: #800080;">0</span>]   IDLE            =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d0    ,</span>
+<span style="color: #008080;">135</span>                         WRITE_START     =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d1    ,</span>
+<span style="color: #008080;">136</span>                         WRITE_VALID     =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d2    ,</span>
+<span style="color: #008080;">137</span>                         WRITE_READY     =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d3    ,</span>
+<span style="color: #008080;">138</span>                         WRITE_BREADY    =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d4    ,</span>
+<span style="color: #008080;">139</span>                         WRITE_END       =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d5    ,</span>
+<span style="color: #008080;">140</span>                         READ_START      =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d11   ,</span>
+<span style="color: #008080;">141</span>                         READ_VALID      =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d12   ,</span>
+<span style="color: #008080;">142</span>                         READ_READY      =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d13   ,</span>
+<span style="color: #008080;">143</span>                         READ_FINISH     =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d14   ,</span>
+<span style="color: #008080;">144</span>                         READ_END        =   <span style="color: #800080;">5</span><span style="color: #800000;">'</span><span style="color: #800000;">d15   ;</span>
+<span style="color: #008080;">145</span> 
+<span style="color: #008080;">146</span>     <span style="color: #0000ff;">always</span> @ (*<span style="color: #000000;">)
+</span><span style="color: #008080;">147</span>     <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">148</span>         next_state =<span style="color: #000000;"> IDLE;
+</span><span style="color: #008080;">149</span>         <span style="color: #0000ff;">case</span><span style="color: #000000;">(current_state)
+</span><span style="color: #008080;">150</span> <span style="color: #000000;">        IDLE:
+</span><span style="color: #008080;">151</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">152</span>             <span style="color: #0000ff;">if</span><span style="color: #000000;">(ipc_wr_rise)
+</span><span style="color: #008080;">153</span>                 next_state =<span style="color: #000000;"> WRITE_START;
+</span><span style="color: #008080;">154</span>             <span style="color: #0000ff;">else</span> <span style="color: #0000ff;">if</span><span style="color: #000000;">(ipc_rd_rise)
+</span><span style="color: #008080;">155</span>                 next_state =<span style="color: #000000;"> READ_START;
+</span><span style="color: #008080;">156</span>             <span style="color: #0000ff;">else</span>
+<span style="color: #008080;">157</span>                 next_state =<span style="color: #000000;"> IDLE;
+</span><span style="color: #008080;">158</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">159</span> 
+<span style="color: #008080;">160</span> <span style="color: #000000;">        WRITE_START:
+</span><span style="color: #008080;">161</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">162</span>             next_state =<span style="color: #000000;"> WRITE_VALID;
+</span><span style="color: #008080;">163</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">164</span> 
+<span style="color: #008080;">165</span> <span style="color: #000000;">        WRITE_VALID:
+</span><span style="color: #008080;">166</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">167</span>             <span style="color: #0000ff;">if</span>(s_axi_awready &amp;&amp;<span style="color: #000000;"> s_axi_wready)
+</span><span style="color: #008080;">168</span>                 next_state =<span style="color: #000000;"> WRITE_READY;
+</span><span style="color: #008080;">169</span>             <span style="color: #0000ff;">else</span>
+<span style="color: #008080;">170</span>                 next_state =<span style="color: #000000;"> WRITE_VALID;
+</span><span style="color: #008080;">171</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">172</span> 
+<span style="color: #008080;">173</span> <span style="color: #000000;">        WRITE_READY:
+</span><span style="color: #008080;">174</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">175</span>             <span style="color: #0000ff;">if</span><span style="color: #000000;">(s_axi_bvalid)
+</span><span style="color: #008080;">176</span>                 next_state =<span style="color: #000000;"> WRITE_BREADY;
+</span><span style="color: #008080;">177</span>             <span style="color: #0000ff;">else</span>
+<span style="color: #008080;">178</span>                 next_state =<span style="color: #000000;"> WRITE_READY;
+</span><span style="color: #008080;">179</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">180</span> 
+<span style="color: #008080;">181</span> <span style="color: #000000;">        WRITE_BREADY:
+</span><span style="color: #008080;">182</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">183</span>             next_state =<span style="color: #000000;"> WRITE_END;
+</span><span style="color: #008080;">184</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">185</span> 
+<span style="color: #008080;">186</span> <span style="color: #000000;">        WRITE_END:
+</span><span style="color: #008080;">187</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">188</span>             next_state =<span style="color: #000000;"> IDLE;
+</span><span style="color: #008080;">189</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">190</span> 
+<span style="color: #008080;">191</span> <span style="color: #000000;">        READ_START:
+</span><span style="color: #008080;">192</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">193</span>             next_state =<span style="color: #000000;"> READ_VALID;
+</span><span style="color: #008080;">194</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">195</span> 
+<span style="color: #008080;">196</span> <span style="color: #000000;">        READ_VALID:
+</span><span style="color: #008080;">197</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">198</span>             <span style="color: #0000ff;">if</span><span style="color: #000000;">(s_axi_arready)
+</span><span style="color: #008080;">199</span>                 next_state =<span style="color: #000000;"> READ_READY;
+</span><span style="color: #008080;">200</span>             <span style="color: #0000ff;">else</span> 
+<span style="color: #008080;">201</span>                 next_state =<span style="color: #000000;"> READ_VALID;
+</span><span style="color: #008080;">202</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">203</span> 
+<span style="color: #008080;">204</span> <span style="color: #000000;">        READ_READY:
+</span><span style="color: #008080;">205</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">206</span>             <span style="color: #0000ff;">if</span><span style="color: #000000;">(s_axi_rvalid)
+</span><span style="color: #008080;">207</span>                 next_state =<span style="color: #000000;"> READ_FINISH;
+</span><span style="color: #008080;">208</span>             <span style="color: #0000ff;">else</span>
+<span style="color: #008080;">209</span>                 next_state =<span style="color: #000000;"> READ_READY;
+</span><span style="color: #008080;">210</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">211</span> 
+<span style="color: #008080;">212</span> <span style="color: #000000;">        READ_FINISH:
+</span><span style="color: #008080;">213</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">214</span>             next_state =<span style="color: #000000;"> READ_END;
+</span><span style="color: #008080;">215</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">216</span> 
+<span style="color: #008080;">217</span> <span style="color: #000000;">        READ_END:
+</span><span style="color: #008080;">218</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">219</span>             next_state =<span style="color: #000000;"> IDLE;
+</span><span style="color: #008080;">220</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">221</span> 
+<span style="color: #008080;">222</span>         <span style="color: #0000ff;">endcase</span>
+<span style="color: #008080;">223</span>     <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">224</span> 
+<span style="color: #008080;">225</span> <span style="color: #008000;">//</span><span style="color: #008000;">-------------------------------------------------------------</span>
+<span style="color: #008080;">226</span>     <span style="color: #0000ff;">reg</span><span style="color: #000000;"> m_axi_awvalid;
+</span><span style="color: #008080;">227</span>     <span style="color: #0000ff;">reg</span><span style="color: #000000;"> m_axi_wvalid;
+</span><span style="color: #008080;">228</span>     <span style="color: #0000ff;">reg</span><span style="color: #000000;"> m_axi_arvalid;
+</span><span style="color: #008080;">229</span> 
+<span style="color: #008080;">230</span>     <span style="color: #0000ff;">reg</span><span style="color: #000000;"> m_axi_rready;
+</span><span style="color: #008080;">231</span>     <span style="color: #0000ff;">reg</span><span style="color: #000000;"> m_axi_bready;
+</span><span style="color: #008080;">232</span>     
+<span style="color: #008080;">233</span>     <span style="color: #0000ff;">reg</span> [<span style="color: #800080;">6</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]m_axi_awaddr; 
+</span><span style="color: #008080;">234</span>     <span style="color: #0000ff;">reg</span> [<span style="color: #800080;">6</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]m_axi_araddr;
+</span><span style="color: #008080;">235</span> 
+<span style="color: #008080;">236</span>     <span style="color: #0000ff;">reg</span> [<span style="color: #800080;">31</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]m_axi_wdata;
+</span><span style="color: #008080;">237</span>     <span style="color: #0000ff;">reg</span> [<span style="color: #800080;">31</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]m_axi_rdata;
+</span><span style="color: #008080;">238</span> 
+<span style="color: #008080;">239</span>     <span style="color: #0000ff;">reg</span><span style="color: #000000;"> ipc_ack_r;
+</span><span style="color: #008080;">240</span> 
+<span style="color: #008080;">241</span> 
+<span style="color: #008080;">242</span>     <span style="color: #0000ff;">always</span> @(<span style="color: #0000ff;">posedge</span> clk_100M <span style="color: #0000ff;">or</span> <span style="color: #0000ff;">posedge</span><span style="color: #000000;"> rst) 
+</span><span style="color: #008080;">243</span>     <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">244</span>         <span style="color: #0000ff;">if</span><span style="color: #000000;"> (rst) 
+</span><span style="color: #008080;">245</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">246</span>             m_axi_awvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">247</span>             m_axi_wvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">248</span>             m_axi_arvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">249</span>             m_axi_rready &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">250</span>             m_axi_bready &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">251</span>             m_axi_awaddr &lt;= <span style="color: #800080;">0</span><span style="color: #000000;">; 
+</span><span style="color: #008080;">252</span>             m_axi_araddr &lt;= <span style="color: #800080;">0</span><span style="color: #000000;">;
+</span><span style="color: #008080;">253</span>             m_axi_wdata &lt;= <span style="color: #800080;">0</span><span style="color: #000000;">;
+</span><span style="color: #008080;">254</span>             m_axi_rdata &lt;= <span style="color: #800080;">0</span><span style="color: #000000;">;
+</span><span style="color: #008080;">255</span>             ipc_ack_r &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">256</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">257</span>         <span style="color: #0000ff;">else</span> 
+<span style="color: #008080;">258</span>         <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">259</span> 
+<span style="color: #008080;">260</span>             m_axi_awvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">261</span>             m_axi_wvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">262</span>             m_axi_arvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">263</span>             m_axi_rready &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">264</span>             m_axi_bready &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">265</span>             ipc_ack_r &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">266</span> 
+<span style="color: #008080;">267</span>             <span style="color: #0000ff;">case</span><span style="color: #000000;">(next_state)
+</span><span style="color: #008080;">268</span>             <span style="color: #008000;">//</span><span style="color: #008000;">IDLE:</span>
+<span style="color: #008080;">269</span> 
+<span style="color: #008080;">270</span> <span style="color: #000000;">            WRITE_START:
+</span><span style="color: #008080;">271</span>             <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">272</span>                 m_axi_awaddr &lt;= ipc_addr[<span style="color: #800080;">6</span>:<span style="color: #800080;">0</span><span style="color: #000000;">];
+</span><span style="color: #008080;">273</span>                 m_axi_wdata &lt;=<span style="color: #000000;"> ipc_wdata;
+</span><span style="color: #008080;">274</span>                 m_axi_awvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">275</span>                 m_axi_wvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">276</span>                 m_axi_bready &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">277</span>             <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">278</span> 
+<span style="color: #008080;">279</span> <span style="color: #000000;">            WRITE_VALID:
+</span><span style="color: #008080;">280</span>             <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">281</span>                 m_axi_awvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">282</span>                 m_axi_wvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;    </span>
+<span style="color: #008080;">283</span>                 m_axi_bready &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">284</span>             <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">285</span> 
+<span style="color: #008080;">286</span> <span style="color: #000000;">            WRITE_READY:
+</span><span style="color: #008080;">287</span>             <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">288</span>                 m_axi_bready &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">289</span>             <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">290</span> 
+<span style="color: #008080;">291</span>             <span style="color: #008000;">//</span><span style="color: #008000;">WRITE_BREADY:</span>
+<span style="color: #008080;">292</span> <span style="color: #000000;">            WRITE_END:
+</span><span style="color: #008080;">293</span>             <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">294</span>                 ipc_ack_r &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">295</span>             <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">296</span> 
+<span style="color: #008080;">297</span> <span style="color: #000000;">            READ_START:
+</span><span style="color: #008080;">298</span>             <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">299</span>                 m_axi_araddr &lt;= ipc_addr[<span style="color: #800080;">6</span>:<span style="color: #800080;">0</span><span style="color: #000000;">];
+</span><span style="color: #008080;">300</span>                 m_axi_arvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">301</span>             <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">302</span> 
+<span style="color: #008080;">303</span> <span style="color: #000000;">            READ_VALID:
+</span><span style="color: #008080;">304</span>             <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">305</span>                 m_axi_arvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">306</span>             <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">307</span> 
+<span style="color: #008080;">308</span>             <span style="color: #008000;">//</span><span style="color: #008000;">READ_READY:</span>
+<span style="color: #008080;">309</span> 
+<span style="color: #008080;">310</span> <span style="color: #000000;">            READ_FINISH:
+</span><span style="color: #008080;">311</span>             <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">312</span>                 m_axi_rdata &lt;=<span style="color: #000000;"> s_axi_rdata;
+</span><span style="color: #008080;">313</span>                 m_axi_rready &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">314</span>             <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">315</span> 
+<span style="color: #008080;">316</span> <span style="color: #000000;">            READ_END:
+</span><span style="color: #008080;">317</span>             <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">318</span>                 ipc_ack_r &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+<span style="color: #008080;">319</span>             <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">320</span> 
+<span style="color: #008080;">321</span>             <span style="color: #0000ff;">default</span><span style="color: #000000;">:
+</span><span style="color: #008080;">322</span>             <span style="color: #0000ff;">begin</span>
+<span style="color: #008080;">323</span>                 m_axi_awvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">324</span>                 m_axi_wvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">325</span>                 m_axi_arvalid &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">326</span>                 m_axi_rready &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">327</span>                 m_axi_bready &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">328</span>                 ipc_ack_r &lt;= <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0;</span>
+<span style="color: #008080;">329</span>             <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">330</span> 
+<span style="color: #008080;">331</span>             <span style="color: #0000ff;">endcase</span>
+<span style="color: #008080;">332</span> 
+<span style="color: #008080;">333</span>         <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">334</span>     <span style="color: #0000ff;">end</span>
+<span style="color: #008080;">335</span> 
+<span style="color: #008080;">336</span>     <span style="color: #0000ff;">assign</span> ipc_rdata =<span style="color: #000000;"> m_axi_rdata;
+</span><span style="color: #008080;">337</span>     <span style="color: #0000ff;">assign</span> ipc_ack =<span style="color: #000000;"> ipc_ack_r;
+</span><span style="color: #008080;">338</span> 
+<span style="color: #008080;">339</span> <span style="color: #008000;">//</span><span style="color: #008000;">-------------------------------------------------------------</span>
+<span style="color: #008080;">340</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> s_axi_awready;
+</span><span style="color: #008080;">341</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> s_axi_arready;
+</span><span style="color: #008080;">342</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> s_axi_wready;
+</span><span style="color: #008080;">343</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> s_axi_rvalid;
+</span><span style="color: #008080;">344</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> s_axi_bvalid;
+</span><span style="color: #008080;">345</span>     <span style="color: #0000ff;">wire</span> [<span style="color: #800080;">31</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]s_axi_rdata;
+</span><span style="color: #008080;">346</span> 
+<span style="color: #008080;">347</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io0_i;
+</span><span style="color: #008080;">348</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io0_o;
+</span><span style="color: #008080;">349</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io0_t;
+</span><span style="color: #008080;">350</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io1_i;
+</span><span style="color: #008080;">351</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io1_o;
+</span><span style="color: #008080;">352</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io1_t;
+</span><span style="color: #008080;">353</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io2_i;
+</span><span style="color: #008080;">354</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io2_o;
+</span><span style="color: #008080;">355</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io2_t;
+</span><span style="color: #008080;">356</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io3_i;
+</span><span style="color: #008080;">357</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io3_o;
+</span><span style="color: #008080;">358</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> io3_t;
+</span><span style="color: #008080;">359</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> ss_i;
+</span><span style="color: #008080;">360</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> ss_o;
+</span><span style="color: #008080;">361</span>     <span style="color: #0000ff;">wire</span><span style="color: #000000;"> ss_t;
+</span><span style="color: #008080;">362</span>     
+<span style="color: #008080;">363</span> <span style="color: #000000;">    axi_quad_spi_0 U1 (
+</span><span style="color: #008080;">364</span>       .ext_spi_clk(clk_100M),      <span style="color: #008000;">//</span><span style="color: #008000;"> input wire ext_spi_clk</span>
+<span style="color: #008080;">365</span>       .s_axi_aclk(clk_100M),        <span style="color: #008000;">//</span><span style="color: #008000;"> input wire s_axi_aclk</span>
+<span style="color: #008080;">366</span>       .s_axi_aresetn(~rst),  <span style="color: #008000;">//</span><span style="color: #008000;"> input wire s_axi_aresetn</span>
+<span style="color: #008080;">367</span>       .s_axi_awaddr(m_axi_awaddr),    <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [6 : 0] s_axi_awaddr</span>
+<span style="color: #008080;">368</span>       .s_axi_awvalid(m_axi_awvalid),  <span style="color: #008000;">//</span><span style="color: #008000;"> input wire s_axi_awvalid</span>
+<span style="color: #008080;">369</span>       .s_axi_awready(s_axi_awready),  <span style="color: #008000;">//</span><span style="color: #008000;"> output wire s_axi_awready</span>
+<span style="color: #008080;">370</span>       .s_axi_wdata(m_axi_wdata),      <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [31 : 0] s_axi_wdata</span>
+<span style="color: #008080;">371</span>       .s_axi_wstrb(<span style="color: #800080;">4</span><span style="color: #800000;">'</span><span style="color: #800000;">b1111),      // input wire [3 : 0] s_axi_wstrb</span>
+<span style="color: #008080;">372</span>       .s_axi_wvalid(m_axi_wvalid),    <span style="color: #008000;">//</span><span style="color: #008000;"> input wire s_axi_wvalid</span>
+<span style="color: #008080;">373</span>       .s_axi_wready(s_axi_wready),    <span style="color: #008000;">//</span><span style="color: #008000;"> output wire s_axi_wready</span>
+<span style="color: #008080;">374</span>       .s_axi_bresp(),      <span style="color: #008000;">//</span><span style="color: #008000;"> output wire [1 : 0] s_axi_bresp</span>
+<span style="color: #008080;">375</span>       .s_axi_bvalid(s_axi_bvalid),    <span style="color: #008000;">//</span><span style="color: #008000;"> output wire s_axi_bvalid</span>
+<span style="color: #008080;">376</span>       .s_axi_bready(m_axi_bready),    <span style="color: #008000;">//</span><span style="color: #008000;"> input wire s_axi_bready</span>
+<span style="color: #008080;">377</span>       .s_axi_araddr(m_axi_araddr),    <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [6 : 0] s_axi_araddr</span>
+<span style="color: #008080;">378</span>       .s_axi_arvalid(m_axi_arvalid),  <span style="color: #008000;">//</span><span style="color: #008000;"> input wire s_axi_arvalid</span>
+<span style="color: #008080;">379</span>       .s_axi_arready(s_axi_arready),  <span style="color: #008000;">//</span><span style="color: #008000;"> output wire s_axi_arready</span>
+<span style="color: #008080;">380</span>       .s_axi_rdata(s_axi_rdata),      <span style="color: #008000;">//</span><span style="color: #008000;"> output wire [31 : 0] s_axi_rdata</span>
+<span style="color: #008080;">381</span>       .s_axi_rresp(),      <span style="color: #008000;">//</span><span style="color: #008000;"> output wire [1 : 0] s_axi_rresp</span>
+<span style="color: #008080;">382</span>       .s_axi_rvalid(s_axi_rvalid),    <span style="color: #008000;">//</span><span style="color: #008000;"> output wire s_axi_rvalid</span>
+<span style="color: #008080;">383</span>       .s_axi_rready(m_axi_rready),    <span style="color: #008000;">//</span><span style="color: #008000;"> input wire s_axi_rready</span>
+<span style="color: #008080;">384</span>       .io0_i(io0_i),                  <span style="color: #008000;">//</span><span style="color: #008000;"> input wire io0_i</span>
+<span style="color: #008080;">385</span>       .io0_o(io0_o),                  <span style="color: #008000;">//</span><span style="color: #008000;"> output wire io0_o</span>
+<span style="color: #008080;">386</span>       .io0_t(io0_t),                  <span style="color: #008000;">//</span><span style="color: #008000;"> output wire io0_t</span>
+<span style="color: #008080;">387</span>       .io1_i(io1_i),                  <span style="color: #008000;">//</span><span style="color: #008000;"> input wire io1_i</span>
+<span style="color: #008080;">388</span>       .io1_o(io1_o),                  <span style="color: #008000;">//</span><span style="color: #008000;"> output wire io1_o</span>
+<span style="color: #008080;">389</span>       .io1_t(io1_t),                  <span style="color: #008000;">//</span><span style="color: #008000;"> output wire io1_t</span>
+<span style="color: #008080;">390</span>       .io2_i(io2_i),                  <span style="color: #008000;">//</span><span style="color: #008000;"> input wire io2_i</span>
+<span style="color: #008080;">391</span>       .io2_o(io2_o),                  <span style="color: #008000;">//</span><span style="color: #008000;"> output wire io2_o</span>
+<span style="color: #008080;">392</span>       .io2_t(io2_t),                  <span style="color: #008000;">//</span><span style="color: #008000;"> output wire io2_t</span>
+<span style="color: #008080;">393</span>       .io3_i(io3_i),                  <span style="color: #008000;">//</span><span style="color: #008000;"> input wire io3_i</span>
+<span style="color: #008080;">394</span>       .io3_o(io3_o),                  <span style="color: #008000;">//</span><span style="color: #008000;"> output wire io3_o</span>
+<span style="color: #008080;">395</span>       .io3_t(io3_t),                  <span style="color: #008000;">//</span><span style="color: #008000;"> output wire io3_t</span>
+<span style="color: #008080;">396</span>       .ss_i(ss_i),                    <span style="color: #008000;">//</span><span style="color: #008000;"> input wire [0 : 0] ss_i</span>
+<span style="color: #008080;">397</span>       .ss_o(ss_o),                    <span style="color: #008000;">//</span><span style="color: #008000;"> output wire [0 : 0] ss_o</span>
+<span style="color: #008080;">398</span>       .ss_t(ss_t),                    <span style="color: #008000;">//</span><span style="color: #008000;"> output wire ss_t</span>
+<span style="color: #008080;">399</span>       .cfgclk(cfgclk),                <span style="color: #008000;">//</span><span style="color: #008000;"> output wire cfgclk</span>
+<span style="color: #008080;">400</span>       .cfgmclk(cfgmclk),              <span style="color: #008000;">//</span><span style="color: #008000;"> output wire cfgmclk</span>
+<span style="color: #008080;">401</span>       .eos(eos),                      <span style="color: #008000;">//</span><span style="color: #008000;"> output wire eos</span>
+<span style="color: #008080;">402</span>       .preq(preq),                    <span style="color: #008000;">//</span><span style="color: #008000;"> output wire preq</span>
+<span style="color: #008080;">403</span>       .ip2intc_irpt(ip2intc_irpt)    <span style="color: #008000;">//</span><span style="color: #008000;"> output wire ip2intc_irpt</span>
+<span style="color: #008080;">404</span> <span style="color: #000000;">    );
+</span><span style="color: #008080;">405</span> 
+<span style="color: #008080;">406</span> <span style="color: #000000;">    IOBUF   dq0(
+</span><span style="color: #008080;">407</span>         .IO (spi_dq[<span style="color: #800080;">0</span><span style="color: #000000;">]),
+</span><span style="color: #008080;">408</span> <span style="color: #000000;">        .O  (io0_i),
+</span><span style="color: #008080;">409</span> <span style="color: #000000;">        .I  (io0_o),
+</span><span style="color: #008080;">410</span> <span style="color: #000000;">        .T  (io0_t)
+</span><span style="color: #008080;">411</span> <span style="color: #000000;">    );
+</span><span style="color: #008080;">412</span> 
+<span style="color: #008080;">413</span> <span style="color: #000000;">    IOBUF   dq1(
+</span><span style="color: #008080;">414</span>         .IO (spi_dq[<span style="color: #800080;">1</span><span style="color: #000000;">]),
+</span><span style="color: #008080;">415</span> <span style="color: #000000;">        .O  (io1_i),
+</span><span style="color: #008080;">416</span> <span style="color: #000000;">        .I  (io1_o),
+</span><span style="color: #008080;">417</span> <span style="color: #000000;">        .T  (io1_t)
+</span><span style="color: #008080;">418</span> <span style="color: #000000;">    );
+</span><span style="color: #008080;">419</span> 
+<span style="color: #008080;">420</span> <span style="color: #000000;">    IOBUF   dq2(
+</span><span style="color: #008080;">421</span>         .IO (spi_dq[<span style="color: #800080;">2</span><span style="color: #000000;">]),
+</span><span style="color: #008080;">422</span> <span style="color: #000000;">        .O  (io2_i),
+</span><span style="color: #008080;">423</span> <span style="color: #000000;">        .I  (io2_o),
+</span><span style="color: #008080;">424</span> <span style="color: #000000;">        .T  (io2_t)
+</span><span style="color: #008080;">425</span> <span style="color: #000000;">    );
+</span><span style="color: #008080;">426</span> 
+<span style="color: #008080;">427</span> <span style="color: #000000;">    IOBUF   dq3(
+</span><span style="color: #008080;">428</span>         .IO (spi_dq[<span style="color: #800080;">3</span><span style="color: #000000;">]),
+</span><span style="color: #008080;">429</span> <span style="color: #000000;">        .O  (io3_i),
+</span><span style="color: #008080;">430</span> <span style="color: #000000;">        .I  (io3_o),
+</span><span style="color: #008080;">431</span> <span style="color: #000000;">        .T  (io3_t)
+</span><span style="color: #008080;">432</span> <span style="color: #000000;">    );
+</span><span style="color: #008080;">433</span> 
+<span style="color: #008080;">434</span> <span style="color: #000000;">    IOBUF   spiss(
+</span><span style="color: #008080;">435</span> <span style="color: #000000;">        .IO (spi_ss),
+</span><span style="color: #008080;">436</span> <span style="color: #000000;">        .O  (ss_i),
+</span><span style="color: #008080;">437</span> <span style="color: #000000;">        .I  (ss_o),
+</span><span style="color: #008080;">438</span> <span style="color: #000000;">        .T  (ss_t)
+</span><span style="color: #008080;">439</span> <span style="color: #000000;">    );
+</span><span style="color: #008080;">440</span> 
+<span style="color: #008080;">441</span> <span style="color: #0000ff;">endmodule</span></pre>
+</div>
+<p>&nbsp;</p></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info">
+</div>
+<div class="clear"></div>
+<div id="post_next_prev"></div>
+</div>
+
+</div>
+	</div></div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id='comment_form' class='commentform'>
+<a name='commentform'></a>
+<div id='divCommentShow'></div>
+<div id='comment_nav'><span id='span_refresh_tips'></span><a href='javascript:void(0);' onclick='return RefreshCommentList();' id='lnk_RefreshComments' runat='server' clientidmode='Static'>刷新评论</a><a href='#' onclick='return RefreshPage();'>刷新页面</a><a href='#top'>返回顶部</a></div>
+<div id='comment_form_container'></div>
+<div class='ad_text_commentbox' id='ad_text_under_commentbox'></div>
+<div id='ad_t2'></div>
+<div id='opt_under_post'></div>
+<script async='async' src='https://www.googletagservices.com/tag/js/gpt.js'></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id='cnblogs_c1' class='c_ad_block'>
+    <div id='div-gpt-ad-1546353474406-0' style='height:250px; width:300px;'></div>
+</div>
+<div id='under_post_news'></div>
+<div id='cnblogs_c2' class='c_ad_block'>
+    <div id='div-gpt-ad-1539008685004-0' style='height:60px; width:468px;'></div>
+</div>
+<div id='under_post_kb'></div>
+<div id='HistoryToday' class='c_ad_block'></div>
+<script type='text/javascript'>
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+			</div>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="FooterCell">
+			
+<p id="footer">
+	Powered by: 
+	<br />
+	
+	<a id="Footer1_Hyperlink3" NAME="Hyperlink1" href="https://www.cnblogs.com/" style="font-family:Verdana;font-size:12px;">博客园</a>
+	<br />
+	Copyright &copy; 沉默改良者
+</p>
+
+		</td>
+	</tr>
+</table>
+
+
+</body>
+</html>
