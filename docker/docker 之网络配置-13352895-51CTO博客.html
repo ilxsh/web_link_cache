@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="https://blog.51cto.com/favicon.ico">
+        <title>docker 之网络配置-13352895-51CTO博客</title>
+    <meta name="keywords" content="docker ,网络配置,none模式">
+<meta name="description" content="docker网络配置，各种网络模式，none 模式 ---&gt; 进行通信">    <link href="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/header.css" rel="stylesheet"><link href="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/other.css" rel="stylesheet"><link href="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/right.css" rel="stylesheet"><link href="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/blog_details.css" rel="stylesheet"><link href="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/highlight.css" rel="stylesheet">
+    <script type="text/javascript" async="" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/vds.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/push.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/hm.js"></script><script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/jquery_002.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/cookie.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/login.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/common.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/mbox.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/follow.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/vip.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/window.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/share.js"></script><link rel="stylesheet" href="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/share_style0_16.css"><style></style></head>
+<body>
+<img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/share_default.jpg" style="width:0; height:0; position:absolute;" border="0">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201904/26/7a2f1194df8bac1e74daa90db1797f71.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url('https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png') 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=4&amp;pc" target="_blank">
+  <img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/eef5e52c4dd5272a561c619251427132.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li><a href="https://blog.51cto.com/">首页</a></li>
+      <li><a href="https://blog.51cto.com/original">文章</a></li>
+      <li><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+      
+    </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com/" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com/" target="_blank">WOT</a>
+            <a href="http://www.51cto.com/" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2F13362895%2F2130375&amp;logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2F13362895%2F2130375" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index" target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onclick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/detail/55" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201904/29/e7d4df7dea98e6ff9a95cf543ee58fbe.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog58',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/entrance.js" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box" style="min-height: 1228px;">
+      <link rel="stylesheet" href="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/mdeShow.css">
+  <link rel="stylesheet" href="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/prism.css">
+  <script type="text/javascript" charset="utf-8" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/prism.js"></script>
+<link rel="stylesheet" href="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/tinyscrollbar.css">
+<script type="text/javascript" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/jquery.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">docker 之网络配置</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/13362895" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="13352895" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/wKiom1nNupiTf_vqAAAdQqAKW2c196_middle.jpg"></a>
+				</div>
+				<a href="https://blog.51cto.com/13362895" class="name fl" target="_blank" style="margin-right:0;">huanzi2017</a>
+									                	                    <a id="checkFollow1_13352895" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">16747人阅读</a>
+				<a href="javascript:;" class="time fr">2018-06-18 23:56:25</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><h1><span style="font-size: 18px;"><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: rgb(192, 0, 0); font-size: 24px;">Docker 网络实现</span></strong></span></h1><p><span style="font-size: 18px;"><strong>首先，要实现网络通信，机器需要至少一个网络接口（物理接口或虚拟接口）来收发数据包；此外，如果不同子网之间要进行通信，需要路由机制。</strong></span></p><p><span style="font-size: 18px;"><strong>Docker 中的网络接口默认都是<span style="font-size: 18px; color: rgb(151, 72, 6);">虚拟的接口</span>。虚拟接口的优势之一是转发效率较高。
+Linux 通过在内核中进行数据复制来实现虚拟接口之间的数据转发，发送接口的发送缓存中的数据包被直接复制到接收接口的接收缓存中。对于本地系统和容器内系统看来就像是一个正常的以太网卡，只是它不需要真正同外部网络设备通信，速度要快很多。</strong></span></p><p><span style="font-size: 18px;"><strong><br></strong></span></p><p><span style="font-size: 18px;"><strong>Docker 容器网络就利用了这项技术。它在本地主机和容器内分别创建一个虚拟接口，并让它们彼此连通（这样的一对接口叫做 </strong><strong><code>veth pair</code>）。</strong></span></p><h3><span style="font-size: 20px;"><strong>创建网络参数</strong></span></h3><p><span style="color: rgb(0, 176, 80); font-size: 18px;"><strong>Docker 创建一个容器的时候，会执行如下操作：</strong></span></p><ul class=" list-paddingleft-2"><li><p><span style="font-size: 18px;"><strong>创建一对虚拟接口，分别放到本地主机和新容器中；</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>本地主机一端桥接到默认的 docker0 或指定网桥上，并具有一个唯一的名字，如 veth65f9；</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>容器一端放到新容器中，并修改名字作为 eth0，这个接口只在容器的名字空间可见；</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>从网桥可用地址段中获取一个空闲地址分配给容器的 eth0，并配置默认路由到桥接网卡 veth65f9。</strong></span></p></li></ul><p><span style="font-size: 18px;"><strong>完成这些之后，容器就可以使用 eth0 虚拟网卡来连接其他容器和其他网络。</strong></span></p><p><br></p><p><span style="font-size: 20px;"><strong>可以在 </strong><strong><code>docker run</code> 的时候通过 <code>--net</code> 参数来指定容器的网络配置，有4个可选值：</strong></span></p><ul class=" list-paddingleft-2"><li><p><span style="font-size: 18px;"><strong><code>--net=bridge</code> 这个是默认值，连接到默认的网桥。</strong></span></p></li><li><p><span style="font-size: 18px;"><strong><code>--net=host</code> 告诉 Docker 
+不要将容器网络放到隔离的名字空间中，即不要容器化容器内的网络。此时容器使用本地主机的网络，它拥有完全的本地主机接口访问权限。容器进程可以跟主机其
+它 root 进程一样可以打开低范围的端口，可以访问本地网络服务比如 
+D-bus，还可以让容器做一些影响整个主机系统的事情，比如重启主机。因此使用这个选项的时候要非常小心。如果进一步的使用 <code>--privileged=true</code>，容器会被允许直接配置主机的网络堆栈。</strong></span></p></li><li><p><span style="font-size: 18px;"><strong><code>--net=container:NAME_or_ID</code> 让 Docker 将新建容器的进程放到一个已存在容器的网络栈中，新容器进程有自己的文件系统、进程列表和资源限制，但会和已存在的容器共享 IP 地址和端口等网络资源，两者进程可以直接通过 <code>lo</code> 环回接口通信。</strong></span></p></li><li><p><span style="font-size: 18px;"><strong><code>--net=none</code> 让 Docker 将新容器放到隔离的网络栈中，但是不进行网络配置。之后，用户可以自己进行配置。</strong></span></p></li></ul><h2><span style="font-size: 18px;"><strong>四种单节点网络模式</strong></span></h2><h3><span style="color: rgb(151, 72, 6); font-size: 20px;"><strong>1、bridge 模式</strong></span></h3><p><span style="font-size: 18px;"><strong>Docker 容器默认使用 bridge 模式的网络。其特点如下：</strong></span></p><ul class=" list-paddingleft-2"><li><p><span style="font-size: 18px;"><strong>使用一个 linux bridge，默认为 docker0</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>使用 veth 对，一头在容器的网络 namespace 中，一头在 docker0 上</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>该模式下Docker Container不具有一个公有IP，因为宿主机的IP地址与veth pair的 IP地址不在同一个网段内</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>Docker采用 NAT 方式，将容器内部的服务监听的端口与宿主机的某一个端口port 进行“绑定”，使得宿主机以外的世界可以主动将网络报文发送至容器内部</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>外界访问容器内的服务时，需要访问宿主机的 IP 以及宿主机的端口 port</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>NAT 模式由于是在三层网络上的实现手段，故肯定会影响网络的传输效率。</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>容器拥有独立、隔离的网络栈；让容器和宿主机以外的世界通过NAT建立通信</strong></span></p></li></ul><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 21-23-01.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529328271950687.png" title="1529328271950687.png" style="cursor: pointer;"></strong></span></p><h3><span style="color: rgb(151, 72, 6); font-size: 20px;"><strong>2、Host 模式</strong></span></h3><p><br></p><p><span style="font-size: 18px;"><strong>定义：</strong></span></p><p style="margin-left: 30px;"><span style="font-size: 18px;"><strong>Host 
+模式并没有为容器创建一个隔离的网络环境。而之所以称之为host模式，是因为该模式下的 Docker 容器会和 host 宿主机共享同一个网络 
+namespace，故 Docker Container可以和宿主机一样，使用宿主机的eth0，实现和外界的通信。换言之，Docker 
+Container的 IP 地址即为宿主机 eth0 的 IP 地址。其特点包括：</strong></span></p><p><br></p><ul class=" list-paddingleft-2"><li><p><span style="font-size: 18px;"><strong>这种模式下的容器没有隔离的 network namespace</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>容器的 IP 地址同 Docker host 的 IP 地址</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>需要注意容器中服务的端口号不能与 Docker host 上已经使用的端口号相冲突</strong></span></p></li><li><p><span style="font-size: 18px;"><strong>host 模式能够和其它模式共存</strong></span></p></li></ul><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 21-25-54.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529328359399810.png" title="1529328359399810.png" style="cursor: pointer;"><br></strong></span></p><p><br></p><h3><span style="color: rgb(151, 72, 6); font-size: 20px;"><strong>3、container 模式</strong></span></h3><p><span style="font-size: 18px;"><strong>定义：</strong></span></p><p style="margin-left: 30px;"><span style="font-size: 18px;"><strong>&nbsp;Container
+ 网络模式是 Docker 中一种较为特别的网络的模式。处于这个模式下的 Docker 
+容器会共享其他容器的网络环境，因此，至少这两个容器之间不存在网络隔离，而这两个容器又与宿主机以及除此之外其他的容器存在网络隔离。&nbsp; <br></strong></span></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 21-26-38.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529328401608524.png" title="1529328401608524.png" style="cursor: pointer;"><br></strong></span></p><h3><span style="color: rgb(151, 72, 6); font-size: 20px;"><strong>4、none 模式</strong></span></h3><p><span style="font-size: 18px;"><strong>定义：</strong></span></p><p style="margin-left: 30px;"><span style="font-size: 18px;"><strong>&nbsp;网络模式为 none，即不为 Docker 容器构造任何网络环境。一旦Docker
+ 容器采用了none 网络模式，那么容器内部就只能使用loopback网络设备，不会再有其他的网络资源。Docker 
+Container的none网络模式意味着不给该容器创建任何网络环境，容器只能使用127.0.0.1的本机网络。</strong></span></p><p><br></p><p><span style="font-size: 18px;"><strong>实验：</strong></span></p><p><span style="font-size: 18px;"><strong>rhel7.3&nbsp; 172.25.12.250(物理机)</strong></span></p><p><br></p><p><br></p><p><span style="font-size: 18px;"><strong>启动一个容器，不指定时，容器默认使用 bridge 模式</strong></span></p><p><span style="font-size: 18px;"><strong>[root@foundation12 ~]# docker run -it --name web ubuntu<br><br></strong></span></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 21-32-35.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529328768543615.png" title="1529328768543615.png" style="cursor: pointer;"></strong></span></p><p><br></p><p><span style="font-size: 18px;"><strong>查看物理机</strong></span></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 21-33-59.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529328903789196.png" title="1529328903789196.png" style="cursor: pointer;"></strong></span></p><p><span style="font-size: 18px;"><strong>物理机桥接情况<br></strong></span></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 21-34-31.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529328951842179.png" title="1529328951842179.png" style="cursor: pointer;"></strong></span></p><p><br></p><h3><span style="color: rgb(151, 72, 6); font-size: 20px;"><strong>设定为none 模式</strong></span></h3><p><br></p><p><span style="font-size: 18px;"><strong>[root@foundation12 ~]# <span style="font-size: 18px; color: rgb(0, 176, 80);">docker run -it --name vm1 --net none ubuntu</span></strong></span></p><p><br><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 22-13-30.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529331220854431.png" title="1529331220854431.png" style="cursor: pointer;"></strong></span></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 22-12-55.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529331227847260.png" title="1529331227847260.png" style="cursor: pointer;"></strong></span></p><p><br></p><p><span style="font-size: 18px;"><strong>查看PID：</strong></span></p><p><span style="font-size: 18px;"><strong>[root@foundation12 ~]# <span style="font-size: 18px; color: rgb(0, 176, 80);">docker inspect -f '{{.State.Pid}}' vm1</span></strong></span></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 22-15-52.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529331612264857.png" title="1529331612264857.png" style="cursor: pointer;"></strong></span></p><p><span style="font-size: 18px;"><strong><br></strong></span></p><p><span style="font-size: 18px;"></span></p><p><br></p><p><span style="font-size: 18px;"><strong>虚拟化网络都是基于<span style="font-size: 18px; color: rgb(0, 176, 80);">netns </span>实现,netns 可以创建一个完全隔离的新网络环境，这个环境包括一个独立的网卡空间，路由表，ARP表，ip地址表，iptables等。总之，与网络有关的组件都是独立的。</strong></span></p><pre><span style="font-size: 18px;"><span style="font-size: 18px; color: rgb(0, 176, 80);"><strong>ip [ OPTIONS ] netns &nbsp;{ COMMAND | help }</strong></span><strong><br><br><span style="font-size: 18px; color: rgb(0, 176, 80);">ip netns list - show all of the named network namespaces &nbsp; &nbsp; 列出所有名称空间<br>ip netns add NETNSNAME - create a new named network namespace &nbsp; &nbsp; 创建一个新的名称空间<br>ip netns delete NETNSNAME - delete the name of a network namespace &nbsp; &nbsp; 删除一个名称空间<br>ip netns exec NETNSNAME cmd ... - Run cmd in the named network namespace &nbsp; &nbsp; 在网络名称空间中执行系统命令</span><br></strong></span></pre><p><br></p><p><span style="font-size: 18px;"><strong>eg:</strong></span></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 22-36-12.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529332580862665.png" title="1529332580862665.png" style="cursor: pointer;"></strong></span></p><p><br></p><p><br></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 22-39-13.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529333230218395.png" title="1529333230218395.png" style="cursor: pointer;"></strong></span></p><p><br></p><p><span style="font-size: 18px;"><strong>[root@foundation12 netns]# </strong><span style="font-size: 18px; color: rgb(0, 176, 80);"><strong>ip link add name veth0 type veth peer name veth1&nbsp; </strong><strong>添加网</strong></span><strong><span style="font-size: 18px; color: rgb(0, 176, 80);">口到namespace(创建端口对)</span></strong></span></p><p><span style="font-size: 18px;"><strong><span style="font-size: 18px; font-family: Helvetica;">在当前namespace可以看到veth0和veth1&nbsp;&nbsp; <br></span></strong></span></p><p><span style="font-size: 18px;"><strong>[root@foundation12 ~]# <span style="font-size: 18px; color: rgb(0, 176, 80);">ip link list&nbsp; 查看端口对</span></strong></span></p><p><img alt="Screenshot from 2018-06-18 23-31-48.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529335921498691.png" title="1529335921498691.png" style="cursor: pointer;"><br></p><p><br></p><p><br><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 23-01-35.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529334102818430.png" title="1529334102818430.png" style="cursor: pointer;"></strong></span></p><p><br></p><p><span style="font-size: 18px;"><strong>[root@foundation12 netns]# <span style="font-size: 18px; color: rgb(0, 176, 80);">brctl addif docker0 veth0&nbsp;&nbsp; 将veth0加入docker0这个网桥</span></strong></span></p><p><br><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 23-02-35.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529334164269792.png" title="1529334164269792.png" style="cursor: pointer;"></strong></span></p><p><br></p><p><span style="color: rgb(0, 176, 80); font-size: 18px;"><strong>默认网桥都是down的，置为up状态</strong></span></p><p><span style="font-size: 18px;"><strong>[root@foundation12 netns]# ip addr<br><br></strong><strong><img alt="Screenshot from 2018-06-18 23-05-17.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529334378722549.png" title="1529334378722549.png" style="cursor: pointer;"></strong></span></p><p><span style="font-size: 18px;"><strong>[root@foundation12 netns]#&nbsp; <span style="font-size: 18px; color: rgb(0, 176, 80);">ip link set up veth0</span><br>[root@foundation12 netns]#&nbsp;<span style="font-size: 18px; color: rgb(0, 176, 80);"> ip link set up veth1<br></span><br></strong></span></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 23-07-15.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529334445799161.png" title="1529334445799161.png" style="cursor: pointer;"></strong></span></p><p><br></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 23-08-07.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529334497915650.png" title="1529334497915650.png" style="cursor: pointer;"></strong></span></p><p><br></p><p><span style="font-size: 18px;"><strong>[root@foundation12 netns]# <span style="font-size: 18px; color: rgb(0, 176, 80);">ip link set veth1 netns 4943&nbsp; 增加端口到namespace</span></strong></span></p><p><span style="color: rgb(0, 176, 80); font-size: 18px;"><strong>查看net namespace</strong></span></p><p><img alt="Screenshot from 2018-06-18 23-37-18.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529336242261817.png" title="1529336242261817.png" style="cursor: pointer;"></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 23-09-05.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529334559538676.png" title="1529334559538676.png" style="cursor: pointer;"></strong></span></p><p><span style="font-size: 18px; color: rgb(0, 176, 80);"><strong>修改名字，添加IP和网关</strong><br></span></p><p><span style="font-size: 18px;"><strong>[root@foundation12 netns]# <span style="font-size: 18px; color: rgb(0, 176, 80);">ip netns exec 4943 ip link set veth1 name eth0</span><br>[root@foundation12 netns]# <span style="font-size: 18px; color: rgb(0, 176, 80);">ip netns exec 4943 ip link set up eth0</span><br>[root@foundation12 netns]# <span style="font-size: 18px; color: rgb(0, 176, 80);">ip netns exec 4943 ip addr add 172.17.0.100/24 dev eth0</span><br>[root@foundation12 netns]# <span style="font-size: 18px; color: rgb(0, 176, 80);">ip netns exec 4943 ip route add default via 172.17.0.1<br></span></strong></span></p><p><br></p><p><span style="font-size: 18px;"><strong>如下效果，none网络变得可以通信</strong><br></span></p><p><span style="font-size: 18px;"><strong><img alt="Screenshot from 2018-06-18 23-10-04.png" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/1529334622238745.png" title="1529334622238745.png" style="cursor: pointer;"></strong></span></p><p><br></p><p><br></p><p><br></p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者huanzi2017的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+									<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=docker+" target="_blank">docker </a>
+																								<a href="https://blog.51cto.com/search/result?q=%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE" target="_blank">网络配置</a>
+																								<a href="https://blog.51cto.com/search/result?q=none%E6%A8%A1%E5%BC%8F" target="_blank">none模式</a>
+															                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="2130375" userid="13352895">1</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1556810445459">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina">微博</a>
+					  <a class="bds_sqq" data-cmd="sqq">QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin">微信</a>
+					  <img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/qr-url.png">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/13362895/2130198" title="docker相关实验">
+						上一篇：docker相关实验</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/13362895/2130744" title="docker 仓库及镜像的上传下载">
+						下一篇：docker 仓库及镜像的上传下...</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/13362895" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="13352895" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/wKiom1nNupiTf_vqAAAdQqAKW2c196_middle.jpg">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/13362895" target="_blank" style="display:inline-block;">huanzi2017</a>
+										<h3>93篇文章，20W+人气，2粉丝</h3>
+					<h4>坚持就对了！</h4>				</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_13352895" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/13362895" class="header-img" target="_blank">
+						<img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可" maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="13352895">
+					<input type="hidden" class="reply_id" value="2130375">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList"></div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog" style="display: none;"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);" style="display: block;"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="https://blog.51cto.com/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>408人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="13" href="https://blog.51cto.com/cloumn/detail/13" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTO夏杰</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1408人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="30" href="https://blog.51cto.com/cloumn/detail/30" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>490人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="6" href="https://blog.51cto.com/cloumn/detail/6" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1491人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="18" href="https://blog.51cto.com/cloumn/detail/18" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>452人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="5" href="https://blog.51cto.com/cloumn/detail/5" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/13362895/2345676?source=dra" target="_blank">go语言学习</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/13362895/2162584?source=dra" target="_blank">zabbix搭建</a>
+															<a class="white-space" href="https://blog.51cto.com/ityouknow/2083688?source=drt" target="_blank">Docker(一)：Docker入门教程</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/lizhenliang/2159817?source=drt" target="_blank">Jenkins与Docker的自动化CI/CD实战</a>
+															<a class="white-space" href="https://blog.51cto.com/ganbing/2087598?source=drt" target="_blank">“深入浅出”来解读Docker网络核心原理</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/ityouknow/2088355?source=drt" target="_blank">Spring Boot 2.0(四)：使用 Docker 部署 Spring Boot</a>
+															<a class="white-space" href="https://blog.51cto.com/lizhenliang/1983392?source=drt" target="_blank">Kubernetes(K8S)集群管理Docker容器（部署篇）</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/11887934/2050590?source=drt" target="_blank">获取Centos7安装Docker各种姿势（指定版本）</a>
+															<a class="white-space" href="https://blog.51cto.com/lzhnb/2153225?source=drt" target="_blank">Docker基础入门实战（一）</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/ityouknow/2091874?source=drt" target="_blank">Spring Boot 2.0(五)：感受 Docker 魅力， 排解决多应用部署之疼</a>
+															<a class="white-space" href="https://blog.51cto.com/welcomeweb/1735251?source=drt" target="_blank">docker Failed to get D-Bus connection 报错</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/dengaosky/2069666?source=drt" target="_blank">Docker网络解决方案-Calico部署记录</a>
+															<a class="white-space" href="https://blog.51cto.com/jerrymin/2386757?source=drh" target="_blank">pinpoint 修改hbase表TTL值</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/ygqygq2/2386424?source=drh" target="_blank">2个Kubernetes使用同一个Ceph存储达到Kubernetes间持久化数据迁移</a>
+															<a class="white-space" href="https://blog.51cto.com/breaklinux/2386343?source=drh" target="_blank">企业级Registry服务器(harbor)部署</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/13760351/2385907?source=drh" target="_blank">记一次阿里云服务器安装Python的血泪史</a>
+															<a class="white-space" href="https://blog.51cto.com/sery/2385611?source=drh" target="_blank">速来围观老司机快速排错--解决论坛迁移到proxmox超融合私有云平台后后部分功能不能使用的问题</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/hld1992/2385108?source=drh" target="_blank">使用Jenkins Pipeline自动化构建发布Java项目</a>
+															<a class="white-space" href="https://blog.51cto.com/12980155/2384548?source=drh" target="_blank">Ansible的高级用法playbook</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14228129/2384429?source=drh" target="_blank">Linux的PS1.PS2.PS3.PS4等环境变量;Crontab的两个坑人点;变量传递等</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+        			<img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/078772c84eb23213ea90f577d9316ce4.png">
+        		</div>
+			<div class="group_code_box">
+			<img src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="2130375" userid="13352895">1</span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>2</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1556810445459">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/qr-url.png"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_13352895" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a href="https://blog.51cto.com/13362895" class="b-name fr">huanzi2017</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/13362895" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="13352895" src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/wKiom1nNupiTf_vqAAAdQqAKW2c196_middle.jpg"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/shCores.js"></script>
+<script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '2130375'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'13352895',
+            'blog_id':'2130375'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/13362895';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='13352895'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/13362895'
+    	nickname = 'huanzi2017'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_13352895'),'13352895','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_13352895'),'13352895','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_13352895'),'13352895','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<h1><span style=\"font-size: 18px;\"><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style=\"color: rgb(192, 0, 0); font-size: 24px;\">Docker \u7f51\u7edc\u5b9e\u73b0<\/span><\/strong><\/span><\/h1><p><span style=\"font-size: 18px;\"><strong>\u9996\u5148\uff0c\u8981\u5b9e\u73b0\u7f51\u7edc\u901a\u4fe1\uff0c\u673a\u5668\u9700\u8981\u81f3\u5c11\u4e00\u4e2a\u7f51\u7edc\u63a5\u53e3\uff08\u7269\u7406\u63a5\u53e3\u6216\u865a\u62df\u63a5\u53e3\uff09\u6765\u6536\u53d1\u6570\u636e\u5305\uff1b\u6b64\u5916\uff0c\u5982\u679c\u4e0d\u540c\u5b50\u7f51\u4e4b\u95f4\u8981\u8fdb\u884c\u901a\u4fe1\uff0c\u9700\u8981\u8def\u7531\u673a\u5236\u3002<\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong>Docker \u4e2d\u7684\u7f51\u7edc\u63a5\u53e3\u9ed8\u8ba4\u90fd\u662f<span style=\"font-size: 18px; color: rgb(151, 72, 6);\">\u865a\u62df\u7684\u63a5\u53e3<\/span>\u3002\u865a\u62df\u63a5\u53e3\u7684\u4f18\u52bf\u4e4b\u4e00\u662f\u8f6c\u53d1\u6548\u7387\u8f83\u9ad8\u3002\nLinux \u901a\u8fc7\u5728\u5185\u6838\u4e2d\u8fdb\u884c\u6570\u636e\u590d\u5236\u6765\u5b9e\u73b0\u865a\u62df\u63a5\u53e3\u4e4b\u95f4\u7684\u6570\u636e\u8f6c\u53d1\uff0c\u53d1\u9001\u63a5\u53e3\u7684\u53d1\u9001\u7f13\u5b58\u4e2d\u7684\u6570\u636e\u5305\u88ab\u76f4\u63a5\u590d\u5236\u5230\u63a5\u6536\u63a5\u53e3\u7684\u63a5\u6536\u7f13\u5b58\u4e2d\u3002\u5bf9\u4e8e\u672c\u5730\u7cfb\u7edf\u548c\u5bb9\u5668\u5185\u7cfb\u7edf\u770b\u6765\u5c31\u50cf\u662f\u4e00\u4e2a\u6b63\u5e38\u7684\u4ee5\u592a\u7f51\u5361\uff0c\u53ea\u662f\u5b83\u4e0d\u9700\u8981\u771f\u6b63\u540c\u5916\u90e8\u7f51\u7edc\u8bbe\u5907\u901a\u4fe1\uff0c\u901f\u5ea6\u8981\u5feb\u5f88\u591a\u3002<\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><br\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong>Docker \u5bb9\u5668\u7f51\u7edc\u5c31\u5229\u7528\u4e86\u8fd9\u9879\u6280\u672f\u3002\u5b83\u5728\u672c\u5730\u4e3b\u673a\u548c\u5bb9\u5668\u5185\u5206\u522b\u521b\u5efa\u4e00\u4e2a\u865a\u62df\u63a5\u53e3\uff0c\u5e76\u8ba9\u5b83\u4eec\u5f7c\u6b64\u8fde\u901a\uff08\u8fd9\u6837\u7684\u4e00\u5bf9\u63a5\u53e3\u53eb\u505a <\/strong><strong><code>veth pair<\/code>\uff09\u3002<\/strong><\/span><\/p><h3><span style=\"font-size: 20px;\"><strong>\u521b\u5efa\u7f51\u7edc\u53c2\u6570<\/strong><\/span><\/h3><p><span style=\"color: rgb(0, 176, 80); font-size: 18px;\"><strong>Docker \u521b\u5efa\u4e00\u4e2a\u5bb9\u5668\u7684\u65f6\u5019\uff0c\u4f1a\u6267\u884c\u5982\u4e0b\u64cd\u4f5c\uff1a<\/strong><\/span><\/p><ul class=\" list-paddingleft-2\"><li><p><span style=\"font-size: 18px;\"><strong>\u521b\u5efa\u4e00\u5bf9\u865a\u62df\u63a5\u53e3\uff0c\u5206\u522b\u653e\u5230\u672c\u5730\u4e3b\u673a\u548c\u65b0\u5bb9\u5668\u4e2d\uff1b<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>\u672c\u5730\u4e3b\u673a\u4e00\u7aef\u6865\u63a5\u5230\u9ed8\u8ba4\u7684 docker0 \u6216\u6307\u5b9a\u7f51\u6865\u4e0a\uff0c\u5e76\u5177\u6709\u4e00\u4e2a\u552f\u4e00\u7684\u540d\u5b57\uff0c\u5982 veth65f9\uff1b<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>\u5bb9\u5668\u4e00\u7aef\u653e\u5230\u65b0\u5bb9\u5668\u4e2d\uff0c\u5e76\u4fee\u6539\u540d\u5b57\u4f5c\u4e3a eth0\uff0c\u8fd9\u4e2a\u63a5\u53e3\u53ea\u5728\u5bb9\u5668\u7684\u540d\u5b57\u7a7a\u95f4\u53ef\u89c1\uff1b<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>\u4ece\u7f51\u6865\u53ef\u7528\u5730\u5740\u6bb5\u4e2d\u83b7\u53d6\u4e00\u4e2a\u7a7a\u95f2\u5730\u5740\u5206\u914d\u7ed9\u5bb9\u5668\u7684 eth0\uff0c\u5e76\u914d\u7f6e\u9ed8\u8ba4\u8def\u7531\u5230\u6865\u63a5\u7f51\u5361 veth65f9\u3002<\/strong><\/span><\/p><\/li><\/ul><p><span style=\"font-size: 18px;\"><strong>\u5b8c\u6210\u8fd9\u4e9b\u4e4b\u540e\uff0c\u5bb9\u5668\u5c31\u53ef\u4ee5\u4f7f\u7528 eth0 \u865a\u62df\u7f51\u5361\u6765\u8fde\u63a5\u5176\u4ed6\u5bb9\u5668\u548c\u5176\u4ed6\u7f51\u7edc\u3002<\/strong><\/span><\/p><p><br\/><\/p><p><span style=\"font-size: 20px;\"><strong>\u53ef\u4ee5\u5728 <\/strong><strong><code>docker run<\/code> \u7684\u65f6\u5019\u901a\u8fc7 <code>--net<\/code> \u53c2\u6570\u6765\u6307\u5b9a\u5bb9\u5668\u7684\u7f51\u7edc\u914d\u7f6e\uff0c\u67094\u4e2a\u53ef\u9009\u503c\uff1a<\/strong><\/span><\/p><ul class=\" list-paddingleft-2\"><li><p><span style=\"font-size: 18px;\"><strong><code>--net=bridge<\/code> \u8fd9\u4e2a\u662f\u9ed8\u8ba4\u503c\uff0c\u8fde\u63a5\u5230\u9ed8\u8ba4\u7684\u7f51\u6865\u3002<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong><code>--net=host<\/code> \u544a\u8bc9 Docker \n\u4e0d\u8981\u5c06\u5bb9\u5668\u7f51\u7edc\u653e\u5230\u9694\u79bb\u7684\u540d\u5b57\u7a7a\u95f4\u4e2d\uff0c\u5373\u4e0d\u8981\u5bb9\u5668\u5316\u5bb9\u5668\u5185\u7684\u7f51\u7edc\u3002\u6b64\u65f6\u5bb9\u5668\u4f7f\u7528\u672c\u5730\u4e3b\u673a\u7684\u7f51\u7edc\uff0c\u5b83\u62e5\u6709\u5b8c\u5168\u7684\u672c\u5730\u4e3b\u673a\u63a5\u53e3\u8bbf\u95ee\u6743\u9650\u3002\u5bb9\u5668\u8fdb\u7a0b\u53ef\u4ee5\u8ddf\u4e3b\u673a\u5176\n\u5b83 root \u8fdb\u7a0b\u4e00\u6837\u53ef\u4ee5\u6253\u5f00\u4f4e\u8303\u56f4\u7684\u7aef\u53e3\uff0c\u53ef\u4ee5\u8bbf\u95ee\u672c\u5730\u7f51\u7edc\u670d\u52a1\u6bd4\u5982 \nD-bus\uff0c\u8fd8\u53ef\u4ee5\u8ba9\u5bb9\u5668\u505a\u4e00\u4e9b\u5f71\u54cd\u6574\u4e2a\u4e3b\u673a\u7cfb\u7edf\u7684\u4e8b\u60c5\uff0c\u6bd4\u5982\u91cd\u542f\u4e3b\u673a\u3002\u56e0\u6b64\u4f7f\u7528\u8fd9\u4e2a\u9009\u9879\u7684\u65f6\u5019\u8981\u975e\u5e38\u5c0f\u5fc3\u3002\u5982\u679c\u8fdb\u4e00\u6b65\u7684\u4f7f\u7528 <code>--privileged=true<\/code>\uff0c\u5bb9\u5668\u4f1a\u88ab\u5141\u8bb8\u76f4\u63a5\u914d\u7f6e\u4e3b\u673a\u7684\u7f51\u7edc\u5806\u6808\u3002<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong><code>--net=container:NAME_or_ID<\/code> \u8ba9 Docker \u5c06\u65b0\u5efa\u5bb9\u5668\u7684\u8fdb\u7a0b\u653e\u5230\u4e00\u4e2a\u5df2\u5b58\u5728\u5bb9\u5668\u7684\u7f51\u7edc\u6808\u4e2d\uff0c\u65b0\u5bb9\u5668\u8fdb\u7a0b\u6709\u81ea\u5df1\u7684\u6587\u4ef6\u7cfb\u7edf\u3001\u8fdb\u7a0b\u5217\u8868\u548c\u8d44\u6e90\u9650\u5236\uff0c\u4f46\u4f1a\u548c\u5df2\u5b58\u5728\u7684\u5bb9\u5668\u5171\u4eab IP \u5730\u5740\u548c\u7aef\u53e3\u7b49\u7f51\u7edc\u8d44\u6e90\uff0c\u4e24\u8005\u8fdb\u7a0b\u53ef\u4ee5\u76f4\u63a5\u901a\u8fc7 <code>lo<\/code> \u73af\u56de\u63a5\u53e3\u901a\u4fe1\u3002<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong><code>--net=none<\/code> \u8ba9 Docker \u5c06\u65b0\u5bb9\u5668\u653e\u5230\u9694\u79bb\u7684\u7f51\u7edc\u6808\u4e2d\uff0c\u4f46\u662f\u4e0d\u8fdb\u884c\u7f51\u7edc\u914d\u7f6e\u3002\u4e4b\u540e\uff0c\u7528\u6237\u53ef\u4ee5\u81ea\u5df1\u8fdb\u884c\u914d\u7f6e\u3002<\/strong><\/span><\/p><\/li><\/ul><h2><span style=\"font-size: 18px;\"><strong>\u56db\u79cd\u5355\u8282\u70b9\u7f51\u7edc\u6a21\u5f0f<\/strong><\/span><\/h2><h3><span style=\"color: rgb(151, 72, 6); font-size: 20px;\"><strong>1\u3001bridge \u6a21\u5f0f<\/strong><\/span><\/h3><p><span style=\"font-size: 18px;\"><strong>Docker \u5bb9\u5668\u9ed8\u8ba4\u4f7f\u7528 bridge \u6a21\u5f0f\u7684\u7f51\u7edc\u3002\u5176\u7279\u70b9\u5982\u4e0b\uff1a<\/strong><\/span><\/p><ul class=\" list-paddingleft-2\"><li><p><span style=\"font-size: 18px;\"><strong>\u4f7f\u7528\u4e00\u4e2a linux bridge\uff0c\u9ed8\u8ba4\u4e3a docker0<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>\u4f7f\u7528 veth \u5bf9\uff0c\u4e00\u5934\u5728\u5bb9\u5668\u7684\u7f51\u7edc namespace \u4e2d\uff0c\u4e00\u5934\u5728 docker0 \u4e0a<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>\u8be5\u6a21\u5f0f\u4e0bDocker Container\u4e0d\u5177\u6709\u4e00\u4e2a\u516c\u6709IP\uff0c\u56e0\u4e3a\u5bbf\u4e3b\u673a\u7684IP\u5730\u5740\u4e0eveth pair\u7684 IP\u5730\u5740\u4e0d\u5728\u540c\u4e00\u4e2a\u7f51\u6bb5\u5185<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>Docker\u91c7\u7528 NAT \u65b9\u5f0f\uff0c\u5c06\u5bb9\u5668\u5185\u90e8\u7684\u670d\u52a1\u76d1\u542c\u7684\u7aef\u53e3\u4e0e\u5bbf\u4e3b\u673a\u7684\u67d0\u4e00\u4e2a\u7aef\u53e3port \u8fdb\u884c\u201c\u7ed1\u5b9a\u201d\uff0c\u4f7f\u5f97\u5bbf\u4e3b\u673a\u4ee5\u5916\u7684\u4e16\u754c\u53ef\u4ee5\u4e3b\u52a8\u5c06\u7f51\u7edc\u62a5\u6587\u53d1\u9001\u81f3\u5bb9\u5668\u5185\u90e8<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>\u5916\u754c\u8bbf\u95ee\u5bb9\u5668\u5185\u7684\u670d\u52a1\u65f6\uff0c\u9700\u8981\u8bbf\u95ee\u5bbf\u4e3b\u673a\u7684 IP \u4ee5\u53ca\u5bbf\u4e3b\u673a\u7684\u7aef\u53e3 port<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>NAT \u6a21\u5f0f\u7531\u4e8e\u662f\u5728\u4e09\u5c42\u7f51\u7edc\u4e0a\u7684\u5b9e\u73b0\u624b\u6bb5\uff0c\u6545\u80af\u5b9a\u4f1a\u5f71\u54cd\u7f51\u7edc\u7684\u4f20\u8f93\u6548\u7387\u3002<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>\u5bb9\u5668\u62e5\u6709\u72ec\u7acb\u3001\u9694\u79bb\u7684\u7f51\u7edc\u6808\uff1b\u8ba9\u5bb9\u5668\u548c\u5bbf\u4e3b\u673a\u4ee5\u5916\u7684\u4e16\u754c\u901a\u8fc7NAT\u5efa\u7acb\u901a\u4fe1<\/strong><\/span><\/p><\/li><\/ul><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 21-23-01.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529328271950687.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529328271950687.png\"\/><\/strong><\/span><\/p><h3><span style=\"color: rgb(151, 72, 6); font-size: 20px;\"><strong>2\u3001Host \u6a21\u5f0f<\/strong><\/span><\/h3><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>\u5b9a\u4e49\uff1a<\/strong><\/span><\/p><p style=\"margin-left: 30px;\"><span style=\"font-size: 18px;\"><strong>Host \n\u6a21\u5f0f\u5e76\u6ca1\u6709\u4e3a\u5bb9\u5668\u521b\u5efa\u4e00\u4e2a\u9694\u79bb\u7684\u7f51\u7edc\u73af\u5883\u3002\u800c\u4e4b\u6240\u4ee5\u79f0\u4e4b\u4e3ahost\u6a21\u5f0f\uff0c\u662f\u56e0\u4e3a\u8be5\u6a21\u5f0f\u4e0b\u7684 Docker \u5bb9\u5668\u4f1a\u548c host \u5bbf\u4e3b\u673a\u5171\u4eab\u540c\u4e00\u4e2a\u7f51\u7edc \nnamespace\uff0c\u6545 Docker Container\u53ef\u4ee5\u548c\u5bbf\u4e3b\u673a\u4e00\u6837\uff0c\u4f7f\u7528\u5bbf\u4e3b\u673a\u7684eth0\uff0c\u5b9e\u73b0\u548c\u5916\u754c\u7684\u901a\u4fe1\u3002\u6362\u8a00\u4e4b\uff0cDocker \nContainer\u7684 IP \u5730\u5740\u5373\u4e3a\u5bbf\u4e3b\u673a eth0 \u7684 IP \u5730\u5740\u3002\u5176\u7279\u70b9\u5305\u62ec\uff1a<\/strong><\/span><\/p><p><br\/><\/p><ul class=\" list-paddingleft-2\"><li><p><span style=\"font-size: 18px;\"><strong>\u8fd9\u79cd\u6a21\u5f0f\u4e0b\u7684\u5bb9\u5668\u6ca1\u6709\u9694\u79bb\u7684 network namespace<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>\u5bb9\u5668\u7684 IP \u5730\u5740\u540c Docker host \u7684 IP \u5730\u5740<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>\u9700\u8981\u6ce8\u610f\u5bb9\u5668\u4e2d\u670d\u52a1\u7684\u7aef\u53e3\u53f7\u4e0d\u80fd\u4e0e Docker host \u4e0a\u5df2\u7ecf\u4f7f\u7528\u7684\u7aef\u53e3\u53f7\u76f8\u51b2\u7a81<\/strong><\/span><\/p><\/li><li><p><span style=\"font-size: 18px;\"><strong>host \u6a21\u5f0f\u80fd\u591f\u548c\u5176\u5b83\u6a21\u5f0f\u5171\u5b58<\/strong><\/span><\/p><\/li><\/ul><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 21-25-54.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529328359399810.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529328359399810.png\"\/><br\/><\/strong><\/span><\/p><p><br\/><\/p><h3><span style=\"color: rgb(151, 72, 6); font-size: 20px;\"><strong>3\u3001container \u6a21\u5f0f<\/strong><\/span><\/h3><p><span style=\"font-size: 18px;\"><strong>\u5b9a\u4e49\uff1a<\/strong><\/span><\/p><p style=\"margin-left: 30px;\"><span style=\"font-size: 18px;\"><strong>&nbsp;Container \u7f51\u7edc\u6a21\u5f0f\u662f Docker \u4e2d\u4e00\u79cd\u8f83\u4e3a\u7279\u522b\u7684\u7f51\u7edc\u7684\u6a21\u5f0f\u3002\u5904\u4e8e\u8fd9\u4e2a\u6a21\u5f0f\u4e0b\u7684 Docker \u5bb9\u5668\u4f1a\u5171\u4eab\u5176\u4ed6\u5bb9\u5668\u7684\u7f51\u7edc\u73af\u5883\uff0c\u56e0\u6b64\uff0c\u81f3\u5c11\u8fd9\u4e24\u4e2a\u5bb9\u5668\u4e4b\u95f4\u4e0d\u5b58\u5728\u7f51\u7edc\u9694\u79bb\uff0c\u800c\u8fd9\u4e24\u4e2a\u5bb9\u5668\u53c8\u4e0e\u5bbf\u4e3b\u673a\u4ee5\u53ca\u9664\u6b64\u4e4b\u5916\u5176\u4ed6\u7684\u5bb9\u5668\u5b58\u5728\u7f51\u7edc\u9694\u79bb\u3002&nbsp; <br\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 21-26-38.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529328401608524.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529328401608524.png\"\/><br\/><\/strong><\/span><\/p><h3><span style=\"color: rgb(151, 72, 6); font-size: 20px;\"><strong>4\u3001none \u6a21\u5f0f<\/strong><\/span><\/h3><p><span style=\"font-size: 18px;\"><strong>\u5b9a\u4e49\uff1a<\/strong><\/span><\/p><p style=\"margin-left: 30px;\"><span style=\"font-size: 18px;\"><strong>&nbsp;\u7f51\u7edc\u6a21\u5f0f\u4e3a none\uff0c\u5373\u4e0d\u4e3a Docker \u5bb9\u5668\u6784\u9020\u4efb\u4f55\u7f51\u7edc\u73af\u5883\u3002\u4e00\u65e6Docker\n \u5bb9\u5668\u91c7\u7528\u4e86none \u7f51\u7edc\u6a21\u5f0f\uff0c\u90a3\u4e48\u5bb9\u5668\u5185\u90e8\u5c31\u53ea\u80fd\u4f7f\u7528loopback\u7f51\u7edc\u8bbe\u5907\uff0c\u4e0d\u4f1a\u518d\u6709\u5176\u4ed6\u7684\u7f51\u7edc\u8d44\u6e90\u3002Docker \nContainer\u7684none\u7f51\u7edc\u6a21\u5f0f\u610f\u5473\u7740\u4e0d\u7ed9\u8be5\u5bb9\u5668\u521b\u5efa\u4efb\u4f55\u7f51\u7edc\u73af\u5883\uff0c\u5bb9\u5668\u53ea\u80fd\u4f7f\u7528127.0.0.1\u7684\u672c\u673a\u7f51\u7edc\u3002<\/strong><\/span><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>\u5b9e\u9a8c\uff1a<\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong>rhel7.3&nbsp; 172.25.12.250(\u7269\u7406\u673a)<\/strong><\/span><\/p><p><br\/><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>\u542f\u52a8\u4e00\u4e2a\u5bb9\u5668\uff0c\u4e0d\u6307\u5b9a\u65f6\uff0c\u5bb9\u5668\u9ed8\u8ba4\u4f7f\u7528 bridge \u6a21\u5f0f<\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong>[root@foundation12 ~]# docker run -it --name web ubuntu<br\/><br\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 21-32-35.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529328768543615.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529328768543615.png\"\/><\/strong><\/span><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>\u67e5\u770b\u7269\u7406\u673a<\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 21-33-59.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529328903789196.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529328903789196.png\"\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong>\u7269\u7406\u673a\u6865\u63a5\u60c5\u51b5<br\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 21-34-31.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529328951842179.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529328951842179.png\"\/><\/strong><\/span><\/p><p><br\/><\/p><h3><span style=\"color: rgb(151, 72, 6); font-size: 20px;\"><strong>\u8bbe\u5b9a\u4e3anone \u6a21\u5f0f<\/strong><\/span><\/h3><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>[root@foundation12 ~]# <span style=\"font-size: 18px; color: rgb(0, 176, 80);\">docker run -it --name vm1 --net none ubuntu<\/span><\/strong><\/span><\/p><p><br\/><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 22-13-30.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529331220854431.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529331220854431.png\"\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 22-12-55.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529331227847260.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529331227847260.png\"\/><\/strong><\/span><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>\u67e5\u770bPID\uff1a<\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong>[root@foundation12 ~]# <span style=\"font-size: 18px; color: rgb(0, 176, 80);\">docker inspect -f &#39;{{.State.Pid}}&#39; vm1<\/span><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 22-15-52.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529331612264857.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529331612264857.png\"\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><br\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><\/span><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>\u865a\u62df\u5316\u7f51\u7edc\u90fd\u662f\u57fa\u4e8e<span style=\"font-size: 18px; color: rgb(0, 176, 80);\">netns <\/span>\u5b9e\u73b0,netns \u53ef\u4ee5\u521b\u5efa\u4e00\u4e2a\u5b8c\u5168\u9694\u79bb\u7684\u65b0\u7f51\u7edc\u73af\u5883\uff0c\u8fd9\u4e2a\u73af\u5883\u5305\u62ec\u4e00\u4e2a\u72ec\u7acb\u7684\u7f51\u5361\u7a7a\u95f4\uff0c\u8def\u7531\u8868\uff0cARP\u8868\uff0cip\u5730\u5740\u8868\uff0ciptables\u7b49\u3002\u603b\u4e4b\uff0c\u4e0e\u7f51\u7edc\u6709\u5173\u7684\u7ec4\u4ef6\u90fd\u662f\u72ec\u7acb\u7684\u3002<\/strong><\/span><\/p><pre><span style=\"font-size: 18px;\"><span style=\"font-size: 18px; color: rgb(0, 176, 80);\"><strong>ip [ OPTIONS ] netns &nbsp;{ COMMAND | help }<\/strong><\/span><strong><br\/><br\/><span style=\"font-size: 18px; color: rgb(0, 176, 80);\">ip netns list - show all of the named network namespaces &nbsp; &nbsp; \u5217\u51fa\u6240\u6709\u540d\u79f0\u7a7a\u95f4<br\/>ip netns add NETNSNAME - create a new named network namespace &nbsp; &nbsp; \u521b\u5efa\u4e00\u4e2a\u65b0\u7684\u540d\u79f0\u7a7a\u95f4<br\/>ip netns delete NETNSNAME - delete the name of a network namespace &nbsp; &nbsp; \u5220\u9664\u4e00\u4e2a\u540d\u79f0\u7a7a\u95f4<br\/>ip netns exec NETNSNAME cmd ... - Run cmd in the named network namespace &nbsp; &nbsp; \u5728\u7f51\u7edc\u540d\u79f0\u7a7a\u95f4\u4e2d\u6267\u884c\u7cfb\u7edf\u547d\u4ee4<\/span><br\/><\/strong><\/span><\/pre><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>eg:<\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 22-36-12.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529332580862665.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529332580862665.png\"\/><\/strong><\/span><\/p><p><br\/><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 22-39-13.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529333230218395.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529333230218395.png\"\/><\/strong><\/span><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>[root@foundation12 netns]# <\/strong><span style=\"font-size: 18px; color: rgb(0, 176, 80);\"><strong>ip link add name veth0 type veth peer name veth1&nbsp; <\/strong><strong>\u6dfb\u52a0\u7f51<\/strong><\/span><strong><span style=\"font-size: 18px; color: rgb(0, 176, 80);\">\u53e3\u5230namespace(\u521b\u5efa\u7aef\u53e3\u5bf9)<\/span><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><span style=\"font-size: 18px; font-family: Helvetica;\">\u5728\u5f53\u524dnamespace\u53ef\u4ee5\u770b\u5230veth0\u548cveth1&nbsp;&nbsp; <br\/><\/span><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong>[root@foundation12 ~]# <span style=\"font-size: 18px; color: rgb(0, 176, 80);\">ip link list&nbsp; \u67e5\u770b\u7aef\u53e3\u5bf9<\/span><\/strong><\/span><\/p><p><img alt=\"Screenshot from 2018-06-18 23-31-48.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529335921498691.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529335921498691.png\"\/><br\/><\/p><p><br\/><\/p><p><br\/><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 23-01-35.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529334102818430.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529334102818430.png\"\/><\/strong><\/span><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>[root@foundation12 netns]# <span style=\"font-size: 18px; color: rgb(0, 176, 80);\">brctl addif docker0 veth0&nbsp;&nbsp; \u5c06veth0\u52a0\u5165docker0\u8fd9\u4e2a\u7f51\u6865<\/span><\/strong><\/span><\/p><p><br\/><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 23-02-35.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529334164269792.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529334164269792.png\"\/><\/strong><\/span><\/p><p><br\/><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 18px;\"><strong>\u9ed8\u8ba4\u7f51\u6865\u90fd\u662fdown\u7684\uff0c\u7f6e\u4e3aup\u72b6\u6001<\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong>[root@foundation12 netns]# ip addr<br\/><br\/><\/strong><strong><img alt=\"Screenshot from 2018-06-18 23-05-17.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529334378722549.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529334378722549.png\"\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong>[root@foundation12 netns]#&nbsp; <span style=\"font-size: 18px; color: rgb(0, 176, 80);\">ip link set up veth0<\/span><br\/>[root@foundation12 netns]#&nbsp;<span style=\"font-size: 18px; color: rgb(0, 176, 80);\"> ip link set up veth1<br\/><\/span><br\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 23-07-15.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529334445799161.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529334445799161.png\"\/><\/strong><\/span><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 23-08-07.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529334497915650.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529334497915650.png\"\/><\/strong><\/span><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>[root@foundation12 netns]# <span style=\"font-size: 18px; color: rgb(0, 176, 80);\">ip link set veth1 netns 4943&nbsp; \u589e\u52a0\u7aef\u53e3\u5230namespace<\/span><\/strong><\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 18px;\"><strong>\u67e5\u770bnet namespace<\/strong><\/span><\/p><p><img alt=\"Screenshot from 2018-06-18 23-37-18.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529336242261817.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529336242261817.png\"\/><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 23-09-05.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529334559538676.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529334559538676.png\"\/><\/strong><\/span><\/p><p><span style=\"font-size: 18px; color: rgb(0, 176, 80);\"><strong>\u4fee\u6539\u540d\u5b57\uff0c\u6dfb\u52a0IP\u548c\u7f51\u5173<\/strong><br\/><\/span><\/p><p><span style=\"font-size: 18px;\"><strong>[root@foundation12 netns]# <span style=\"font-size: 18px; color: rgb(0, 176, 80);\">ip netns exec 4943 ip link set veth1 name eth0<\/span><br\/>[root@foundation12 netns]# <span style=\"font-size: 18px; color: rgb(0, 176, 80);\">ip netns exec 4943 ip link set up eth0<\/span><br\/>[root@foundation12 netns]# <span style=\"font-size: 18px; color: rgb(0, 176, 80);\">ip netns exec 4943 ip addr add 172.17.0.100\/24 dev eth0<\/span><br\/>[root@foundation12 netns]# <span style=\"font-size: 18px; color: rgb(0, 176, 80);\">ip netns exec 4943 ip route add default via 172.17.0.1<br\/><\/span><\/strong><\/span><\/p><p><br\/><\/p><p><span style=\"font-size: 18px;\"><strong>\u5982\u4e0b\u6548\u679c\uff0cnone\u7f51\u7edc\u53d8\u5f97\u53ef\u4ee5\u901a\u4fe1<\/strong><br\/><\/span><\/p><p><span style=\"font-size: 18px;\"><strong><img alt=\"Screenshot from 2018-06-18 23-10-04.png\" src=\"https:\/\/s1.51cto.com\/images\/20180618\/1529334622238745.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1529334622238745.png\"\/><\/strong><\/span><\/p><p><br\/><\/p><p><br\/><\/p><p><br\/><\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"docker 之网络配置",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1556810445; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/marked.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/highlight.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/detail_mp.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/detail.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/details_new.js"></script><script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/copy.js"></script>    <script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type="text/javascript">
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/jquery_003.js"></script>
+<script src="docker%20%E4%B9%8B%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE-13352895-51CTO%E5%8D%9A%E5%AE%A2_files/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+
+
+<div id="zhichiBtnBox" style="position: fixed; z-index: 2147483583; box-shadow: rgba(15, 66, 76, 0.25) 0px 0px 14px 0px; width: 60px; height: 60px; border-radius: 50%; background-color: rgb(66, 133, 244); background-image: url(&quot;//www.sobot.com/chat/frame/imgs/icon.png&quot;); background-repeat: no-repeat; background-position: 18px -58px; right: 40px; bottom: 90px; display: none;"><a hidefocus="" id="zhichiBtn" style="position:relative;text-decoration: none; outline: none; font-family: Microsoft Yahei, Arial, Helvetica; color: #fff; font-size: 16px; display: inline-block; margin: 0; padding: 0; border: none; line-height:43px; float:none;width:100%;height:100%;border-radius:50%;"><span class="zc-advice-icon-btn-title" style="box-shadow: rgba(107, 113, 114, 0.15) 0px 2px 4px 0px; border: 1px solid rgb(235, 239, 240); font-family: Microsoft Yahei, Arial, Helvetica; color: rgb(85, 85, 86); font-size: 13px; margin: 0px; text-align: right; background: rgb(255, 255, 255) none repeat scroll 0% 0%; position: absolute; top: 15px; right: 70px; text-overflow: ellipsis; white-space: nowrap; word-break: normal; display: none; border-radius: 3px; padding: 0px 5px; height: 30px; line-height: 30px;">咨询在线客服</span></a><i style="position:absolute;top:0px;right:0px;padding:1px;line-height:20px;text-align:center;color:#fff;font-weight:bold;height:18px;min-width:18px;background-color:#ed5c5c;border-radius:18px;font-size:12px;display:none;font-style:normal;" id="zhichiCount"></i></div></body></html>

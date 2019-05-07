@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="origin">
+    <title>基于FPGA（DDS）的正弦波发生器 - 江山无限辉 - 博客园</title>
+<meta property="og:description" content="记录背景：昨晚快下班时，与同事rk聊起怎么用FPGA实现正弦波的输出。我第一反应是利用高频的PWM波去滤波，但感觉这样的波形精度肯定很差；后来想起之前由看过怎么用FPGA产生正弦波的技术，但怎么都想不">
+    <link type="text/css" rel="stylesheet" href="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-coffee.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-coffee-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/lifei-chan/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/lifei-chan/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/lifei-chan/wlwmanifest.xml">
+    <script src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_2019032901.js"></script><script async="" src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script type="text/javascript" src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/encoder.js"></script><script src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script>var currentBlogId=411770;var currentBlogApp='lifei-chan',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js" type="text/javascript"></script>
+<link rel="preload" href="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2019032901.js" async=""></script></head>
+<body>
+<a name="top"></a>
+
+
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a id="lnkBlogLogo" href="https://www.cnblogs.com/lifei-chan/"><img id="blogLogo" src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.gif" alt="返回主页"></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/lifei-chan/">江山无限辉</a></h1>
+<h2></h2>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		<div id="navigator">
+			
+<ul id="navList">
+	<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+	<li><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/lifei-chan/">首页</a></li>
+	<li><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+	<li><a id="blog_nav_contact" accesskey="9" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89">联系</a></li>
+	<li><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+	<li><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/lifei-chan/rss">订阅</a>
+	<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/lifei-chan/rss"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/xml.gif" alt="订阅"></a></li>
+</ul>
+
+
+			<div class="blogStats">
+				
+				<div id="blog_stats">
+<!--done-->
+随笔- 21&nbsp;
+文章- 0&nbsp;
+评论- 1&nbsp;
+</div>
+				
+			</div><!--end: blogStats -->
+		</div><!--end: navigator 博客导航栏 -->
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/lifei-chan/p/9216272.html">基于FPGA（DDS）的正弦波发生器</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><p>记录背景：昨晚快下班时，与同事
+rk聊起怎么用FPGA实现正弦波的输出。我第一反应是利用高频的PWM波去滤波，但感觉这样的波形精度肯定很差；后来想起之前由看过怎么用FPGA产生
+正弦波的技术，但怎么都想不起来这个技术的名称是叫什么了。后来搜索后才知道就是DDS（Direct Digital 
+Synthesizer），即：直接数字频率合成器。</p>
+<p>最近（好吧，不是最近，是一直）发现自己记东西记不牢，究竟是自己老了，记忆力下退；还是自己不用心去记；还是因为看得少，缺少实践（毕竟纸上得来终觉浅、绝知此事要躬行）。</p>
+<p>-----------------------------分割线-----------------------------------</p>
+<p>以下内容主要转自：http://blog.chinaaet.com/lincoding/p/5100050592，如有侵权，请告知删除。抱歉！</p>
+<p>DDS的主要组成部分：相位累加器、相位调制器、波形数据表、DAC和低通滤波器四大部分组成。如下图：</p>
+<p><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1333687-20180623082036880-1121979992.png" alt=""></p>
+<p>DDS的原理：</p>
+<p>1、首先ROM中要存放好要显示的正弦波数据；</p>
+<p>2、然后由相位累加器（其实就是个计数器）一直累加，这个累加器的值作为ROM的地址</p>
+<p>3、DAC根据ROM输出的数据输出对应的电压值</p>
+<p>4、由于上述输出的电压值是个离散值，无法构成平滑的正弦波，因此需要在后级增加一个低通滤波器才能输出完美的正弦波。</p>
+<p>那么，怎么实现上述的功能呢？</p>
+<p>首先，我们要考虑两个问题：</p>
+<p>A、相位累加器（计数器）的位宽是多少？</p>
+<p>B、ROM的数据位宽和深度（深度：2^地址位宽）是多少？</p>
+<p>对于第一个问题：相位累加器的位宽一般是24~32bits，一般选32bits（因为这样的位宽能满足绝大部分的应用场合了）；</p>
+<p>对于第二个问题：</p>
+<p>ROM的数据位宽选择要看DAC模块，比如我的DAC模块的数据输入数据范围是0~1023，那么ROM的数据位宽就要选择10位；</p>
+<p>ROM的深度也要取决于你的DAC模块，因为ROM中只能存储整数。</p>
+<p>相位累加器举例：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #008000;">//</span><span style="color: #008000;">-----------------------------------
+</span><span style="color: #008000;">//</span><span style="color: #008000;">phase adder</span>
+<span style="color: #0000ff;">reg</span>    [<span style="color: #800080;">10</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]    fre_cnt;
+</span><span style="color: #0000ff;">always</span> @ ( <span style="color: #0000ff;">posedge</span> clk <span style="color: #0000ff;">or</span> <span style="color: #0000ff;">negedge</span><span style="color: #000000;"> rst_n )
+</span><span style="color: #0000ff;">begin</span>
+    <span style="color: #0000ff;">if</span> ( !<span style="color: #000000;"> rst_n )
+        fre_cnt        </span>&lt;= <span style="color: #800080;">11</span><span style="color: #800000;">'</span><span style="color: #800000;">d0;</span>
+    <span style="color: #0000ff;">else</span> <span style="color: #0000ff;">if</span><span style="color: #000000;"> ( DDS_en )
+        fre_cnt        </span>&lt;= fre_cnt + <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+    <span style="color: #0000ff;">else</span><span style="color: #000000;">
+        fre_cnt        </span>&lt;= <span style="color: #800080;">11</span><span style="color: #800000;">'</span><span style="color: #800000;">d0;</span>
+<span style="color: #0000ff;">end</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>这就是所谓的相位累加器，在DDS_en是能以后就一直技术，直到记满，然后重新又开始计数。</p>
+<div class="cnblogs_code">
+<pre><span style="color: #000000;">DDS_rom u_DDS_ddsrom
+(    
+    .clock            (clk),
+    .address          (fre_cnt),
+    .q                (DAC_data)
+);</span></pre>
+</div>
+<p>然后，将计数的值作为ROM的地址送给ROM，ROM输出相应的正弦波数据，这是，会把2048个点（假设ROM中存了一个正弦波周期的数据，共
+2048个数据）全部输出。而2048个点全部输出需要的实践为：2048*20ns（假设时钟为
+50MHz）=40960ns（24414.0625Hz），这就是DDS的基本频率，我们将其称为基频。</p>
+<p>***********************************************************************************************************</p>
+<p>如果我们希望能将频率翻倍，可以这样：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #008000;">//</span><span style="color: #008000;">-----------------------------------
+</span><span style="color: #008000;">//</span><span style="color: #008000;">phase adder</span>
+<span style="color: #0000ff;">reg</span>    [<span style="color: #800080;">10</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]    fre_cnt;
+</span><span style="color: #0000ff;">always</span> @ ( <span style="color: #0000ff;">posedge</span> clk <span style="color: #0000ff;">or</span> <span style="color: #0000ff;">negedge</span> rst_n )       <span style="color: #008000;">//</span><span style="color: #008000;">clk为50Mhz</span>
+<span style="color: #0000ff;">begin</span>
+    <span style="color: #0000ff;">if</span> ( !<span style="color: #000000;"> rst_n )
+        fre_cnt        </span>&lt;= <span style="color: #800080;">11</span><span style="color: #800000;">'</span><span style="color: #800000;">d0;</span>
+    <span style="color: #0000ff;">else</span> <span style="color: #0000ff;">if</span><span style="color: #000000;"> ( DDS_en )
+        fre_cnt        </span>&lt;= fre_cnt + <span style="color: #800080;">2</span><span style="color: #800000;">'</span><span style="color: #800000;">d2;</span>
+    <span style="color: #0000ff;">else</span><span style="color: #000000;">
+        fre_cnt        </span>&lt;= <span style="color: #800080;">11</span><span style="color: #800000;">'</span><span style="color: #800000;">d0;</span>
+<span style="color: #0000ff;">end</span><span style="color: #000000;">
+
+DDS_rom u_DDS_ddsrom
+(    
+    .clock            (clk),
+    .address          (fre_cnt),
+    .q                (DAC_data)
+);</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>如果我们希望把频率减半，我们可以这样：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #008000;">//</span><span style="color: #008000;">-----------------------------------
+</span><span style="color: #008000;">//</span><span style="color: #008000;">phase adder</span>
+<span style="color: #0000ff;">reg</span>    [<span style="color: #800080;">10</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]    fre_cnt;
+</span><span style="color: #0000ff;">always</span> @ ( <span style="color: #0000ff;">posedge</span> clk_ref <span style="color: #0000ff;">or</span> <span style="color: #0000ff;">negedge</span> rst_n )    <span style="color: #008000;">//</span><span style="color: #008000;">clk_ref为25Mhz</span>
+<span style="color: #0000ff;">begin</span>
+    <span style="color: #0000ff;">if</span> ( !<span style="color: #000000;"> rst_n )
+        fre_cnt        </span>&lt;= <span style="color: #800080;">11</span><span style="color: #800000;">'</span><span style="color: #800000;">d0;</span>
+    <span style="color: #0000ff;">else</span> <span style="color: #0000ff;">if</span><span style="color: #000000;"> ( DDS_en )
+        fre_cnt        </span>&lt;= fre_cnt + <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1;</span>
+    <span style="color: #0000ff;">else</span><span style="color: #000000;">
+        fre_cnt        </span>&lt;= <span style="color: #800080;">11</span><span style="color: #800000;">'</span><span style="color: #800000;">d0;</span>
+<span style="color: #0000ff;">end</span><span style="color: #000000;">
+
+DDS_rom u_DDS_ddsrom
+(    
+    .clock            (clk),
+    .address          (fre_cnt),
+    .q                (DAC_data)
+);</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>注意：上述的clk_ref为25MHz；</p>
+<p>但由于上述需要用到另外的时钟，clk_ref，这会让代码不好维护，改良代码如下：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #008000;">//</span><span style="color: #008000;">-----------------------------------
+</span><span style="color: #008000;">//</span><span style="color: #008000;">phase adder</span>
+<span style="color: #0000ff;">reg</span>    [<span style="color: #800080;">31</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]    fre_cnt;
+</span><span style="color: #0000ff;">always</span> @ ( <span style="color: #0000ff;">posedge</span> clk <span style="color: #0000ff;">or</span> <span style="color: #0000ff;">negedge</span> rst_n )    <span style="color: #008000;">//</span><span style="color: #008000;">clk为50Mhz</span>
+<span style="color: #0000ff;">begin</span>
+    <span style="color: #0000ff;">if</span> ( !<span style="color: #000000;"> rst_n )
+        fre_cnt        </span>&lt;= <span style="color: #800080;">32</span><span style="color: #800000;">'</span><span style="color: #800000;">d0;</span>
+    <span style="color: #0000ff;">else</span> <span style="color: #0000ff;">if</span><span style="color: #000000;"> ( DDS_en )
+        fre_cnt        </span>&lt;= fre_cnt +<span style="color: #000000;"> fre_value;
+    </span><span style="color: #0000ff;">else</span><span style="color: #000000;">
+        fre_cnt        </span>&lt;= <span style="color: #800080;">32</span><span style="color: #800000;">'</span><span style="color: #800000;">d0;</span>
+<span style="color: #0000ff;">end</span>
+
+<span style="color: #0000ff;">wire</span>    [<span style="color: #800080;">11</span>:<span style="color: #800080;">0</span>]    rom_addr    = fre_cnt[<span style="color: #800080;">31</span>:<span style="color: #800080;">20</span><span style="color: #000000;">];
+
+DDS_rom u_DDS_ddsrom
+(    
+    .clock            (clk),
+    .address          (rom_addr),
+    .q                (DAC_data)
+);</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>为了更进一步完善DDS，我们可以再增加一个相位调节的功能：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #008000;">//</span><span style="color: #008000;">-----------------------------------
+</span><span style="color: #008000;">//</span><span style="color: #008000;">phase adder</span>
+<span style="color: #0000ff;">reg</span>    [<span style="color: #800080;">31</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]    fre_cnt;
+</span><span style="color: #0000ff;">always</span> @ ( <span style="color: #0000ff;">posedge</span> clk <span style="color: #0000ff;">or</span> <span style="color: #0000ff;">negedge</span> rst_n )    <span style="color: #008000;">//</span><span style="color: #008000;">clk为50Mhz</span>
+<span style="color: #0000ff;">begin</span>
+    <span style="color: #0000ff;">if</span> ( !<span style="color: #000000;"> rst_n )
+        fre_cnt        </span>&lt;= <span style="color: #800080;">32</span><span style="color: #800000;">'</span><span style="color: #800000;">d0;</span>
+    <span style="color: #0000ff;">else</span> <span style="color: #0000ff;">if</span><span style="color: #000000;"> ( DDS_en )
+        fre_cnt        </span>&lt;= fre_cnt +<span style="color: #000000;"> fre_value;
+    </span><span style="color: #0000ff;">else</span><span style="color: #000000;">
+        fre_cnt        </span>&lt;= <span style="color: #800080;">32</span><span style="color: #800000;">'</span><span style="color: #800000;">d0;</span>
+<span style="color: #0000ff;">end</span>
+
+<span style="color: #0000ff;">wire</span>    [<span style="color: #800080;">11</span>:<span style="color: #800080;">0</span>]    rom_addr    = fre_cnt[<span style="color: #800080;">31</span>:<span style="color: #800080;">20</span>] +<span style="color: #000000;"> pha_value;
+
+DDS_rom u_DDS_ddsrom
+(    
+    .clock            (clk),
+    .address          (rom_addr),
+    .q                (DAC_data)
+);</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>就是增加一个pha_value的相位控制字，它的位宽需与ROM中DAC模块的位宽相同。</p>
+<p>Summary：</p>
+<p>1、相位累加器的位宽为24~32bites，一般选32bits；</p>
+<p>2、频率控制字位宽与相位累加器位宽相同；</p>
+<p>3、ROM的数据位宽选择取决于DAC模块；</p>
+<p>4、ROM的深度（2^地址位宽）有标准深度，但可任意；</p>
+<p>5、相位控制字位宽选择取决于DAC模块。</p>
+<p>&nbsp;</p></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(9216272,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow('bbb24edb-64a5-40df-4573-08d54dbac325');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/lifei-chan/" target="_blank"><img src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/sample_face.gif" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/lifei-chan/">江山无限辉</a><br>
+            <a href="http://home.cnblogs.com/u/lifei-chan/followees">关注 - 3</a><br>
+            <a href="http://home.cnblogs.com/u/lifei-chan/followers">粉丝 - 4</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('bbb24edb-64a5-40df-4573-08d54dbac325');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(9216272,'Digg')">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(9216272,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/lifei-chan/p/9159069.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/lifei-chan/p/9159069.html" title="发布于2018-06-09 12:27">电子元器件 热阻的理解</a><br><a href="https://www.cnblogs.com/lifei-chan/p/9208402.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/lifei-chan/p/9208402.html" title="发布于2018-06-23 16:57">如何对xilinx FPGA进行bit文件加密</a><br></div>
+</div>
+
+
+		</div>
+		<div class="postDesc">posted @ <span id="post-date">2018-06-23 08:45</span> <a href="https://www.cnblogs.com/lifei-chan/">江山无限辉</a> 阅读(<span id="post_view_count">829</span>) 评论(<span id="post_comment_count">0</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=9216272" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(9216272);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=411770,cb_entryId=9216272,cb_blogApp=currentBlogApp,cb_blogUserGuid='bbb24edb-64a5-40df-4573-08d54dbac325',cb_entryCreatedDate='2018/6/23 8:45:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="https://gitee.com/enterprises?from=bky-2" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-gitee')">【推荐】专业便捷的企业级代码托管服务 - Gitee 码云</a><br><a href="https://www.bagevent.com/event/2468856" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-GAITC')">【活动】2019第四届全球人工技术大会解码“智能+时代”</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="%E5%9F%BA%E4%BA%8EFPGA%EF%BC%88DDS%EF%BC%89%E7%9A%84%E6%AD%A3%E5%BC%A6%E6%B3%A2%E5%8F%91%E7%94%9F%E5%99%A8%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CJemqsTHzuECFZCMvQod-EMH9Q"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>相关博文：</b><br>·  <a href="https://www.cnblogs.com/bgd150206119/p/6601798.html" target="_blank" onclick="clickRecomItmem(6601798)">采用DDS(数字频率合成法)设计信号发生器</a><br>·  <a href="https://www.cnblogs.com/bgd150206208/p/6597464.html" target="_blank" onclick="clickRecomItmem(6597464)">DDS数字信号发生器</a><br>·  <a href="https://www.cnblogs.com/bgd140206104/p/6600937.html" target="_blank" onclick="clickRecomItmem(6600937)">采用DDS设计信号发生器</a><br>·  <a href="https://www.cnblogs.com/bgd150206111/p/6582506.html" target="_blank" onclick="clickRecomItmem(6582506)">采用DDS设计信号发生器</a><br>·  <a href="https://www.cnblogs.com/moluoqishi/p/9396734.html" target="_blank" onclick="clickRecomItmem(9396734)">数字信号处理专题（1）——DDS函数发生器环路Demo</a><br></div></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CJimqsTHzuECFZCMvQod-EMH9Q"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/623775/" target="_blank">IE 11浏览器被爆安全漏洞：可远程窃取本地PC文件</a><br> ·  <a href="https://news.cnblogs.com/n/623774/" target="_blank">新周刊：中国穷人的孩子，正在被手机废掉</a><br> ·  <a href="https://news.cnblogs.com/n/623772/" target="_blank">关于“996”马云刘强东之后 顺丰王卫也表态</a><br> ·  <a href="https://news.cnblogs.com/n/623771/" target="_blank">微软确认有黑客入侵部分Outlook帐户 时间长达数月</a><br> ·  <a href="https://news.cnblogs.com/n/623770/" target="_blank">顺为资本周航：有人问2019下半年会好吗？坦白说不会</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/lifei-chan/">江山无限辉</a><br>园龄：<a href="https://home.cnblogs.com/u/lifei-chan/" title="入园时间：2018-02-10">1年2个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/lifei-chan/followers/">4</a><br>关注：<a href="https://home.cnblogs.com/u/lifei-chan/followees/">3</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow('bbb24edb-64a5-40df-4573-08d54dbac325')">+加关注</a></div><script>getFollowStatus('bbb24edb-64a5-40df-4573-08d54dbac325')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="calendar"><div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/03/01');return false;">&lt;</a></td><td align="center">2019年4月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/05/01');return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" abbr="日" scope="col" align="center">日</th><th class="CalDayHeader" abbr="一" scope="col" align="center">一</th><th class="CalDayHeader" abbr="二" scope="col" align="center">二</th><th class="CalDayHeader" abbr="三" scope="col" align="center">三</th><th class="CalDayHeader" abbr="四" scope="col" align="center">四</th><th class="CalDayHeader" abbr="五" scope="col" align="center">五</th><th class="CalDayHeader" abbr="六" scope="col" align="center">六</th></tr><tr><td class="CalOtherMonthDay" align="center">31</td><td align="center">1</td><td align="center">2</td><td align="center">3</td><td align="center">4</td><td align="center">5</td><td class="CalWeekendDay" align="center">6</td></tr><tr><td class="CalWeekendDay" align="center">7</td><td align="center">8</td><td align="center">9</td><td align="center">10</td><td align="center">11</td><td align="center">12</td><td class="CalWeekendDay" align="center">13</td></tr><tr><td class="CalTodayDay" align="center">14</td><td align="center">15</td><td align="center">16</td><td align="center">17</td><td align="center">18</td><td align="center">19</td><td class="CalWeekendDay" align="center">20</td></tr><tr><td class="CalWeekendDay" align="center">21</td><td align="center">22</td><td align="center">23</td><td align="center">24</td><td align="center">25</td><td align="center">26</td><td class="CalWeekendDay" align="center">27</td></tr><tr><td class="CalWeekendDay" align="center">28</td><td align="center">29</td><td align="center">30</td><td class="CalOtherMonthDay" align="center">1</td><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td></tr><tr><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td><td class="CalOtherMonthDay" align="center">7</td><td class="CalOtherMonthDay" align="center">8</td><td class="CalOtherMonthDay" align="center">9</td><td class="CalOtherMonthDay" align="center">10</td><td class="CalOtherMonthDay" align="center">11</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script></div>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<div class="catListLink">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/lifei-chan/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/lifei-chan/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/lifei-chan/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/lifei-chan/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/lifei-chan/tag/" title="我的博客的标签列表">我的标签</a></li>
+<li><a id="itemListLink" onclick="this.blur();WarpClass('itemListLink', 'itemListLin_con');return false;" href="#">更多链接</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div></div><div id="sidebar_toptags" class="sidebar-block">
+<div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/lifei-chan/tag/FPGA%20%E6%B5%8B%E8%AF%95%20%E7%BC%96%E7%A0%81%E8%A7%84%E5%88%99/">FPGA 测试 编码规则</a>(1)</li>
+</ul>
+</div></div><div id="sidebar_categories">
+<div class="catListPostArchive">
+<h3 class="catListTitle">随笔档案</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/lifei-chan/archive/2018/10.html">2018年10月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/lifei-chan/archive/2018/07.html">2018年7月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/lifei-chan/archive/2018/06.html">2018年6月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/lifei-chan/archive/2018/05.html">2018年5月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_4" href="https://www.cnblogs.com/lifei-chan/archive/2018/04.html">2018年4月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_5" href="https://www.cnblogs.com/lifei-chan/archive/2018/03.html">2018年3月 (9)</a> </li>
+
+</ul>
+
+</div>
+
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/lifei-chan/p/9114897.html#3997583">1. Re:运动规划——PT and PVT 模式</a></li>
+        <li class="recent_comment_body">写的不错 赞</li>
+        <li class="recent_comment_author">--闪闪❤惹人爱</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/lifei-chan/p/8653973.html">1. FPGA-Xilinx原语调用之ODDR(2914)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/9114897.html">2. 运动规划——PT and PVT 模式(1352)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/8683468.html">3. Xilinx原语学习之时钟资源相关原语(1269)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/8653647.html">4. NTC热敏电阻认识及功率型热敏电阻选型(1226)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/9216272.html">5. 基于FPGA（DDS）的正弦波发生器(829)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/lifei-chan/p/9114897.html">1. 运动规划——PT and PVT 模式(1)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/lifei-chan/p/8612633.html">1. FPGA设计方法检查表(1)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright ©2019 江山无限辉
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+</body></html>

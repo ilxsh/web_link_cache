@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="origin">
+    <title>Xilinx原语学习之时钟资源相关原语 - 江山无限辉 - 博客园</title>
+<meta property="og:description" content="一直来，都是使用Vivado中自带的GMIItoRGMII IP核来完成GMII转RGMII的功能；尽管对GMII及RGMII协议都有一定的了解，但从没用代码实现过其功能。由于使用IP时，会涉及到MD">
+    <link type="text/css" rel="stylesheet" href="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-coffee.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-coffee-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/lifei-chan/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/lifei-chan/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/lifei-chan/wlwmanifest.xml">
+    <script src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_2019032901.js"></script><script async="" src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script>var currentBlogId=411770;var currentBlogApp='lifei-chan',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js" type="text/javascript"></script>
+<link rel="preload" href="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2019032901.js" async=""></script></head>
+<body>
+<a name="top"></a>
+
+
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a id="lnkBlogLogo" href="https://www.cnblogs.com/lifei-chan/"><img id="blogLogo" src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.gif" alt="返回主页"></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/lifei-chan/">江山无限辉</a></h1>
+<h2></h2>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		<div id="navigator">
+			
+<ul id="navList">
+	<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+	<li><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/lifei-chan/">首页</a></li>
+	<li><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+	<li><a id="blog_nav_contact" accesskey="9" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89">联系</a></li>
+	<li><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+	<li><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/lifei-chan/rss">订阅</a>
+	<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/lifei-chan/rss"><img src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/xml.gif" alt="订阅"></a></li>
+</ul>
+
+
+			<div class="blogStats">
+				
+				<div id="blog_stats">
+<!--done-->
+随笔- 21&nbsp;
+文章- 0&nbsp;
+评论- 1&nbsp;
+</div>
+				
+			</div><!--end: blogStats -->
+		</div><!--end: navigator 博客导航栏 -->
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/lifei-chan/p/8683468.html">Xilinx原语学习之时钟资源相关原语</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><p>一直来，都是使用Vivado中自
+带的GMIItoRGMII 
+IP核来完成GMII转RGMII的功能；尽管对GMII及RGMII协议都有一定的了解，但从没用代码实现过其功能。由于使用IP时，会涉及到MDIO
+配置IP寄存器的问题，觉得麻烦。因此决定用代码实现GMII转RGMII的功能。</p>
+<p>参考Lattice的开源代码，进行移植。移植后在Vivado中进行编译时没有问题，但一旦进行实现（Implementation）时就会有如下错误：</p>
+<pre>[Place 30-574] Poor placement for routing between an IO pin and BUFG. </pre>
+<p>实在纳闷，于是深入挖掘原因。</p>
+<p>从编译的原理图来看，rgmii_rclk在输入端已被Vivado自动添加了一个IBUF以及BUFG；通过Vivado中的Synthesis的Settings，取消自动添加BUFG的选项；再实现时没有错误了，且可以生成bit文件；但时序严重不满足。</p>
+<p>查看之前使用GMIItoRGMII的IP工程中的Schematic，发现rgmii_rclk输入后添加了三个原语模块：IBUF、BUFR以
+及BUFG。其中IBUF是在信号输入端处添加了，BUFR是紧跟着IBUF，然后其输出的信号被内部的D触发器所使用，其中有一路直接连接到BUFG，
+然后通过BUFG输出到管脚（作为GMII的时钟输出）。</p>
+<p>藉此机会，想更进一步学习这几个原语的不同之处：</p>
+<p>-------------------------------------------------------------------------------------------------------------</p>
+<p>在Xilinx 7Series FPGA中，存在3种主要的时钟网络：BUFG，BUFR,BUFIO以及由他们所衍生出来的各种变种。它们之间的特点和区别如下：</p>
+<p>&gt;&gt;&gt;BUFIO</p>
+<p>BUFIO是IO时钟网络，顾名思义，它只能驱动IO Block里面的逻辑，不能驱动CLB里面的LUT，REG等逻辑。BUFIO可以被如下节点驱动：</p>
+<p>1、SRCCs and MRCCs in the same clock region</p>
+<p>2、MRCCs in an adjacent clock regionusing BUFMRs</p>
+<p>3、MMCMs clock outputs 0-3 driving the HPC in the same clock region</p>
+<p>&gt;&gt;&gt;BUFR</p>
+<p>BUFR是regional时钟网络，顾名思义，它的驱动范围只能局限在一个clock region的逻辑，但是它可以同时驱动IO和内部逻辑。BUFR可以被如下节点所驱动：</p>
+<p>1、所有能驱动BUFIO的节点</p>
+<p>2、MMCMs clock outputs 0-3</p>
+<p>3、General interconnect</p>
+<p>BUFIO和BUFR的主要区别可以用下图概括：</p>
+<p><img src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1333687-20180401182813435-481304275.png" alt=""></p>
+<p>&gt;&gt;&gt;BUFG</p>
+<p>BUFG是全局时钟网络，这个大家最熟悉了，它可以驱动所有的IO和逻辑，并且可以被Transceiver所驱动。如果时钟信号要走全局时钟网络，必须通过这个BUFG来驱动，BUFG可以驱动所有的CLB，RAM，IOB。Zynq一共有22个BUFG全局时钟线。</p>
+<p>BUFR相比BUFG的最大优势是skew和功耗都比较小，在源同步的设计中，这一点也是很关键的。</p>
+<p>&gt;&gt;&gt;BUFR和BUFMR有什么区别？</p>
+<p>BUFMR是7系列才有的时钟buffer，它是在有些源同步设计中逻辑IO跨上中下三个Bank；而BUFR仅仅能够驱动一个Bank，所以需要BUFMR级联BUFR来完成每个Bank的功能功能，如下图：</p>
+<p><img src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1333687-20180401185550067-1161552048.png" alt=""></p>
+<p>&gt;&gt;&gt;BUFH怎么用？</p>
+<p>BUFH，BUFH驱动区域中的水平全局时钟树，Xilinx的时钟是通过时钟树来分布的。可用于互联逻辑、SelectIO逻辑，DSP48E1模块或者Block RAM资源的时钟驱动。</p>
+<p>&gt;&gt;&gt;时钟资源选择上是不是BUFG最优？</p>
+<p>这个要根据设计，很多AD DA需要源同步设计，如果上了BUFG由于时钟走线延迟较大；完全跟数据不同步，很难再进行正确的采样。接口设计的逻辑量一般比较小，不建议上全局。</p>
+<p>下面介绍下Xilinx时钟的管理：</p>
+<p>Xilinx芯片全局时钟资源的使用方法主要有下面5种：</p>
+<p>A、GCLK——&gt;IBUFG——&gt;BUFG</p>
+<p>IBUFG后面连接BUFG的方法是最基本的全局时钟资源的使用方法，其等效于BUFGP</p>
+<p>B、GCLKP&amp;GCLKN——&gt;IBUFGDS——&gt;BUFG</p>
+<p>当输入时钟为差分信号时候，需要使用IBUFGDS原语。</p>
+<p>C、IBUFG+DCM+BUFG</p>
+<p>通过DCM（Digital clock manage）不仅能对时钟进行同步、移相、分频、倍频等变换，而且可以使用全局时钟的输出无抖动和小延迟。</p>
+<p>D、Logic + BUFG</p>
+<p>BUFG不但可使用IBUFG的输出，还可以驱动其他普通信号的输出。当某个信号的扇出非常大，并且要求抖动延迟最小时，可以使用BUFG驱动该信号，使得该信号利用全局时钟资源。</p>
+<p>E、Logic + DCM + BUFG</p>
+<p>DCM可以改变也可以控制变换普通时钟信号。</p>
+<p>-----------------------------------------------------</p>
+<p>附录，参考链接：</p>
+<p>《<span style="font-size: 12px;">Xilinx FPGA器件中时钟资源的说明以及使用</span>》</p>
+<p>https://www.jianshu.com/p/3da8c9eca03a</p>
+<p>&nbsp;</p></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(8683468,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow('bbb24edb-64a5-40df-4573-08d54dbac325');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/lifei-chan/" target="_blank"><img src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/sample_face.gif" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/lifei-chan/">江山无限辉</a><br>
+            <a href="http://home.cnblogs.com/u/lifei-chan/followees">关注 - 3</a><br>
+            <a href="http://home.cnblogs.com/u/lifei-chan/followers">粉丝 - 4</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('bbb24edb-64a5-40df-4573-08d54dbac325');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(8683468,'Digg')">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(8683468,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/lifei-chan/p/8673353.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/lifei-chan/p/8673353.html" title="发布于2018-03-31 08:34">PCI学习之总线原理01</a><br><a href="https://www.cnblogs.com/lifei-chan/p/8949496.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/lifei-chan/p/8949496.html" title="发布于2018-04-26 09:22">Testbench学习——$fopen/$display/$fclose</a><br></div>
+</div>
+
+
+		</div>
+		<div class="postDesc">posted @ <span id="post-date">2018-04-01 22:22</span> <a href="https://www.cnblogs.com/lifei-chan/">江山无限辉</a> 阅读(<span id="post_view_count">1269</span>) 评论(<span id="post_comment_count">0</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=8683468" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(8683468);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=411770,cb_entryId=8683468,cb_blogApp=currentBlogApp,cb_blogUserGuid='bbb24edb-64a5-40df-4573-08d54dbac325',cb_entryCreatedDate='2018/4/1 22:22:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="https://gitee.com/enterprises?from=bky-2" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-gitee')">【推荐】专业便捷的企业级代码托管服务 - Gitee 码云</a><br><a href="https://www.bagevent.com/event/2468856" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-GAITC')">【活动】2019第四届全球人工技术大会解码“智能+时代”</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="Xilinx%E5%8E%9F%E8%AF%AD%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%B6%E9%92%9F%E8%B5%84%E6%BA%90%E7%9B%B8%E5%85%B3%E5%8E%9F%E8%AF%AD%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CJrf6sLHzuECFUIplgodXzQFZg"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>相关博文：</b><br>·  <a href="https://www.cnblogs.com/superyueyue/p/4038452.html" target="_blank" onclick="clickRecomItmem(4038452)">时钟,泳池</a><br>·  <a href="https://www.cnblogs.com/wenwubin/archive/2012/10/31/2748683.html" target="_blank" onclick="clickRecomItmem(2748683)">模拟时钟</a><br>·  <a href="https://www.cnblogs.com/firstsy0709/p/3644030.html" target="_blank" onclick="clickRecomItmem(3644030)">改进时钟（小熊时钟）</a><br>·  <a href="https://www.cnblogs.com/rogation/p/3804479.html" target="_blank" onclick="clickRecomItmem(3804479)">winfrom LED时钟</a><br>·  <a href="https://www.cnblogs.com/thinkinjava/p/3436036.html" target="_blank" onclick="clickRecomItmem(3436036)">时钟同步</a><br></div></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CJvf6sLHzuECFUIplgodXzQFZg"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/623775/" target="_blank">IE 11浏览器被爆安全漏洞：可远程窃取本地PC文件</a><br> ·  <a href="https://news.cnblogs.com/n/623774/" target="_blank">新周刊：中国穷人的孩子，正在被手机废掉</a><br> ·  <a href="https://news.cnblogs.com/n/623772/" target="_blank">关于“996”马云刘强东之后 顺丰王卫也表态</a><br> ·  <a href="https://news.cnblogs.com/n/623771/" target="_blank">微软确认有黑客入侵部分Outlook帐户 时间长达数月</a><br> ·  <a href="https://news.cnblogs.com/n/623770/" target="_blank">顺为资本周航：有人问2019下半年会好吗？坦白说不会</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/lifei-chan/">江山无限辉</a><br>园龄：<a href="https://home.cnblogs.com/u/lifei-chan/" title="入园时间：2018-02-10">1年2个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/lifei-chan/followers/">4</a><br>关注：<a href="https://home.cnblogs.com/u/lifei-chan/followees/">3</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow('bbb24edb-64a5-40df-4573-08d54dbac325')">+加关注</a></div><script>getFollowStatus('bbb24edb-64a5-40df-4573-08d54dbac325')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="calendar"><div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/03/01');return false;">&lt;</a></td><td align="center">2019年4月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/05/01');return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" abbr="日" scope="col" align="center">日</th><th class="CalDayHeader" abbr="一" scope="col" align="center">一</th><th class="CalDayHeader" abbr="二" scope="col" align="center">二</th><th class="CalDayHeader" abbr="三" scope="col" align="center">三</th><th class="CalDayHeader" abbr="四" scope="col" align="center">四</th><th class="CalDayHeader" abbr="五" scope="col" align="center">五</th><th class="CalDayHeader" abbr="六" scope="col" align="center">六</th></tr><tr><td class="CalOtherMonthDay" align="center">31</td><td align="center">1</td><td align="center">2</td><td align="center">3</td><td align="center">4</td><td align="center">5</td><td class="CalWeekendDay" align="center">6</td></tr><tr><td class="CalWeekendDay" align="center">7</td><td align="center">8</td><td align="center">9</td><td align="center">10</td><td align="center">11</td><td align="center">12</td><td class="CalWeekendDay" align="center">13</td></tr><tr><td class="CalTodayDay" align="center">14</td><td align="center">15</td><td align="center">16</td><td align="center">17</td><td align="center">18</td><td align="center">19</td><td class="CalWeekendDay" align="center">20</td></tr><tr><td class="CalWeekendDay" align="center">21</td><td align="center">22</td><td align="center">23</td><td align="center">24</td><td align="center">25</td><td align="center">26</td><td class="CalWeekendDay" align="center">27</td></tr><tr><td class="CalWeekendDay" align="center">28</td><td align="center">29</td><td align="center">30</td><td class="CalOtherMonthDay" align="center">1</td><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td></tr><tr><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td><td class="CalOtherMonthDay" align="center">7</td><td class="CalOtherMonthDay" align="center">8</td><td class="CalOtherMonthDay" align="center">9</td><td class="CalOtherMonthDay" align="center">10</td><td class="CalOtherMonthDay" align="center">11</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script></div>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<div class="catListLink">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/lifei-chan/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/lifei-chan/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/lifei-chan/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/lifei-chan/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/lifei-chan/tag/" title="我的博客的标签列表">我的标签</a></li>
+<li><a id="itemListLink" onclick="this.blur();WarpClass('itemListLink', 'itemListLin_con');return false;" href="#">更多链接</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div></div><div id="sidebar_toptags" class="sidebar-block">
+<div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/lifei-chan/tag/FPGA%20%E6%B5%8B%E8%AF%95%20%E7%BC%96%E7%A0%81%E8%A7%84%E5%88%99/">FPGA 测试 编码规则</a>(1)</li>
+</ul>
+</div></div><div id="sidebar_categories">
+<div class="catListPostArchive">
+<h3 class="catListTitle">随笔档案</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/lifei-chan/archive/2018/10.html">2018年10月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/lifei-chan/archive/2018/07.html">2018年7月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/lifei-chan/archive/2018/06.html">2018年6月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/lifei-chan/archive/2018/05.html">2018年5月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_4" href="https://www.cnblogs.com/lifei-chan/archive/2018/04.html">2018年4月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_5" href="https://www.cnblogs.com/lifei-chan/archive/2018/03.html">2018年3月 (9)</a> </li>
+
+</ul>
+
+</div>
+
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/lifei-chan/p/9114897.html#3997583">1. Re:运动规划——PT and PVT 模式</a></li>
+        <li class="recent_comment_body">写的不错 赞</li>
+        <li class="recent_comment_author">--闪闪❤惹人爱</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/lifei-chan/p/8653973.html">1. FPGA-Xilinx原语调用之ODDR(2914)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/9114897.html">2. 运动规划——PT and PVT 模式(1352)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/8683468.html">3. Xilinx原语学习之时钟资源相关原语(1269)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/8653647.html">4. NTC热敏电阻认识及功率型热敏电阻选型(1226)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/9216272.html">5. 基于FPGA（DDS）的正弦波发生器(829)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/lifei-chan/p/9114897.html">1. 运动规划——PT and PVT 模式(1)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/lifei-chan/p/8612633.html">1. FPGA设计方法检查表(1)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright ©2019 江山无限辉
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+</body></html>
