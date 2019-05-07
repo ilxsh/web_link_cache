@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="referrer" content="origin" />
+    <title>docker network基础 - wadeson - 博客园</title>
+<meta property="og:description" content="前面介绍了nginx与php两个容器间是如何进行通信的： 通过容器间的选项--link指定容器名称进行不同容器间的通信（--link container_name或者将container_name取一" />
+    <link type="text/css" rel="stylesheet" href="/bundles/blog-common.css?v=svlZeZMvc3He7PqOD4T7SOuQn0_kIfLBYiy3idqd35Y1"/>
+<link id="MainCss" type="text/css" rel="stylesheet" href="/skins/sea/bundle-sea.css?v=PPe3jt1rcXPno6kucw0iQU2MWF3DbrvubQHRM0FEMas1"/>
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/sea/bundle-sea-mobile.css?v=yFtgEd5VFXGr9Lo4adjD_iDDW9y0pVJjEZ2io36-rWw1"/>
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/jsonhc/rss"/>
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/jsonhc/rsd.xml"/>
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/jsonhc/wlwmanifest.xml"/>
+    <script src="//common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script>var currentBlogId=358609;var currentBlogApp='jsonhc',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="/bundles/blog-common.js?v=OFBZTzkHKauV7mtIFLF9jlqrX-sesK9-mY9KjurLrq01" type="text/javascript"></script>
+</head>
+<body>
+<a name="top"></a>
+
+<!--PageBeginHtml Block Begin-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+    <head>
+        
+        
+        
+        <title>打赏</title>
+    </head>
+    <script>
+        window.tctipConfig = {
+            staticPrefix: "http://static.tctip.com",
+            buttonImageId: 5,
+            //zanzhu--博客园右边出现"赞助"二字
+            //buttonTip: "zanzhu",
+            //dashang--博客园右边出现"打赏"二字
+            buttonTip: "dashang",
+            list: {
+                alipay: {
+                    //修改一：修改支付宝收款码地址
+                    qrimg: "https://files.cnblogs.com/files/jsonhc/zhifubao.bmp"
+                },
+                weixin: {
+                    //修改二：修改微信收款码地址
+                    qrimg: "https://files.cnblogs.com/files/jsonhc/weixin.bmp"
+                },
+            }
+        };
+    </script>
+    <script src="http://static.tctip.com/js/tctip.min.js"></script>
+
+    <body>
+
+</html>
+<!--PageBeginHtml Block End-->
+
+<!--done-->
+<div id="header">
+	
+<!--done-->
+<div class="header">
+	<div class="headerText">
+		<a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/jsonhc/">wadeson</a><br>
+		github：https://github.com/jsonhc/
+	</div>
+</div>
+
+</div>
+
+<div id="mytopmenu" >
+	
+		<div id="mylinks"><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a> &nbsp;
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/jsonhc/">首页</a> &nbsp;
+<a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a> &nbsp;
+<a id="blog_nav_contact" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/wadeson">联系</a> &nbsp;
+<a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/jsonhc/rss">订阅</a><a id="blog_nav_rss_image" href="https://www.cnblogs.com/jsonhc/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a>&nbsp;
+<a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a>
+</div>
+		<DIV id="mystats"><div id="blog_stats">
+随笔-101&nbsp;
+评论-24&nbsp;
+文章-0&nbsp;
+<!--trackbacks-0-->
+</div></DIV>
+	
+</div>
+<div id="centercontent" >
+	
+        <div id="post_detail">
+<div class = "post">
+	<h1 class = "postTitle"><a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/jsonhc/p/7823286.html">docker network基础</a></h1>
+	<div id="cnblogs_post_body" class="blogpost-body"><p>前面介绍了nginx与php两个容器间是如何进行通信的：</p>
+<div class="cnblogs_code">
+<pre>[root@docker ~]# docker run -d --name=php -v /www:/usr/local/nginx/html php</pre>
+</div>
+<div class="cnblogs_code">
+<pre>[root@docker ~]# docker run -d --name=nginx --link=php:php -v /www:/usr/local/nginx/html -p <span style="color: #800080;">81</span>:<span style="color: #800080;">80</span> nginx</pre>
+</div>
+<div class="cnblogs_code">
+<pre>[root@docker ~]# docker <span style="color: #0000ff;">ps</span> -<span style="color: #000000;">a
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                NAMES
+58280fe851f9        nginx               </span><span style="color: #800000;">"</span><span style="color: #800000;">/usr/local/nginx/...</span><span style="color: #800000;">"</span>   <span style="color: #800080;">15</span> seconds ago      Up <span style="color: #800080;">14</span> seconds       <span style="color: #800080;">0.0</span>.<span style="color: #800080;">0.0</span>:<span style="color: #800080;">81</span>-&gt;<span style="color: #800080;">80</span>/<span style="color: #000000;">tcp   nginx
+9ea150c35587        php                 </span><span style="color: #800000;">"</span><span style="color: #800000;">/usr/local/php/sb...</span><span style="color: #800000;">"</span>   <span style="color: #800080;">36</span> seconds ago      Up <span style="color: #800080;">35</span> seconds       <span style="color: #800080;">9000</span>/tcp             php</pre>
+</div>
+<p>通过容器间的选项--link指定容器名称进行不同容器间的通信（--link container_name或者将container_name取一个别名）</p>
+<p>现在使用另外一种方式替代--link来达到容器间的通信：docker network</p>
+<p>查看local的网络信息：</p>
+<div class="cnblogs_code">
+<pre>[root@docker ~]# docker network <span style="color: #0000ff;">ls</span><span style="color: #000000;">
+NETWORK ID          NAME                DRIVER              SCOPE
+5133ec415c3c        bridge              bridge              local
+f359ca4e2d39        host                host                local
+8d68673c045c        none                </span><span style="color: #0000ff;">null</span>                local</pre>
+</div>
+<p>现在创建一个网络名为my_net且driver为bridge的网络：（默认创建的就是bridge）</p>
+<div class="cnblogs_code">
+<pre>[root@docker ~<span style="color: #000000;">]# docker network create my_net
+67e29f0e4a77c79144efc337a081a889188b5b8e289968f22be6e4ddd9b80610
+[root@docker </span>~]# docker network <span style="color: #0000ff;">ls</span><span style="color: #000000;">
+NETWORK ID          NAME                DRIVER              SCOPE
+5133ec415c3c        bridge              bridge              local
+f359ca4e2d39        host                host                local
+67e29f0e4a77        my_net              bridge              local
+8d68673c045c        none                </span><span style="color: #0000ff;">null</span>                local</pre>
+</div>
+<p>利用--network启动容器提供服务：</p>
+<div class="cnblogs_code">
+<pre>[root@docker ~]# docker run -d --name=php --network my_net --network-alias php -v /www:/usr/local/nginx/<span style="color: #000000;">html php
+6b493cbe8207dee4cb4d5945cfce305dba96914083bd7f46841b0b42376bcb99
+[root@docker </span>~]# docker run -d --name=nginx --network my_net --network-alias nginx -v /www:/usr/local/nginx/html -p <span style="color: #800080;">80</span>:<span style="color: #800080;">80</span><span style="color: #000000;"> nginx
+5ab220196b52bb768bef508433f0b920eecee70c3ee47880ebc5e2a74b5ee254</span></pre>
+</div>
+<p>通过选项--network-alias将取名的my_net起了一个别名</p>
+<div class="cnblogs_code">
+<pre>[root@docker ~]# docker exec -it nginx <span style="color: #0000ff;">ping</span><span style="color: #000000;"> php
+PING php (</span><span style="color: #800080;">172.18</span>.<span style="color: #800080;">0.2</span>) <span style="color: #800080;">56</span>(<span style="color: #800080;">84</span><span style="color: #000000;">) bytes of data.
+</span><span style="color: #800080;">64</span> bytes from php.my_net (<span style="color: #800080;">172.18</span>.<span style="color: #800080;">0.2</span>): icmp_seq=<span style="color: #800080;">1</span> ttl=<span style="color: #800080;">64</span> <span style="color: #0000ff;">time</span>=<span style="color: #800080;">0.079</span><span style="color: #000000;"> ms
+</span><span style="color: #800080;">64</span> bytes from php.my_net (<span style="color: #800080;">172.18</span>.<span style="color: #800080;">0.2</span>): icmp_seq=<span style="color: #800080;">2</span> ttl=<span style="color: #800080;">64</span> <span style="color: #0000ff;">time</span>=<span style="color: #800080;">0.090</span> ms</pre>
+</div>
+<p>这里为啥能够ping通过php这个容器呢，因为这两个容器在同一个网络m'y_net内，而nginx里面ping的php是容器名（这里管理的是容器级别）</p>
+<p>由于能够ping通php，所以在nginx中配置的：</p>
+<div class="cnblogs_code">
+<pre><span style="color: #000000;">server {
+    listen   </span><span style="color: #800080;">80</span><span style="color: #000000;">;
+    root </span>/usr/local/nginx/<span style="color: #000000;">html;
+    index index.htm index.html index.php;
+    location </span>~<span style="color: #000000;"> \.php$ {
+        root </span>/usr/local/nginx/<span style="color: #000000;">html;
+        fastcgi_pass php:</span><span style="color: #800080;">9000</span><span style="color: #000000;">;
+        fastcgi_index index.php;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    } 
+}</span></pre>
+</div>
+<p>所以配置文件中的php不会导致nginx启动失败，通过network的driver bridge实现了容器间的访问</p>
+<p><img src="https://images2017.cnblogs.com/blog/1168897/201711/1168897-20171112215036075-629506272.png" alt="" /></p>
+<p>&nbsp;</p>
+<p>上面在容器启动的时候使用的是选项--network，而在compose的配置文件中则是networks，现在通过配置文件来进行阐述该参数的作用：</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# <span style="color: #0000ff;">cat</span><span style="color: #000000;"> lnmp.yml 
+version: </span><span style="color: #800000;">'</span><span style="color: #800000;">3</span><span style="color: #800000;">'</span><span style="color: #000000;">
+services:
+  nginx:
+    image: nginx
+    container_name: lnmp</span>-<span style="color: #000000;">nginx
+    depends_on:
+      </span>-<span style="color: #000000;"> php
+    ports:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">80:80</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    networks:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">net1</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    volumes:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">/www:/usr/local/nginx/html</span><span style="color: #800000;">"</span><span style="color: #000000;">
+  php:
+    image: php
+    container_name: lnmp</span>-<span style="color: #000000;">php
+    expose: 
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">9000</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    networks:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">net1</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    volumes:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">/www:/usr/local/nginx/html</span><span style="color: #800000;">"</span><span style="color: #000000;">
+
+networks:
+  net1:
+    driver: bridge</span></pre>
+</div>
+<p>由上述文件中可以知道networks定义了一个名称为net1的网络，由于networks是top-level（顶层级别，所以需要在顶层设置），而在创建的网络时候需要指定driver（单一网络使用bridge，swarm集群使用overlay），而且driver内容不能省略，在nginx和php两个service中使用了同一网络net1，现在将服务启动：</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# docker-compose -<span style="color: #000000;">f lnmp.yml up
+Creating network </span><span style="color: #800000;">"</span><span style="color: #800000;">lnmp_net1</span><span style="color: #800000;">"</span> with driver <span style="color: #800000;">"</span><span style="color: #800000;">bridge</span><span style="color: #800000;">"</span><span style="color: #000000;">
+Creating lnmp</span>-<span style="color: #000000;">php ... 
+Creating lnmp</span>-php ... <span style="color: #0000ff;">done</span><span style="color: #000000;">
+Creating lnmp</span>-<span style="color: #000000;">nginx ... 
+Creating lnmp</span>-nginx ... <span style="color: #0000ff;">done</span><span style="color: #000000;">
+Attaching to lnmp</span>-php, lnmp-nginx</pre>
+</div>
+<p>可以看出在启动服务的时候创建了服务级别的网络lnmp_net1</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# docker network <span style="color: #0000ff;">ls</span><span style="color: #000000;">
+NETWORK ID          NAME                DRIVER              SCOPE
+5133ec415c3c        bridge              bridge              local
+f359ca4e2d39        host                host                local
+29d798852b52        lnmp_net1           bridge              local
+67e29f0e4a77        my_net              bridge              local
+8d68673c045c        none                </span><span style="color: #0000ff;">null</span>                local</pre>
+</div>
+<p>服务nginx和php在网络lnmp_net1实现了互联通信</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# docker-compose -f lnmp.yml exec nginx <span style="color: #0000ff;">ping</span><span style="color: #000000;"> php
+PING php (</span><span style="color: #800080;">172.19</span>.<span style="color: #800080;">0.2</span>) <span style="color: #800080;">56</span>(<span style="color: #800080;">84</span><span style="color: #000000;">) bytes of data.
+</span><span style="color: #800080;">64</span> bytes from lnmp-php.lnmp_net1 (<span style="color: #800080;">172.19</span>.<span style="color: #800080;">0.2</span>): icmp_seq=<span style="color: #800080;">1</span> ttl=<span style="color: #800080;">64</span> <span style="color: #0000ff;">time</span>=<span style="color: #800080;">0.060</span> ms</pre>
+</div>
+<p>在nginx服务中能够访问php的服务，在compose编排中级别的访问是对service级别的访问，所以在nginx服务配置文件中对应的php能够实现，不会导致nginx启动失败</p>
+<p>及在compose的配置文件设置并对应的是service级别，当使用参数links也是配置的php服务，使得nginx服务能够ping通php服务并实现访问通信</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# <span style="color: #0000ff;">cat</span><span style="color: #000000;"> lnmp.yml
+version: </span><span style="color: #800000;">'</span><span style="color: #800000;">3</span><span style="color: #800000;">'</span><span style="color: #000000;">
+services:
+  nginx:
+    image: nginx
+    container_name: lnmp</span>-<span style="color: #000000;">nginx
+    depends_on:
+      </span>-<span style="color: #000000;"> php
+    ports:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">80:80</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    links:
+      </span>-<span style="color: #000000;"> php:php
+    volumes:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">/www:/usr/local/nginx/html</span><span style="color: #800000;">"</span><span style="color: #000000;">
+  php:
+    image: php
+    container_name: lnmp</span>-<span style="color: #000000;">php
+    expose: 
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">9000</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    volumes:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">/www:/usr/local/nginx/html</span><span style="color: #800000;">"</span></pre>
+</div>
+<p>将networks参数改为了links参数，使得两个服务能够继续互联访问</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# docker-compose -<span style="color: #000000;">f lnmp.yml up
+Creating network </span><span style="color: #800000;">"</span><span style="color: #800000;">lnmp_default</span><span style="color: #800000;">"</span><span style="color: #000000;"> with the default driver
+Creating lnmp</span>-<span style="color: #000000;">php ... 
+Creating lnmp</span>-php ... <span style="color: #0000ff;">done</span><span style="color: #000000;">
+Creating lnmp</span>-<span style="color: #000000;">nginx ... 
+Creating lnmp</span>-nginx ... <span style="color: #0000ff;">done</span><span style="color: #000000;">
+Attaching to lnmp</span>-php, lnmp-nginx</pre>
+</div>
+<p>而且启动的时候创建的默认的网络</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# docker-compose -f lnmp.yml exec nginx <span style="color: #0000ff;">ping</span><span style="color: #000000;"> php
+PING php (</span><span style="color: #800080;">172.19</span>.<span style="color: #800080;">0.2</span>) <span style="color: #800080;">56</span>(<span style="color: #800080;">84</span><span style="color: #000000;">) bytes of data.
+</span><span style="color: #800080;">64</span> bytes from lnmp-php.lnmp_default (<span style="color: #800080;">172.19</span>.<span style="color: #800080;">0.2</span>): icmp_seq=<span style="color: #800080;">1</span> ttl=<span style="color: #800080;">64</span> <span style="color: #0000ff;">time</span>=<span style="color: #800080;">0.091</span><span style="color: #000000;"> ms
+</span><span style="color: #800080;">64</span> bytes from lnmp-php.lnmp_default (<span style="color: #800080;">172.19</span>.<span style="color: #800080;">0.2</span>): icmp_seq=<span style="color: #800080;">2</span> ttl=<span style="color: #800080;">64</span> <span style="color: #0000ff;">time</span>=<span style="color: #800080;">0.107</span> ms</pre>
+</div>
+<p>--links也是能够使得服务间进行访问的</p>
+<p>&nbsp;</p>
+<p>现在通过案例讲解参数external_links的作用：external_links类似于links针对的也是service级别，但是external_links对应的是外部的service而不是同一compose配置文件中的service</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# <span style="color: #0000ff;">cat</span><span style="color: #000000;"> lnmp.yml
+version: </span><span style="color: #800000;">'</span><span style="color: #800000;">3</span><span style="color: #800000;">'</span><span style="color: #000000;">
+services:
+  nginx:
+    image: nginx
+    container_name: lnmp</span>-<span style="color: #000000;">nginx
+    depends_on:
+      </span>-<span style="color: #000000;"> php
+    ports:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">80:80</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    networks:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">net1</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    volumes:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">/www:/usr/local/nginx/html</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    external_links:
+      </span>-<span style="color: #000000;"> php1:php
+  php:
+    image: php
+    container_name: lnmp</span>-<span style="color: #000000;">php
+    expose: 
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">9000</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    networks:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">net1</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    volumes:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">/www:/usr/local/nginx/html</span><span style="color: #800000;">"</span><span style="color: #000000;">
+
+networks:
+  net1:
+    driver: bridge</span></pre>
+</div>
+<p>上面可以看见external_links配置了php1的服务，并且将php1的服务也取别名为了php，然后编写另一个compose配置文件，并配置服务名为php1的服务：</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# <span style="color: #0000ff;">cat</span><span style="color: #000000;"> php1.yml 
+version: </span><span style="color: #800000;">'</span><span style="color: #800000;">3</span><span style="color: #800000;">'</span><span style="color: #000000;">
+services:
+  php1:
+    image: php
+    container_name: lnmp</span>-<span style="color: #000000;">php1
+    expose: 
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">9000</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    networks:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">net1</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    volumes:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">/www:/usr/local/nginx/html</span><span style="color: #800000;">"</span><span style="color: #000000;">
+
+networks:
+  net1:
+    driver: bridge</span></pre>
+</div>
+<p>结合两个compose配置文件，可以知道有nginx、php、php1的服务，并且php1的服务也有php的别名，现在依次开启php1，和nginx与php：</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# docker-compose -<span style="color: #000000;">f php1.yml up
+Creating network </span><span style="color: #800000;">"</span><span style="color: #800000;">lnmp_net1</span><span style="color: #800000;">"</span> with driver <span style="color: #800000;">"</span><span style="color: #800000;">bridge</span><span style="color: #800000;">"</span><span style="color: #000000;">
+Creating lnmp</span>-<span style="color: #000000;">php1 ... 
+Creating lnmp</span>-php1 ... <span style="color: #0000ff;">done</span><span style="color: #000000;">
+Attaching to lnmp</span>-php1</pre>
+</div>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# docker-compose -f lnmp.yml up --<span style="color: #000000;">build
+WARNING: Found orphan containers (lnmp</span>-php1) <span style="color: #0000ff;">for</span> this project. If you removed or renamed this service <span style="color: #0000ff;">in</span> your compose <span style="color: #0000ff;">file</span>, you can run this command with the --remove-<span style="color: #000000;">orphans flag to clean it up.
+Creating lnmp</span>-<span style="color: #000000;">php ... 
+Creating lnmp</span>-php ... <span style="color: #0000ff;">done</span><span style="color: #000000;">
+Creating lnmp</span>-<span style="color: #000000;">nginx ... 
+Creating lnmp</span>-nginx ... <span style="color: #0000ff;">done</span><span style="color: #000000;">
+Attaching to lnmp</span>-php, lnmp-nginx</pre>
+</div>
+<p>查看启动的容器状态：</p>
+<div class="cnblogs_code">
+<pre>[root@docker www]# docker <span style="color: #0000ff;">ps</span> -<span style="color: #000000;">a
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                NAMES
+a089cd261279        nginx               </span><span style="color: #800000;">"</span><span style="color: #800000;">/usr/local/nginx/...</span><span style="color: #800000;">"</span>   <span style="color: #800080;">25</span> seconds ago      Up <span style="color: #800080;">25</span> seconds       <span style="color: #800080;">0.0</span>.<span style="color: #800080;">0.0</span>:<span style="color: #800080;">80</span>-&gt;<span style="color: #800080;">80</span>/tcp   lnmp-<span style="color: #000000;">nginx
+4ff4bf7c1bf9        php                 </span><span style="color: #800000;">"</span><span style="color: #800000;">/usr/local/php/sb...</span><span style="color: #800000;">"</span>   <span style="color: #800080;">25</span> seconds ago      Up <span style="color: #800080;">25</span> seconds       <span style="color: #800080;">9000</span>/tcp             lnmp-<span style="color: #000000;">php
+4e39cdf62bf1        php                 </span><span style="color: #800000;">"</span><span style="color: #800000;">/usr/local/php/sb...</span><span style="color: #800000;">"</span>   <span style="color: #800080;">51</span> seconds ago      Up <span style="color: #800080;">51</span> seconds       <span style="color: #800080;">9000</span>/tcp             lnmp-php1</pre>
+</div>
+<p>现在将nginx一起的php的这个服务停止掉，看下nginx服务是否将会被停止：</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# docker-compose -<span style="color: #000000;">f lnmp.yml stop php
+Stopping lnmp</span>-php ... <span style="color: #0000ff;">done</span></pre>
+</div>
+<p>而在nginx这里的输出如下：</p>
+<div class="cnblogs_code">
+<pre>lnmp-php exited with code <span style="color: #800080;">0</span></pre>
+</div>
+<div class="cnblogs_code">
+<pre>[root@docker www]# docker <span style="color: #0000ff;">ps</span> -<span style="color: #000000;">a
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                      PORTS                NAMES
+a089cd261279        nginx               </span><span style="color: #800000;">"</span><span style="color: #800000;">/usr/local/nginx/...</span><span style="color: #800000;">"</span>   <span style="color: #800080;">2</span> minutes ago       Up <span style="color: #800080;">2</span> minutes                <span style="color: #800080;">0.0</span>.<span style="color: #800080;">0.0</span>:<span style="color: #800080;">80</span>-&gt;<span style="color: #800080;">80</span>/tcp   lnmp-<span style="color: #000000;">nginx
+4ff4bf7c1bf9        php                 </span><span style="color: #800000;">"</span><span style="color: #800000;">/usr/local/php/sb...</span><span style="color: #800000;">"</span>   <span style="color: #800080;">2</span> minutes ago       Exited (<span style="color: #800080;">0</span>) <span style="color: #800080;">52</span> seconds ago                        lnmp-php</pre>
+</div>
+<p>而php服务对应的容器lnmp-php也停止了，但是nginx的服务却没有停止，为什么呢？那是因为php1的服务并没有停止，而php1的服务也是别名php服务的，而external_links就是实现这种情况的</p>
+<p>使一个compose中的服务能与另一个compose中的服务能够互联通信，compose就是service级别的实现，配置文件中对应的都是service级别，而不是容器名</p>
+<p><img src="https://images2017.cnblogs.com/blog/1168897/201711/1168897-20171112222628450-2143246953.png" alt="" /></p>
+<p>而在另一个compose中也必须定义与之相同的网络名称，也就是说配置external_links时，两者服务间的网络名称必须一致，不然依旧不能进行互相访问</p>
+<p>当使用了external_links时，必须启动另一个compose的service，如果仅仅启动的是包含此函数的compose那么service将会启动报错</p>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# <span style="color: #0000ff;">cat</span><span style="color: #000000;"> lnmp.yml_external_links 
+version: </span><span style="color: #800000;">'</span><span style="color: #800000;">3</span><span style="color: #800000;">'</span><span style="color: #000000;">
+services:
+  nginx:
+    image: nginx
+    container_name: lnmp</span>-<span style="color: #000000;">nginx
+    depends_on:
+      </span>-<span style="color: #000000;"> php
+    ports:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">80:80</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    networks:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">net1</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    volumes:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">/www:/usr/local/nginx/html</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    external_links:
+      </span>-<span style="color: #000000;"> php1:php
+  php:
+    image: php
+    container_name: lnmp</span>-<span style="color: #000000;">php
+    expose: 
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">9000</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    networks:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">net1</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    volumes:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">/www:/usr/local/nginx/html</span><span style="color: #800000;">"</span><span style="color: #000000;">
+
+networks:
+  net1:
+    driver: bridge</span></pre>
+</div>
+<div class="cnblogs_code">
+<pre>[root@docker lnmp]# docker-compose -f lnmp.yml up --<span style="color: #000000;">build
+Creating network </span><span style="color: #800000;">"</span><span style="color: #800000;">lnmp_net1</span><span style="color: #800000;">"</span> with driver <span style="color: #800000;">"</span><span style="color: #800000;">bridge</span><span style="color: #800000;">"</span><span style="color: #000000;">
+Creating lnmp</span>-<span style="color: #000000;">php ... 
+Creating lnmp</span>-php ... <span style="color: #0000ff;">done</span><span style="color: #000000;">
+Creating lnmp</span>-<span style="color: #000000;">nginx ... 
+Creating lnmp</span>-nginx ... <span style="color: #0000ff;">done</span><span style="color: #000000;">
+Attaching to lnmp</span>-php, lnmp-<span style="color: #000000;">nginx
+lnmp</span>-nginx | nginx: [emerg] host not found <span style="color: #0000ff;">in</span> upstream <span style="color: #800000;">"</span><span style="color: #800000;">php</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">in</span> /usr/local/nginx/conf/vhost/www.conf:<span style="color: #800080;">7</span><span style="color: #000000;">
+lnmp</span>-nginx exited with code <span style="color: #800080;">1</span></pre>
+</div>
+<p>参数external_links连接的外部php服务并没有启动，所以nginx还是启动报错</p></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info">
+</div>
+<div class="clear"></div>
+<div id="post_next_prev"></div>
+</div>
+
+
+	<div class = "postDesc">posted on <span id="post-date">2017-11-12 22:29</span> <a href='https://www.cnblogs.com/jsonhc/'>wadeson</a> 阅读(<span id="post_view_count">...</span>) 评论(<span id="post_comment_count">...</span>)  <a href ="https://i.cnblogs.com/EditPosts.aspx?postid=7823286" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(7823286);return false;">收藏</a></div>
+</div>
+<script type="text/javascript">var allowComments=true,cb_blogId=358609,cb_entryId=7823286,cb_blogApp=currentBlogApp,cb_blogUserGuid='a9b70db3-edc1-4255-cb7a-08d49c352df2',cb_entryCreatedDate='2017/11/12 22:29:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id='comment_form' class='commentform'>
+<a name='commentform'></a>
+<div id='divCommentShow'></div>
+<div id='comment_nav'><span id='span_refresh_tips'></span><a href='javascript:void(0);' onclick='return RefreshCommentList();' id='lnk_RefreshComments' runat='server' clientidmode='Static'>刷新评论</a><a href='#' onclick='return RefreshPage();'>刷新页面</a><a href='#top'>返回顶部</a></div>
+<div id='comment_form_container'></div>
+<div class='ad_text_commentbox' id='ad_text_under_commentbox'></div>
+<div id='ad_t2'></div>
+<div id='opt_under_post'></div>
+<script async='async' src='https://www.googletagservices.com/tag/js/gpt.js'></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id='cnblogs_c1' class='c_ad_block'>
+    <div id='div-gpt-ad-1546353474406-0' style='height:250px; width:300px;'></div>
+</div>
+<div id='under_post_news'></div>
+<div id='cnblogs_c2' class='c_ad_block'>
+    <div id='div-gpt-ad-1539008685004-0' style='height:60px; width:468px;'></div>
+</div>
+<div id='under_post_kb'></div>
+<div id='HistoryToday' class='c_ad_block'></div>
+<script type='text/javascript'>
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+</div>
+<div id="leftcontent">
+	
+		<DIV id="leftcontentcontainer">
+			
+<!--done-->
+<div class="newsItem">
+	<div id="blog-news"></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="blog-calendar" style="display:none"></div><script type="text/javascript">loadBlogDefaultCalendar();</script><br>
+			<div id="blog-sidecolumn"></div><script type="text/javascript">loadBlogSideColumn();</script></DIV>
+	
+</div>
+
+<!--done-->
+<div class="footer">
+	Powered by: <a href="http://www.cnblogs.com">博客园</a>	模板提供：<a href="http://blog.hjenglish.com">沪江博客</a>
+	Copyright &copy;2019 wadeson
+</div>
+
+
+
+
+</body>
+</html>

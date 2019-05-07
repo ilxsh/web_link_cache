@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="referrer" content="origin" />
+    <title>Docker系列之（五）：使用Docker Compose编排容器 - ee900222 - 博客园</title>
+<meta property="og:description" content="使用Docker Compose可以对Docker 容器进行编排，定义和运行多容器的应用，可以一条命令启动多个容器。" />
+    <link type="text/css" rel="stylesheet" href="/bundles/blog-common.css?v=svlZeZMvc3He7PqOD4T7SOuQn0_kIfLBYiy3idqd35Y1"/>
+<link id="MainCss" type="text/css" rel="stylesheet" href="/skins/iMetro_HD/bundle-iMetro_HD.css?v=cDVgAMQ7FTtxrKvup-MCLDNCyny4xFuA__ZZf74gd_s1"/>
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/iMetro_HD/bundle-iMetro_HD-mobile.css?v=JhfH-fSS1HfSs_57nJyoJS9jmLaEpa-Bf28DBeTNOwc1"/>
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/ee900222/rss"/>
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/ee900222/rsd.xml"/>
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/ee900222/wlwmanifest.xml"/>
+    <script src="//common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script>var currentBlogId=260854;var currentBlogApp='ee900222',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="/bundles/blog-common.js?v=OFBZTzkHKauV7mtIFLF9jlqrX-sesK9-mY9KjurLrq01" type="text/javascript"></script>
+</head>
+<body>
+<a name="top"></a>
+
+
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a id="lnkBlogLogo" href="https://www.cnblogs.com/ee900222/"><img id="blogLogo" src="/Skins/custom/images/logo.gif" alt="返回主页" /></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/ee900222/">ee900222</a></h1>
+<h2></h2>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+<li><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/ee900222/">首页</a></li>
+<li><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+<li><a id="blog_nav_contact" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/ee900222">联系</a></li>
+<li><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/ee900222/rss">订阅</a>
+<!--<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/ee900222/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a>--></li>
+<li><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+</ul>
+		<div class="blogStats">
+			
+			<div id="blog_stats">
+<span id="stats_post_count">随笔 - 15&nbsp; </span>
+<span id="stats_article_count">文章 - 0&nbsp; </span>
+<span id="stats-comment_count">评论 - 35</span>
+</div>
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class = "post">
+		<h1 class = "postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/ee900222/p/docker_5.html">Docker系列之（五）：使用Docker Compose编排容器</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><h1>1. 前言</h1>
+<p>Docker Compose 是 Docker 容器进行编排的工具，定义和运行多容器的应用，可以一条命令启动多个容器。</p>
+<p>使用Compose 基本上分为三步：</p>
+<ol>
+<li class="level1">
+<div class="li">Dockerfile 定义应用的运行环境</div>
+</li>
+<li class="level1">
+<div class="li">docker-compose.yml 定义组成应用的各服务</div>
+</li>
+<li class="level1">
+<div class="li">docker-compose up 启动整个应用</div>
+</li>
+</ol>
+<p>&nbsp;</p>
+<h1>2. 安装Compose</h1>
+<p>直接从github下载即可，前提要先安装Docker，版本要1.9.1以上</p>
+<p>Note that Compose 1.8.0 requires Docker Engine 1.10.0 or later for version 2 of the Compose File format, and Docker Engine 1.9.1 or later for version 1.</p>
+<div class="cnblogs_code">
+<pre># curl -L https:<span style="color: #008000;">//</span><span style="color: #008000;">github.com/docker/compose/releases/download/1.8.0/docker-compose-`uname -s`-`uname -m` &gt; /usr/local/bin/docker-compose</span>
+# chmod +x /usr/local/bin/docker-compose</pre>
+</div>
+<p>也可以用pip或官网的run.sh脚本安装</p>
+<p>&nbsp;</p>
+<p>安装后确认</p>
+<div class="cnblogs_code">
+<pre># docker-compose --version</pre>
+</div>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825135640991-789213715.png" alt="" /></p>
+<p>&nbsp;</p>
+<h1>3. 使用Compose</h1>
+<h3>3.1 创建一个Python应用， 使用Flask，将数值记入Redis</h3>
+<h4>3.1.1 建立一个应用的目录，创建Python文件</h4>
+<div class="cnblogs_code">
+<pre><span style="color: #000000;"># mkdir python
+# cd python
+
+# vi app.py 
+</span><span style="color: #0000ff;">from</span><span style="color: #000000;"> flask import Flask
+</span><span style="color: #0000ff;">from</span><span style="color: #000000;"> redis import Redis
+
+app </span>=<span style="color: #000000;"> Flask(__name__)
+redis </span>= Redis(host=<span style="color: #800000;">'</span><span style="color: #800000;">redis</span><span style="color: #800000;">'</span>, port=<span style="color: #800080;">6379</span><span style="color: #000000;">)
+
+@app.route(</span><span style="color: #800000;">'</span><span style="color: #800000;">/</span><span style="color: #800000;">'</span><span style="color: #000000;">)
+def hello():
+    redis.incr(</span><span style="color: #800000;">'</span><span style="color: #800000;">hits</span><span style="color: #800000;">'</span><span style="color: #000000;">)
+    </span><span style="color: #0000ff;">return</span> <span style="color: #800000;">'</span><span style="color: #800000;">Hello World! I have been seen %s times.</span><span style="color: #800000;">'</span> % redis.<span style="color: #0000ff;">get</span>(<span style="color: #800000;">'</span><span style="color: #800000;">hits</span><span style="color: #800000;">'</span><span style="color: #000000;">)
+
+</span><span style="color: #0000ff;">if</span> __name__ == <span style="color: #800000;">"</span><span style="color: #800000;">__main__</span><span style="color: #800000;">"</span><span style="color: #000000;">:
+    app.run(host</span>=<span style="color: #800000;">"</span><span style="color: #800000;">0.0.0.0</span><span style="color: #800000;">"</span>, debug=<span style="color: #000000;">True)
+
+# vi requirements.txt 
+flask
+redis</span></pre>
+</div>
+<p>&nbsp;</p>
+<h4>3.1.2 创建 Dockerfile</h4>
+<p>在同一目录下，创建Dockerfile</p>
+<div class="cnblogs_code">
+<pre><span style="color: #000000;"># vi Dockerfile 
+FROM python:</span><span style="color: #800080;">2.7</span><span style="color: #000000;">
+ADD . </span>/<span style="color: #000000;">code
+WORKDIR </span>/<span style="color: #000000;">code
+RUN pip install </span>-<span style="color: #000000;">r requirements.txt
+CMD python app.py</span></pre>
+</div>
+<p>对上面的Dockerfile做一下简单说明：</p>
+<ul>
+<li>容器使用Python 2.7的镜像</li>
+<li>将当前目录下文件拷贝到容器内/code</li>
+<li>指定工作目录为/code</li>
+<li>安装python需要的库：flask, redis</li>
+<li>容器执行命令&nbsp;python app.py</li>
+</ul>
+<p>&nbsp;</p>
+<h4>3.1.3 创建编排脚本</h4>
+<p>在同一目录下，创建 docker-compose.yml</p>
+<div class="cnblogs_code">
+<pre># cat docker-<span style="color: #000000;">compose.yml 
+version: </span><span style="color: #800000;">'</span><span style="color: #800000;">2</span><span style="color: #800000;">'</span><span style="color: #000000;">
+services:
+  web:
+    build: .
+    ports:
+     </span>- <span style="color: #800000;">"</span><span style="color: #800000;">5000:5000</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    volumes:
+     </span>- .:/<span style="color: #000000;">code
+    depends_on:
+     </span>-<span style="color: #000000;"> redis
+  redis:
+    image: redis</span></pre>
+</div>
+<p>对上面的编排脚本做一下简单说明：</p>
+<ul>
+<li>这个应用定义了两个服务：web, redis</li>
+<li>web容器通过当前路径下的Dockerfile生成</li>
+<li>web容器内的5000端口映射到主机的5000端口</li>
+<li>将当前目录挂载到web容器内/code</li>
+<li>web容器依赖于redis容器</li>
+<li>redis容器从Docker Hub获取镜像</li>
+</ul>
+<p>&nbsp;</p>
+<h4>3.1.4 启动应用</h4>
+<p>会执行编排脚本，分别制作和抓取web，redis镜像，启动容器</p>
+<div class="cnblogs_code">
+<pre># docker-compose up</pre>
+</div>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825142122116-1453970299.png" alt="" /></p>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825142131585-563359023.png" alt="" /></p>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825142144991-1069541440.png" alt="" /></p>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825142201147-1465941169.png" alt="" /></p>
+<p>&nbsp;</p>
+<h4>3.1.5&nbsp;访问应用</h4>
+<p><a class="urlextern" title="http://localhost:5000/" href="http://localhost:5000/" rel="nofollow">http://localhost:5000/</a></p>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825142249804-2143193412.png" alt="" /></p>
+<p>&nbsp;</p>
+<h3>3.2 其他命令</h3>
+<h4>3.2.1 daemon模式启动/停止</h4>
+<div class="cnblogs_code">
+<pre># docker-compose up -<span style="color: #000000;">d<br /></span></pre>
+</div>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825142434179-2028555828.png" alt="" /></p>
+<div class="cnblogs_code">
+<pre># docker-compose stop</pre>
+</div>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825142443429-67412222.png" alt="" /></p>
+<p>&nbsp;</p>
+<h4>3.2.2 查看信息</h4>
+<div class="cnblogs_code">
+<pre># docker-compose ps</pre>
+</div>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825142654022-553198836.png" alt="" /></p>
+<p>&nbsp;</p>
+<h4>3.2.3 对容器执行命令（一次）</h4>
+<div class="cnblogs_code">
+<pre>#docker-compose run <span style="color: #ff0000;">services</span> <span style="color: #ff0000;">cmd</span></pre>
+</div>
+<p>例如：查看web容器环境变量</p>
+<div class="cnblogs_code">
+<pre># docker-compose run web env</pre>
+</div>
+<p>&nbsp;</p>
+<h3>3.3 创建一个Wordpress应用</h3>
+<h4>3.3.1&nbsp;建立一个应用的目录</h4>
+<div class="cnblogs_code">
+<pre><span style="color: #000000;"># mkdir wordpress
+# cd wordpress</span></pre>
+</div>
+<p>&nbsp;</p>
+<h4>3.3.2 创建 docker-compose.yml</h4>
+<div class="cnblogs_code">
+<pre># cat docker-<span style="color: #000000;">compose.yml 
+version: </span><span style="color: #800000;">'</span><span style="color: #800000;">2</span><span style="color: #800000;">'</span><span style="color: #000000;">
+services:
+  db:
+    image: mysql:</span><span style="color: #800080;">5.7</span><span style="color: #000000;">
+    volumes:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">./.data/db:/var/lib/mysql</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+
+  wordpress:
+    depends_on:
+      </span>-<span style="color: #000000;"> db
+    image: wordpress:latest
+    links:
+      </span>-<span style="color: #000000;"> db
+    ports:
+      </span>- <span style="color: #800000;">"</span><span style="color: #800000;">8000:80</span><span style="color: #800000;">"</span><span style="color: #000000;">
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:</span><span style="color: #800080;">3306</span><span style="color: #000000;">
+      WORDPRESS_DB_PASSWORD: wordpress<br /></span></pre>
+</div>
+<p>MySQL的数据目录挂载到当前目录下，./.data/db不存在时会自动创建。</p>
+<p>&nbsp;</p>
+<h4>3.3.3 启动应用</h4>
+<div class="cnblogs_code">
+<pre># docker-compose up -d</pre>
+</div>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825144649569-943634351.png" alt="" /></p>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825144708991-1213948293.png" alt="" /></p>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825144720444-1291512450.png" alt="" /></p>
+<p>&nbsp;</p>
+<h4>3.3.4 确认</h4>
+<div class="cnblogs_code">
+<pre># docker-compose ps</pre>
+</div>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825144846554-2081243779.png" alt="" /></p>
+<p>&nbsp;</p>
+<h4>3.3.5 访问应用</h4>
+<p><a class="urlextern" title="http://localhost:8000/" href="http://localhost:8000/" rel="nofollow">http://localhost:8000/</a></p>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825144925647-1557450348.png" alt="" /></p>
+<p>&nbsp;</p>
+<p>初始化设置后，就可以看到Wordpress的页面</p>
+<p><img src="https://images2015.cnblogs.com/blog/868522/201608/868522-20160825145019397-962745769.png" alt="" /></p>
+<p>&nbsp;</p></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info">
+</div>
+<div class="clear"></div>
+<div id="post_next_prev"></div>
+</div>
+
+
+		</div>
+		<div class = "postDesc">posted @ <span id="post-date">2016-08-25 14:55</span> <a href='https://www.cnblogs.com/ee900222/'>ee900222</a> 阅读(<span id="post_view_count">...</span>) 评论(<span id="post_comment_count">...</span>)  <a href ="https://i.cnblogs.com/EditPosts.aspx?postid=5806810" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(5806810);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=260854,cb_entryId=5806810,cb_blogApp=currentBlogApp,cb_blogUserGuid='224ee1a5-dbad-e511-9fc1-ac853d9f53cc',cb_entryCreatedDate='2016/8/25 14:55:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id='comment_form' class='commentform'>
+<a name='commentform'></a>
+<div id='divCommentShow'></div>
+<div id='comment_nav'><span id='span_refresh_tips'></span><a href='javascript:void(0);' onclick='return RefreshCommentList();' id='lnk_RefreshComments' runat='server' clientidmode='Static'>刷新评论</a><a href='#' onclick='return RefreshPage();'>刷新页面</a><a href='#top'>返回顶部</a></div>
+<div id='comment_form_container'></div>
+<div class='ad_text_commentbox' id='ad_text_under_commentbox'></div>
+<div id='ad_t2'></div>
+<div id='opt_under_post'></div>
+<script async='async' src='https://www.googletagservices.com/tag/js/gpt.js'></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id='cnblogs_c1' class='c_ad_block'>
+    <div id='div-gpt-ad-1546353474406-0' style='height:250px; width:300px;'></div>
+</div>
+<div id='under_post_news'></div>
+<div id='cnblogs_c2' class='c_ad_block'>
+    <div id='div-gpt-ad-1539008685004-0' style='height:60px; width:468px;'></div>
+</div>
+<div id='under_post_kb'></div>
+<div id='HistoryToday' class='c_ad_block'></div>
+<script type='text/javascript'>
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="blog-calendar" style="display:none"></div><script type="text/javascript">loadBlogDefaultCalendar();</script>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright &copy;2019 ee900222
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+</body>
+</html>

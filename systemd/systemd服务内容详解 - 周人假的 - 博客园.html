@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="referrer" content="origin" />
+    <title>systemd服务内容详解 - 周人假的 - 博客园</title>
+<meta property="og:description" content="systemd是Linux下的一种init软件，由Lennart Poettering带头开发，并在LGPL2.1及其后续版本许可证下开源发布。其开发目标是提供更优秀的框架以表示系统服务间的依赖关系，" />
+    <link type="text/css" rel="stylesheet" href="/bundles/blog-common.css?v=svlZeZMvc3He7PqOD4T7SOuQn0_kIfLBYiy3idqd35Y1"/>
+<link id="MainCss" type="text/css" rel="stylesheet" href="/skins/LessIsMore/bundle-LessIsMore.css?v=K-SPbyFTmacJSNw1O1LzZFcIaS56dT8uEKlXYOxLR9k1"/>
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/LessIsMore/bundle-LessIsMore-mobile.css?v=Go8Bj0ZU9gZXuPSKWcSQabps3E1njgJKYz4DiOq6-N41"/>
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/zhouhbing/rss"/>
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/zhouhbing/rsd.xml"/>
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/zhouhbing/wlwmanifest.xml"/>
+    <script src="//common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script>var currentBlogId=153595;var currentBlogApp='zhouhbing',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="/bundles/blog-common.js?v=OFBZTzkHKauV7mtIFLF9jlqrX-sesK9-mY9KjurLrq01" type="text/javascript"></script>
+</head>
+<body>
+<a name="top"></a>
+
+
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+		
+<!--done-->
+<div class="title"><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/zhouhbing/">周人假的</a></div>
+<div class="subtitle"></div>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li id="nav_sitehome"><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+<li id="nav_myhome"><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/zhouhbing/">首页</a></li>
+<li id="nav_newpost"><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+<li id="nav_contact"><a id="blog_nav_contact" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/%E5%91%A8%E4%BA%BA%E5%81%87%E7%9A%84">联系</a></li>
+<li id="nav_rss"><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/zhouhbing/rss">订阅</a>
+<!--<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/zhouhbing/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a>--></li>
+<li id="nav_admin"><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+</ul>
+
+		<div class="blogStats">
+			
+			<div id="blog_stats">
+<!--done-->
+随笔-257&nbsp;
+文章-1&nbsp;
+评论-6&nbsp;
+</div>
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class = "post">
+		<h1 class = "postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/zhouhbing/p/4021635.html">systemd服务内容详解</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><div>systemd是<a title="Linux" href="http://zh.wikipedia.org/wiki/Linux#tc_qz_original=624731186" target="_blank">Linux</a>下的一种<a title="Init" href="http://zh.wikipedia.org/wiki/Init#tc_qz_original=624731186" target="_blank">init</a>软件，由<a href="http://zh.wikipedia.org/w/index.php?title=Lennart_Poettering&amp;action=edit&amp;redlink=1#tc_qz_original=624731186" target="_blank">Lennart Poettering</a>带头开发，并在<a title="LGPL" href="http://zh.wikipedia.org/wiki/LGPL#tc_qz_original=624731186" target="_blank">LGPL</a>&nbsp;2.1及其后续版本许可证下开源发布。其开发目标是提供更优秀的<a title="框架" href="http://zh.wikipedia.org/wiki/%E6%A1%86%E6%9E%B6#tc_qz_original=624731186" target="_blank">框架</a>以表示<a href="http://zh.wikipedia.org/w/index.php?title=%E6%9C%8D%E5%8A%A1_(%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84)&amp;action=edit&amp;redlink=1#tc_qz_original=624731186" target="_blank">系统服务</a>间的依赖关系，并依此实现系统初始化时服务的并行启动，同时达到降低<a title="Shell" href="http://zh.wikipedia.org/wiki/Shell#tc_qz_original=624731186" target="_blank">Shell</a>的<a href="http://zh.wikipedia.org/w/index.php?title=%E7%B3%BB%E7%BB%9F%E5%BC%80%E9%94%80&amp;action=edit&amp;redlink=1#tc_qz_original=624731186" target="_blank">系统开销</a>的效果，最终代替现在常用的<a title="System V" href="http://zh.wikipedia.org/wiki/System_V#tc_qz_original=624731186" target="_blank">System V</a>与<a title="BSD" href="http://zh.wikipedia.org/wiki/BSD#tc_qz_original=624731186" target="_blank">BSD</a>风格init程序。<br />&nbsp; &nbsp;传统的<a title="System V" href="http://zh.wikipedia.org/wiki/System_V#tc_qz_original=624731186" target="_blank">System V</a>是串行启动，即在启动下一个脚本前，上一个脚本必须执行完，这样在启动时间上会有很大的浪费。在这个时间就是金钱的年代，这种启动方式必将被淘汰。&nbsp;&nbsp;首先是Ubuntu 最先造反，启用了自己的upstart启动方式,upstart基于事件触发，但还是串行启动，但是对于没有必要的服务就不会启动。<br />&nbsp; &nbsp; 这时&nbsp;systemd出现了，主要优点就是并行启动，节约启动时间，systemd作者曾口出狂言，最快2秒启动<br />&nbsp;&nbsp;&nbsp;&nbsp;相比以前的System V启动方式有以下优化：</div>
+<div>
+<ul>
+<li>采用<a title="Socket（页面不存在）" href="http://zh.wikipedia.org/w/index.php?title=Socket&amp;action=edit&amp;redlink=1#tc_qz_original=624731186" target="_blank">Socket</a>激活式与<a title="总线" href="http://zh.wikipedia.org/wiki/%E6%80%BB%E7%BA%BF#tc_qz_original=624731186" target="_blank">总线</a>激活式服务，以提高相互依赖的各服务的并行运行性能；</li>
+<li>用<a title="Cgroups" href="http://zh.wikipedia.org/wiki/Cgroups#tc_qz_original=624731186" target="_blank">cgroups</a>代替<a title="PID" href="http://zh.wikipedia.org/wiki/PID#tc_qz_original=624731186" target="_blank">PID</a>来追踪进程，以此即使是两次<a href="http://zh.wikipedia.org/w/index.php?title=Fork_(%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F)&amp;action=edit&amp;redlink=1#tc_qz_original=624731186" target="_blank">fork</a>之后生成的守护进程也不会脱离systemd的控制&nbsp;</li>
+
+</ul>
+
+&nbsp;<br />一：传统的启动是内核启动完后，首先执行的第一个进程是/sbin/init。<br />&nbsp;&nbsp;&nbsp;&nbsp;如果要以systemd方式启动，则首先让内核执行的第一个进程是/lib/systemd/systemd或者/usr/lib/systemd/systemd.<br />&nbsp;&nbsp;&nbsp;&nbsp;方法是在grub界面输入init=/lib/systemd/systemd</div>
+<p>&nbsp;</p>
+<p>二：systemd启动后，首先会去三个目录下找相应的配置文件，按优先级从高到底为/etc/systemd/,/usr/lib/systemd/<br />&nbsp;&nbsp;&nbsp;&nbsp;和/lib/systemd/，优先级高的配置文件会覆盖优先级低的配置文件</p>
+<p>三：systemd的配置文件又叫unit文件，主要有以下几种</p>
+<ol>
+<li><code>service</code>&nbsp;：守护进程的启动、停止、重启和重载是此类&nbsp;unit&nbsp;中最为明显的几个类型。</li>
+<li><code>socket</code>&nbsp;：此类&nbsp;unit&nbsp;封装系统和互联网中的一个 socket 。当下，systemd 支持流式、数据报和连续包的 AF_INET、AF_INET6、AF_UNIX socket 。也支持传统的 FIFOs 传输模式。每一个 socket&nbsp;unit&nbsp;都有一个相应的服务&nbsp;unit&nbsp;。相应的服务在第一个&ldquo;连接&rdquo;进入 socket 或 FIFO 时就会启动(例如：nscd.socket 在有新连接后便启动 nscd.service)。</li>
+<li><code>device</code>&nbsp;：此类&nbsp;unit&nbsp;封装一个存在于 Linux 设备树中的设备。每一个使用 udev 规则标记的设备都将会在 systemd 中作为一个设备&nbsp;unit&nbsp;出现。udev 的属性设置可以作为配置设备&nbsp;unit&nbsp;依赖关系的配置源。</li>
+<li><code>mount</code>&nbsp;：此类&nbsp;unit&nbsp;封装系统结构层次中的一个挂载点。</li>
+<li><code>automount</code>&nbsp;：此类&nbsp;unit&nbsp;封装系统结构层次中的一个自挂载点。每一个自挂载&nbsp;unit&nbsp;对应一个已挂载的挂载&nbsp;unit&nbsp;(需要在自挂载目录可以存取的情况下尽早挂载)。</li>
+<li><code>target</code>&nbsp;：此类&nbsp;unit&nbsp;为其他&nbsp;unit&nbsp;进行逻辑分组。它们本身实际上并不做什么，只是引用其他&nbsp;unit&nbsp;而已。这样便可以对&nbsp;unit&nbsp;做一个统一的控制。(例如：multi-user.target 相当于在传统使用 SysV 的系统中运行级别5)；bluetooth.target 只有在蓝牙适配器可用的情况下才调用与蓝牙相关的服务，如：bluetooth 守护进程、obex 守护进程等）</li>
+<li><code>snapshot</code>&nbsp;：与 target&nbsp;unit&nbsp;相似，快照本身不做什么，唯一的目的就是引用其他&nbsp;unit&nbsp;。&nbsp;</li>
+
+</ol>
+<p>&nbsp;四：systemd启动的第一个unit文件为/lib/systemd/system/下的default.target文件（这里的default.target一般为链接文<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;件，这样default.target指向不同的文件，可达到不同的启动等级）</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; 例：<img src="http://img.blog.csdn.net/20140402212311750?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvYTYyNDczMTE4Ng==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="" /><br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 可以看到，default.target指向graphical.target这个文件，graphical.target表示图形界面这个等级<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;graphical.target其内容如下：&nbsp;<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="http://img.blog.csdn.net/20140402212335328?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvYTYyNDczMTE4Ng==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="" /></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Description=&nbsp;&nbsp;&nbsp;&nbsp;：一些描述，显示给用户界面看的，可以是任何字符串，一般是关于服务的说明。</p>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Documentation=　　：指定参考文档的列表。<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;Requires=　　　：指定graphical.target依赖于multi-user.target这个服务，如果graphical.target被激活，那么 Requires 后面<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;的multi-user.target服务也会被激活，反之，如果 Requires 后面的multi-user.target服务被停止或无法启动，则graphical.target<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;服务也会停止。这个选项可以指定多次，那么就要求所有指定的服务都被激活。</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After= ：表示启动完multi-user.target后，再启动graphical.target。同时还有Before= :表示启动完本服务后，再启动Before后面<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;的服务。<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Conflicts=　：配置一个依赖冲突，当rescue.target服务启动时，graphical.target服务停止，反过来，graphical.target服务启动，<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;那么rescue.targe就会停止。<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;Wants= &nbsp; &nbsp;：相对弱化的 Requires= ，display-manager.target会被启动，但如果无法启动或无法添加到事务处理，并不影<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;响graphical.target服务做为一个整体的启动。<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AllowIsolate=　：布尔值。如果是真值，则此服务可以使用&nbsp;systemctl isolate&nbsp;命令进行操作。否则会拒绝此操作。默认值是假。</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Alias=　　：在安装使用应该使用的别名。名字必须和服务本身有同样的后缀（即同样的类型）。这个选项可以指定多次，所有的<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;名字都起作用，当执行 systemctl enable 命令时，会建立相当的链接<br /><br />五：常用的命令<br />
+<div>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Description=　　　：一些描述，显示给用户界面看的，可以是任何字符串，一般是关于服务的说明。<br />&nbsp;</div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Documentation=　　：指定参考文档的列表，以空格分开的 URI 形式，如http://, https://, file:, info:, man:，这是有顺序的，最好是先解释这个服务的目的是什么，然后是它是如何配置的，再然后是其它文件，这个选项可以多次指定，会将多行的合并，如果指定了一个空的，那么会重置此项，前的配置不在起作用。<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Requires=　　　：指定此服务依赖的其它服务，如果本服务被激活，那么 Requires 后面的服务也会被激活，反之，如果 Requires 后面的服务被停止或无法启动，则本服务也会停止。这个选项可以指定多次，那么就要求所有指定的服务都被激活。需要注意的是这个选项不影响启动或停止的顺序，启动顺序使用单句的 After= 和 Before= 来配置。例如，如果 foo.service 依赖 &nbsp;bar.serivce，但是只配置了 Requires= 而没有 After= 或 Before=，那么 foo.service 启动时会同时激活 foo.service 和 bar.service。通常使用 Wants= 代替 Requires= 是更好的选择，因为系统会更好的处理服务失败的情况。注意，这种依赖关系，也可以在文件之外来处理，即使用 .requires/ 目录，可以参看上面的说明。<br />&nbsp;</div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RequiresOverridable= &nbsp; &nbsp; ：类似上面的 Requires= ，不过这种情况下，只要用户明确要求它启动，才会影响到被依赖的服务，不然服务出错什么的，不会影响被依赖服务的启动。<br />&nbsp;</div>
+<div>&nbsp;</div>
+<div><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Requisite=</code>,&nbsp;<code>RequisiteOverridable=　　：分别类似上面的两个，不过如果是这个指定服务没有启动，被依赖的服务会不启动，立即失败。<br />&nbsp;</code></div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Wants= &nbsp; &nbsp;：相对弱化的 Requires= ，这里列出的服务会被启动，但如果无法启动或无法添加到事务处理，并不影响本服务做为一个整体的启动。这是推荐的两个服务关联的方式。这种依赖也可以配置文件外，通过 .wants/ 目录添加，具体可以看上面的说明。<br />&nbsp;</div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BindsTo=　：和 Requires= 很像，但是这种情况，如果他后面列出的服务停止运行或崩溃之类的，本服务也会同时停止。</div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PartOf=　　：又一个类似 Requires= 的选项，但是限制在停止或重启动服务，如果这里列出的服务被停止或重启动，那么本服务也会停止或重启动，注意这个依赖是意向，即本服务停止或重启动，不会影响到这里列出服务的运行状态。<br />&nbsp;</div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Conflicts=　：配置一个依赖冲突，如果配置了些项，那么，当一个服务启动时，或停止此处列出的服务，反过来，如果这里列出的服务启动，那么本服务就会停止，即后启动的才起作用。注意，此设置和 After= 和 Before= 是互相独立的。如果服务 A 和 B 冲突，且在 B 启动的时候同时启动，那么有可能会启动失败（两都都是必需的）或修改以修复它（两者之一或两都都不是必需的），后一种情况，会将不需要的依赖删除，或停止冲突。<br />&nbsp;</div>
+<div>&nbsp;</div>
+<div><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Before=</code>,&nbsp;<code>After=　　：配置服务间的启动顺序，比如一个 foo.service 包含了一行 Before=bar.service，那么当他们同时启动时，bar.service 会等待 foo.service 启动完成后才启动。注意这个设置和 Requires= 的相互独立的，同时包含 After= 和 Requires= 也是常见的。此选项可以指定一次以上，这时是按顺序全部启动。<br />&nbsp;</code></div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OnFailure= &nbsp; &nbsp; 　　：列出一个或更多的服务，当本服务启动状态是 failed 的时候，激活这些服务。<br />&nbsp;</div>
+<div>&nbsp;</div>
+<div><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PropagatesReloadTo=</code>,&nbsp;<code>ReloadPropagatedFrom=　　：这两个是列出一些服务，当其它服务 reload 时同时 reload 这个服务，或者反之。<br />&nbsp;</code></div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RequiresMountsFor=　　：用空格分开的绝对路径列表，是 Requires= 和 After= 添加的依赖中的 mount 文件需要访问的指定的路径。</div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OnFailureIsolate=　　：是一个布尔值，如果是真，那么 OnFailure= 后面的服务会进入隔离模式，即所有不是它依赖的服务都会停止。如果只设置一个服务，可以放在 OnFailure= 后，默认值是假。</div>
+<div>&nbsp;</div>
+<div><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IgnoreOnIsolate= &nbsp; 　：一个布尔值.如果是真则当隔离其它服务时本服务不会停止（不明白隔离是什么意思，大概在后面）。默认是假。</code></div>
+<div><code><br /></code><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IgnoreOnSnapshot=　　：一个布尔值.如果是真则本服务不包含快照(snapshots)。对 device 和 snapshot 服务默认为真，其它服务默认为假。</code></div>
+<div>&nbsp;</div>
+<div><code></code><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;StopWhenUnneeded=　　：一个布尔值。如果是真则当本服务不使用时会停止。&nbsp;注意，为了尽量减少 systemd 的工作，默认情况下是不会停止不使用的服务的，除非和其它服务冲突，或用户明确要求停止。如果设置了这个选项，那么如果没有其它活动的服务需要此服务，它会自动停止。默认值是假。</code></div>
+<div><code><br /></code><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RefuseManualStart=</code>,&nbsp;<code>RefuseManualStop=　　：布尔值。如果设为真值，则此服务只能间接的激活或停止。这种情况下，用户直接启动或停止此服务会被拒绝，只有做为其它的服务依赖关系，由其它服务进行启动或停止才可以。这主要是为了停止用户误操作。默认值是假。</code></div>
+<div><code><br /></code><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AllowIsolate=　　　　　　：布尔值。如果是真值，则此服务可以使用&nbsp;systemctl isolate&nbsp;命令进行操作。否则会拒绝此操作。最好的办法是不要动这处选项，除非目标服务的行为类似于 SysV 启动系统中的 runlevels。只是一种预防措施，避免系统无法使用的状态。默认值是假。</code></div>
+<div><code><br /></code><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DefaultDependencies=　　：布尔值。如果是真（默认值），一些本服务默认的依赖会隐式的建立，具体是哪些依赖，则于服务的类型决定。比如，对于普通的服务（.service类型），它会确保在系统基本服务启动后才启动本服务，会在系统关机前确保本服务已关闭。一般来说，只有早期开机服务和后期的关机服务，才需要把这个设成假。强烈对大多数普通服务，让这个选项启用即可。如果设成假，也不会禁用所有的隐式依赖，只是禁用那些非必要的。<br />&nbsp;</code></div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;JobTimeoutSec=　　：当一个客户端等待本服务的某个 Job 完成时，所指定的超时时间。如果达到了限制的时间，此 Job 会取消运行，但服务不会更改状态，包括进入&ldquo;failed&rdquo;状态。除了设备服务（即.device类型），其它的默认值是0（即没有超时设置）。注意，这个是独立于特定服务所设置的超时设置的（比如对 .service 类型所设置的 Timeout=），它对服务本身没有影响，但特定服务的设置是有影响的（能用来更改服务状态）。<br />&nbsp;</div>
+<div>&nbsp;</div>
+<div><code>ConditionPathExists=</code>,&nbsp;<code>ConditionPathExistsGlob=</code>,&nbsp;<code>ConditionPathIsDirectory=</code>,&nbsp;<code>ConditionPathIsSymbolicLink=</code>,&nbsp;<code>ConditionPathIsMountPoint=</code>,&nbsp;<code>ConditionPathIsReadWrite=</code>,&nbsp;<code>ConditionDirectoryNotEmpty=</code>,<code>ConditionFileNotEmpty=</code>,&nbsp;<code>ConditionFileIsExecutable=</code>,&nbsp;<code>ConditionKernelCommandLine=</code>,&nbsp;<code>ConditionVirtualization=</code>,&nbsp;<code>ConditionSecurity=</code>,&nbsp;<code>ConditionCapability=</code>,&nbsp;<code>ConditionHost=</code>,&nbsp;<code>ConditionACPower=</code>,<code>ConditionNull=　　：这是一组类似的东西。检测特定的条件是不是真值，如果不是真值，服务会略过启动，但是它依赖的服务还是会正常运行的。这个条件测试失败不会让服务进入失败状态。条件是在服务开始运行时检查的。<br />&nbsp;</code></div>
+<div>　　<code>ConditionPathExists=</code>&nbsp;是指定在服务启动时检查指定文件的存在状态。如果指定的绝对路径名不存在，这个条件的结果就是失败。如果绝对路径的带有!前缀，则条件反转，即只有路径不存在时服务才启动。</div>
+<div>　　ConditionPathExistsGlob=　类似上面的选项，但支持通配符。</div>
+<div>　　ConditionPathIsDirectory=　判断指定路径是不是目录。</div>
+<div>　　ConditionPathIsSymbolicLink=　判断指定路径是不是链接。</div>
+<div>　　ConditionPathIsMountPoint=　判断指定路径是不是一个挂载点。</div>
+<div>　　ConditionPathIsReadWrite=　多年指定路径是否可读写（即不是做为只读系统挂载的）</div>
+<div>　　ConditionDirectoryNotEmpty=　判断指定目录是否存在且不为空。</div>
+<div>　　ConditionFileNotEmpty=　判断指定文件是否是常规文件且不为空（即大小不是0）。</div>
+<div>　　ConditionFileIsExecutable=　判断指定文件是否是常规文件且可执行。</div>
+<div>　　类似的，ConditionKernelCommandLine=是判断有没有指定的内核命令行启动参数（或带有!反之），这个参数必须是一个单词或用=分开的两个单词，前一种情况下，会寻找内核参数是否有此单词或是赋值的左边。后一种情况则必须是赋值的左右同时符合。<br />&nbsp;</div>
+<div>　　ConditionVirtualization=　是判断是不是在虚拟化环境下执行的服务。这可以是个布尔值以判断是不是任意的虚拟化环境，或者下列的字符串之一：&nbsp;qemu, kvm, vmware, microsoft, oracle, xen, bochs, chroot, openvz, lxc, lxc-libvirt, systemd-nspawn，以判断是不是特定的虚拟化环境，多重嵌套的虚拟化环境，只判断最后一层。可以使用!进行反转判断。<br />&nbsp;</div>
+<div>　　ConditionSecurity=　是判断系统是否启用了安全环境，当前仅能识别<code>selinux</code>,&nbsp;<code>apparmor</code>, 和&nbsp;<code>smack。可以使用!进行反转判断。<br />&nbsp;</code></div>
+<div>　　ConditionCapability= 是判断服务管理器绑定的&nbsp;capability 是否存在。（可以查看其它部分的详细信息。）设置为&nbsp;capability 的名字，比如 CAP_MKNOD。可以通过在前面加!反转判断。<br />&nbsp;</div>
+<div>　　ConditionHost=　是判断主机名 (hostname)或机器ID(machine ID)是否匹配。可以加!反转。<br />&nbsp;</div>
+<div>　　ConditionACPower=　是判断机器是否在使用交流电源。如果设成 true，而只有至少连接一个交流电源时结果才为真，反过来，设成 false，则不连接所有交流电源时才为真。<br />&nbsp;</div>
+<div>　　最后，ConditionNull=　是一个常量性质的判断条件，它应该是布尔值，如果设成 false ，则条件永远失败，反过来则永远成立。<br />&nbsp;</div>
+<div>　　如果指定多个条件，则所有条件都需要成立（即条件之间是 AND 的关系）。条件前面可以加上 | 符号，这时条件变成一个触发条件，服务定义了触发条件，那么在满足其它非触发条件和这个触发条件的情况下，服务会至少执行一次。同时指定|和!前缀时，先处理|，后处理!。除了ConditionPathIsSymbolicLink=，其它条件均跟随链接。如果这些条件指定为空，则相当于重置，前面的任何设置都不再起作用。</div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SourcePath=　　：这个服务生成的配置文件所在的路径，这主要是用在生成工具从外部配置文件的格式转换到本地服务的配置格式中。因此，对一般的服务不要使用此选项。<br /><br /><br />&nbsp;</div>
+<div>&nbsp;</div>
+<div>服务文件还可能包含一个 [Install] 段，这个段的内容服务的安装信息。它不在 systemd 的运行期间使用。只在使用 systemctl enable 和 systemctl disable 命令启用/禁用服务时有用。</div>
+<div>&nbsp;</div>
+<div><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Alias=　　：在安装使用应该使用的额外名字（即别名）。名字必须和服务本身有同样的后缀（即同样的类型）。这个选项可以指定多次，所有的名字都起作用，当执行 systemctl enable 命令时，会建立相当的链接。</code></div>
+<div><code><br /></code><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WantedBy=</code>,&nbsp;<code>RequiredBy=　：在&nbsp;<code>.wants/</code>&nbsp;或&nbsp;<code>.requires/</code>&nbsp;子目录中为服务建立相应的链接。这样做的效果是当列表中的服务启动，本服务也会启动。 在　　bar.service　中的&nbsp;WantedBy=foo.service&nbsp;　和&nbsp;Alias=foo.service.wants/bar.service&nbsp;基本是一个意思。</code></div>
+<div><code><br /></code><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Also=　　：当此服务安装时同时需要安装的附加服务。</code>&nbsp;如果用户请求安装的服务中配置了此项，则 systemctl enable 命令执行时会自动安装本项所指定的服务。</div>
+<div>&nbsp;</div>
+<div>
+<div>
+<p>在 [Install] 段使用这些字符串有特定含义: %n, %N, %p, %i, %U, %u, %m, %H, %b. 详细信息看下一段。、</p>
+<p>特殊字符串</p>
+
+</div>
+<div>
+<p>许多设置支持使用特殊的字符串，可以在运行或加载时替换成特定的内容。下表是支持的字符串。</p>
+<div>
+<table summary="Specifiers available in unit files" border="1"><colgroup><col align="left" /><col align="left" /><col align="left" /></colgroup>
+<thead>
+<tr><th align="left">字符串</th><th align="left">简介</th><th align="left">详细信息</th></tr>
+
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>%n</code></td>
+<td align="left">完整的服务名称</td>
+<td align="left">&nbsp;</td>
+
+</tr>
+<tr>
+<td align="left"><code>%N</code></td>
+<td align="left">不转义的完整服务名称</td>
+<td align="left">&nbsp;</td>
+
+</tr>
+<tr>
+<td align="left"><code>%p</code></td>
+<td align="left">前缀名</td>
+<td align="left">对于实例化的服务，这是前@前面的部分，对于其它的服务，是指去掉后缀（即类型）的部分。</td>
+
+</tr>
+<tr>
+<td align="left"><code>%P</code></td>
+<td align="left">不转义的前缀名</td>
+<td align="left">&nbsp;</td>
+
+</tr>
+<tr>
+<td align="left"><code>%i</code></td>
+<td align="left">实例名称</td>
+<td align="left">对于实例化的服务，这是指 @和后缀之间的部分。</td>
+
+</tr>
+<tr>
+<td align="left"><code>%I</code></td>
+<td align="left">不转义的实例名。</td>
+<td align="left">&nbsp;</td>
+
+</tr>
+<tr>
+<td align="left"><code>%f</code></td>
+<td align="left">不转义的文件名。</td>
+<td align="left">这可以不转义的实例名（如果可用）或前缀名，带有/前缀。</td>
+
+</tr>
+<tr>
+<td align="left"><code>%c</code></td>
+<td align="left">服务的控制组路径。？</td>
+<td align="left">&nbsp;</td>
+
+</tr>
+<tr>
+<td align="left"><code>%r</code></td>
+<td align="left">systemd 的根控制组路径。？</td>
+<td align="left">&nbsp;</td>
+
+</tr>
+<tr>
+<td align="left"><code>%R</code></td>
+<td align="left">systemd 的根控制组路径的父目录。</td>
+<td align="left">&nbsp;</td>
+
+</tr>
+<tr>
+<td align="left"><code>%t</code></td>
+<td align="left">运行时 Socket 目录。</td>
+<td align="left">这可以是&nbsp;<code>/run</code>&nbsp;(系统管理器) 或&nbsp;<code>$XDG_RUNTIME_DIR</code>&nbsp;(用户管理器).</td>
+
+</tr>
+<tr>
+<td align="left"><code>%u</code></td>
+<td align="left">用户名</td>
+<td align="left">这是服务配置的用户或systemd运行实例的用户（如果没有配置的话）。</td>
+
+</tr>
+<tr>
+<td align="left"><code>%U</code></td>
+<td align="left">用户 UID</td>
+<td align="left">这是服务配置的用户UID或systemd运行实例的用户UID（如果没有配置的话）</td>
+
+</tr>
+<tr>
+<td align="left"><code>%h</code></td>
+<td align="left">用户家目录</td>
+<td align="left">这是服务配置的用户家目录或systemd运行实例的用户家目录（如果没有配置的话）</td>
+
+</tr>
+<tr>
+<td align="left"><code>%s</code></td>
+<td align="left">用户Shell</td>
+<td align="left">这是服务配置的用户shell或systemd运行实例的用户shell（如果没有配置的话）</td>
+
+</tr>
+<tr>
+<td align="left"><code>%m</code></td>
+<td align="left">机器 ID</td>
+<td align="left">运行系统的机器 ID ，格式是一个字符串。</td>
+
+</tr>
+<tr>
+<td align="left"><code>%b</code></td>
+<td align="left">启动 ID</td>
+<td align="left">运行系统的启动 ID ，格式是一个字符串。.</td>
+
+</tr>
+<tr>
+<td align="left"><code>%H</code></td>
+<td align="left">主机名</td>
+<td align="left">运行系统的主机名。</td>
+
+</tr>
+<tr>
+<td align="left"><code>%%</code></td>
+<td align="left">转义 %</td>
+<td align="left">一个单百分号.</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+
+</div>
+<p>systemd 的手册页：<a href="http://www.freedesktop.org/software/systemd/man" target="_blank">http://www.freedesktop.org/software/systemd/man</a></p>
+<p>fedora 的 systemd 说明页面：<a href="http://fedoraproject.org/wiki/Packaging:Systemd" target="_blank">http://fedoraproject.org/wiki/Packaging:Systemd</a>，中文：<a href="https://fedoraproject.org/wiki/Systemd/zh-cn" target="_blank">https://fedoraproject.org/wiki/Systemd/zh-cn</a></p>
+<p>unbuntu 的 systemd 说明页面：<a href="https://wiki.edubuntu.org/systemd" target="_blank">https://wiki.edubuntu.org/systemd</a></p>
+<p>arch 的 systemd 说明页面：<a href="https://wiki.archlinux.org/index.php/Systemd/" target="_blank">https://wiki.archlinux.org/index.php/Systemd/</a>，中文：<a href="https://wiki.archlinux.org/index.php/Systemd_" target="_blank">https://wiki.archlinux.org/index.php/Systemd_</a>(%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87)</p>
+
+</div></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info">
+</div>
+<div class="clear"></div>
+<div id="post_next_prev"></div>
+</div>
+
+
+		</div>
+		<div class = "postDesc">posted @ <span id="post-date">2014-10-13 10:17</span> <a href='https://www.cnblogs.com/zhouhbing/'>周人假的</a> 阅读(<span id="post_view_count">...</span>) 评论(<span id="post_comment_count">...</span>)  <a href ="https://i.cnblogs.com/EditPosts.aspx?postid=4021635" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(4021635);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=153595,cb_entryId=4021635,cb_blogApp=currentBlogApp,cb_blogUserGuid='f82f4959-bab8-e211-b39b-90b11c0b1faa',cb_entryCreatedDate='2014/10/13 10:17:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id='comment_form' class='commentform'>
+<a name='commentform'></a>
+<div id='divCommentShow'></div>
+<div id='comment_nav'><span id='span_refresh_tips'></span><a href='javascript:void(0);' onclick='return RefreshCommentList();' id='lnk_RefreshComments' runat='server' clientidmode='Static'>刷新评论</a><a href='#' onclick='return RefreshPage();'>刷新页面</a><a href='#top'>返回顶部</a></div>
+<div id='comment_form_container'></div>
+<div class='ad_text_commentbox' id='ad_text_under_commentbox'></div>
+<div id='ad_t2'></div>
+<div id='opt_under_post'></div>
+<script async='async' src='https://www.googletagservices.com/tag/js/gpt.js'></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id='cnblogs_c1' class='c_ad_block'>
+    <div id='div-gpt-ad-1546353474406-0' style='height:250px; width:300px;'></div>
+</div>
+<div id='under_post_news'></div>
+<div id='cnblogs_c2' class='c_ad_block'>
+    <div id='div-gpt-ad-1539008685004-0' style='height:60px; width:468px;'></div>
+</div>
+<div id='under_post_kb'></div>
+<div id='HistoryToday' class='c_ad_block'></div>
+<script type='text/javascript'>
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="calendar"><div id="blog-calendar" style="display:none"></div><script type="text/javascript">loadBlogDefaultCalendar();</script></div>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright &copy;2019 周人假的
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+</body>
+</html>

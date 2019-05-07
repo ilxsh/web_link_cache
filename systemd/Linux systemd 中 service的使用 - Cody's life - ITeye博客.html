@@ -1,0 +1,1035 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh-CN" dir="ltr">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>
+    Linux systemd 中 service的使用 - Cody's life - ITeye博客
+  </title>
+  <meta name="description" content="     运行命令systemctl start /usr/lib/systemd/system/test.service 去启动一个service，遇到如下错误：     Failed to issue method call: Unit usr-lib-systemd-system\x2d\x2dtest.service.mount failed to load: No such file or ..." />
+  <meta name="keywords" content=" Linux systemd 中 service的使用" />
+  <link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+  <link rel="search" type="application/opensearchdescription+xml" href="/open_search.xml" title="ITeye" />
+  <link href="/rss" rel="alternate" title="Cody's life" type="application/rss+xml" />
+  <link href="https://www.iteye.com/stylesheets/blog.css?1543400233" media="screen" rel="stylesheet" type="text/css" />
+<link href="https://www.iteye.com/stylesheets/themes/blog/blue.css?1543400233" media="screen" rel="stylesheet" type="text/css" />
+  <script src="https://www.iteye.com/javascripts/application.js?1544695478" type="text/javascript"></script>
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?e19a8b00cf63f716d774540875007664";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+<style>
+/* 折叠效果 */
+.hide-main-content{
+    position: relative;
+}
+.hide-article-box {
+    display: none;
+    position: absolute;
+    z-index: 9999;
+    bottom: -1px;
+    width: 100%;
+    padding-top: 160px;
+    background-image: -webkit-gradient(linear,left top, left bottom,from(rgba(255,255,255,0)),color-stop(70%, #fff));
+    background-image: linear-gradient(-180deg,rgba(255,255,255,0) 0%,#fff 70%);
+}
+.hide-article-box #btn-readmore{
+    color: #ca0c16;
+    border: 1px solid #ca0c16;
+    margin: 10px auto;
+    padding: 0 8px;
+    display: block;
+    font-size: 14px;
+    border-radius: 4px;
+    text-align: center;
+    background-color: transparent;
+    height: 34px;
+    width: 74px;
+    line-height: 32px;
+    min-width: 72px;
+    cursor: pointer;
+}
+.hide-article-box #btn-readmore:hover{
+    background: #ca0c16;
+    color:#fff;
+    text-decoration: none;
+}
+</style>
+<!-- 因INS广告原因 需要提前引入jquery -->
+<script src="//csdnimg.cn/public/common/libs/jquery/jquery-1.11.1.min.js" type="text/javascript"></script>
+<script type="text/javascript">var jQuery = jQuery.noConflict();// 解决jq与prototype.js命名空间冲突的问题</script>
+<script src="https://g.csdnimg.cn/fixed-sidebar/1.1.1/fixed-sidebar.js" type="text/javascript"></script>
+
+    <link href="https://www.iteye.com/javascripts/syntaxhighlighter/SyntaxHighlighter.css?1448702469" media="screen" rel="stylesheet" type="text/css" />
+  <script src="https://www.iteye.com/javascripts/syntaxhighlighter/shCoreCommon.js?1448702469" type="text/javascript"></script>
+<script src="https://www.iteye.com/javascripts/hotkey.js?1448702469" type="text/javascript"></script>
+  <script src="https://www.iteye.com/javascripts/code_favorites.js?1448702469" type="text/javascript"></script>
+<script src="https://www.iteye.com/javascripts/weiboshare.js?1448702469" type="text/javascript"></script>
+
+  <!-- 请置于所有广告位代码之前 -->
+  <script src="https://dup.baidustatic.com/js/ds.js"></script>
+  <link ref="canonical" href="http://codyjava.iteye.com/blog/2211547">
+  <script src="//msite.baidu.com/sdk/c.js?appid=1563894916825412"></script>
+  <script src="https://g.csdnimg.cn/recommend/1.3.1/recommend.js"></script>
+</head>
+
+<body>
+  <div id="header">
+    <div id="blog_site_nav">
+  <a href="https://www.iteye.com/" class="homepage">首页</a>
+  <a href="https://www.iteye.com/news">资讯</a>
+  <a href="https://www.iteye.com/magazines">精华</a>
+  <a href="https://www.iteye.com/forums">论坛</a>
+  <a href="https://www.iteye.com/ask">问答</a>
+  <a href="https://www.iteye.com/blogs">博客</a>
+  <a href="https://www.iteye.com/blogs/subjects">专栏</a>
+  <a href="https://www.iteye.com/groups">群组</a>
+<!--  <a href="#" onclick="return false;" id="msna"><u>更多</u> <small>▼</small></a>-->
+<!--  <div class="quick_menu" style="display:none;">-->
+<!--    <a target="_blank" href="https://job.iteye.com/iteye">知识库</a>-->
+<!--    <a href="https:///search">搜索</a>-->
+<!--  </div>-->
+</div>
+
+    <div id="user_nav">
+
+      <a href="/login" class="welcome" title="登录">您还未登录 !</a>
+    <a href="/login">登录</a>
+    <!--<a href="/signup" class="nobg">注册</a>-->
+    <!--<a href="https://passport.csdn.net/account/mobileregister?from=https://www.iteye.com">注册</a>-->
+  </div>
+
+
+  </div>
+
+  <div id="page">
+<!--    <div id="branding" class="clearfix">-->
+<!--      <div id="blog_name">-->
+<!--        <h1><a href="/">-->
+<!--            </a></h1>-->
+<!--      </div>-->
+<!--      <div id='fd'></div>-->
+<!--      <div id="blog_navbar">-->
+<!--        <ul>-->
+          
+          
+          
+          
+          
+          
+<!--        </ul>-->
+
+<!--        <div class="search">-->
+<!--          <form action="/blog/search" method="get">-->
+<!--            <input class="search_text" id="query" name="query" style="margin-left: 10px;width: 110px;" type="text"-->
+<!--              value="" />-->
+<!--            <input class="submit_search" type="submit" value="" />-->
+<!--          </form>-->
+<!--        </div>-->
+<!--        <div id="fd"></div>-->
+<!--      </div>-->
+<!--    </div>-->
+    `
+    <div id="content" class="clearfix">
+      <div id="local">
+        <div class="local_top"></div>
+        <div id="blog_owner">
+  <div id="blog_owner_logo"><a href='https://codyjava.iteye.com'><img alt="codyJava的博客" class="logo" src="https://www.iteye.com/images/user-logo.gif?1448702469" title="codyJava的博客: Cody's life" width="" /></a></div>
+  <div id="blog_owner_name">codyJava</div>
+</div>
+
+        <div id="blog_actions">
+          <ul>
+            <li>浏览:
+              56388 次</li>
+            
+            <li>性别:
+              <img alt="Icon_minigender_1" src="https://www.iteye.com/images/icon_minigender_1.gif?1448702469" title="男" />
+            </li>
+            
+            
+            <li>来自:
+              上海
+            </li>
+            
+            <li>
+              <img src='/images/status/offline.gif'/>
+            </li>
+            
+          </ul>
+        </div>
+
+        <div id="user_visits" class="clearfix">
+          <h5>最近访客 <span style='font-weight:normal;font-size:12px;padding-left:30px;'>
+              <a href="/blog/user_visits">更多访客&gt;&gt;</a></span></h5>
+          
+          <div class="user_visit">
+            <div class="logo"><a href='https://junweishang.iteye.com' target='_blank'><img alt="junweishang的博客" class="logo" src="https://www.iteye.com/images/user-logo-thumb.gif?1448702469" title="junweishang的博客: " width="48px" /></a></div>
+            <div class="left">
+              <a href='https://junweishang.iteye.com' target='_blank' title='junweishang'>junweishang</a>
+            </div>
+          </div>
+          
+          <div class="user_visit">
+            <div class="logo"><a href='https://foobarjohnny.iteye.com' target='_blank'><img alt="foobarjohnny的博客" class="logo" src="https://www.iteye.com/images/user-logo-thumb.gif?1448702469" title="foobarjohnny的博客: " width="48px" /></a></div>
+            <div class="left">
+              <a href='https://foobarjohnny.iteye.com' target='_blank' title='foobarjohnny'>foobarjohnny</a>
+            </div>
+          </div>
+          
+          <div class="user_visit">
+            <div class="logo"><a href='https://bqf.iteye.com' target='_blank'><img alt="bqf的博客" class="logo" src="https://www.iteye.com/images/user-logo-thumb.gif?1448702469" title="bqf的博客: " width="48px" /></a></div>
+            <div class="left">
+              <a href='https://bqf.iteye.com' target='_blank' title='bqf'>bqf</a>
+            </div>
+          </div>
+          
+          <div class="user_visit">
+            <div class="logo"><a href='https://madwenoma.iteye.com' target='_blank'><img alt="madwenoma的博客" class="logo" src="https://www.iteye.com/images/user-logo-thumb.gif?1448702469" title="madwenoma的博客: " width="48px" /></a></div>
+            <div class="left">
+              <a href='https://madwenoma.iteye.com' target='_blank' title='madwenoma'>madwenoma</a>
+            </div>
+          </div>
+          
+        </div>
+
+        <div id="user_title_list" class="clearfix">
+          <h5>博主相关</h5>
+          <li>
+            <a href="https://codyjava.iteye.com">博客</a>
+          </li>
+
+          <li>
+            <a href="/weibo">微博</a>
+          </li>
+
+          <li>
+            <a href="/album">相册</a>
+          </li>
+
+          <li>
+            <a href="/link">收藏</a>
+          </li>
+
+          <li>
+            <a href="/blog/guest_book">留言</a>
+          </li>
+
+          <li>
+            <a href="/blog/profile">关于我</a>
+          </li>
+        </div>
+
+        
+
+                <div id="blog_menu">
+          <h5>文章分类</h5>
+          <ul>
+            <li>
+              <a href="/">全部博客 (25)</a>
+            </li>
+            
+            <li>
+              <a href="/category/187399">RCP (0)</a>
+              </li>
+              
+            <li>
+              <a href="/category/190574">Java (4)</a>
+              </li>
+              
+            <li>
+              <a href="/category/202638">旧 (1)</a>
+              </li>
+              
+            <li>
+              <a href="/category/202643">UT (0)</a>
+              </li>
+              
+            <li>
+              <a href="/category/316551">Web (4)</a>
+              </li>
+              
+            <li>
+              <a href="/category/333893">Maven (2)</a>
+              </li>
+              
+            <li>
+              <a href="/category/345651">ubuntu (1)</a>
+              </li>
+              
+            <li>
+              <a href="/category/354057">DB (2)</a>
+              </li>
+              
+            <li>
+              <a href="/category/376449">微服务 (2)</a>
+              </li>
+              
+            <li>
+              <a href="/category/376969">kubernetes (2)</a>
+              </li>
+              
+            <li>
+              <a href="/category/379882">API Gateway (1)</a>
+              </li>
+              
+            <li>
+              <a href="/category/382096">宣传 (0)</a>
+              </li>
+              
+            <li>
+              <a href="/category/382425">AI (1)</a>
+              </li>
+              
+            <li>
+              <a href="/category/382439">Python (1)</a>
+              </li>
+              
+          </ul>
+        </div>
+        <div id='month_blogs'>
+          <h5>社区版块</h5>
+          <ul>
+            <li>
+              <a href="/blog/news">我的资讯</a> (
+              0)</li>
+            <li>
+              <a href="/blog/post">我的论坛</a> (
+              0)
+            </li>
+            <li>
+              <a href="/blog/answered_problems">我的问答</a> (
+              0)</li>
+          </ul>
+        </div>
+        <div id="month_blogs">
+          <h5>存档分类</h5>
+          <ul>
+            
+            <li>
+              <a href="/blog/monthblog/2019-03">2019-03</a>
+              (
+              1)</li>
+            
+            <li>
+              <a href="/blog/monthblog/2019-01">2019-01</a>
+              (
+              1)</li>
+            
+            <li>
+              <a href="/blog/monthblog/2018-12">2018-12</a>
+              (
+              1)</li>
+            
+            <li>
+              <a href="/blog/monthblog_more">更多存档...</a>
+            </li>
+          </ul>
+        </div>
+        
+        
+
+        <div id="guest_books">
+          <h5>最新评论</h5>
+          <ul>
+            
+          </ul>
+        </div>
+
+        <div class="local_bottom"></div>
+        
+        <div id="nav_show_top_stop">
+            <div>
+              <!-- 广告位：PC端-iteye博客详情页左侧Button1-200*200 -->
+              
+              <!-- Ads ID 423 -->
+              
+            </div>
+            <div>
+              <!-- 广告位：PC端-iteye博客详情页左侧Button2-200*200 -->
+              
+              <!-- Ads ID 424 -->
+              
+            </div>
+          </div>
+      </div>
+      
+      <div id="main" class="">
+        
+
+
+
+        
+
+
+<div class="h-entry" style='display:none'>
+  <a href="https://codyjava.iteye.com" class="p-author" target="_blank">codyJava</a>
+</div>
+
+
+<div class="blog_main">
+  <script type="application/ld+json">
+    {
+        "@context": "https://zhanzhang.baidu.com/contexts/cambrian.jsonld",
+        "@id": "http://codyjava.iteye.com/blog/2211547",
+        "title": "Linux systemd 中 service的使用",
+        "images": [],
+        "description": "",
+        "pubDate": "2015-05-15T15:32:45"
+    }
+  </script>
+  <div class="blog_title">
+    <h3>
+      <a href="/blog/2211547">Linux systemd 中 service的使用</a>
+      <em class="actions">      </em>
+    </h3>
+    
+        <div class='news_tag'>&nbsp;</div>
+  </div>
+
+  <div id="blog_content" class="hide-main-content">
+    <div class="hide-article-box text-center">
+      <a class="btn" id="btn-readmore">阅读更多</a>
+    </div>
+    <div class="iteye-blog-content-contain">
+<p style="font-size: 14px;"> </p>
+<p style="font-size: 14px;">运行命令systemctl start /usr/lib/systemd/system/test.service 去启动一个service，遇到如下错误：</p>
+<p style="font-size: 14px;"> </p>
+<p style="font-size: 14px;">Failed to issue method call: Unit usr-lib-systemd-system\x2d\x2dtest.service.mount failed to load: No such file or directory.</p>
+<p style="font-size: 14px;"> </p>
+<p style="font-size: 14px;">原因：</p>
+<p style="font-size: 14px;">如果unit的名字以 ‘/’ 开头，就会被systemd认为是一个mount，而不是service，所以，在这里不能用path来运行一个service。</p>
+<p style="font-size: 14px;">来源：https://bbs.archlinux.org/viewtopic.php?id=156616</p>
+<p style="font-size: 14px;"> </p>
+<p style="font-size: 14px;">解决：</p>
+<p style="font-size: 14px;">systemctl start test.service</p>
+<p style="font-size: 14px;"> </p>
+<p style="font-size: 14px;">关于rpmbuild里spec中调用systemd的宏变量可以参考下面的link：</p>
+<p>http://cgit.freedesktop.org/systemd/systemd/tree/src/core/macros.systemd.in</p>
+<p> </p>
+<p>对于systemd中，命令参数的介绍：</p>
+<p>http://www.ebugg-i.com/technology/linux/what-is-systemctl-linux-command.html</p>
+<p> </p>
+<p>对于systemd的入门介绍：</p>
+<p>https://wiki.merproject.org/wiki/Systemd</p>
+<p> </p>
+<p>对于systemd的运行机制：</p>
+<p>http://www.cnblogs.com/cfox/archive/2013/02/01/2888759.html</p>
+</div>
+
+  
+
+  <div>
+    <!-- 广告位：PC端-iteye博客详情页底部banner2-728*90 -->
+    <script>
+      (function() {
+          var s = "_" + Math.random().toString(36).slice(2);
+          document.write('<div id="' + s + '"></div>');
+          (window.slotbydup=window.slotbydup || []).push({
+              id: '4774193',
+              container: s,
+              size: '728,90',
+              display: 'inlay-fix'
+          });
+      })();
+      jQuery(function(){
+        window.csdn.recommendSide({
+          contentBox: "recommend",
+          postBox: jQuery(".news-right-side"),
+          query:'Linux systemd 中 service的使用',
+          popu:'725'
+        })
+      });
+    </script>
+  </div>
+
+
+
+  <div id="bottoms" class="clearfix">
+    
+    <div id="share_weibo">分享到：
+      <a data-type='sina' href="javascript:;" title="分享到新浪微博"><img src="/images/sina.jpg"></a>
+      <a data-type='qq' href="javascript:;" title="分享到腾讯微博"><img src="/images/tec.jpg"></a>
+    </div>
+  </div>
+
+  <div class="blog_nav">
+    <div class="pre_next">
+      <a href="/blog/2215778" class="next" title="Spring MVC 4.1.6 Json 406 错误">Spring MVC 4.1.6 Json 406 错误</a>
+      |
+      <a href="/blog/2209531" class="pre" title="android中Socket的使用">android中Socket的使用</a>
+    </div>
+  </div>
+  <div class="blog_bottom">
+    <ul>
+      <li>2015-05-15 15:32</li>
+      <li>浏览 668</li>
+      <li><a href="#comments">评论(0)</a></li>
+      
+      
+      <li>分类:<a href="https://www.iteye.com/blogs/category/os">操作系统</a></li>      
+      <li class='last'><a href="https://www.iteye.com/wiki/blog/2211547" target="_blank" class="more">查看更多</a></li>
+    </ul>    
+  </div>
+    
+  <div class="blog_comment">
+    <h5>评论</h5>
+    <a id="comments" name="comments"></a>
+    
+    
+    
+  </div>
+
+  <div class="blog_comment">
+    <h5>发表评论</h5>
+            <p style="text-align:center; margin-top:30px;margin-bottom:0px;"><a href="/login" style="background-color:white;"> <img src="/images/login_icon.png" style="vertical-align:middle; margin-right: 10px;" /></a><a href="/login">  您还没有登录,请您登录后再发表评论 </a></p>
+      </div>
+  </div>
+  
+      
+<div class="boutique-curr-box blog_comment">
+	  <div class="boutique-curr clearfix" id="album_detail_wrap">
+	    <h5 class="h3titles">相关资源推荐</h5>
+			<ul style="margin-top: 8px" class="clearfix">
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/qq_25196769/article/details/77755242" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/qq_25196769/article/details/77755242,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/qq_25196769/article/details/77755242,-&quot;}" target="_blank" title="Linux学习笔记——利用systemd实现服务自启动"><em class='related_suggestion_highlight'>Linux</em>学习笔记——利用<em class='related_suggestion_highlight'>systemd</em>实现服务自启动</a>
+              <p>
+                每个服务对应一个服务配置文件，若用户想添加服务，必须自己编写服务配置文件。
+
+（配置文件主要放在/usr/lib/<em class='related_suggestion_highlight'>systemd</em>目录下，也可能在/etc/<em class='related_suggestion_highlight'>systemd</em>/system目录下）
+以下为服务设置自启的主要步骤：
+1、若服务比较简单则直接找到服务程序即可，否则需要用户编写命令脚本。
+2、编写配置文件xxx.<em class='related_suggestion_highlight'>service</em>放在/usr/lib/<em class='related_suggestion_highlight'>systemd</em>目录下。
+3、输入以
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/masteryee/article/details/83689990" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/masteryee/article/details/83689990,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/masteryee/article/details/83689990,-&quot;}" target="_blank" title="Linux添加systemd服务，使用systemctl start xxx启动服务"><em class='related_suggestion_highlight'>Linux</em>添加<em class='related_suggestion_highlight'>systemd</em>服务，<em class='related_suggestion_highlight'>使用</em>systemctl start xxx启动服务</a>
+              <p>
+                文章目录<em class='related_suggestion_highlight'>Linux</em><em class='related_suggestion_highlight'>使用</em>systemctl启动服务systemctl 新增服务第一步：进入/usr/lib/<em class='related_suggestion_highlight'>systemd</em>/system文件夹第二步：创建<em class='related_suggestion_highlight'>service</em>启动文件第三步：添加tomcat.<em class='related_suggestion_highlight'>service</em>文件的启动权限第四步：测试
+<em class='related_suggestion_highlight'>Linux</em><em class='related_suggestion_highlight'>使用</em>systemctl启动服务
+
+<em class='related_suggestion_highlight'>Linux</em>版本：Centos 7.4
+
+参考
+systemctl 新增服务
+第一步：进入/usr/lib/syst...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/aafancy22/article/details/52682543" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/aafancy22/article/details/52682543,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/aafancy22/article/details/52682543,-&quot;}" target="_blank" title="Systemd及service文件解析"><em class='related_suggestion_highlight'>Systemd</em>及<em class='related_suggestion_highlight'>service</em>文件解析</a>
+              <p>
+                <em class='related_suggestion_highlight'>Systemd</em>及<em class='related_suggestion_highlight'>service</em>文件解析
+ 
+<em class='related_suggestion_highlight'>Systemd</em>是<em class='related_suggestion_highlight'>linux</em>下的一款系统和服务管理器，兼容SysV和LSB的启动脚本。<em class='related_suggestion_highlight'>Systemd</em>的特征有：支持并行化任务；同时采用socket式与D-Bus总线式激活服务；按需启动守护进程（daemon）；利用<em class='related_suggestion_highlight'>Linux</em>的cgroups监视进程；支持快照和系统恢复；维护挂载点和自动挂载点；各服务间基于依赖关系进行精密控制。
+其中的监视和控制功能的
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/u010127879/article/details/38018825" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/u010127879/article/details/38018825,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/u010127879/article/details/38018825,-&quot;}" target="_blank" title="编写systemd下服务脚本">编写<em class='related_suggestion_highlight'>systemd</em>下服务脚本</a>
+              <p>
+                编写<em class='related_suggestion_highlight'>systemd</em>下服务脚本
+Red Hat Enterprise <em class='related_suggestion_highlight'>Linux</em> 7（RHEL 7）已经将服务管理工具从SysVinit和Upstart迁移到了<em class='related_suggestion_highlight'>systemd</em>上，相应的服务脚本也需要改变。前面的版本里，所有的启动脚本都是放在/etc/rc.d/init.d/ 目录下。这些脚本都是bash脚本，可以让系统管理员控制这些服务的状态，通常，这些脚本中包含了start，stop，resta
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/m0_38063172/article/details/83784443" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/m0_38063172/article/details/83784443,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/m0_38063172/article/details/83784443,-&quot;}" target="_blank" title="Linux启动程序systemd和环境变量"><em class='related_suggestion_highlight'>Linux</em>启动程序<em class='related_suggestion_highlight'>systemd</em>和环境变量</a>
+              <p>
+                昨天看到一篇文章，讲的是<em class='related_suggestion_highlight'>Linux</em>的开机启动，个人感觉写得非常好。我是在学习环境变量时看到的，所以只翻译其中的一小部分，再结合环境变量讲一讲。建议大家好好读一下原文。
+<em class='related_suggestion_highlight'>systemd</em>
+<em class='related_suggestion_highlight'>Linux</em>系统的开机流程（boot process）的结束：选定的系统核（kernel）加载到内存，然后解压自己，加载<em class='related_suggestion_highlight'>systemd</em>，此时控制权交给了<em class='related_suggestion_highlight'>systemd</em>，开始系统的启动流程（startup process...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/lizao2/article/details/81030380" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/lizao2/article/details/81030380,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/lizao2/article/details/81030380,-&quot;}" target="_blank" title="【转】systemd环境变量的小坑">【转】<em class='related_suggestion_highlight'>systemd</em>环境变量的小坑</a>
+              <p>
+                <em class='related_suggestion_highlight'>systemd</em>环境变量的小坑 
+ 明明 <em class='related_suggestion_highlight'>Linux</em>学习笔记 围观402次 2 条评论 编辑日期：2017-03-22 字体：大 中 小 
+事件起因，ELK项目在写ES的服务单元文件时，发现ES启动时找不到JAVA_HOME和limitnofile的环境变量。
+
+而在ssh登录时都是正常生效的，JAVA_HOME配置在/etc/profile中，limitnofile配置在/etc/security...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/qq_25821067/article/details/79120222" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/qq_25821067/article/details/79120222,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/qq_25821067/article/details/79120222,-&quot;}" target="_blank" title="Linux Centos 7  systemctl（systemd）新增加service服务，并且开机启动"><em class='related_suggestion_highlight'>Linux</em> Centos 7  systemctl（<em class='related_suggestion_highlight'>systemd</em>）新增加<em class='related_suggestion_highlight'>service</em>服务，并且开机启动</a>
+              <p>
+                centos 7中采用了<em class='related_suggestion_highlight'>systemd</em>控制系统服务，更加简单，以前启动服务需要 <em class='related_suggestion_highlight'>service</em> xxxx start|stop等。现在需要的是systemctl start|stop xxx。比如我配置的启动tomcat，systemctl start tomcat。十分方便。以前是在，现在直接在/usr/lib/<em class='related_suggestion_highlight'>systemd</em>/system里面新建一个tomcat.<em class='related_suggestion_highlight'>service</em>，内容如下：
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/institute/article/details/20152317" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/institute/article/details/20152317,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/institute/article/details/20152317,-&quot;}" target="_blank" title="写给linux系统管理员看的systemd 三如何把SysV Init脚本转换成一个systmed的service文件 (systemd作者blog翻译过来的)">写给<em class='related_suggestion_highlight'>linux</em>系统管理员看的<em class='related_suggestion_highlight'>systemd</em> 三如何把SysV Init脚本转换成一个systmed的<em class='related_suggestion_highlight'>service</em>文件 (<em class='related_suggestion_highlight'>systemd</em>作者blog翻译过来的)</a>
+              <p>
+                原文地址：http://0pointer.de/blog/projects/<em class='related_suggestion_highlight'>systemd</em>-for-admins-3.html
+
+
+
+How Do I Convert A SysV Init Script Into A <em class='related_suggestion_highlight'>systemd</em> <em class='related_suggestion_highlight'>Service</em> File?
+
+Traditionally, Unix and <em class='related_suggestion_highlight'>Linux</em> <em class='related_suggestion_highlight'>service</em>s (daemons) are started
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/institute/article/details/20152365" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/institute/article/details/20152365,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/institute/article/details/20152365,-&quot;}" target="_blank" title="写给linux系统管理员看的systemd 四  杀掉服务(systemd作者blog翻译过来的)">写给<em class='related_suggestion_highlight'>linux</em>系统管理员看的<em class='related_suggestion_highlight'>systemd</em> 四  杀掉服务(<em class='related_suggestion_highlight'>systemd</em>作者blog翻译过来的)</a>
+              <p>
+                原文地址：http://0pointer.de/blog/projects/<em class='related_suggestion_highlight'>systemd</em>-for-admins-4.html
+
+Killing <em class='related_suggestion_highlight'>Service</em>s
+
+Killing a system daemon is easy, right? Or is it?
+Sure, as long as your daemon persists only of a single process
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/diyiday/article/details/79817905" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/diyiday/article/details/79817905,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/diyiday/article/details/79817905,-&quot;}" target="_blank" title="linux常用文件位置实例说明之-/lib/systemd/system/目录"><em class='related_suggestion_highlight'>linux</em>常用文件位置实例说明之-/lib/<em class='related_suggestion_highlight'>systemd</em>/system/目录</a>
+              <p>
+                <em class='related_suggestion_highlight'>linux</em>系统结构/lib/<em class='related_suggestion_highlight'>systemd</em>/system/目录 
+该目录自动存放启动文件的配置位置，里面一般包含有XXXXX.<em class='related_suggestion_highlight'>service</em> 
+例如systemctl enable  supervisord.<em class='related_suggestion_highlight'>service</em>， 
+就是调用 /lib/<em class='related_suggestion_highlight'>systemd</em>/system/supervisord.<em class='related_suggestion_highlight'>service</em>文件，使supervisord开机启动
+
+实例：有次安装supervisor，安装配...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/bestBT/article/details/82086455" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/bestBT/article/details/82086455,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/bestBT/article/details/82086455,-&quot;}" target="_blank" title="【Linux管理】利用systemd开机执行命令">【<em class='related_suggestion_highlight'>Linux</em>管理】利用<em class='related_suggestion_highlight'>systemd</em>开机执行命令</a>
+              <p>
+                我自己记着玩的，以后有机会详细写配置
+
+参考：http://www.ruanyifeng.com/blog/2016/03/<em class='related_suggestion_highlight'>systemd</em>-tutorial-commands.html
+
+[Unit]
+Description=shadowsocks-rss
+Documentation=
+After=network.target remote-fs.target nss-lookup.target
+...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/yuesichiu/article/details/51485147" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/yuesichiu/article/details/51485147,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/yuesichiu/article/details/51485147,-&quot;}" target="_blank" title="CentOS 7之Systemd详解之服务单元设置system.service">CentOS 7之<em class='related_suggestion_highlight'>Systemd</em>详解之服务单元设置system.<em class='related_suggestion_highlight'>service</em></a>
+              <p>
+                 
+
+英文网址：https://www.freedesktop.org/software/<em class='related_suggestion_highlight'>systemd</em>/man/<em class='related_suggestion_highlight'>systemd</em>.<em class='related_suggestion_highlight'>service</em>.html
+
+ 
+
+名称
+
+<em class='related_suggestion_highlight'>systemd</em>.<em class='related_suggestion_highlight'>service</em> - 服务单元配置
+
+概要
+
+<em class='related_suggestion_highlight'>service</em>.<em class='related_suggestion_highlight'>service</em>
+
+描述
+
+以 .<em class='related_suggestion_highlight'>service</em> 结尾的单元文件，用于封装一个被 <em class='related_suggestion_highlight'>systemd</em> 监视与控制的进程。
+
+本手册只列出专用于此种单元的选...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/m0_37886429/article/details/80350659" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/m0_37886429/article/details/80350659,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/m0_37886429/article/details/80350659,-&quot;}" target="_blank" title="docker中使用systemd管理服务">docker中<em class='related_suggestion_highlight'>使用</em><em class='related_suggestion_highlight'>systemd</em>管理服务</a>
+              <p>
+                Docker运行一个容器起来的时候，有时也会想要像在物理机那样<em class='related_suggestion_highlight'>使用</em> systemctl start|status|stop 来管理服务进程，但是在我用yum安装了 maridb-server 服务器后，启动的时候报错了
+
+
+[root@a1346fe8a351 swagger-ui-master]# systemctl start mariadb
+
+报错内容：Failed to get D-...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/qq_36119192/article/details/82415113" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/qq_36119192/article/details/82415113,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/qq_36119192/article/details/82415113,-&quot;}" target="_blank" title="Linux启动流程和服务管理(init和systemd)"><em class='related_suggestion_highlight'>Linux</em>启动流程和服务管理(init和<em class='related_suggestion_highlight'>systemd</em>)</a>
+              <p>
+                目录
+
+一：<em class='related_suggestion_highlight'>Linux</em>启动流程
+
+       init和<em class='related_suggestion_highlight'>Systemd</em>的区别
+
+二：<em class='related_suggestion_highlight'>Linux</em>服务管理(<em class='related_suggestion_highlight'>service</em>,systemctl)
+
+一：<em class='related_suggestion_highlight'>Linux</em>启动流程
+
+Rhel6启动过程：
+
+
+Rhel7启动过程：
+
+
+
+ GRUB2相较于GRUB一代的提升：更健壮、可移植、更强大。支持BIOS、EFI和OpenFirmware，支持GPT和MBR分区表。支持非<em class='related_suggestion_highlight'>Linux</em>系统，如苹果HFS文件...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/akin_zhou/article/details/50373503" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/akin_zhou/article/details/50373503,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/akin_zhou/article/details/50373503,-&quot;}" target="_blank" title="关于systemctl及systemd service的一些使用经验">关于systemctl及<em class='related_suggestion_highlight'>systemd</em> <em class='related_suggestion_highlight'>service</em>的一些<em class='related_suggestion_highlight'>使用</em>经验</a>
+              <p>
+                systemctl的<em class='related_suggestion_highlight'>使用</em>方法，编写业务系统的<em class='related_suggestion_highlight'>service</em>，将业务系统加入到<em class='related_suggestion_highlight'>systemd</em>服务之中，<em class='related_suggestion_highlight'>使用</em><em class='related_suggestion_highlight'>systemd</em> <em class='related_suggestion_highlight'>service</em>的相关管理方法进行管理
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/tiantao2012/article/details/81121152" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/tiantao2012/article/details/81121152,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/tiantao2012/article/details/81121152,-&quot;}" target="_blank" title="systemd 开机自动运行脚本"><em class='related_suggestion_highlight'>systemd</em> 开机自动运行脚本</a>
+              <p>
+                1：首先在/etc/<em class='related_suggestion_highlight'>systemd</em>/system/catchlog.<em class='related_suggestion_highlight'>service</em> 中建立后缀为server的文件。如本例
+
+
+root@d:/home# cat catchlog.<em class='related_suggestion_highlight'>service</em>
+[Uint]
+
+Description=catch log
+
+[<em class='related_suggestion_highlight'>Service</em>]
+ExecStart=/bin/sh /home/catchlog.sh
+
+[Install]
+WantedBy=mult...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/comprel/article/details/82750288" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/comprel/article/details/82750288,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/comprel/article/details/82750288,-&quot;}" target="_blank" title="systemctl自定义systemd.service服务设置守护进程">systemctl自定义<em class='related_suggestion_highlight'>systemd</em>.<em class='related_suggestion_highlight'>service</em>服务设置守护进程</a>
+              <p>
+                介绍
+Systemctl是一个<em class='related_suggestion_highlight'>systemd</em>工具，主要负责控制<em class='related_suggestion_highlight'>systemd</em>系统和管理系统服务
+<em class='related_suggestion_highlight'>systemd</em>即为system daemon,是<em class='related_suggestion_highlight'>linux</em>下的一种init软件
+有时我们将自定义程序注册为<em class='related_suggestion_highlight'>systemd</em> <em class='related_suggestion_highlight'>service</em> 进程管理交由系统管理，可以方便启动停止，亦可以实现
+服务异常退出重启,开机自启动。 减少自定义程序服务管理的时间消耗。
+参数
+了解systemctl <em class='related_suggestion_highlight'>service</em>自...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/n88Lpo/article/details/83311467" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/n88Lpo/article/details/83311467,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/n88Lpo/article/details/83311467,-&quot;}" target="_blank" title="systemd实践: 依据情况自动重启服务"><em class='related_suggestion_highlight'>systemd</em>实践: 依据情况自动重启服务</a>
+              <p>
+                <em class='related_suggestion_highlight'>systemd</em>服务异常自动重启很好用，但有的时候希望某些服务只在特定情况下进行重启，其他时候不要自动重启(比如OOM，需要人工介入)。
+本文抛砖引玉，旨在能够让读者对sy...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/institute/article/details/19948107" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/institute/article/details/19948107,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/institute/article/details/19948107,-&quot;}" target="_blank" title="写给linux系统管理员看的systemd 二  给定Service拥有哪些进程(systemd作者blog翻译过来的)">写给<em class='related_suggestion_highlight'>linux</em>系统管理员看的<em class='related_suggestion_highlight'>systemd</em> 二  给定<em class='related_suggestion_highlight'>Service</em>拥有哪些进程(<em class='related_suggestion_highlight'>systemd</em>作者blog翻译过来的)</a>
+              <p>
+                给定<em class='related_suggestion_highlight'>Service</em>拥有哪些进程？
+大多数<em class='related_suggestion_highlight'>Linux</em>系统中，如果不做特殊修改，系统中运行的进程的总数十分庞大。想知道哪个进程在干什么以及它属于哪里正变得越来越困难。 有些服务，他们的几个主要工作进程与其他附加进程堆砌在一起，使得&quot;ps&quot;输出结果非常不容易辨认。 更复杂的情况是：像Apache 生成的那些CGI进程，或cron生成的那些用户作业那样，由守护进程产生任意的第三方进程。
+应对这种情况的
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/zyjiscainiao/article/details/54410286" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/zyjiscainiao/article/details/54410286,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/zyjiscainiao/article/details/54410286,-&quot;}" target="_blank" title="linux开机服务启动顺序详解"><em class='related_suggestion_highlight'>linux</em>开机服务启动顺序详解</a>
+              <p>
+                <em class='related_suggestion_highlight'>Linux</em>系统中，系统服务的启动脚本一般放在/etc/rc.d/init.d目录下。不同的开机模式，则分别对应到/etc/rc.d/rc0-6.d目录下,rc0.d –rd6.d 这七个目录存放着<em class='related_suggestion_highlight'>linux</em>在不同运行级别init.d下脚本的启停顺序，这几个目录下文件的命名形式为：K（S）+ number+<em class='related_suggestion_highlight'>service</em>，这些文件分别连接到<em class='related_suggestion_highlight'>service</em>对应脚本存在的目录，K表示kill，S表示st
+              </p>
+						</li>
+				
+			</ul>
+	  </div>
+</div>
+
+    
+
+</div>
+
+
+<script type="text/javascript">
+  dp.SyntaxHighlighter.HighlightAll('code', true, true);
+
+  $$('#main .blog_content pre[name=code]').each(function(pre, index){ // blog content
+    var post_id = 2211547;
+    var location = window.location;
+    source_url = location.protocol + "//" + location.host + location.pathname + location.search;
+    pre.writeAttribute('codeable_id', post_id);
+    pre.writeAttribute('codeable_type', "Blog");
+    pre.writeAttribute('source_url', source_url);
+    pre.writeAttribute('pre_index', index);
+    pre.writeAttribute('title', 'Linux systemd 中 service的使用');
+  });
+
+  fix_image_size($$('div.blog_content img'), 700);
+
+  function processComment() {
+    $$('#main .blog_comment > div').each(function(comment){// comment
+      var post_id = comment.id.substr(2);
+      $$("#"+comment.id+" pre[name=code]").each(function(pre, index){
+        var location = window.location;
+        source_url = location.protocol + "//" + location.host + location.pathname + location.search;
+        source_url += "#" + comment.id;
+        pre.writeAttribute('codeable_id', post_id);
+        pre.writeAttribute('codeable_type', "BlogComment");
+        pre.writeAttribute('source_url', source_url);
+        pre.writeAttribute('pre_index', index);
+        pre.writeAttribute('title', 'Linux systemd 中 service的使用');
+      });
+    });
+  }
+
+  function quote_comment(id) {
+    new Ajax.Request('/editor/quote', {
+      parameters: {'id':id, 'type':'BlogComment'},
+      onSuccess:function(response){editor.bbcode_editor.textarea.insertAfterSelection(response.responseText);
+        Element.scrollTo(editor.bbcode_editor.textarea.element);}
+    });
+  }
+
+  code_favorites_init();
+  processComment();
+  new WeiboShare({share_buttons: $('share_weibo'), img_scope: $('blog_content')});
+</script>
+
+
+
+
+      </div>
+      
+        <div class="blog-sidebar">
+          <div class="blog-sidebar-fixed">
+            <div class="news-right-side">
+
+            </div>
+            <div class="persion_article">
+
+            </div>
+          </div>
+        </div>
+            <script>
+        setTimeout(function () {
+          var naviga_offsetTop = 0;
+
+          function onload_function() {
+            naviga_offsetTop = jQuery("#nav_show_top_stop").position().top;
+            jQuery(window).bind("scroll", naviga_stay_top);
+            jQuery(window).bind("mousewheel", naviga_stay_top);
+            jQuery(document).bind("scroll", naviga_stay_top);
+            jQuery(document).bind("mousewheel", naviga_stay_top);
+          }
+
+          function naviga_stay_top() {
+
+            var scrollTop = jQuery(document).scrollTop();
+            if (scrollTop > (naviga_offsetTop + 250)) {
+              jQuery("#nav_show_top_stop").css({
+                "position": "fixed"
+              });
+              jQuery("#nav_show_top_stop").css({
+                "top": "0px"
+              });
+            } else {
+              jQuery("#nav_show_top_stop").css({
+                "position": "fixed"
+              });
+              jQuery("#nav_show_top_stop").css({
+                "top": naviga_offsetTop + 250 - scrollTop + "px"
+              });
+            }
+          }
+          jQuery(document).ready(onload_function());
+        }, 200);
+      </script>
+    </div>
+          <script>
+          setTimeout(function () {
+              not_loading = true;
+              pageNum = 3;
+              oList = jQuery("#album_detail_wrap");
+              jQuery(window).scroll(function() {
+                  var scrollTop = jQuery(this).scrollTop();
+                  var scrollHeight = jQuery(document).height() ;
+                  var windowHeight = jQuery(this).height();
+                  if (scrollTop + windowHeight >= scrollHeight) {
+                      if(not_loading){
+                          refreshMore();
+                          setTimeout(function(){
+                              getMore();
+                          },100);
+                      }else{
+                          jQuery(".dl_more").remove();
+                      }
+                  }
+              });
+
+              function getMore(){
+                  not_loading = false;
+                  console.log("getMore......");
+                  jQuery.ajax({
+                      type: 'get',
+                      url: "/blog/ajax_get_blog_recommends/2211547",
+                      data:{
+                          page:pageNum
+                      },
+                      //async: false,
+                      dataType: 'json',
+                      success: function (resobj) {
+                          var totalNum = resobj.total_pages;
+                          if(pageNum <= totalNum && resobj.oHtml != '' ){
+                              jQuery(".dl_more").remove();
+                              oList.find('ul').append(resobj.oHtml);
+                              refreshMore();
+                              not_loading = true;
+                              pageNum++;
+                          }else{
+                              not_loading = false;
+                              noMore();
+                          }
+                      },
+                      error: function (err) {
+                          console.log(err);
+                      }
+                  });
+              }
+
+              function noMore(){
+                  jQuery(".dl_more").remove();
+                  if(oList.find(".dl_no_more").length ==0){
+                      oList.append('<div class="dl_no_more" style="font-size:14px; color:#0F8AC6; text-align:center;padding-top:10px; ">我们是很有底线的</div>');
+                  }
+              }
+
+              function refreshMore(){
+                  if(oList.find(".dl_more").length ==0){
+                      oList.append('<div class="dl_more" style="font-size:14px; color:#0F8AC6; text-align:center;padding-top:10px;">上滑加载更多</div>');
+                  }
+              }
+          }, 200);
+      </script>
+  
+    <div id="footer" class="clearfix">
+      <!-- <div id="copyright">
+        <hr />
+        声明：ITeye文章版权属于作者，受法律保护。没有作者书面许可不得转载。若作者同意转载，必须以超链接形式标明文章原始出处和作者。<br />
+        &copy; 2003-
+        2019 ITeye.com. All rights reserved. [ 京ICP证110151号 京公网安备110105010620 ]
+      </div> -->
+      <div id="ad_pop">
+        <div class="J_adv" data-view="true" data-mod="ad_popu_64" data-mtp="62" data-order="21" data-con="ad_content_2070">
+          <script id="popuLayer_js_q" src="https://ads.csdn.net/js/popuLayer.js" defer="" type="text/javascript"></script>
+          <!-- 广告位：PC端-iteye博客详情右侧弹窗-300*250 -->
+          
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript">
+  document.write("<img src='https://stat.iteye.com/?url="+ encodeURIComponent(document.location.href) + "&referrer=" + encodeURIComponent(document.referrer) + "&user_id=' width='0' height='0' />");
+</script>
+
+
+
+   Global site tag (gtag.js) - Google Analytics
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-127895514-6"></script>
+  <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-127895514-6');
+  </script>
+
+  
+  
+  <link href="//csdnimg.cn/public/common/toolbar/content_toolbar_css/content_toolbar.css" rel="stylesheet" >
+<script src="//csdnimg.cn/public/common/libs/jquery/jquery-1.11.1.min.js" type="text/javascript"></script>
+<script src="https://csdnimg.cn/pubfooter/js/publib_footer-1.0.3.js" data-isfootertrack="false" type="text/javascript"></script>
+<script id="csdn-toolbar-id" btnId="header_notice_num" wrapId="note1" count="5" subCount="5" type="text/javascript" src="//csdnimg.cn/public/common/toolbar/js/content_toolbar.js"></script>
+<script src="//csdnimg.cn/asdf/tracking-1.0.1.js" type="text/javascript"></script>
+<script language="javascript" type="text/javascript" src="//csdnimg.cn/asdf/async-1.0.1.js"></script>
+<script type="text/javascript" charset="utf-8" src="https://g.csdnimg.cn/track/1.2.2/track.js"></script>
+<style>
+  .userinfo {display: none !important;}
+  .persion_article h3{
+    background: none !important;
+    border-bottom: none!important;
+    padding: 0!important;
+    margin-bottom: 0!important;
+    line-height: 1!important;
+  }
+  .persion_article .right_box{
+    margin-top: 0!important;
+  }
+  .persion_article .footer_box .feed_new_tit span{
+    padding-left: 0!important;
+  }
+</style>
+<script>
+(function($){
+  var windowHeight = $(window).height(),
+      contentHeight = $(".hide-main-content").height()
+      windowHeight = windowHeight * 1.2 //获得可视区域高度
+      if(contentHeight > windowHeight){
+        $(".hide-article-box").show()
+        $(".hide-main-content").css({'height': windowHeight,'overflow':'hidden'})
+        $(".hide-article-box").find("#btn-readmore").click(function(){
+          $(this).parents('.hide-main-content').removeAttr('style')
+          $(this).parent().hide()
+        })
+      }
+})(jQuery)
+</script>
+<script type="text/javascript">var $csdn_iteye_jq = jQuery.noConflict();// 解决jq与prototype.js命名空间冲突的问题</script>
+  
+  
+  <script src="https://www.iteye.com/javascripts/web-storage-cache.min.js?1461122670" type="text/javascript"></script>
+  <script src="https://www.iteye.com/javascripts/replace.min.js?1517972556" type="text/javascript"></script>
+  
+
+</body>
+<script>
+  var jQuery = jQuery.noConflict();
+  setTimeout(function($){
+    window.csdn.fixedSidebar({
+        targetBox: $('.persion_article'), //判断到达底部的div,公共footer可选 $('.persion_article'),$('.public_pc_right_footer2018')
+        mainBox: $("#main"), //侧边栏旁边的主体div,默认 $("main")
+        sidebar: $(".blog-sidebar-fixed"), //侧边栏,默认 $("aside")
+        direction: 'right', //侧边栏浮动方向,可选'right','left',
+        position: 'fixed',//定位方式
+        bottom: 0,
+        zIndex: 99,
+        sidebarRightMargin: 8,//direction为left,侧边栏距离mainbox的右边距
+        sidebarLeftMargin: 37,//direction为right,侧边栏距离mainbox的左边距
+    })
+  },200,jQuery)
+  </script>
+</html>
