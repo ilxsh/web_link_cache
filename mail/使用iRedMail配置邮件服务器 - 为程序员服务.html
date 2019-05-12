@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8"/>
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, width=device-width" />
+    <meta content="telephone=no" name="format-detection">
+    <meta name="apple-mobile-web-app-capable">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <meta name="description" content="iRedMail（http://www.iredmail.com/） 是一个基于 Linux/BSD
+系统的零成本、功能完备、成熟的邮件服务器解决方案。iRedMail 是一个开源、免费的项目，是企业级邮件服务的一个不错的选择。iRedMail提供了全套的解
+决方案，所以使用iRedMail时不需要提前准备任何服务。在使用iRedMail前，我们需要了解一些概念： MUA(邮件用户代理)就是我们常"/>
+    <meta name="keywords" content="System,Tools 使用iRedMail配置邮件服务器"/>
+    <title>使用iRedMail配置邮件服务器 - 为程序员服务</title>
+    <link href="http://outofmemory.cn/v5/s/5/17.1.css" type="text/css" rel="stylesheet"/>
+    
+    <link rel="shortcut icon" href="http://outofmemory.cn/favicon.ico" type="image/x-icon" >
+    
+</head>
+<body>
+
+<header class="head">
+<div class="head-left">
+    <div class="logo"><a href="http://outofmemory.cn/">OutOfMemory.CN</a></div>
+    <div class="beta"><sup>β</sup></div>
+    <div class="nav">
+        <ul id="headNav">
+            <li  class="current"><a href="http://ju.outofmemory.cn/" title="聚客：编程技术网站牛人牛博聚集地">聚客</a></li>
+            <li ><a href="http://outofmemory.cn/code-snippet/" title="代码：分享代码 分享经验">代码</a></li>
+            <li ><a href="http://j.outofmemory.cn/" title="技术专栏，精华">专栏</a></li>
+            <li><a href="http://outofmemory.cn/tutorial/" title="简单易学的技术教程">教程</a></li>
+            <li style="width:65px"><a href="http://maven.outofmemory.cn/" title="Maven信息库速查">Maven</a></li>
+            <li ><a  href="http://outofmemory.cn/github/" title="Github上的中国开源人">Gitter</a></li>
+            <li ><a href="http://outofmemory.cn/tag/" title="标签">标签</a></li>
+        </ul>
+    </div>
+</div>
+<div class="head-right">
+<div class="userStatus">
+    <a class="signin" target="_self" href="http://outofmemory.cn/user/login"><i></i><b>登录</b></a><a class="signup" target="_self" href="http://outofmemory.cn/user/register"><i></i><b>注册</b></a>
+</div>
+</div>
+</header>
+
+
+<div class="wrap">
+<div class="content"><h1>使用iRedMail配置邮件服务器</h1>
+<div class="meta">
+    <a href="http://ju.outofmemory.cn/feed/1667/" title="Debugo"><i class="ico man"></i>Debugo</a>
+    <time><i class="ico date"></i>2015-04-14</time>
+    <span class="pv"><b>2211</b> 阅读</span>
+</div>
+<div class="tags">
+<a class="tag" href="http://ju.outofmemory.cn/tag/System/">System</a>
+
+<a class="tag" href="http://ju.outofmemory.cn/tag/Tools/">Tools</a>
+
+</div>
+
+<script>
+    function imgError(img){
+        if (typeof img.hasReplaceSrc != 'undefined'){
+            var refer = $('div.author a:last').attr('href');
+            img.src = '/imgr?src=' + encodeURIComponent(img.src) + '&r=' + encodeURIComponent(refer);
+        } else {
+            var urlPattern = /(http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/;
+            for (var i=0;i<img.attributes.length;i++){
+                var attrName = img.attributes[i].nodeName;
+                var attrVal = img.attributes[i].nodeValue;
+                if(attrName.toLowerCase() != 'src' && urlPattern.test(attrVal)){
+                    img.src = attrVal;
+                    img.hasReplaceSrc=true;
+                    break;
+                }
+            }
+        }
+        return true;
+    }
+</script>
+<p>iRedMail（<a rel="nofollow external" href="http://www.iredmail.com/">http://www.iredmail.com/</a>） 是一个基于 Linux/BSD 系统的零成本、功能完备、成熟的邮件服务器解决方案。iRedMail 是一个开源、免费的项目，是企业级邮件服务的一个不错的选择。iRedMail提供了全套的解决方案，所以使用iRedMail时不需要提前准备任何服务。在使用iRedMail前，我们需要了解一些概念：<br />
+MUA(邮件用户代理)就是我们常用的thunderbird, outlook等应用程序，也称为电子邮件客户端程序。通过 MUA 程序，我们可以发送邮件，也可以把接收到的邮件保存在客户端的邮箱中。这两种操作属于不同的两个进程。MUA通过POP（邮局协议）和STMP（简单邮件传输协议）从电子邮件服务器发送或接收消息。<br />
+而MTA（邮件传送代理） 和MDA（邮件分发代理） 是电子邮件服务器的两个独立进程MUA向电子邮件服务器发送一个电子邮件，MTA会判断这个邮件的地址是否在本服务器上。如果是通过MDA发送到目的邮箱MUA.如果不是MTA就把这个邮件传送到包含目的邮箱列表的电子邮件服务器。常用的MTA是sendmail,postfix和qmail，而MDA为dovecot。手动搭建MTA+MDA可以参考：<a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-a-postfix-e-mail-server-with-dovecot">How To Set Up a Postfix E-Mail Server with Dovecot</a>。<br />
+除了MTA和MDA外，邮件防毒、垃圾邮件扫描等组件也是不可缺少的。更多的信息可以参考：<br />
+<a rel="nofollow external" href="http://www.ibm.com/developerworks/cn/linux/1304_liyang_mailsecure1/">企业开源电子邮件系统安全保障实战精要: 第 1 部分，原理及 Sendmail、Qmail 安全防护实战</a><br />
+<a rel="nofollow external" href="http://www.ibm.com/developerworks/cn/linux/1304_liyang_mailsecure2/">企业开源电子邮件系统安全保障实战精要: 第 2 部分，Postfix 安全防护实战及垃圾邮件防范</a></p>
+<p> 而iRedMail中，为了我们提供了全套整合方案。它使用的核心组件及其对应的功能包括：<br />
+<strong>Postfix</strong>: SMTP 服务器（MTA）<br />
+<strong>Dovecot</strong>: POP3/IMAP服务器（MDA）<br />
+<strong>Apache/Nignx</strong>: Web 服务器<br />
+<strong>MySQL/OpenLDAP/PostgreSQL</strong>: 用于存储其它程序的数据，也可用于存储邮件帐号。<br />
+<strong>Policyd</strong>: Postfix policy server<br />
+<strong>Amavisd</strong>: 提供 DKIM 签名及校验、SPF校验、为外发邮件添加“免责声明”内容，并调用 SpamAssassin 做基于邮件内容的发垃圾扫描，调用 ClamAV 做邮件病毒扫描。<br />
+<strong>Roundcube</strong>: Webmail<br />
+<strong>Awstats</strong>: 用于分析 Apache 和 Postfix 日志文件，并生成简单的图表。<br />
+<strong>iRedAdmin</strong>：基于 web 的邮件帐号管理程序。</p>
+<h2>安装iRedMail</h2>
+<p>安装文档：<a rel="nofollow external" href="http://wiki.ubuntu.org.cn/index.php?title=IRedMail&#038;variant=zh-hant">IRedMail(中文)</a> &#038; <a rel="nofollow external" href="http://www.iredmail.com/docs/install.iredmail.on.debian.ubuntu.html">Install iRedMail on Debian or Ubuntu Linux</a><br />
+安装iRedMail需要最少1GB的内存，其中Spam和病毒扫描组件会消耗大部分系统资源。<br />
+首先要设置一个完全合格域名(Fully Qualified Domain Name，FQDN)，我们需要使用hostname和/etc/hosts设置，例如：</p><pre><code>hostname -f
+mail.example.com
+# Part of file:/etc/hosts
+.0.0.1   mx.example.com mx localhost localhost.localdomain</code></pre><p>下载最新的iRedMail包，当前iRedMail的版本是0.90。</p><pre><code>wget https://bitbucket.org/zhb/iredmail/downloads/iRedMail-0.9.0.tar.bz2
+tar xjvf iRedMail-0.9.0.tar.bz2
+cd iRedMail-0.9.0/
+sh iRedMail.sh</code></pre><p>下面脚本开始自动需要检查系统环境，下载资源，并使用源安装一些依赖。等待一段时间后进入图形配置界面。<br />
+在图形配置界面我们需要设置：<br />
+Web服务器类型。当我们选择nginx时，要保证它的对等服务apache2不要运行。<br />
+邮件存储路径，默认为/var/vmail<br />
+存储邮件帐号的方式（MySQL、LDAP和PostgreSQL中选择一个），并设置对应的管理员密码。<br />
+设定邮件所在域，以及域的管理员postmaster@example.com。<br />
+<a rel="nofollow external" href="http://debugo.com/wp-content/uploads/2015/04/ired-setup.png"><img  alt="ired-setup" class="alignnone size-large wp-image-1277" height="234" src="http://debugo.com/wp-content/uploads/2015/04/ired-setup.png" width="554"  onerror="return imgError(this)"></a><br />
+接下来，iRedMail脚本会完成剩下的工作。最后会提醒你把一些服务、工具和帐号信息放在/root/iRedMail-0.9.0/iRedMail.tips这个目录下面。<br />
+其中，邮件存储和MySQL的备份脚本分别在：<br />
+<code>/var/vmail/backup</code><br />
+<code>/var/vmail/backup/backup_mysql.sh</code><br />
+并设置了相应的crontab任务</p><pre><code>   *   *   *   /bin/bash /var/vmail/backup/backup_mysql.sh
+# iRedMail: Cleanup Cluebringer database
+   *   *   *   /usr/sbin/cbpadmin --config=/etc/cluebringer/cluebringer.conf --cleanup &gt;/dev/null
+# iRedMail: Cleanup Amavisd database
+   *   *   *   python /usr/share/apache2/iredadmin/tools/cleanup_amavisd_db.py &gt;/dev/null
+# iRedMail: update Awstats statistics for web
+   */1   *   *   *   perl /usr/lib/cgi-bin/awstats.pl -config=web -update &gt;/dev/null
+# iRedMail: update Awstats statistics for smtp
+   */1   *   *   *   perl /usr/lib/cgi-bin/awstats.pl -config=smtp -update &gt;/dev/null</code></pre>
+<h2>使用iRedMail</h2>
+<p>首先添加DNS解析，在/etc/dnsmasq.conf中添加一个A记录(mail.example.com)到邮件所在的服务器(127.0.0.1)，以及一个MX域记录(example.com)到这个A记录(mail.example.com)上。关于DNSMASQ的使用，可以参考：<a href="http://juke.outofmemory.cn/entry/95909">DNSmasq – 配置DNS和DHCP</a><br />
+mx-host=example.com,mail.example.com,50<br />
+然后验证一下：</p><pre><code>dig mx example.com
+;; QUESTION SECTION:
+;example.com.			IN	MX
+;; ANSWER SECTION:
+example.com.		0	IN	MX	50 mail.example.com.</code></pre><p>设置本机的DNS到dnsmasq所在的主机上，<br />
+下面就可以打开下面几个链接了：<br />
+<strong>Roundcube webmail</strong>: https://mail.example.com/mail/<br />
+<strong>Web admin panel (iRedAdmin)</strong>: https://mail.example.com/iredadmin/<br />
+<strong>Awstats</strong>: httpS://mail.example.com/awstats/awstats.pl?config=web<br />
+如果遇到502 Bad Gateway，需要启动uwsgi</p><pre><code>/etc/init.d/uwsgi restart</code></pre><p>使用postmaster@example.com登录iRedAdmin，在Add User中新增两个用户：Leo和Debugo<br />
+<a rel="nofollow external" href="http://debugo.com/wp-content/uploads/2015/04/add-user.png"><img  alt="add-user" class="alignnone size-full wp-image-1276" height="331" src="http://debugo.com/wp-content/uploads/2015/04/add-user.png" width="631"  onerror="return imgError(this)"></a><br />
+然后登录webmail(Roundcube)，https://mail.example.com/mail<br />
+如果这里依然出现502 bad gateway的错误，可以尝试重启一下php5-fpm，并查看一下/var/log/php5-fpm.log日志信息。<br />
+service php5-fpm restart<br />
+<a rel="nofollow external" href="http://debugo.com/wp-content/uploads/2015/04/login.png"><img  alt="login" class="alignnone size-large wp-image-1279" height="260" src="http://debugo.com/wp-content/uploads/2015/04/login.png" width="483"  onerror="return imgError(this)"></a><br />
+使用刚才设置的postmaster@example.com/debugo来登录，就可以看到当前域管理员用户的邮件列表。接下来我们新建一个邮件并发送。<br />
+如果出现“添加收件人失败 &#8220;leo@example.com&#8221; (4.3.5 Server configuration problem)。”，打开/var/log/mail.log中报错：</p><pre><code>Apr 13 23:33:41 test01 postfix/smtpd[28870]: connect from localhost[127.0.0.1]
+Apr 13 23:33:41 test01 postfix/smtpd[28870]: warning: connect to 127.0.0.1:7777: Connection refused
+Apr 13 23:33:41 test01 postfix/smtpd[28870]: warning: problem talking to server 127.0.0.1:7777: Connection refused</code></pre><p>Postfix需要使用iRedApd，它是一个 Python写的Postfix Policy Server，监听的 7777 端口用于 socket 通讯。下面重启一下iRedApd。<br />
+同样，Postfix需要依赖clue bringer这个，它监听的是10031端口。需要确保这个服务也正常运行。</p><pre><code>/etc/init.d/iredapd start
+Starting iredapd
+/etc/init.d/postfix-cluebringer start</code></pre><p>发送邮件的界面如下：<br />
+<a rel="nofollow external" href="http://debugo.com/wp-content/uploads/2015/04/sendmail.png"><img  alt="sendmail" class="alignnone size-large wp-image-1280" height="302" src="http://debugo.com/wp-content/uploads/2015/04/sendmail-640x302.png" width="640"  onerror="return imgError(this)"></a><br />
+然后登录leo@example.com这个用户，邮件已经收到啦。<br />
+<a rel="nofollow external" href="http://debugo.com/wp-content/uploads/2015/04/listmail.png"><img  alt="listmail" class="alignnone size-large wp-image-1278" height="366" src="http://debugo.com/wp-content/uploads/2015/04/listmail.png" width="544"  onerror="return imgError(this)"></a><br />
+^^</p>
+<div class="like">
+    <a href="javascript:void(0)" class="assertLogin" rel="nofollow" target="_self">点赞</a>
+</div>
+<div class="tags">
+<a class="tag" href="http://ju.outofmemory.cn/tag/System/">System</a>
+
+<a class="tag" href="http://ju.outofmemory.cn/tag/Tools/">Tools</a>
+
+</div>
+
+<div class="author">
+    <span class="name">作者：<a href="http://ju.outofmemory.cn/feed/1667/" title="Debugo">Debugo</a></span>
+    <div class="authorAvatar">
+        <a href="http://ju.outofmemory.cn/feed/1667/">
+            <img width="128" align="center" valign="absmiddle" src="http://ju.outofmemory.cn/flogos/7/1667.png" alt="Debugo"/>
+        </a>
+    </div>
+    <div class="small">
+    </div>
+    <div class="small">原文地址：<a rel="nofollow external" target="_blank" href="http://debugo.com/iredmail-server/">使用iRedMail配置邮件服务器</a>, 感谢原作者分享。</div>
+</div>
+
+<div class="pn">
+    <span class="next"><mark>→</mark><a href="/entry/139403">Gitosis配置手记</a></span>
+    <span class="pre"><mark>←</mark><a href="/entry/126238">Sqoop常用操作</a></span>
+</div>
+<div class="tgBD">
+<script type="text/javascript">
+
+var cpro_id = "u2080713"
+</script>
+<script src="http://cpro.baidustatic.com/cpro/ui/cm.js" type="text/javascript"></script>
+</div>
+
+<div class="comments">
+<a name="comments"></a>
+</div>
+
+
+<div class="newComment"><a name="newComment"></a>
+<h3>发表评论</h3>
+<form action="/entry/comment/add" method="POST">
+    <input type="hidden" name="targetId" value="132587"/>
+    <input type="hidden" name="title" value="回复:使用iRedMail配置邮件服务器"/>
+    <input type="hidden" name="replyId"/>
+    <textarea name="content" cols="100" rows="6" class="mdInput" style="width:98%"></textarea>
+    <p>
+        <button type="button" id="btnComment">发表评论</button><span id="commentTip"></span>
+    </p>
+</form>
+</div>
+
+
+
+
+</div>
+<div class="sidebar">
+    <div class="similar entry">
+    <span class="title">您可能感兴趣的博客</span>
+    <div><ul class="similarEntries">
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/1667/" title="debugo">debugo</a> 发表 <span class="time">2015-01-16 07:06:44</span></span>
+<a href="http://ju.outofmemory.cn/entry/111383" class="codeTitle">Squid快速配置攻略</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/1667/" title="debugo">debugo</a> 发表 <span class="time">2015-04-14 13:08:20</span></span>
+<a href="http://ju.outofmemory.cn/entry/132587" class="codeTitle">使用iRedMail配置邮件服务器</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/4572/" title="Soflen S. (Intel)">Soflen S. (Intel)</a> 发表 <span class="time">2016-09-01 21:45:05</span></span>
+<a href="http://ju.outofmemory.cn/entry/278110" class="codeTitle">Intel® System Studio Debugging Tools - WinDbg Exte</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/1667/" title="debugo">debugo</a> 发表 <span class="time">2015-01-21 14:34:33</span></span>
+<a href="http://ju.outofmemory.cn/entry/112454" class="codeTitle">使用Keepalived实现Nginx高可用性</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/4572/" title="Soflen S. (Intel)">Soflen S. (Intel)</a> 发表 <span class="time">2016-09-01 21:41:06</span></span>
+<a href="http://ju.outofmemory.cn/entry/278113" class="codeTitle">Intel® System Studio Debugging Tools - System Debu</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/1667/" title="debugo">debugo</a> 发表 <span class="time">2015-01-01 06:55:43</span></span>
+<a href="http://ju.outofmemory.cn/entry/112456" class="codeTitle">Nginx基本服务与upstream配置详解</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/1667/" title="debugo">debugo</a> 发表 <span class="time">2014-12-29 07:21:31</span></span>
+<a href="http://ju.outofmemory.cn/entry/108386" class="codeTitle">Containerized MySQL&amp;Redis by Docker</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/1667/" title="debugo">debugo</a> 发表 <span class="time">2015-02-13 16:25:55</span></span>
+<a href="http://ju.outofmemory.cn/entry/116490" class="codeTitle">Docker &amp; Weave实现跨主机容器互联</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/1667/" title="debugo">debugo</a> 发表 <span class="time">2015-04-29 04:31:19</span></span>
+<a href="http://ju.outofmemory.cn/entry/139403" class="codeTitle">Gitosis配置手记</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/1667/" title="debugo">debugo</a> 发表 <span class="time">2015-05-15 14:44:07</span></span>
+<a href="http://ju.outofmemory.cn/entry/144887" class="codeTitle">在Windows下构建Docker开发环境</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/1667/" title="debugo">debugo</a> 发表 <span class="time">2015-01-04 07:04:50</span></span>
+<a href="http://ju.outofmemory.cn/entry/108869" class="codeTitle">使用supervisord管理容器进程</a>
+</li>
+    <li><span class="meta"><a href="http://ju.outofmemory.cn/feed/1667/" title="debugo">debugo</a> 发表 <span class="time">2015-05-14 07:16:38</span></span>
+<a href="http://ju.outofmemory.cn/entry/144938" class="codeTitle">Gitbucket—快速建立自己的Github</a>
+</li>
+</ul>
+</div>
+</div>
+
+
+
+
+    <div class="tgSide"><script type="text/javascript">var jd_union_unid="1000081043",jd_ad_ids="512:6",jd_union_pid="CKvGvfKzKxCTjfDcAxoAIMH+guICKgA=";var jd_width=336;var jd_height=280;var jd_union_euid="";var p="BBcEUB5aEwUbNwpfBkgyTUMIRmtKRk9aZV8ETVxNNwpfBkgyeWcXBSJifWVlDFMYfkNLDwxmRRwAYgtZK10WABoBVhlcFzISBlQaWhwCEwJXK2tKRk9aZVA1FDJNQwhGaxUHGgdXE1MUBxIOVxxrFDIiNw%3D%3D";</script><script type="text/javascript" charset="utf-8" src="//u.x.jd.com/static/js/auto.js"></script></div>
+    <div class="similar code">
+    <span class="title">您可能感兴趣的代码</span>
+    <div><ul class="similarCodes">
+    <li><span class="time">2013-01-23 20:53:45</span><a href="http://outofmemory.cn/code-snippet/1973/java-usage-System-getProperty-name-get-java-xuniji-related-variable">java使用System.getProperty(name)获得java虚拟机相关变量</a> by <a href="//outofmemory.cn/user/18">玉开Sir</a>
+</li>
+    <li><span class="time">2015-04-06 09:18:58</span><a href="http://outofmemory.cn/code-snippet/36847/python-output-system-user">python输出系统用户</a> by <a href="//outofmemory.cn/user/25">山药</a>
+</li>
+    <li><span class="time">2013-02-05 21:47:26</span><a href="http://outofmemory.cn/code-snippet/2153/java-usage-System-getProperty-name-get-dangqian-denglu-tell-ji-use-huming">java使用System.getProperty(name)获得当前登录计算机的用户名</a> by <a href="//outofmemory.cn/user/103">shixiaoliang</a>
+</li>
+    <li><span class="time">2015-04-08 11:57:50</span><a href="http://outofmemory.cn/code-snippet/36961/usage-lambda-expression-get-system-parameter">使用lambda表达式获得系统参数</a> by <a href="//outofmemory.cn/user/37">阮小七</a>
+</li>
+    <li><span class="time">2013-02-15 09:28:17</span><a href="http://outofmemory.cn/code-snippet/2285/java-zhong-direction-stderror">java重定向stderror</a> by <a href="//outofmemory.cn/user/128">南宫傲</a>
+</li>
+    <li><span class="time">2015-04-09 10:50:29</span><a href="http://outofmemory.cn/code-snippet/37013/output-python-system-parameter">输出python的系统参数</a> by <a href="//outofmemory.cn/user/169">阿明娃儿</a>
+</li>
+    <li><span class="time">2013-02-15 09:59:38</span><a href="http://outofmemory.cn/code-snippet/2286/how-quit-java-program">如何退出java程序</a> by <a href="//outofmemory.cn/user/88">Merrill</a>
+</li>
+    <li><span class="time">2015-04-13 09:08:23</span><a href="http://outofmemory.cn/code-snippet/37061/system-os-path-usage">system os path使用</a> by <a href="//outofmemory.cn/user/37">阮小七</a>
+</li>
+    <li><span class="time">2013-02-16 09:40:38</span><a href="http://outofmemory.cn/code-snippet/2296/java-get-dangqian-directory">java获得当前目录</a> by <a href="//outofmemory.cn/user/83">empireghost</a>
+</li>
+    <li><span class="time">2015-04-14 11:50:15</span><a href="http://outofmemory.cn/code-snippet/37065/List-system-variable-keys-and-set-a-system-parameter-key">List system variable keys and set a system parameter key</a> by <a href="//outofmemory.cn/user/61">wubai</a>
+</li>
+    <li><span class="time">2013-02-17 09:42:18</span><a href="http://outofmemory.cn/code-snippet/2307/java-zhong-direction-program-standard-output-System-out-come-file">java重定向程序的标准输出System.out到文件</a> by <a href="//outofmemory.cn/user/167">vzex</a>
+</li>
+    <li><span class="time">2015-04-19 13:53:22</span><a href="http://outofmemory.cn/code-snippet/37073/Python-usage-zi-process-instead-multithreading">Python使用子进程代替多线程</a> by <a href="//outofmemory.cn/user/85">xwz</a>
+</li>
+</ul>
+</div>
+</div>
+
+
+
+    
+    
+    
+    
+</div>
+
+
+</div>
+<script src="/static/js/jquery-1.11.3.min.js"></script>
+<script>var isMobile= $('.sidebar').css('clear') == 'both';</script>
+<script src="http://outofmemory.cn/user/loginUser_v5?t=juke&k=132587&oa=getEntryVoteStatus&oa=triggerCommentCaptcha&oa=displayPv&oa=dynamicTG&tg=jukeTopLine" charset="utf-8"></script>
+<script src="/static/prettify/prettify.js?1?1.9.0" type="text/javascript"></script>
+<script src="http://outofmemory.cn/v5/s/5.js?1.9.0"></script>
+<script>
+    var removeAD=false;
+    var voteTargetType='entry';var voteTargetId =132587;
+    var voting=false;
+    function onGetVoteStatus(status){
+        if(status.type != 0){
+            voting=true;
+            $('.like a').html('0赞');
+        }
+    }
+    $('.like a').click(function(){
+        if (!voting){
+            voting = true;
+            $.post("/"+voteTargetType+"/"+voteTargetId+"/vote", { type: '1'},
+            function (response, textStatus){
+                if(!response.success){
+                    alert(response.message);
+                } else {
+                    $('.like a').html((response.upCount||1) + '赞');
+                }
+            }, "json");
+        } else {
+            $('.like a').html('已赞');
+        }
+    });
+    $('pre,code').removeClass('prettyprint').addClass('prettyprint');
+    prettyPrint();
+    function displayPv(pv){
+        $('.pv b').html(pv + '');
+    }
+    function resizeImg(o,maxWidth) {
+        var img = $(o);
+        if(img.width() > maxWidth) {
+            var h = Math.round(maxWidth / img.width() * img.height());
+            img.width(maxWidth).height(h);
+        }
+    }
+    function resizeImgs(){
+        var maxWidth = $('div.author').width();
+        $('.content img').each(
+            function(i,o){resizeImg(o,maxWidth);}
+        );
+        var tg = $('.tgBD');
+        if(tg.width()>maxWidth){
+            tg.width(maxWidth+'px').css({'text-align':'center','overflow':'hidden',border:'1px solid transparent','border-radius':'2px','-moz-border-radius':'2px'});
+        }
+    }
+    $(resizeImgs);
+    $(window).resize(resizeImgs);
+    function showBooks(books) {
+        var h = '<div class="tgL books"><span>&nbsp;</span>好书：';
+        var maxCount = 5;
+        var lineCn = books.length>maxCount?maxCount:books.length;
+        function getProvidersHtml(b) {
+            var h='';
+            if (b.providers) {
+                h += '[';
+                var first = true;
+                for (var p in b.providers) {
+                    var pUrl = b.providers[p]['url'];
+                    
+                    if (first) {
+                        first = false;
+                    } else {
+                        h += ' &nbsp; ';
+                    }
+                    h += ('<a href="' + pUrl +'" target="_blank">' + p +  '</a>');
+                    
+                }
+                h += ']';
+            }
+            return h;
+        }
+
+        for (var i=0; i<lineCn;i++) {
+            if (i>0) h += '<span class="sep"> | </span>';
+            var book = books[i];
+            h += ('<a href="'+ book.url +'" target="_blank">' + book.title + '</a>');
+            h += getProvidersHtml(book);
+        }
+
+
+        h += '</div>';
+        $(h).insertBefore($('div.wrap'));
+
+        var rightHtml = '<div class="tgSide booksNail"><div class="cTitle">好书推荐</div>';
+        rightHtml += '<div><ul>';
+        var startIdx = books.length > 4 ? books.length-4 : 0;
+        for (var i=startIdx; i<books.length;i++) {
+            var book = books[i];
+            rightHtml += ('<li><div class="nail"><a href="' + book.url + '" target="_blank"><img src="//outofmemory.cn/static/book/' + book.image + '" /></a></div>');
+            rightHtml += ('<div class="title"><a class="bookName" href="'+book.url+'" target="_blank"><nobr>'+book.title+ '</nobr></a>');
+            var providerH = getProvidersHtml(book);
+            rightHtml += providerH;
+            rightHtml += '</div></li>';
+        }
+        rightHtml += '</ul></div>';
+        rightHtml += '</div>';
+
+        $(rightHtml).insertBefore($('div.sidebar div:first'))
+    }
+</script>
+<script src="http://outofmemory.cn/book/list?cb=showBooks&tags=System%2CTools&page=1" type="text/javascript"></script>
+
+
+<footer class="foot">
+&copy; 2015 <a href="http://outofmemory.cn/">内存溢出</a>
+</footer>
+
+<script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-36036446-1', 'outofmemory.cn');
+    ga('send', 'pageview');
+    ga('set',  '&uid', window.loginUser.id); // 使用已登录的 user_id 来设置用户 ID。
+</script>
+
+<div class="bdtj"><script type="text/javascript">
+
+
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?2051de3619785a7bff6213250ea9fbbd";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+</div>
+<script>
+    function displayTG(k, h){
+        var display = typeof removeAD != 'undefined' && !removeAD;
+        if (!display) {
+            return;
+        }
+        if(k == 'jukeTopLine'){
+            $(h).insertBefore($('div.wrap'));
+        }
+    }
+    if(parseInt($('.content').css('marginRight')) > 50){
+        var contentHeight=$('.content').height();var sideHeight=$('.sidebar').height();
+        if(contentHeight<sideHeight) $('.content').css({'minHeight':sideHeight+'px'});
+    }
+</script>
+</body>
+</html>

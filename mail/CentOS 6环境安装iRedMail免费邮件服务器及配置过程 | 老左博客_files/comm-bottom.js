@@ -1,0 +1,1 @@
+document.writeln("<div class=\"singdownads\"><a href=\"https://www.laozuo.org/12161.html\" target=\"_blank\" title=\"99IDC\"><img src=\"https://www.laozuo.org/banner/txyun.jpg\" border=\"0\" width=\"640px\" height=\"55px\"></a></div>");

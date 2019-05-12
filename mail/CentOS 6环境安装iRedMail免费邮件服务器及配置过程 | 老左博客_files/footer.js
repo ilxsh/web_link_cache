@@ -1,0 +1,1 @@
+document.writeln("<div class=\"footerads\"><a href=\"https://www.50vm.com/\" target=\"_blank\" rel=\"nofollow\"><img src=\"https://www.laozuo.org/banner/50vm4.gif\" border=\"0\" title=\"\"></a></div>");

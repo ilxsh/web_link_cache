@@ -1,0 +1,3 @@
+document.writeln("<div class=\"sing60ads\"><a href=\"http://www.raksmart.com/News/index?id=95\" target=\"_blank\" title=\"RAKsmart\"><img src=\"https://www.laozuo.org/banner/rak-650.jpg\" border=\"0\" width=\"665px\" height=\"60px\"></a></div>");
+document.writeln("<div class=\"sing60ads\"><a href=\"https://www.61vps.com/hkssdcloud.html\" target=\"_blank\" title=\"\"><img src=\"https://www.laozuo.org/banner/61vps.gif\" border=\"0\" width=\"665px\" height=\"60px\"></a></div>");
+document.writeln("<div class=\"sing60ads\"><a href=\"https://www.qg.net/\" target=\"_blank\" title=\"\"><img src=\"https://www.laozuo.org/banner/qgnet.gif\" border=\"0\" width=\"665px\" height=\"60px\"></a></div>");

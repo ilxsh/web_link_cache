@@ -1,0 +1,1 @@
+document.writeln("<a href=\"https://www.laozuo.org/bandwagonhost\" target=\"_blank\" rel=\"nofollow\"><img src=\"https:\/\/images.laozuo.org\/banner\/bwg-350-48.jpg\" border=\"0\" title=\"\"></a>")

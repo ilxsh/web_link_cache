@@ -1,0 +1,1 @@
+document.writeln("<a href=\"https://www.laozuo.org/bandwagonhost\" target=\"_blank\" title=\"便宜年付VPS\"><img src=\"https://www.laozuo.org/banner/content40width.jpg\" border=\"0\"></a>");

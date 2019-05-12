@@ -1,0 +1,288 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>系统运维|Linux有问必答：如何在Linux下禁用IPv6</title>
+ 
+<meta name="keywords" content="Linux有问必答：如何在Linux下禁用IPv6">
+<meta name="description" content="问题：我发现我的一个应用程序在尝试通过IPv6建立连接，但是由于我们本地网络不允许分配IPv6的流量，IPv6连接会超时，应用程序的连接会回退到IPv4，这样就会造成不必要的延迟。由于我目前对IPv6没有任何需求，所以我想在我的Linux主机上禁用IPv6。有什么比较合适的方法呢？  IPv6被认为是IPv4互联网上的传统32位地址空间的替代产品，它用来解决现有IPv4地址空间即将耗尽的问题。然而，由于已经有大量主机、设备用IPv4连接到了互联网上，所以想在一夜之间将它们全部切换到IPv6几乎是不可能的。许多IPv4到IPv6的转换机制(例如：双协议栈、网 ">
+<meta name="copyright" content="2005-2015 Linux.cn">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<meta name="applicable-device" content="pc,mobile">
+<meta name="referrer" content="always">
+<!-- base href="https://linux.cn/" --><link rel="stylesheet" type="text/css" href="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/style_1_common.css">
+<link rel="stylesheet" type="text/css" href="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/style_1_portal_view.css">
+<link href="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/responsive.css" rel="stylesheet">
+
+<script type="text/javascript">var STYLEID = '1', STATICURL = 'https://img.linux.net.cn/static/', IMGDIR = 'https://img.linux.net.cn/static/image/common', VERHASH = 'KrS', charset = 'utf-8', discuz_uid = '0', cookiepre = 'dx_516d_', cookiedomain = '.linux.cn', cookiepath = '/', showusercard = '1', attackevasive = '0', disallowfloat = '', creditnotice = '1|经验|,2|L币|,3|贡献|', defaultstyle = '', REPORTURL = 'aHR0cDovL2xpbnV4LmNuL2FydGljbGUtNTQxNy0xLmh0bWw/cHI=', SITEURL = 'https://linux.cn/', JSPATH = 'https://img.linux.net.cn/static/js/', CSSPATH = 'data/cache/style_', DYNAMICURL = '';</script>
+<script src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/common.js" type="text/javascript"></script>
+<script src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/jquery-1.js" type="text/javascript"></script>
+<script type="text/javascript">jQuery.noConflict();</script>
+<script src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/jquery.js" type="text/javascript"></script>
+<link rel="canonical" href="https://linux.cn/article-5417-1.html"><script src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/portal.js" type="text/javascript"></script>
+<style type="text/css">
+sup {color: #fff;background-color: #666;padding: 0 1px 2px 1px;}
+.show_links {color: #666;font-size: 9px;padding-left: 10px; }
+.sup { font-size: 9px; vertical-align: super; background-color: #666; color: #fff; -webkit-transform: scale(0.75); transform: scale(0.75); display: inline-block; padding: 1px 1px 3px 1px; margin: 0; line-height: 1em;}
+</style>
+</head>
+
+<body id="nv_portal">
+<div id="append_parent"></div><div id="ajaxwaitid"></div>
+<a id="close_print" href="javascript:location.href='https://linux.cn/article-5417-1.html';" title="关闭打印模式"></a>
+<a href="javascript:;" id="switchwidth" title="切换到窄版" class="switchwidth"></a>
+<div id="wp" class="wp pr">
+
+<div id="ct" class="ct2 wp cl">
+<div class="mn" style="float:none; margin:40px auto;">
+<div class="vw">
+<div class="h">
+<div class="hm z">
+<h1 class="ph" id="article_title">Linux有问必答：如何在Linux下禁用IPv6</h1>
+<p class="xg1">
+2015-05-09 20:40</p>
+<p class="copyright">
+    	 
+    		    			    			<span class="z">译自：<a href="http://ask.xmodulo.com/disable-ipv6-linux.html" target="_blank">http://ask.xmodulo.com/disable-ipv6-linux.html</a></span>
+    			    		    		<span class="y">作者： Dan Nanni</span>    		<br class="clear">
+    	    	<span class="z">原创：<a href="http://lctt.github.io/" target="_blank">LCTT</a> <a href="https://linux.cn/article-5417-1.html" target="_blank">https://linux.cn/article-5417-1.html</a></span>
+            			<span class="y">译者： ZTinoZ</span>    		<br class="clear">
+    	</p>
+
+</div>
+<div class="y" id="pr_qrcode"><canvas width="100" height="100"></canvas></div>
+<br class="clear">
+</div>
+
+<div class="d">
+<div id="article_content">
+<blockquote>
+<p><strong>问题</strong>：我发现我的一个应用程序在尝试通过IPv6建立连接，但是由于我们本地网络不允许分配IPv6的流
+量，IPv6连接会超时，应用程序的连接会回退到IPv4，这样就会造成不必要的延迟。由于我目前对IPv6没有任何需求，所以我想在我的Linux主机
+上禁用IPv6。有什么比较合适的方法呢？</p>
+</blockquote>
+<p>IPv6被认为是IPv4——互联网上的传统32位地址空间——的替代产品，它用来解决现有IPv4地址空间即将耗尽的问题。然而，由于已经有大量
+主机、设备用IPv4连接到了互联网上，所以想在一夜之间将它们全部切换到IPv6几乎是不可能的。许多IPv4到IPv6的转换机制(例如：双协议栈、
+网络隧道、代理) 
+已经被提出来用来促进IPv6能被采用，并且很多应用也正在进行重写，如我们所提倡的，来增加对IPv6的支持。有一件事情可以确定，就是在可预见的未来
+里IPv4和IPv6势必将共存。</p>
+<p class="article_img"><img src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/203853n903vr6v6revnrun.png" alt=""></p>
+<p>理想情况下，<a href="http://www.google.com/intl/en/ipv6/statistics.html" class="ext" rel="external nofollow" target="_blank">向IPv6过渡的进程</a><span class="sup">[1]</span>不
+应该被最终的用户所看见，但是IPv4/IPv6混合环境有时会让你碰到各种源于IPv4和IPv6之间不经意间的相互碰撞的问题。举个例子，你会碰到应
+用程序超时的问题，比如apt-get或ssh尝试通过IPv6连接失败、DNS服务器意外清空了IPv6的AAAA记录、或者你支持IPv6的设备不兼
+容你的互联网服务提供商遗留下的IPv4网络，等等等等。</p>
+<p>当然这不意味着你应该盲目地在你的Linux机器上禁用IPv6。鉴于IPv6许诺的种种好处，作为社会的一份子我们最终还是要充分拥抱它的，但是作为给最终用户进行故障排除过程的一部分，如果IPv6确实是罪魁祸首，那你可以尝试去关闭它。</p>
+<p>这里有一些让你在Linux中部分(例如：对于某个特定的网络接口)或全部禁用IPv6的小技巧。这些小贴士应该适用于所有主流的Linux发行版包括Ubuntu、Debian、Linux Mint、CentOS、Fedora、RHEL以及Arch Linux。</p>
+<h3 id="toc_1">查看IPv6在Linux中是否被启用</h3>
+<p>所有现代Linux发行版默认都自动启用IPv6。为了能看到IPv6在你的Linux中是否被激活，可以使用ifconfig或ip命令。如果你在输入这些命令之后看到"inet6"字样的输出，那就意味着你的Linux系统启用了IPv6。</p>
+<pre class="prettyprint linenums"><code>$ ifconfig 
+</code></pre>
+<p class="article_img"><img src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/204020oumokf9ngjmyxxym.jpg" alt="" style="width: 708.333px; cursor: pointer;"></p>
+<pre class="prettyprint linenums"><code>$ ip addr 
+</code></pre>
+<p class="article_img"><img src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/204028vpehk73c2keivhb8.jpg" alt="" style="width: 708.333px; cursor: pointer;"></p>
+<h3 id="toc_2">临时禁用IPv6</h3>
+<p>如果你想要在你的Linux系统上临时关闭IPv6，你可以用 /proc 文件系统。"临时"的意思是我们所做的禁用IPv6的更改在系统重启后将不被保存。IPv6会在你的Linux机器重启后再次被启用。</p>
+<p>要将一个特定的网络接口禁用IPv6，使用以下命令：</p>
+<pre class="prettyprint linenums"><code>$ sudo sh -c 'echo 1 &gt; /proc/sys/net/ipv6/conf/&lt;interface-name&gt;/disable_ipv6' 
+</code></pre>
+<p>举个例子，将eth0接口禁用IPv6：</p>
+<pre class="prettyprint linenums"><code>$ sudo sh -c 'echo 1 &gt; /proc/sys/net/ipv6/conf/eth0/disable_ipv6' 
+</code></pre>
+<p class="article_img"><img src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/204039epupn33kgp6g1wkz.jpg" alt="" style="width: 708.333px; cursor: pointer;"></p>
+<p>重新启用eth0接口的IPv6：</p>
+<pre class="prettyprint linenums"><code>$ sudo sh -c 'echo 0 &gt; /proc/sys/net/ipv6/conf/eth0/disable_ipv6' 
+</code></pre>
+<p>如果你想要将整个系统所有接口包括回环接口禁用IPv6，使用以下命令：</p>
+<pre class="prettyprint linenums"><code>$ sudo sh -c 'echo 1 &gt; /proc/sys/net/ipv6/conf/all/disable_ipv6' 
+</code></pre>
+<h3 id="toc_3">永久禁用IPv6</h3>
+<p>以上方法是不能永久禁用IPv6的，你一旦重启系统IPv6还是会被启用。如果你想要永久关闭它，有几个方法你可以试试。</p>
+<h4 id="toc_4">方法一</h4>
+<p>第一种方法是通过 /etc/sysctl.conf 文件对 /proc 进行永久修改。</p>
+<p>换句话说，就是用文本编辑器打开 /etc/sysctl.conf 然后添加以下内容：</p>
+<pre class="prettyprint linenums"><code># 禁用整个系统所有接口的IPv6
+net.ipv6.conf.all.disable_ipv6 = 1
+
+# 禁用某一个指定接口的IPv6(例如：eth0, lo)
+net.ipv6.conf.lo.disable_ipv6 = 1
+net.ipv6.conf.eth0.disable_ipv6 = 1
+</code></pre>
+<p>在 /etc/sysctl.conf 使这些更改生效，运行以下命令：</p>
+<pre class="prettyprint linenums"><code>$ sudo sysctl -p /etc/sysctl.conf 
+</code></pre>
+<p>或者直接重启。</p>
+<h4 id="toc_5">方法二</h4>
+<p>另一个永久禁用IPv6的方法是在开机的时候传递一个必要的内核参数。</p>
+<p>用文本编辑器打开 /etc/default/grub 并给GRUB<em>CMDLINE</em>LINUX变量添加"ipv6.disable=1"。</p>
+<pre class="prettyprint linenums"><code>$ sudo vi /etc/default/grub
+</code></pre>
+<hr>
+<pre class="prettyprint linenums"><code>GRUB_CMDLINE_LINUX="xxxxx ipv6.disable=1"
+</code></pre>
+<p>上面的"xxxxx"代表任何已有的内核参数，在它后面添加"ipv6.disable=1"。</p>
+<p class="article_img"><img src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/204054p8jzpjlbfdr1eab8.jpg" alt="" style="width: 708.333px; cursor: pointer;"></p>
+<p>最后，不要忘记用以下方法保存对GRUB/GRUB2的修改：</p>
+<p>Debian、Ubuntu或Linux Mint系统：</p>
+<pre class="prettyprint linenums"><code>$ sudo update-grub 
+</code></pre>
+<p>Fedora、CentOS/RHEL系统：</p>
+<pre class="prettyprint linenums"><code>$ sudo grub2-mkconfig -o /boot/grub2/grub.cfg 
+</code></pre>
+<p>现在只要你重启你的Linux系统，IPv6就会完全被禁用。</p>
+<h3 id="toc_6">禁用IPv6之后的其它可选步骤</h3>
+<p>这里有一些在你禁用IPv6后需要考虑的可选步骤，这是因为当你在内核里禁用IPv6后，其它程序也许仍然会尝试使用IPv6。在大多数情况下，应用程序的这种行为不太会影响到什么，但是出于效率或安全方面的原因，你可以为他们禁用IPv6。</p>
+<h4 id="toc_7">/etc/hosts</h4>
+<p>根据你的设置， /etc/hosts 会包含一条或多条IPv6的hosts和它们的地址。用文本编辑器打开 /etc/hosts 并注释掉包含IPv6 hosts的脚本行。</p>
+<pre class="prettyprint linenums"><code>$ sudo vi /etc/hosts
+</code></pre>
+<hr>
+<pre class="prettyprint linenums"><code># comment these IPv6 hosts
+# ::1     ip6-localhost ip6-loopback
+# fe00::0 ip6-localnet
+# ff00::0 ip6-mcastprefix
+# ff02::1 ip6-allnodes
+# ff02::2 ip6-allrouters
+</code></pre>
+<h4 id="toc_8">Network Manager</h4>
+<p>如果你在用NetworkManager来管理你的网络设置，你可以在NetworkManager里禁用IPv6。在
+NetworkManager打开wired connection，点击"IPv6 
+Settings"选项并在"Method"一栏选择"Ignore"，保存退出。</p>
+<p class="article_img"><img src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/204055g1izpc3ix2u2u2cp.png" alt=""></p>
+<h4 id="toc_9">SSH服务</h4>
+<p>默认情况下，OpenSSH服务(sshd)会去尝试捆绑IPv4和IPv6的地址。</p>
+<p>要强制sshd只捆绑IPv4地址，用文本编辑器打开 /etc/ssh/sshd_config 并添加以下行。inet只适用于IPv4，而inet6是适用于IPv6的。</p>
+<pre class="prettyprint linenums"><code>$ sudo vi /etc/ssh/sshd_config
+</code></pre>
+<hr>
+<pre class="prettyprint linenums"><code>AddressFamily inet
+</code></pre>
+<p>然后重启sshd服务。</p>
+<hr>
+<p>via: <a href="http://ask.xmodulo.com/disable-ipv6-linux.html" class="ext" rel="external nofollow" target="_blank">http://ask.xmodulo.com/disable-ipv6-linux.html</a></p>
+<p>作者：<a href="http://ask.xmodulo.com/author/nanni" class="ext" rel="external nofollow" target="_blank">Dan Nanni</a><span class="sup">[2]</span> 译者：<a href="https://github.com/ZTinoZ" class="ext" rel="external nofollow" target="_blank">ZTinoZ</a><span class="sup">[3]</span> 校对：<a href="https://github.com/wxy" class="ext" rel="external nofollow" target="_blank">wxy</a><span class="sup">[4]</span></p>
+<p>本文由 <a href="https://github.com/LCTT/TranslateProject" class="ext" rel="external nofollow" target="_blank">LCTT</a><span class="sup">[5]</span> 原创翻译，<a href="https://linux.cn/article-5417-1.html?pr">Linux中国</a><span class="sup">[6]</span> 荣誉推出</p><hr width="80%"><p class="show_links">[1]: http://www.google.com/intl/en/ipv6/statistics.html<br>[2]: http://ask.xmodulo.com/author/nanni<br>[3]: https://github.com/ZTinoZ<br>[4]: https://github.com/wxy<br>[5]: https://github.com/LCTT/TranslateProject<br>[6]: https://linux.cn/article-5417-1.html?pr<br></p></div>
+</div>
+</div>
+
+</div>
+ 
+
+<script type="text/javascript">
+(function($){
+$(window).load(function() {
+// 顶部固顶菜单高度
+affix_topmenu = 35;
+// 可见窗口的高度
+window_height = $(window).height();
+
+// 文章内插图及注释
+
+var max_width = $("#article_content").width();
+var imgp = $("#article_content P IMG").parent("P");
+imgp.each(function(){
+$(this).addClass("article_img");
+// 如果有图片描述
+var desc = $(this).next("P");
+var img = $(this).children("IMG");
+if (desc.contents().length == 1 && desc.contents().first().is("em") ) {
+  					desc.addClass("article_img_desc");
+  					desc_txt = desc.contents().first().text();
+  					img.attr({"title":desc_txt,"alt":desc_txt});
+} else {
+var desc_txt = img.attr("title") || img.attr("alt");
+if (desc_txt != '' && typeof desc_txt != 'undefined') {
+$(this).after("<p><em>" + desc_txt + "</em></p>");
+var desc = $(this).next("P");
+
+  					desc.addClass("article_img_desc");
+}
+}
+var max_width = $("#article_content").width() - 60;
+if (img.attr("width") > max_width) {
+img.attr("width",'');
+img.attr("height",'');
+img.css("cursor","pointer");
+img.click(function(){window.open(img.attr("src"));});
+} else if (img.width() > max_width) {
+img.css("height",parseInt(img.height() * (max_width / img.attr("width"))));
+img.css("width",max_width);
+img.css("cursor","pointer");
+img.click(function(){window.open(img.attr("src"));});
+}
+});
+var re_sitelink = /^https?:\/\/(www.)?linux(.net)?.cn\//i;
+var footer_links = '';
+var i = 0;
+$("#article_content a").map(function(){
+if ($(this).attr('href') == undefined) {
+$(this).css({'visibility':'hidden'});
+}
+if (re_sitelink.test($(this).attr('href'))) {
+if ($(this).text() == 'Linux中国') $(this).attr('href',$(location).attr('href'));
+} else {
+$(this).addClass("ext").attr({"rel":"external nofollow","target":"_blank"});
+}
+if ($(this).text().substr(0,4).toLowerCase() != 'http' && $(this).attr('href') && $(this).attr('href').substr(0,1) != '#') {
+if ($(this).parent("ruby").length > 0) {
+$(this).parent("ruby").after("<span class=sup>[" + (++i) + "]</span>" );
+} else {
+$(this).after("<span class=sup>[" + (++i) + "]</span>" );
+}
+footer_links += "[" + i + "]: " + $(this).attr('href') + "<br />";
+}
+});
+if (strlen(footer_links)) {
+$("#article_content").append("<hr width=80% /><p class=show_links>" + footer_links + "</p>");
+}
+});
+// 视频
+$("video").map(function() {
+var src = $(this).children("source").attr("src");
+$(this).wrap("<blockquote class=video_url></blockquote>").parent().empty()
+.append("此处应有视频，地址： <a href='" + src + "' target=_blank>" + src + "</a>");
+});
+
+$("#pr_qrcode").empty().qrcode({
+render: 'canvas',
+ecLevel: 'H',
+minVersion: 1,
+fill: '#000',
+background: '#FFF',
+text: 'https://linux.cn/article-5417-1.html' + '?pr',
+size: 100,
+radius: 0,
+quiet: 0,
+mode: 0});
+
+$('#switchwidth').click(function(){
+$('.pr .mn').toggleClass('autowidth');
+$(this).toggleClass('switchedwidth');
+});
+$('body').keydown(function(){
+if (event.keyCode == 27) {
+location.href = 'https://linux.cn/article-5417-1.html';
+} else if (event.keyCode == 9) {
+$('#switchwidth').click();
+return false;
+}
+});
+$('#weixin_style').click(function(){
+$("#article_content h1").wrapInner("<p class='h1'></p>");
+$("#article_content h2").wrapInner("<p class='h2'></p>");
+$("#article_content h3").wrapInner("<p class='h3'></p>");
+$("#article_content h4").wrapInner("<p class='h4'></p>");
+$("#article_content h5").wrapInner("<p class='h5'></p>");
+$("#article_content h6").wrapInner("<p class='h6'></p>");
+$("#article_content :header p").unwrap();
+});
+})(jQuery);
+</script>
+</div> 
+
+<link rel="stylesheet" href="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/prettify.css" type="text/css">
+<script src="%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4%7CLinux%E6%9C%89%E9%97%AE%E5%BF%85%E7%AD%94%EF%BC%9A%E5%A6%82%E4%BD%95%E5%9C%A8Linux%E4%B8%8B%E7%A6%81%E7%94%A8IPv6_files/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+var sourceBaseUrl = "https://img.linux.net.cn/static/js/tinymce/plugins/prettify";
+//prettyPrint();
+</script>
+</div></body></html>

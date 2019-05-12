@@ -1,0 +1,2281 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>iRedMail：在CentOS 6上使用Postfix，Dovecot，PostgreSQL构建全功能邮件服务器。</title>
+    <meta name="description" content="在CentOS 6上使用Postfix，Dovecot，PostgreSQL构建全功能邮件服务器
+&nbsp;&nbsp;&nbsp;&nbsp;
+我们将在Cent ...上设置一个免费的全功能邮件服务器">
+    <meta id="token" name="token" value="PlhKCbjs01gW68JDjIn4HNZsC0SGQp8HrBsrXf61">
+    <link rel="shortcut icon" href="https://www.howtoing.com/favicon.ico" type="image/x-icon">
+        <!--     <link rel="stylesheet" type="text/css" href="http://www.ui3g.com/demos/show/1619/bootstrap-3.3.5/css/bootstrap.min.css"> -->
+    <link rel="stylesheet" href="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/bootstrap.css">
+    <link rel="stylesheet" href="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/w3.css">
+        <link rel="stylesheet" href="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/style.css" media="screen" title="app" charset="utf-8">
+    <link rel="stylesheet" href="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/prettify.css">
+        <link rel="stylesheet" href="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/font-awesome.css">
+    <link href="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/css.css" rel="stylesheet">
+    <script src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/osd.js"></script><script src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/ca-pub-7163569408396951.js"></script><script src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/show_ads_impl.js" id="google_shimpl"></script><script src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/jquery.js"></script>
+<script src="http://static.bshare.cn/b/components/bsStatic.js?v=20150603" type="text/javascript" charset="utf-8"></script><script src="http://static.bshare.cn/b/engines/bs-engine.js?v=20150603" type="text/javascript" charset="utf-8"></script><link rel="preload" href="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/integrator.js" as="script"><script type="text/javascript" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/integrator.js"></script><link rel="preload" href="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/show_ads_impl.js" as="script"></head>
+
+<body>
+    <!--header -->
+            <div class="w3-white w3-common-bj">
+  <!-- nav responesive -->
+  <div class="row w3-common-nav w3-display-container">
+   <!-- search modal -->
+     <div id="id01" style="display:none;">
+                <div class="w3-modal-content" style="width:100%;">
+                     <form action="/search" method="get" accept-charset="utf-8">
+                        <div class="w3-display-container w3-bar w3-white w3-search-input" style="position:relative;z-index:999;background-color:red;">
+                            <input id="search" style="min-width:80%;line-height:60px;" type="text" name="query" class="w3-bar-item w3-input w3-left w3-medium post-m-search-input" placeholder="搜索一下，你就知道了！">
+                            <a class="w3-bar-item w3-button w3-white w3-hover-none w3-right w3-xlarge w3-display-right" onclick="document.getElementById('id01').style.display='none'">×</a>
+                            <button type="submit" class="w3-bar-item w3-button w3-hover-none w3-right w3-medium w3-display-right" style="right:45px;"><i class="fa fa-search"></i></button>
+                        </div>
+                      </form>
+                </div>
+          </div>
+
+         <div class="w3-display-left">
+          <a href="https://www.howtoing.com/" class="index-logo-words w3-bar-item w3-white w3-hover-none w3-button w3-xlarge">Howtoing运维教程</a>
+         <!--  <a href="/" class="w3-bar-item w3-white w3-hover-none w3-button w3-display-left w3-logo-word" style="left:160px;"> Images &amp; Videos on Instagram</a> -->
+         </div>
+        <div class="w3-display-right">
+            <a id="query" onclick="document.getElementById('id01').style.display='block';
+              document.getElementById('search').focus();" href="javascript:void(0)" class="w3-bar-item w3-button w3-hover-none w3-right w3-xlarge w3-display-right"><i class="fa fa-search"></i></a>
+        </div>
+    </div>
+</div>
+<!-- Slideshow -->
+<div class="w3-content w3-display-container" style="max-width:1048px;min-height:160px;    margin-top: 10px;">
+  <!-- Slideshow -->
+      <div class="w3-display-container mySlides w3-animate-opacity" style="display: block;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">云计算&amp;大数据</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/cloud" title="Cloud">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Cloud</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/clustering" title="Clustering">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Clustering</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/hadoop" title="Hadoop">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Hadoop</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/storage" title="Storage">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Storage</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/big-data" title="大数据">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              大数据</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/chrome" title="Chrome浏览器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Chrome浏览器</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">运维</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/recovery-tools" title="恢复工具">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              恢复工具</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/errors" title="errors">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              errors</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/editors" title="Editors">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Editors</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/awk-command" title="Awk命令">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Awk命令</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/postfix" title="Postfix">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Postfix</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/sed-command" title="Sed 命令">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Sed 命令</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ci-cd" title="CI/CD">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              CI/CD</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/configuration-management" title="配置管理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              配置管理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/monitoring" title="Monitoring">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Monitoring</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/file-managers" title="文件管理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              文件管理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ansible" title="Ansible">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ansible</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ssh" title="SSH">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              SSH</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/backups" title="备份">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              备份</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/desktop" title="desktop">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              desktop</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ghost" title="Ghost">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ghost</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/dkim" title="DKIM">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              DKIM</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/joomla" title="Joomla">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Joomla</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/commercial" title="commercial">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              commercial</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/dokku" title="Dokku">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Dokku</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/backup" title="backup">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              backup</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/other" title="other">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              other</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">架构</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/docker" title="Docker">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Docker</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/django" title="Django">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Django</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/drupal" title="Drupal">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Drupal</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/sinatra" title="Sinatra">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Sinatra</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">操作系统</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/kali-linux" title="Kali Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Kali Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mandriva" title="mandriva">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              mandriva</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/rhcsa" title="RHCSA认证">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              RHCSA认证</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/kernel" title="kernel">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              kernel</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/pclinuxos" title="pclinuxos">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              pclinuxos</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/raspbian" title="raspbian">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              raspbian</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/tails-os" title="Tails OS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Tails OS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ubuntu" title="Ubuntu">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ubuntu</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/centos" title="CentOS系统">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              CentOS系统</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/fedora" title="Fedora">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Fedora</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-tutorials" title="Linux 教程">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux 教程</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/rhel" title="RHEL">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              RHEL</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linuxmint" title="LinuxMint">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LinuxMint</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/elementary-os" title="Elementary OS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Elementary OS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/opensuse" title="OpenSuse">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              OpenSuse</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/windows-tutorials" title="Windows 教程">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Windows 教程</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-players" title="Linux 播放器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux 播放器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/devuan-linux" title="Devuan Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Devuan Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/pc-bsd" title="PC-BSD">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              PC-BSD</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/suse" title="Suse">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Suse</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-apps" title="Linux系统应用">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux系统应用</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-products" title="Linux 产品">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux 产品</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/bodhi-linux" title="Bodhi Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Bodhi Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/parrot-os" title="Parrot OS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Parrot OS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lfce" title="LFCE">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LFCE</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/pear-linux" title="Pear Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Pear Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-mint" title="Linux Mint">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux Mint</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-commands" title="Linux命令">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux命令</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/gentoo" title="Gentoo">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Gentoo</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/zentyal" title="Zentyal">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Zentyal</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/uberstudent" title="Uberstudent">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Uberstudent</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-desktop" title="Linux桌面">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux桌面</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-lite" title="Linux Lite">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux Lite</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/fuduntu" title="Fuduntu">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Fuduntu</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/xubuntu" title="Xubuntu">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Xubuntu</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/scientific-linux" title="Scientific Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Scientific Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/clear-os" title="Clear OS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Clear OS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux" title="Linux介绍">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux介绍</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lfcs" title="LFCS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LFCS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-certifications" title="Linux认证">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux认证</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ubuntu-16-04" title="Ubuntu 16.04">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ubuntu 16.04</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-fixes" title="Linux修复">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux修复</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/poll" title="POLL字符设备驱动函数">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              POLL字符设备驱动函数</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/debian-9" title="Debian 9">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Debian 9</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/zorin-os" title="Zorin OS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Zorin OS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lxc" title="LXC内核虚拟化技术">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LXC内核虚拟化技术</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-talks" title="Linux Talks">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux Talks</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/rhce" title="RHCE">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              RHCE</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/new-linux-distros" title="最新的Linux发行">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              最新的Linux发行</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/coreos" title="CoreOS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              CoreOS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-basics" title="Linux基础">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux基础</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/redhat" title="RedHat">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              RedHat</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/freebsd" title="FreeBSD">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              FreeBSD</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/netrunner" title="Netrunner">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Netrunner</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-distributions" title="Linux版本">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux版本</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-quiz" title="Linux 测试">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux 测试</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/manjaro" title="Manjaro">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Manjaro</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/arch-linux" title="Arch Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Arch Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/windows" title="Windows">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Windows</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/debian" title="Debian">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Debian</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-training" title="Linux 培训">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux 培训</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/arch" title="Arch">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Arch</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-distros" title="Linux发行版">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux发行版</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">开发工具</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/sdk" title="SDK">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              SDK</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/monitoring-tools" title="监控工具">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              监控工具</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/opera" title="Opera">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Opera</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/xen" title="xen">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              xen</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ajenti" title="Ajenti">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ajenti</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/amazon-tools" title="Amazon 工具包">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Amazon 工具包</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/svn" title="SVN">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              SVN</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/yum" title="Yum">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Yum</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/pentoo" title="Pentoo测试工具">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Pentoo测试工具</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/package-managers" title="Package Managers">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Package Managers</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vim-editor" title="Vim Editor">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Vim Editor</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/gtk" title="GTK">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              GTK</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/terminals" title="Terminals终端">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Terminals终端</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/git" title="GIT">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              GIT</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/kwheezy" title="KWheezy">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              KWheezy</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/samba" title="Samba">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Samba</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ftp-servers" title="FTP Servers">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              FTP Servers</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/package-management" title="软件包管理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              软件包管理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/system-tools" title="系统工具">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              系统工具</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/deployment" title="Deployment">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Deployment</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/control-panel" title="控制面板">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              控制面板</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/monit" title="Monit">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Monit</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nagios" title="Nagios">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Nagios</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nrpe" title="NRPE监控">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              NRPE监控</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/firefox" title="Firefox浏览器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Firefox浏览器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/api" title="API">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              API</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">编程语言</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/c-c" title="c/c++">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              c/c++</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/programming" title="Programming">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Programming</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ruby" title="Ruby">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ruby</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/data-analysis" title="Data Analysis">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Data Analysis</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/php" title="PHP">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              PHP</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/php-frameworks" title="PHP框架">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              PHP框架</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/virtualization" title="虚拟化">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              虚拟化</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/c-programming" title="C编程">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              C编程</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/python" title="python">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              python</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/perl" title="Perl">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Perl</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/python-scripts" title="Python 脚本">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Python 脚本</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/miscellaneous" title="Miscellaneous">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Miscellaneous</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/go" title="Go">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Go</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/c-language" title="C语言">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              C语言</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ruby-on-rails" title="Ruby 软件工程师">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ruby 软件工程师</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/python-frameworks" title="Python 框架">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Python 框架</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/java" title="JAVA">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              JAVA</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/shell" title="shell">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              shell</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/bash-shell" title="Bash Shell">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Bash Shell</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">WEB开发设计</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-scanner" title="Web 扫描">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 扫描</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/wordpress" title="WordPress">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              WordPress</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/themes-icons" title="主题和icon图标">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              主题和icon图标</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/javascript" title="JavaScript">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              JavaScript</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-apps" title="Web 应用">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 应用</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/android" title="android">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              android</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-hosting" title="Web 托管">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 托管</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-browsers" title="Web 浏览器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 浏览器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mean" title="MEAN">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              MEAN</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/openlitespeed" title="OpenLiteSpeed">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              OpenLiteSpeed</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/blueprint" title="Blueprint">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Blueprint</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-design" title="Web 设计">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 设计</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">服务器</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/virtualbox" title="virtualbox">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              virtualbox</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/tomcat" title="Tomcat">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Tomcat</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/dovecot" title="dovecot">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              dovecot</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/iis" title="IIS服务器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              IIS服务器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/suse-apache" title="suse.apache">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              suse.apache</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vmware" title="vmware">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              vmware</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/openvz" title="openvz">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              openvz</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/xmpp" title="XMPP">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              XMPP</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-servers" title="Web 服务器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 服务器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/powerdns" title="powerdns">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              powerdns</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mydns" title="mydns">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              mydns</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/djbdns" title="djbdns">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              djbdns</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/apache" title="Apache">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Apache</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mail-servers" title="Mail Servers">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Mail Servers</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/xenserver" title="XenServer">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              XenServer</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/freenas" title="FreeNAS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              FreeNAS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/amazon-web-services" title="Amazon 网站服务">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Amazon 网站服务</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mail-server" title="邮件服务器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              邮件服务器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/caching-server" title="缓存服务器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              缓存服务器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/parse" title="Parse">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Parse</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lighttpd" title="Lighttpd">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Lighttpd</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mail-services" title="Mail服务">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Mail服务</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/openstack" title="开源栈">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              开源栈</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/digitalocean" title="DigitalOcean">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              DigitalOcean</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/logging" title="日志">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              日志</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/elasticsearch" title="弹性搜索">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              弹性搜索</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vsftpd" title="VsFTPd">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              VsFTPd</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/high-availability" title="高可用">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              高可用</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nginx" title="Nginx">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Nginx</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/block-storage" title="块存储">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              块存储</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/digitalocean-articles" title="DigitalOcean 文章">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              DigitalOcean 文章</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/node-js" title="Node.js">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Node.js</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/wildfly" title="WildFly">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              WildFly</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lamp-stack" title="LAMP 栈">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LAMP 栈</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/server-optimization" title="服务器优化">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              服务器优化</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/load-balancing" title="Load Balancing">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Load Balancing</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nodejs" title="Nodejs">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Nodejs</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lemp" title="LEMP">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LEMP</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/bind" title="bind">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              bind</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/squid" title="Squid">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Squid</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ispconfig" title="ispconfig">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              ispconfig</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-server" title="web server">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              web server</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/caching" title="缓存">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              缓存</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/citrix-xenserver" title="Citrix XenServer">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Citrix XenServer</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/anti-spam-virus" title="anti-spam/virus">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              anti-spam/virus</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">数据库</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mariadb" title="MariaDB">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              MariaDB</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mysql" title="MySQL">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              MySQL</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/databases" title="数据库管理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              数据库管理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/sql-server" title="SQL Server">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              SQL Server</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/oracle" title="Oracle">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Oracle</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mssql" title="MSSQL">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              MSSQL</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/postgresql" title="PostgreSQL">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              PostgreSQL</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mongodb" title="MongoDB">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              MongoDB</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/redis-server" title="Redis Server">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Redis Server</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/redis" title="Redis">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Redis</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nosql" title="NoSQL">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              NoSQL</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/couchdb" title="CouchDB">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              CouchDB</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">网络安全</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/kvm" title="KVM">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              KVM</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/network-services" title="网络服务">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              网络服务</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nfs" title="NFS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              NFS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/networking" title="Networking">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Networking</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/dhcp" title="DHCP">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              DHCP</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/security" title="安全">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              安全</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/filesystem" title="Filesystem">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Filesystem</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ftp" title="FTP">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              FTP</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/telnet" title="Telnet">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Telnet</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/openldap" title="OpenLDAP轻型目录访问协议">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              OpenLDAP轻型目录访问协议</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/pxe" title="PXE预启动执行环境">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              PXE预启动执行环境</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vnc" title="VNC虚拟网络控制台">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              VNC虚拟网络控制台</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vpn" title="VPN">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              VPN</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/torrent-clients" title="Torrent Clients">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Torrent Clients</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/raid-array" title="RAID-ARRAY冗余磁盘阵列">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              RAID-ARRAY冗余磁盘阵列</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/firewalls" title="Firewalls">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Firewalls</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vps" title="VPS虚拟专用服务器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              VPS虚拟专用服务器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/network" title="网络知识">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              网络知识</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/raid" title="Raid">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Raid</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/firewall" title="Firewall">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Firewall</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ipv6" title="IPv6">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              IPv6</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/proxy" title="代理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              代理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/dns" title="DNS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              DNS</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">其他</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/interview-questions" title="Interview Questions">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Interview Questions</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/uncategorized" title="更多分类">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              更多分类</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/opensource" title="opensource">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              opensource</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/deals" title="Deals">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Deals</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ide" title="IDE">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              IDE</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/top-tools" title="Top Tools">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Top Tools</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/desktops" title="Desktops">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Desktops</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/career" title="Career">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Career</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/general-talks" title="General Talks">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              General Talks</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/content-management-system" title="Content Management System">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Content Management System</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/celebrate" title="Celebrate">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Celebrate</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/product-reviews" title="Product Reviews">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Product Reviews</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/download-managers" title="下载管理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              下载管理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/cherokee" title="Cherokee">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Cherokee</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ecommerce" title="Ecommerce">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ecommerce</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/samba4-active-directory" title="Samba4 Active Directory">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Samba4 Active Directory</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/install" title="Install">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Install</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/google-apps" title="谷歌应用">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              谷歌应用</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/applications" title="Applications">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Applications</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/one-click-install-apps" title="单击安装APPS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              单击安装APPS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/scaling" title="Scaling">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Scaling</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/development" title="Development">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Development</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/let-s-encrypt" title="Let's Encrypt">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Let's Encrypt</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/games" title="Games">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Games</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/glusterfs" title="GlusterFS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              GlusterFS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/chef" title="Chef">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Chef</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/general-articles" title="General Articles">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              General Articles</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/getting-started" title="Getting Started">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Getting Started</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/social-media" title="Social Media">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Social Media</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/email" title="Email">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Email</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/quickstart" title="Quickstart">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Quickstart</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/sendmail" title="Sendmail">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Sendmail</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/media-players" title="媒体播放">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              媒体播放</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/whm-cpanel" title="WHM/cPanel">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              WHM/cPanel</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/faq" title="FAQ">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              FAQ</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/control-panels" title="Control Panels">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Control Panels</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/messaging" title="Messaging">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Messaging</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/issues" title="Issues">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Issues</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/cheat-sheets" title="Cheat Sheets">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Cheat Sheets</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/cms" title="内容管理系统">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              内容管理系统</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/open-source" title="开源">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              开源</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ebooks" title="eBooks">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              eBooks</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Object Storage</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Conceptual</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Product Documentation</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">ZoneMinder</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Kubernetes</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Text Editors</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">DigitalOcean Cloud Firewalls</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Billing</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Programming Project</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Ubuntu 18.04</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Initial Server Setup</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">R</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Networking Commands</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">CDN</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Microservices</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Terraform</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Solutions</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Machine Learning</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Custom Images</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Development Tools</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Linux Auditing</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Media Streaming</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Encryption Tools</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Raspberry Pi</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    
+  <button class="w3-button w3-light-grey noselection w3-display-topleft w3-index-banner-pre w3-opacity" onclick="plusDivs(-1)">❮</button>
+
+  <button class="w3-button w3-light-grey noselection w3-display-topright w3-index-banner-next w3-opacity" onclick="plusDivs(+1)">❯</button>
+</div>        <!-- main -->
+    <div class="container" style="padding:0;margin:0 auto;width:1048px;">
+        <div class="w3-row">
+                <div class="w3-row" id="jiathis_main">
+        <div class="w3-col index-left">
+            <div class="w3-container w3-center delete-common-m-p">
+    <h2>iRedMail：在CentOS 6上使用Postfix，Dovecot，PostgreSQL构建全功能邮件服务器。</h2>
+
+    <div class="w3-panel w3-leftbar w3-light-grey post-title-bottom-tag">
+                <p>在CentOS 6上使用Postfix，Dovecot，PostgreSQL构建全功能邮件服务器
+&nbsp;&nbsp;&nbsp;&nbsp;
+我们将在Cent ...上设置一个免费的全功能邮件服务器</p>
+            </div>
+
+    <div class="w3-row post-title-bottom-tag">
+        <div class="w3-col" style="width:70%">
+                        <p>
+                <span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">分类:</span>
+                                    <a href="https://www.howtoing.com/category/centos"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">CentOS系统</span></a>
+                                    <a href="https://www.howtoing.com/category/postfix"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">Postfix</span></a>
+                                    <a href="https://www.howtoing.com/category/email"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">Email</span></a>
+                                    <a href="https://www.howtoing.com/category/maintenance"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">运维</span></a>
+                                    <a href="https://www.howtoing.com/category/operating-system"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">操作系统</span></a>
+                                    <a href="https://www.howtoing.com/category/others"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">其他</span></a>
+                            </p>
+                    </div>
+        <div class="w3-col" style="width:30%;">
+            <p style="text-align:right;">
+                 <span class="post-tag-line-height index-post-bottom-line-word w3-right"> <i class="fa fa-clock-o" aria-hidden="true">&nbsp;2017-09-23 08:38:56</i></span>
+               <!-- <span class="post-tag-line-height index-post-bottom-line-word w3-right"> <i class="fa fa-heart" aria-hidden="true">&nbsp;146</i> </span>
+                <span class="post-tag-line-height index-post-bottom-line-word w3-right" ><i class="fa fa-comments" aria-hidden="true">&nbsp;</i>87</span>-->
+            </p>
+        </div>
+    </div>
+
+    <!-- content start -->
+    <div class="w3-panel post-title-bottom-tag" style="text-align:left;">
+        <div style="float: left;padding-right: 20px;padding-top: 5px;">
+            <script async="" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/adsbygoogle.js"></script>
+            <!-- howtoing-post-content-left-ads-336*280 -->
+            <ins class="adsbygoogle" style="display:inline-block;width:336px;height:280px" data-ad-client="ca-pub-7163569408396951" data-ad-slot="7352319254" data-adsbygoogle-status="done"><ins id="aswift_0_expand" style="display:inline-table;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:336px;background-color:transparent;"><ins id="aswift_0_anchor" style="display:block;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:336px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0px;width:336px;height:280px;" width="336" height="280" frameborder="0"></iframe></ins></ins></ins>
+            <script>
+            $(document).ready(function(){(adsbygoogle = window.adsbygoogle || []).push({})});
+            </script>
+
+        </div>
+        <div id="htfContentPage"><h2 id="build-a-fullfeatured-mail-server-on-centos-with-postfix-dovecot-postgresql"> 使用Postfix，Dovecot，PostgreSQL在CentOS 6上构建全功能邮件服务器 </h2><h3 id="summary"> 概要 </h3><p> 我们将在CentOS 6.2上设置一个免费的功能齐全的邮件服务器，所有邮件服务相关组件都是免费的和开源的，您可以控制自己的数据。 安装过程非常简单和流畅。 </p><p> 按照本教程，您将有以下主要的软件和服务可供生产使用： </p><ul><li>  Postfix：SMTP服务 </li><li>  Dovecot：POP3 / POP3S，IMAP / IMAPS，Managesieve服务 </li><li>  PostgreSQL：存储邮件帐户和应用程序数据 </li><li>  Apache：Web服务器 </li><li>  Amavisd，SpamAssassin，ClamAV：反垃圾邮件，反病毒 </li><li>  Roundcube：Webmail </li><li>  Fail2ban：扫描日志文件（例如/ var / log / maillog），并禁止显示恶意代码的IP，密码失败，寻求漏洞等。 </li><li>  iRedAdmin：一个基本的，免费的，开源的管理面板来管理邮件帐户。 全功能版可在此处购买： <a mce_real_href="http://www.iredmail.org/admin_panel.html" href="http://www.iredmail.org/admin_panel.html" target="_blank">http</a> : <a mce_real_href="http://www.iredmail.org/admin_panel.html" href="http://www.iredmail.org/admin_panel.html" target="_blank">//www.iredmail.org/admin_panel.html</a> 。 </li><li>  Awstats：Apache和Postfix日志分析器 </li><li>  phpPgAdmin：PostgreSQL的基于Web的管理工具 </li></ul><p></p><h3 id="introduce-iredmail"> 介绍iRedMail </h3><p>  iRedMail项目的主页在这里： <a mce_real_href="http://www.iredmail.org/" href="http://www.iredmail.org/" target="_blank">http</a> : <a mce_real_href="http://www.iredmail.org/" href="http://www.iredmail.org/" target="_blank">//www.iredmail.org/</a> </p><p>  iRedMail是： </p><ul><li> 零成本，完全成熟的全功能邮件服务器解决方案。 所有组件都是免费的开源软件。 </li><li> 一个由GPLv2发布的开源项目，位于<a mce_real_href="https://bitbucket.org/zhb/iredmail/changesets" href="https://bitbucket.org/zhb/iredmail/changesets" target="_blank">BitBucket上</a> 。 </li></ul><p> 使用iRedMail，您可以在不到2分钟内设置全功能的零成本邮件服务器。  iRedMail适用于8个主要的Linux / BSD发行版： </p><ul><li> 红帽企业版Linux 5.x，6.x </li><li>  CentOS 5.x，6.x </li><li> 科学Linux 5.x，6.x </li><li>  Debian 6.x（挤压） </li><li>  Ubuntu 10.04 LTS，11.10，12.04 </li><li>  Linux Mint 12（基于Ubuntu） </li><li>  Gentoo Linux，最新的官方发布（或每日版本）与最新的portage </li><li>  openSUSE 12.1 </li><li>  FreeBSD 8.x，9.x </li></ul><p>  iRedMail（0.8.0-beta4）的最新测试版本支持RHEL / CentOS / Scientific Linux（6.x），Ubuntu（11.10,12.04），FreeBSD上的PostgreSQL。 </p><p></p><h3 id="system-requirements"> 系统要求 </h3><p> <span class="highlight">警告</span> ：iRedMail旨在部署在<b>FRESH</b>服务器系统上，这意味着您的服务器没有安装邮件相关组件，例如Apache，PostgreSQL，OpenLDAP，Postfix，Dovecot，Amavisd等。否则可能会覆盖您现有的文件/配置虽然它会在修改之前备份文件，但可能无法正常工作。 </p><p> 要安装iRedMail，您需要： </p><ul><li> 一个新鲜的，最小的工作CentOS Linux 6.最新的6.2版本是推荐的。 </li><li> 生产使用至少需要512MB的内存。 </li></ul><p></p><h3 id="preparations"> 准备 </h3><h4 id="set-a-fully-qualified-domain-name-fqdn-hostname-on-your-server"> 在服务器上设置完全限定的域名（FQDN）主机名 </h4><p> 在设置邮件服务器之前，我们需要设置一个FQDN主机名。 </p><p> 在CentOS Linux上，主机名设置在两个文件中： </p><p> 主机名设置： <span class="system">/ etc / sysconfig / network</span> </p><pre class="prettyprint prettyprinted" style=""><span class="com"># Part of file: /etc/sysconfig/network</span><span class="pln">
+HOSTNAME</span><span class="pun">=</span><span class="pln">demo</span><span class="pun">.</span><span class="pln">iredmail</span><span class="pun">.</span><span class="pln">org</span></pre><p> 主机名&lt;=&gt; IP地址映射： <span class="system">/ etc / hosts</span> 。  <span class="highlight">警告</span> ：请列出FQDN主机名作为第一项。 </p><pre class="prettyprint prettyprinted" style=""><span class="com"># Part of file: /etc/hosts</span><span class="pln">
+</span><span class="lit">127.0</span><span class="pun">.</span><span class="lit">0.1</span><span class="pln">   demo</span><span class="pun">.</span><span class="pln">iredmail</span><span class="pun">.</span><span class="pln">org demo localhost localhost</span><span class="pun">.</span><span class="pln">localdomain</span></pre>使用命令'hostname -f'验证FQDN主机名。如果更改主机名，请重新启动服务器使其正常工作。<p class="command">$ hostname -f</p><p class="system">demo.iredmail.org</p><p></p><h4 id="enable-yum-repositories-for-installing-new-packages"> 启用yum存储库以安装新软件包 </h4><p> 请启用/etc/yum.repos.d/CentOS-Base.repo中的所有默认yum存储<span class="system">库</span> ，并禁用所有第三方存储库。 如果在repo文件中设置“enabled = 1”，则启用存储库。 </p><p></p><h4 id="download-the-latest-release-of-iredmail"> 下载iRedMail的最新版本 </h4><p> 访问<a mce_real_href="http://www.iredmail.org/download.html" href="http://www.iredmail.org/download.html" target="_blank">下载</a>页面以获取最新版本的iRedMail。 至少需要iRedMail-0.8.0-beta4。 </p><p> 通过ftp或scp或任何可以使用的方法将iRedMail上传到您的邮件服务器，登录到服务器以安装iRedMail。 我们假设您将它上传到目录<span class="system">/root/iRedMail-xyztar.bz2</span> （将<span class="system">xyz</span>替换为实际版本号）。 </p><p> 解压缩iRedMail压缩包： </p><p class="command"># cd /root/<br>
+# tar xjf iRedMail-x.y.z.tar.bz2</p><p></p><h3 id="start-iredmail-installer"> 启动iRedMail安装程序 </h3><p> 现在准备启动iRedMail安装程序，它会问你一些简单的问题，这些都是设置全功能邮件服务器的步骤。 </p><p class="command"># cd /root/iRedMail-x.y.z/<br>
+# bash iRedMail.sh</p><p></p><h4 id="screenshots-of-iredmail-installation">  iRedMail安装屏幕截图 </h4><p>  1）欢迎并感谢您的使用： </p><p> <a class="fancybox" id="img-welcome" href="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/big/welcome.png"><img mce_real_src="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/welcome.png" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/welcome.png" width="550" height="378"></a> </p><p>  2）指定存储所有邮箱的位置。 默认为<span class="system">/ var / vmail /</span> 。 </p><p> <a class="fancybox" id="img-location_to_store_mailboxes" href="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/big/location_to_store_mailboxes.png"><img mce_real_src="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/location_to_store_mailboxes.png" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/location_to_store_mailboxes.png" width="550" height="380"></a> </p><p>  3）选择用于存储邮件帐户的后端。 我们将在本教程中选择PostgreSQL，请选择您熟悉的。 您可以通过网络iRedMail管理面板iRedAdmin管理邮件帐户。 </p><p> <a class="fancybox" id="img-backend_pgsql" href="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/big/backend_pgsql.png"><img mce_real_src="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/backend_pgsql.png" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/backend_pgsql.png" width="550" height="375"></a> </p><p>  4）设置PostgreSQL管理员用户的密码。  PostgreSQL用于存储邮件帐户和应用程序数据。 例如Roundcube webmail，Amavisd-new。 </p><p><a class="fancybox" id="img-pw_of_pgsql_root_user" href="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/big/pw_of_pgsql_root_user.png"><img mce_real_src="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/pw_of_pgsql_root_user.png" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/pw_of_pgsql_root_user.png" width="550" height="380"></a> </p><p>  5）添加您的第一个邮件域名： </p><p> <a class="fancybox" id="img-first_mail_domain" href="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/big/first_mail_domain.png"><img mce_real_src="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/first_mail_domain.png" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/first_mail_domain.png" width="550" height="382"></a> </p><p>  6）设置您的第一个邮件域的管理员帐户密码。  <span class="highlight">注意</span> ： </p><ul><li> 此帐户仅用于系统管理，而不是邮件用户。 这意味着您无法使用此帐户登录到网络邮箱。 </li><li> 您可以使用此帐户登录iRedAdmin（基于Web的iRedMail管理面板），用于邮件管理，登录名为完整电子邮件地址。 </li><li> 管理员用户名是硬编码的，您可以在安装完成后用iRedAdmin创建新的管理员。 </li></ul><p> <a class="fancybox" id="img-pw_of_domain_admin" href="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/big/pw_of_domain_admin.png"><img mce_real_src="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/pw_of_domain_admin.png" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/pw_of_domain_admin.png" width="550" height="376"></a> </p><p>  7）设置第一个邮件域的第一个邮件用户的密码。  <span class="highlight">注意</span> ： </p><ul><li> 这个帐号是一个普通的邮件用户，这意味着你可以使用这个帐号登录到webmail，登录名是完整的电子邮件地址。 </li><li> 用户名是硬编码的，可以在安装完成后用iRedAdmin创建新的邮件用户。 </li></ul><p> <a class="fancybox" id="img-pw_of_domain_user" href="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/big/pw_of_domain_user.png"><img mce_real_src="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/pw_of_domain_user.png" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/pw_of_domain_user.png" width="550" height="383"></a> </p><p>  8）选择可选组件： </p><p> <a class="fancybox" id="img-optional_components" href="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/big/optional_components.png"><img mce_real_src="https://www.howtoing.com/wp-content/uploads/images/iredmail_centos_6_postfix_dovecot_postgresql/optional_components.png" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/optional_components.png" width="550" height="377"></a> </p><p> 在这些问题之后，iRedMail安装程序将要求您确认此安装。 它将自动安装和配置所需的包。 键入<span class="system">y</span>或<span class="system">Y</span> ，然后按<span class="system">Enter</span>确认，键入n或N，然后按Enter取消此安装。 </p><pre class="prettyprint prettyprinted" style=""><span class="pun">...</span><span class="pln">
+</span><span class="typ">Configuration</span><span class="pln"> completed</span><span class="pun">.</span><span class="pln">
+</span><span class="pun">*************************************************************************</span><span class="pln">
+</span><span class="pun">*****************************</span><span class="pln"> WARNING </span><span class="pun">***********************************</span><span class="pln">
+</span><span class="pun">*************************************************************************</span><span class="pln">
+</span><span class="pun">*</span><span class="pln">                                                                       </span><span class="pun">*</span><span class="pln">
+</span><span class="pun">*</span><span class="pln"> </span><span class="typ">Please</span><span class="pln"> </span><span class="kwd">do</span><span class="pln"> remember to </span><span class="pun">*</span><span class="pln">MOVE</span><span class="pun">*</span><span class="pln"> configuration file after installation    </span><span class="pun">*</span><span class="pln">
+</span><span class="pun">*</span><span class="pln"> completed successfully</span><span class="pun">.</span><span class="pln">                                               </span><span class="pun">*</span><span class="pln">
+</span><span class="pun">*</span><span class="pln">                                                                       </span><span class="pun">*</span><span class="pln">
+</span><span class="pun">*</span><span class="pln">   </span><span class="pun">*</span><span class="pln"> </span><span class="str">/root/</span><span class="pln">iRedMail</span><span class="pun">-</span><span class="pln">x</span><span class="pun">.</span><span class="pln">y</span><span class="pun">.</span><span class="pln">z</span><span class="pun">/</span><span class="pln">config
+</span><span class="pun">*</span><span class="pln">                                                                       </span><span class="pun">*</span><span class="pln">
+</span><span class="pun">*************************************************************************</span><span class="pln">
+</span><span class="pun">&lt;</span><span class="pln"> </span><span class="typ">Question</span><span class="pln"> </span><span class="pun">&gt;</span><span class="pln"> </span><span class="typ">Continue</span><span class="pun">?</span><span class="pln"> </span><span class="pun">[</span><span class="pln">y</span><span class="pun">|</span><span class="pln">N</span><span class="pun">]</span></pre><p> 这就是您需要做的所有设置一个免费和功能齐全的邮件服务器。 足够简单 </p><p></p><h3 id="important-things-you-should-know-after-installation"> 重要的事情你应该知道安装后 </h3><ul><li> 首先读取文件<span class="system">/root/iRedMail-xyz/iRedMail.tips</span> ，它包含： <ul><li> 基于Web的应用程序的URL，用户名和密码 </li><li> 邮件的位置服务相关的软件配置文件 </li><li> 一些其他重要和/或敏感信息 </li></ul></li><li>  <a mce_real_href="http://code.google.com/p/iredmail/wiki/DNS_SPF" href="http://code.google.com/p/iredmail/wiki/DNS_SPF" target="_blank">设置SPF的DNS记录</a> </li><li>  <a mce_real_href="http://code.google.com/p/iredmail/wiki/DNS_DKIM" href="http://code.google.com/p/iredmail/wiki/DNS_DKIM" target="_blank">设置DKIM的DNS记录</a> </li></ul><p></p><h3 id="access-webmail-and-other-web-applications"> 访问Webmail和其他Web应用程序 </h3><p> 安装成功完成后，如果您选择安装，您可以访问基于Web的程序。 将下面的“your_server”替换为实际的服务器名称或IP地址。 </p><ul><li>  Webmail： <span class="system">http：// your_server / mail /</span> （或<span class="system">/ webmail</span> ， <span class="system">/ roundcube</span> 。也可以使用HTTPS。） </li><li> 管理面板： <span class="system">httpS：// your_server / iredadmin /</span> </li><li>  phpMyAdmin： <span class="system">httpS：// your_server / phpmyadmin /</span> </li><li>  Awstats： <span class="system">http：//your_server/awstats/awstats.pl？config = web</span> （或<span class="system">？config = smtp</span> ） </li></ul><p></p><h3 id="get-technical-support"> 获得技术支持 </h3><p>  iRedMail项目提供快速和有效的在线支持，请在我们的在线支持论坛上发布所有问题，反馈，功能请求，建议，比您所期望的更加负责： <a mce_real_href="http://www.iredmail.org/forum/" href="http://www.iredmail.org/forum/" target="_blank">http</a> : <a mce_real_href="http://www.iredmail.org/forum/" href="http://www.iredmail.org/forum/" target="_blank">//www.iredmail.org/forum/</a> 。 </p></div>
+    </div>
+    <div class="w3-row">
+
+            <script async="" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/adsbygoogle.js"></script>
+            <!-- howtoing-post-content-left-ads-336*280 -->
+            <ins class="adsbygoogle" style="display:inline-block;width:336px;height:280px" data-ad-client="ca-pub-7163569408396951" data-ad-slot="7352319254" data-adsbygoogle-status="done"><ins id="aswift_1_expand" style="display:inline-table;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:336px;background-color:transparent;"><ins id="aswift_1_anchor" style="display:block;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:336px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_1" name="aswift_1" style="left:0;position:absolute;top:0;border:0px;width:336px;height:280px;" width="336" height="280" frameborder="0"></iframe></ins></ins></ins>
+            <script>
+            $(document).ready(function(){(adsbygoogle = window.adsbygoogle || []).push({})});  
+            </script>
+
+    </div>
+        <div class="w3-row post-post-bottom-tag">
+        <span class="post-tag-line-height post-tag w3-tag  w3-left w3-small w3-green" style="color:gray;">Tag标签：</span>
+                    <a href="https://www.howtoing.com/tag/postfix"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">Postfix</span></a>
+                    <a href="https://www.howtoing.com/tag/centos"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">centos</span></a>
+                    <a href="https://www.howtoing.com/tag/email"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">Email</span></a>
+            </div>
+        <!-- content end -->
+</div>
+            <div class="w3-row">
+    <div class="w3-half w3-container w3-next-wrap">
+                <p class="w3-left w3-pre-post">上一篇</p><br>
+        <p class="w3-left delete-common-m-p"><a href="https://www.howtoing.com/striping-across-four-storage-nodes-with-glusterfs-3.2.x-on-ubuntu-11.10">使用GlusterFS 3.2.x在四个存储节点上划分在Ubuntu 11.10上</a></p>
+            </div>
+    <div class="w3-half w3-container w3-next-wrap">
+                <p class="w3-right w3-new-post">下一篇</p><br>
+        <p class="w3-right delete-common-m-p"><a href="https://www.howtoing.com/centos-6.2-installing-mod_spdy-with-apache2-level-novice">CentOS 6.2  - 安装mod_spdy与Apache 2  - 级新手</a></p>
+            </div>
+</div>            <!-- <h3 class="w3-center w3-bottombar w3-border-gray post-relation-article">相关文章</h3> -->
+<br>
+<div id="London" class="w3-container city delete-common-m-p">
+    <script async="" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/adsbygoogle.js"></script>
+        <ins class="adsbygoogle" style="display: block; height: 436px;" data-ad-format="autorelaxed" data-ad-client="ca-pub-9856485789689900" data-ad-slot="9308464999" data-adsbygoogle-status="done"><ins id="aswift_2_expand" style="display:inline-table;border:none;height:436px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent;"><ins id="aswift_2_anchor" style="display:block;border:none;height:436px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_2" name="aswift_2" style="left:0;position:absolute;top:0;border:0px;width:728px;height:436px;" width="728" height="436" frameborder="0"></iframe></ins></ins></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+</div>
+        </div>
+        <div class="w3-col index-right">
+
+    <div class="w3-row index-common-h2">
+        文章分类<span class="w3-badge w3-right w3-margin-right"> 10 </span>
+    </div>
+  <div class="w3-row">
+    <div class="w3-col s6 w3-dark-grey w3-center" style="padding:10px 0px;"> <a href="https://www.howtoing.com/category/cloud">运维</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;"><i class="fa fa-sitemap" aria-hidden="true"></i> <a href="https://www.howtoing.com/category/system-architecture">架构</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center" style="padding:10px 0px;">
+      <i class="fa fa-wrench" aria-hidden="true"></i> <a href="https://www.howtoing.com/category/developer-kits">开发工具</a>
+    </div>
+    <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;"><i class="fa fa-linux" aria-hidden="true"></i> <a href="https://www.howtoing.com/category/operating-system">操作系统</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center" style="padding:10px 0px;"><i class="fa fa-code" aria-hidden="true"></i> <a href="https://www.howtoing.com/category/programming-2">编程语言</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;"><a href="https://www.howtoing.com/category/html-css">WEB开发设计</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center" style="padding:10px 0px;"><i class="fa fa-server" aria-hidden="true"></i> <a href="https://www.howtoing.com/category/server">服务器</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;"><i class="fa fa-database" aria-hidden="true"></i>  <a href="https://www.howtoing.com/category/database">数据库</a></div>
+     <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;"> <a href="https://www.howtoing.com/category/network-security">网络安全</a></div>
+
+      <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;">  <a href="https://www.howtoing.com/category/others">综合分类</a></div>
+  </div>
+    <div class="w3-row index-common-h2">
+        热门文章<span class="w3-badge w3-right w3-margin-right">8</span>
+    </div>
+        <div class="w3-row">
+        <ul class="w3-ul delete-common-m-p">
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/how-to-set-up-a-cd-pipeline-with-spinnaker-on-digitalocean-kubernetes">如何在DigitalOcean Kubernetes上使用Spinnaker设置CD管道</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/how-to-convert-data-types-in-go">如何在Go中转换数据类型</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/how-to-install-f-and-set-up-a-local-programming-environment-on-ubuntu-18-04">如何在Ubuntu 18.04上安装F＃并设置本地编程环境</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/how-to-set-up-wordpress-with-mysql-on-kubernetes-using-helm">如何使用Helm在Kubernetes上使用MySQL设置WordPress</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/machine-learning-projects-python-a-digitalocean-ebook">机器学习项目：Python  -  DigitalOcean电子书</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/understanding-data-types-in-go">了解Go中的数据类型</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/how-to-set-up-digitalocean-kubernetes-cluster-monitoring-with-helm-and-prometheus-operator">如何使用Helm和Prometheus算子设置DigitalOcean Kubernetes群集监控</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/install-lemp-nginx-php-mariadb-phpmyadmin-in-opensuse">在OpenSUSE中安装LEMP  -  Nginx，PHP，MariaDB和PhpMyAdmin</a></li>
+                  </ul>
+    </div>
+    
+    <div class="w3-row index-common-right-ads">
+    <script async="" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/adsbygoogle.js"></script>
+    <!-- howtoing-side-300*600 -->
+    <ins class="adsbygoogle" style="display: inline-block; width: 300px; height: 250px;" data-ad-client="ca-pub-7163569408396951" data-ad-slot="7372376843" data-adsbygoogle-status="done"><ins id="aswift_3_expand" style="display:inline-table;border:none;height:250px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><ins id="aswift_3_anchor" style="display:block;border:none;height:250px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_3" name="aswift_3" style="left:0;position:absolute;top:0;border:0px;width:300px;height:250px;" width="300" height="250" frameborder="0"></iframe></ins></ins></ins>
+    <script>
+      $(document).ready(function(){(adsbygoogle = window.adsbygoogle || []).push({})});
+    </script>
+    </div>
+
+
+     <div class="w3-row">
+      <div class="w3-row w3-border index-qq">
+          <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/webwxgetmsgimg.jpg" width="100%"><br>
+          <img src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/follow-us.png" width="220px">
+          <p class="delete-common-m-p">Linux入门</p>
+          <p class="delete-common-m-p">QQ交流群:308781113</p>
+      </div>
+    </div>
+
+
+
+</div>
+    </div>
+        </div>
+    </div>
+    <!-- footer -->
+            <footer class="w3-center w3-light-grey w3-margin-top w3-padding-24 w3-medium">
+      <p>howtoing.com是一个运维教程站，开始于2012年5月。这里提供如何简单的学习引导Linux/Windows系统管理员的目标。我们一直在努力提供简单易学高质量的文章。</p>
+      <p>联系邮箱: howtoing@foxmail.com</p>
+      <p>©2019 Howtoing运维教程 京ICP备17008628号-1
+      </p>
+</footer>    
+        <script src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/bootstrap.js" charset="utf-8"></script>
+    <!-- <script src="/js/dynamicscrollspy.js" charset="utf-8"></script> -->
+    <script src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/prettify.js" charset="utf-8"></script>
+    <script src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/howto.js" charset="utf-8"></script>
+        <!-- share -->
+    <a class="bshareDiv" href="http://www.bshare.cn/share">分享按钮</a><script type="text/javascript" charset="utf-8" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/buttonLite.js"></script>
+    <!-- Start of StatCounter Code for Default Guide -->
+    <script type="text/javascript">
+    var sc_project=11028908; 
+    var sc_invisible=1; 
+    var sc_security="bc715dee"; 
+    var scJsHost = (("https:" == document.location.protocol) ?
+    "https://secure." : "http://www.");
+    document.write("<sc"+"ript type='text/javascript' src='" +
+    scJsHost+
+    "statcounter.com/counter/counter.js'></"+"script>");
+    </script><script type="text/javascript" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/counter.js"></script>
+    <noscript><div class="statcounter"><a title="Web Analytics"
+    href="http://statcounter.com/" target="_blank"><img
+    class="statcounter"
+    src="//c.statcounter.com/11028908/0/bc715dee/1/" alt="Web
+    Analytics"></a></div></noscript>
+    <!-- End of StatCounter Code for Default Guide -->
+
+<iframe id="google_osd_static_frame_4487190758748" name="google_osd_static_frame" style="display: none; width: 0px; height: 0px;"></iframe></body><iframe id="google_esf" name="google_esf" src="iRedMail%EF%BC%9A%E5%9C%A8CentOS%206%E4%B8%8A%E4%BD%BF%E7%94%A8Postfix%EF%BC%8CDovecot%EF%BC%8CPostgreSQL%E6%9E%84%E5%BB%BA%E5%85%A8%E5%8A%9F%E8%83%BD%E9%82%AE%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E3%80%82_files/zrt_lookup.html" style="display: none;" data-ad-client="ca-pub-7163569408396951"></iframe></html>

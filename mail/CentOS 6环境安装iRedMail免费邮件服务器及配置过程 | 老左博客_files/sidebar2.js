@@ -1,0 +1,4 @@
+document.writeln("<div class=\"s_ad125\"><a href=\"http://www.ssf.cc/rent.asp\" target=\"_blank\" rel=\"nofollow\"><img src=\"https://www.laozuo.org/banner/ssf.gif\" border=\"0\" title=\"ssf\" ></a></div>");
+document.writeln("<div class=\"s_ad125\"><a href=\"https://aoyouhost.com/\" target=\"_blank\" rel=\"nofollow\"><img src=\"https://www.laozuo.org/banner/aoyou.jpg\" border=\"0\" title=\"傲游主机\" ></a></div>");
+document.writeln("<div class=\"s_ad125\"><a href=\"http://www.kaivps.com/about-7-720.html\" target=\"_blank\" rel=\"nofollow\"><img src=\"https://www.laozuo.org/banner/kaivps.jpg\" border=\"0\" title=\"kaivps\" ></a></div>");
+document.writeln("<div class=\"s_ad125\"><a href=\"https://www.laozuo.org/myvps\" target=\"_blank\"><img src=\"https://www.laozuo.org/banner/changyong.jpg\" border=\"0\" title=\"便宜VPS\" ></a></div>");

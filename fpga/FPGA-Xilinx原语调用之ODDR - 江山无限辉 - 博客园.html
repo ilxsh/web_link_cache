@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="origin">
+    <title>FPGA-Xilinx原语调用之ODDR - 江山无限辉 - 博客园</title>
+<meta property="og:description" content="记录背景：最近由于想实现GMIItoRGMII的功能，因此需要调用ODDR原语。 ODDR：Dedicated Dual Data Rate （DDR） Output Register 通过ODDR把">
+    <link type="text/css" rel="stylesheet" href="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-coffee.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-coffee-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/lifei-chan/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/lifei-chan/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/lifei-chan/wlwmanifest.xml">
+    <script src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_2019032901.js"></script><script async="" src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script type="text/javascript" src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/encoder.js"></script><script src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script>var currentBlogId=411770;var currentBlogApp='lifei-chan',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js" type="text/javascript"></script>
+<link rel="preload" href="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2019032901.js" async=""></script></head>
+<body>
+<a name="top"></a>
+
+
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a id="lnkBlogLogo" href="https://www.cnblogs.com/lifei-chan/"><img id="blogLogo" src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.gif" alt="返回主页"></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/lifei-chan/">江山无限辉</a></h1>
+<h2></h2>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		<div id="navigator">
+			
+<ul id="navList">
+	<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+	<li><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/lifei-chan/">首页</a></li>
+	<li><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+	<li><a id="blog_nav_contact" accesskey="9" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89">联系</a></li>
+	<li><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+	<li><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/lifei-chan/rss">订阅</a>
+	<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/lifei-chan/rss"><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/xml.gif" alt="订阅"></a></li>
+</ul>
+
+
+			<div class="blogStats">
+				
+				<div id="blog_stats">
+<!--done-->
+随笔- 21&nbsp;
+文章- 0&nbsp;
+评论- 1&nbsp;
+</div>
+				
+			</div><!--end: blogStats -->
+		</div><!--end: navigator 博客导航栏 -->
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/lifei-chan/p/8653973.html">FPGA-Xilinx原语调用之ODDR</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><p>记录背景：最近由于想实现GMIItoRGMII的功能，因此需要调用ODDR原语。</p>
+<p>ODDR：Dedicated Dual Data Rate （DDR） Output Register</p>
+<p>通过ODDR把两路单端的数据合并到一路上输出，上下沿同时输出数据，上沿输出a路下沿输出b路；如果两路输入信号一路恒定为1，一路恒定为0，那么输出的信号实际上就是输入的时钟信号。</p>
+<p>调用的Verilog语句是：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #008080;"> 1</span> <span style="color: #008000;">//</span><span style="color: #008000;"> ODDR: Output Double Data Rate Output Register with Set, Reset
+</span><span style="color: #008080;"> 2</span> <span style="color: #008000;">//</span><span style="color: #008000;">       and Clock Enable.
+</span><span style="color: #008080;"> 3</span> <span style="color: #008000;">//</span><span style="color: #008000;">       7 Series
+</span><span style="color: #008080;"> 4</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Xilinx HDL Language Template, version 2017.4</span>
+<span style="color: #008080;"> 5</span> 
+<span style="color: #008080;"> 6</span> <span style="color: #000000;">ODDR #(
+</span><span style="color: #008080;"> 7</span>    .DDR_CLK_EDGE(<span style="color: #800000;">"</span><span style="color: #800000;">OPPOSITE_EDGE</span><span style="color: #800000;">"</span>), <span style="color: #008000;">//</span><span style="color: #008000;"> "OPPOSITE_EDGE" or "SAME_EDGE"</span>
+<span style="color: #008080;"> 8</span>    .INIT(<span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b0),    // Initial value of Q: 1</span><span style="color: #800000;">'</span>b0 <span style="color: #0000ff;">or</span> <span style="color: #800080;">1</span><span style="color: #800000;">'</span><span style="color: #800000;">b1</span>
+<span style="color: #008080;"> 9</span>    .SRTYPE(<span style="color: #800000;">"</span><span style="color: #800000;">SYNC</span><span style="color: #800000;">"</span>) <span style="color: #008000;">//</span><span style="color: #008000;"> Set/Reset type: "SYNC" or "ASYNC"</span>
+<span style="color: #008080;">10</span> <span style="color: #000000;">) ODDR_inst (
+</span><span style="color: #008080;">11</span>    .Q(Q),   <span style="color: #008000;">//</span><span style="color: #008000;"> 1-bit DDR output</span>
+<span style="color: #008080;">12</span>    .C(C),   <span style="color: #008000;">//</span><span style="color: #008000;"> 1-bit clock input</span>
+<span style="color: #008080;">13</span>    .CE(CE), <span style="color: #008000;">//</span><span style="color: #008000;"> 1-bit clock enable input</span>
+<span style="color: #008080;">14</span>    .D1(D1), <span style="color: #008000;">//</span><span style="color: #008000;"> 1-bit data input (positive edge)</span>
+<span style="color: #008080;">15</span>    .D2(D2), <span style="color: #008000;">//</span><span style="color: #008000;"> 1-bit data input (negative edge)</span>
+<span style="color: #008080;">16</span>    .R(R),   <span style="color: #008000;">//</span><span style="color: #008000;"> 1-bit reset</span>
+<span style="color: #008080;">17</span>    .S(S)    <span style="color: #008000;">//</span><span style="color: #008000;"> 1-bit set</span>
+<span style="color: #008080;">18</span> <span style="color: #000000;">);
+</span><span style="color: #008080;">19</span> 
+<span style="color: #008080;">20</span> <span style="color: #008000;">//</span><span style="color: #008000;"> End of ODDR_inst instantiation</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>模式解释：</p>
+<p>OPPOSITE_EDGE模式：</p>
+<p>在此模式中，时钟边沿被用来以两倍的吞吐量从FPGA逻辑中捕获数据。这种结构与virtex-6的实现比较相似。两个输出都提供给IOB的数据输入或者三态控制输入。</p>
+<p><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1333687-20180326210618497-1274347918.png" alt=""></p>
+<p>SAME_EDGE模式：</p>
+<p>在此模式下，数据可以在相同的时钟边沿从给IOB。相同的时钟沿将数据送给IOB可以避免建立时间违规，并允许用户使用最小的寄存器来执行更高的DDR频率来进行寄存器的延迟，而不是使用CLB寄存器。</p>
+<p>&nbsp;<img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1333687-20180326210837446-2145813658.png" alt=""></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>注意：</p>
+<p>1、set和reset不能同时置位；</p>
+<p>2、ODDR原语的复位需要约12个clock，第一次输入的数据可能会有问题（亲测），[由于公司网络的原因，无法上传图片]，但亲测是如此。</p>
+<p>&nbsp;修改代码前：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #0000ff;">wire</span><span style="color: #000000;"> oddr_do_test;
+
+oddr_test oddr_test
+        (.clk(tx_clk),
+         .rst(rst),
+         .ce(</span>~<span style="color: #000000;">rst),
+         .di_p(tx_en),
+         .di_n(tx_er),
+         .do_o(oddr_do_test)
+        );</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>&nbsp;</p>
+<p><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1333687-20180326211010787-1046272544.png" alt="" width="1187" height="300"></p>
+<p>增加如下代码：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #0000ff;">wire</span><span style="color: #000000;"> oddr_do_test;
+
+</span><span style="color: #0000ff;">reg</span> [<span style="color: #800080;">5</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]tx_en_d;
+</span><span style="color: #0000ff;">reg</span> [<span style="color: #800080;">5</span>:<span style="color: #800080;">0</span><span style="color: #000000;">]tx_er_d;
+</span><span style="color: #0000ff;">always</span> @ (<span style="color: #0000ff;">posedge</span><span style="color: #000000;"> tx_clk)
+</span><span style="color: #0000ff;">begin</span><span style="color: #000000;">
+    tx_en_d </span>&lt;= {tx_en_d[<span style="color: #800080;">4</span>:<span style="color: #800080;">0</span><span style="color: #000000;">],tx_en};
+    tx_er_d </span>&lt;= {tx_er_d[<span style="color: #800080;">4</span>:<span style="color: #800080;">0</span><span style="color: #000000;">],tx_er};
+</span><span style="color: #0000ff;">end</span><span style="color: #000000;">
+
+
+oddr_test oddr_test
+        (.clk(tx_clk),
+         .rst(rst),
+         .ce(</span>~<span style="color: #000000;">rst),
+         .di_p(tx_en_d[</span><span style="color: #800080;">5</span><span style="color: #000000;">]),
+         .di_n(tx_er_d[</span><span style="color: #800080;">5</span><span style="color: #000000;">]),
+         .do_o(oddr_do_test)
+        );</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1333687-20180326211343444-931909380.png" alt=""></p>
+<p>&nbsp;</p></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(8653973,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow('bbb24edb-64a5-40df-4573-08d54dbac325');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/lifei-chan/" target="_blank"><img src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/sample_face.gif" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/lifei-chan/">江山无限辉</a><br>
+            <a href="http://home.cnblogs.com/u/lifei-chan/followees">关注 - 3</a><br>
+            <a href="http://home.cnblogs.com/u/lifei-chan/followers">粉丝 - 4</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('bbb24edb-64a5-40df-4573-08d54dbac325');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(8653973,'Digg')">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(8653973,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/lifei-chan/p/8653647.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/lifei-chan/p/8653647.html" title="发布于2018-03-26 20:42">NTC热敏电阻认识及功率型热敏电阻选型</a><br><a href="https://www.cnblogs.com/lifei-chan/p/8660334.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/lifei-chan/p/8660334.html" title="发布于2018-03-27 23:42">IIC串行总线的组成及其工作原理</a><br></div>
+</div>
+
+
+		</div>
+		<div class="postDesc">posted @ <span id="post-date">2018-03-26 21:14</span> <a href="https://www.cnblogs.com/lifei-chan/">江山无限辉</a> 阅读(<span id="post_view_count">2864</span>) 评论(<span id="post_comment_count">0</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=8653973" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(8653973);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=411770,cb_entryId=8653973,cb_blogApp=currentBlogApp,cb_blogUserGuid='bbb24edb-64a5-40df-4573-08d54dbac325',cb_entryCreatedDate='2018/3/26 21:14:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="https://cloud.baidu.com/campaign/purchase-2019/index.html?track=cp:dsp|pf:pc|pp:chui-bokeyuan-huodong-19caigouji-BCC-neiyeCH-190410|pu:neiyeCH-wenzilian|ci:2019cgj|kw:2112847" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-百度云')">【推荐】百度智能云品牌升级，云服务器福利低至0.5折</a><br><a href="https://gitee.com/enterprises?from=bky-2" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-gitee')">【推荐】专业便捷的企业级代码托管服务 - Gitee 码云</a><br><a href="https://www.bagevent.com/event/2468856" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-GAITC')">【活动】2019第四届全球人工技术大会解码“智能+时代”</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="FPGA-Xilinx%E5%8E%9F%E8%AF%AD%E8%B0%83%E7%94%A8%E4%B9%8BODDR%20-%20%E6%B1%9F%E5%B1%B1%E6%97%A0%E9%99%90%E8%BE%89%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="COWhoIXGzuECFVBevQodwI4BQA"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>相关博文：</b><br>·  <a href="https://www.cnblogs.com/ninghechuan/p/8325699.html" target="_blank" onclick="clickRecomItmem(8325699)">基于Xilinx FPGA的视频图像采集系统</a><br>·  <a href="https://www.cnblogs.com/tsfh/p/9184621.html" target="_blank" onclick="clickRecomItmem(9184621)">使用XilinxSDSoc在Xilinxzcu102开发板上编程HelloWorld</a><br>·  <a href="https://www.cnblogs.com/craftor/archive/2010/09/14/1825628.html" target="_blank" onclick="clickRecomItmem(1825628)">在ModelSim中添加Xilinx仿真库</a><br>·  <a href="https://www.cnblogs.com/FPGA_DSP/archive/2010/01/28/1658764.html" target="_blank" onclick="clickRecomItmem(1658764)">xilinx编写高效的验证平台</a><br>·  <a href="https://www.cnblogs.com/yangjun1219/p/5565013.html" target="_blank" onclick="clickRecomItmem(5565013)">Xilinx FPGA LVDS应用</a><br></div></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="COahoIXGzuECFVBevQodwI4BQA"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/623775/" target="_blank">IE 11浏览器被爆安全漏洞：可远程窃取本地PC文件</a><br> ·  <a href="https://news.cnblogs.com/n/623774/" target="_blank">新周刊：中国穷人的孩子，正在被手机废掉</a><br> ·  <a href="https://news.cnblogs.com/n/623772/" target="_blank">关于“996”马云刘强东之后 顺丰王卫也表态</a><br> ·  <a href="https://news.cnblogs.com/n/623771/" target="_blank">微软确认有黑客入侵部分Outlook帐户 时间长达数月</a><br> ·  <a href="https://news.cnblogs.com/n/623770/" target="_blank">顺为资本周航：有人问2019下半年会好吗？坦白说不会</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/lifei-chan/">江山无限辉</a><br>园龄：<a href="https://home.cnblogs.com/u/lifei-chan/" title="入园时间：2018-02-10">1年2个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/lifei-chan/followers/">4</a><br>关注：<a href="https://home.cnblogs.com/u/lifei-chan/followees/">3</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow('bbb24edb-64a5-40df-4573-08d54dbac325')">+加关注</a></div><script>getFollowStatus('bbb24edb-64a5-40df-4573-08d54dbac325')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="calendar"><div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/03/01');return false;">&lt;</a></td><td align="center">2019年4月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/05/01');return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" abbr="日" scope="col" align="center">日</th><th class="CalDayHeader" abbr="一" scope="col" align="center">一</th><th class="CalDayHeader" abbr="二" scope="col" align="center">二</th><th class="CalDayHeader" abbr="三" scope="col" align="center">三</th><th class="CalDayHeader" abbr="四" scope="col" align="center">四</th><th class="CalDayHeader" abbr="五" scope="col" align="center">五</th><th class="CalDayHeader" abbr="六" scope="col" align="center">六</th></tr><tr><td class="CalOtherMonthDay" align="center">31</td><td align="center">1</td><td align="center">2</td><td align="center">3</td><td align="center">4</td><td align="center">5</td><td class="CalWeekendDay" align="center">6</td></tr><tr><td class="CalWeekendDay" align="center">7</td><td align="center">8</td><td align="center">9</td><td align="center">10</td><td class="CalTodayDay" align="center">11</td><td align="center">12</td><td class="CalWeekendDay" align="center">13</td></tr><tr><td class="CalWeekendDay" align="center">14</td><td align="center">15</td><td align="center">16</td><td align="center">17</td><td align="center">18</td><td align="center">19</td><td class="CalWeekendDay" align="center">20</td></tr><tr><td class="CalWeekendDay" align="center">21</td><td align="center">22</td><td align="center">23</td><td align="center">24</td><td align="center">25</td><td align="center">26</td><td class="CalWeekendDay" align="center">27</td></tr><tr><td class="CalWeekendDay" align="center">28</td><td align="center">29</td><td align="center">30</td><td class="CalOtherMonthDay" align="center">1</td><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td></tr><tr><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td><td class="CalOtherMonthDay" align="center">7</td><td class="CalOtherMonthDay" align="center">8</td><td class="CalOtherMonthDay" align="center">9</td><td class="CalOtherMonthDay" align="center">10</td><td class="CalOtherMonthDay" align="center">11</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script></div>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<div class="catListLink">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/lifei-chan/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/lifei-chan/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/lifei-chan/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/lifei-chan/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/lifei-chan/tag/" title="我的博客的标签列表">我的标签</a></li>
+<li><a id="itemListLink" onclick="this.blur();WarpClass('itemListLink', 'itemListLin_con');return false;" href="#">更多链接</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div></div><div id="sidebar_toptags" class="sidebar-block">
+<div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/lifei-chan/tag/FPGA%20%E6%B5%8B%E8%AF%95%20%E7%BC%96%E7%A0%81%E8%A7%84%E5%88%99/">FPGA 测试 编码规则</a>(1)</li>
+</ul>
+</div></div><div id="sidebar_categories">
+<div class="catListPostArchive">
+<h3 class="catListTitle">随笔档案</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/lifei-chan/archive/2018/10.html">2018年10月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/lifei-chan/archive/2018/07.html">2018年7月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/lifei-chan/archive/2018/06.html">2018年6月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/lifei-chan/archive/2018/05.html">2018年5月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_4" href="https://www.cnblogs.com/lifei-chan/archive/2018/04.html">2018年4月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_5" href="https://www.cnblogs.com/lifei-chan/archive/2018/03.html">2018年3月 (9)</a> </li>
+
+</ul>
+
+</div>
+
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/lifei-chan/p/9114897.html#3997583">1. Re:运动规划——PT and PVT 模式</a></li>
+        <li class="recent_comment_body">写的不错 赞</li>
+        <li class="recent_comment_author">--闪闪❤惹人爱</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/lifei-chan/p/8653973.html">1. FPGA-Xilinx原语调用之ODDR(2864)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/9114897.html">2. 运动规划——PT and PVT 模式(1328)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/8683468.html">3. Xilinx原语学习之时钟资源相关原语(1256)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/8653647.html">4. NTC热敏电阻认识及功率型热敏电阻选型(1219)</a></li><li><a href="https://www.cnblogs.com/lifei-chan/p/9216272.html">5. 基于FPGA（DDS）的正弦波发生器(812)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/lifei-chan/p/9114897.html">1. 运动规划——PT and PVT 模式(1)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/lifei-chan/p/8612633.html">1. FPGA设计方法检查表(1)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright ©2019 江山无限辉
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+</body></html>
