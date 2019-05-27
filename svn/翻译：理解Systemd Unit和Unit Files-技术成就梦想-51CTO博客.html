@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<!-- saved from url=(0041)https://blog.51cto.com/jiangche00/1926777 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="https://blog.51cto.com/favicon.ico">
+        <title>翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客</title>
+    <meta name="keywords" content="Linux,配置文件,systemd,unit files">
+<meta name="description" content="原文链接：Understanding Systemd Units and Unit Files导论目前，越来越多的Linux发行版正在采用或者准备采用systemd初始化系统，而这一强大的管理套件可以对你的服务器进行多方面的管理，譬如服务管理、挂载设备管理、系统状态管理。 在systemd里面，所谓的unit是指任何系统可以操作并管理的资源，这也是systemd处理的主要对象。这些资源对象被定义在">    <link href="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/header.css" rel="stylesheet"><link href="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/other.css" rel="stylesheet"><link href="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/right.css" rel="stylesheet"><link href="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/blog_details.css" rel="stylesheet"><link href="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/highlight.css" rel="stylesheet">
+    <script type="text/javascript" async="" src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/vds.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/push.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/hm.js.download"></script><script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/jquery.min.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/cookie.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/login.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/common.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/mbox.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/follow.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/vip.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/window.js.download"></script><style></style><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/share.js.download"></script><link rel="stylesheet" href="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/share_style0_16.css"></head>
+<body>
+<img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201905/09/35b614858be88dc3aa22df9d911acb79.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url(&#39;https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png&#39;) 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=9&amp;pc" target="_blank">
+  <img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/d82b6251b6923be0ee6899d541dd5013.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li><a href="https://blog.51cto.com/">首页</a></li>
+      <li><a href="https://blog.51cto.com/original">文章</a></li>
+      <li><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+      
+    </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com/" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com/" target="_blank">WOT</a>
+            <a href="http://www.51cto.com/" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fjiangche00%2F1926777&amp;logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fjiangche00%2F1926777" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index" target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onclick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/box.js.download"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=9" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201905/08/e52192da62e30db4af5d359c36de8998.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog61',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/entrance.js.download" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box" style="min-height: 859px;">
+      <link rel="stylesheet" href="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/mdeShow.css">
+  <link rel="stylesheet" href="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/prism.css">
+  <script type="text/javascript" charset="utf-8" src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/prism.js.download"></script>
+<link rel="stylesheet" href="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/tinyscrollbar.css">
+<script type="text/javascript" src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/jquery.tinyscrollbar.js.download"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name translation">翻译</a>
+							</div>
+			<h1 class="artical-title">翻译：理解Systemd Unit和Unit Files</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/jiangche00" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="4377920" src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/wKiom1kz44-BvcLzAAAeAda26sM640_middle.jpg"></a>
+				</div>
+				<a href="https://blog.51cto.com/jiangche00" class="name fl" target="_blank" style="margin-right:0;">jiangche00</a>
+												<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">15996人阅读</a>
+				<a href="javascript:;" class="time fr">2017-05-17 20:08:22</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><blockquote style="padding:15px 20px;margin:0 0 1.1em;border-left:5px solid;border-left-width:10px;"><p style="margin-top:0px;font-size:1em;margin-bottom:0px;">原文链接：<br><strong><a href="https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files" style="background: transparent; color: rgb(66, 133, 244); text-decoration: none;" target="_blank">Understanding Systemd Units and Unit Files</a></strong></p></blockquote><hr style="height:0px;border-right-width:0px;border-bottom-width:0px;border-left-width:0px;border-top-style:solid;margin:2em 0px;"><blockquote style="padding:15px 20px;margin:0 0 1.1em;border-left:5px solid;border-left-width:10px;"><p style="margin-top:0px;font-size:1em;margin-bottom:0px;"><strong>导论</strong><br>目前，越来越多的Linux发行版正在采用或者准备采用systemd初始化系统，而这一强大的管理套件可以对你的服务器进行多方面的管理，譬如服务管理、挂载设备管理、系统状态管理。 在systemd里面，所谓的<strong>unit</strong>是指<strong>任何系统可以操作并管理的资源</strong>，这也是systemd处理的主要对象。这些资源对象被定义在一些配置文件里面，而这些配置文件被称为<strong>unit files</strong>。在本文中，我们将为您介绍systemd所能处理的各种不同的<strong>unit</strong>单元。我们也会涵盖介绍一些常用的针对unit files的指令，用以体现这些资源是如何在系统里面进行处理。</p></blockquote><h3 style="font-family:inherit;color:inherit;font-size:1.7em;margin:1.2em 0px .6em;">Systemd Unit能够带给你什么东西？</h3><p style="margin-top:0px;margin-bottom:1.1em;"><strong>Units</strong>是<strong>systemd</strong>所能够管理的对象，他们是一些对于系统资源的<strong>标准化表示</strong>，可以被systemd套件的守护进程所管理，同时也可以被提供的命令工具所操作。</p><p style="margin-top:0px;margin-bottom:1.1em;"><strong>Units</strong>在一定程度上和init系统里面的服务(services)或者作业(jobs)很相似，但是<strong>Units</strong>有着更加宽广的定义，可以是抽象服务，网络资源，设备，文件系统挂载，以及隔离态的资源池。</p><p style="margin-top:0px;margin-bottom:1.1em;">这种<strong>Units</strong>的观点认为，其余那些由单一统一服务定义的init系统可以将这些服务拆分为多个<strong>功能单元</strong>，这种由功能(function)组织的单元，可以让您轻松地开启功能，停止功能，或扩展功能，而不用修改整个单元的行为。</p><p style="margin-top:0px;margin-bottom:1.1em;"><strong>Units</strong>容易执行的一些设置 如下所示：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>基于套接字(socket-based)的触发激活</strong>： 与服务相关的套接字，从守护进程中剥离出来，目的是为了更好的分开来进行处理。这么做有很多好处：比如我们可以对服务延迟启动，直到其相关的套接字可用为止。比如这么做可以允许系统在服务启动过程之前先创建好套接字，从而使得能够并行启动该服务的相关服务。</p></li><li><p><strong>基于总线(bus-based)的触发激活</strong>：<strong>Units</strong>也可以被D-Bus提供的总线接口激活。当一个与某个单元相关的总线被发布的时候，该单元便可以开始工作。</p></li><li><p><strong>基于路径(path-based)的触发激活</strong>：一个单元可以依据某个确定的文件系统路径的活动状态以及可用性而开始工作。相当于集成了Linux的inotify功能。</p></li><li><p><strong>隐式依赖映射</strong>：大部分单元的依赖树可以有systemd自己构建。但是您仍然可以自己添加依赖，调整信息。不过大部分的任务已经不用您个人自己完成了。</p></li><li><p><strong>实例与模板</strong>：单元文件的模板可以用来给同一个单元创建多个实例，这可以使得彼此相差不多或者本身是同系的单元能够提供相同的通用×××</p></li><li><p><strong>简单的安全加固</strong>：<strong>Units</strong>可以通过添加简单的指令从而执行一些相当不错的安全设置。例如您可以对特定的文件系统设置只读或者无法访问，可以限制内核功能，可以非配私有的/tmp目录以及，可以设置网络访问控制。</p></li><li><p><strong>插件与片段</strong>：通过使用片段(snippets)覆盖系统的单元文件，可以轻易地扩展<strong>Units</strong>功能。</p></li></ul><h3 style="font-family:inherit;color:inherit;font-size:1.7em;margin:1.2em 0px .6em;">Systemd 单元文件从哪里获取？</h3><p style="margin-top:0px;margin-bottom:1.1em;">定义systemd如何处理“单元”的文件可以在多个不同的路径下面，而每一个路径都有不同的特性和含义。</p><p style="margin-top:0px;margin-bottom:1.1em;">系统拷贝的单元文件一般都保存在<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">/lib/systemd/system</code>目录底下，一般的软件安装都会将单元文件安装到这个目录底下。</p><p style="margin-top:0px;margin-bottom:1.1em;"><strong><span style="color:#FF0000;">该路径下的单元文件能够在会话里面依据需求开启或者停止，这些单元文件又被成为泛用或普通的单元文件，一般由上游的项目维护者编写</span></strong>，其目的是让systemd系统都能够运行相关的单元文件。<strong><span style="color:#FF0000;">建议您不要修改这个目录里面的单元文件</span></strong>。您应该覆盖这些文件，必要的话使用另一个可以取代该目录的目录，将编写的单元文件放置进去。</p><p style="margin-top:0px;margin-bottom:1.1em;">如果您要修改单元文件的原有功能，最好在<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">/etc/systemd/system</code>目录下面。<strong><span style="color:#FF0000;">位于此目录下面的单元文件比其他任何文件系统位置下的单元文件的优先级都要高</span></strong>。如果您需要修改系统拷贝的单元文件，最安全灵活的做法是将一个同名的单元文件放到这个目录下面。</p><p style="margin-top:0px;margin-bottom:1.1em;">如果您只是需要覆盖某些系统单元文件的部分指令(即系统单元文件的一部分内容)，您可以在一个子目录下面使用<strong><span style="color:#FF0000;">片段</span></strong>。这么做的话便会对系统拷贝的单元文件的指令进行追加或者修改，让您只针对您需要的指令部分，而不需要修改或覆盖整个单元文件。</p><p style="margin-top:0px;margin-bottom:1.1em;">正确的做法是创建一个单元文件名字加上”.d”的子目录，例如某个单元文件叫做<strong><span style="color:#00AA00;">example.service</span></strong>，则需要创建一个名为<strong><span style="color:#00AA00;">example.service.d</span></strong>的目录，在这个目录里面，以<strong><span style="color:#00AA00;">.conf</span></strong>结尾的文件可以用于覆盖或者扩展对应的系统单元文件的属性。</p><p style="margin-top:0px;margin-bottom:1.1em;">还存在一个运行时单元定义的目录：<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">/run/systemd/system</code>。在该目录下的单元文件的优先级介于<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">/etc/systemd/system</code>和<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">/lib/systemd/system</code>之间。</p><p style="margin-top:0px;margin-bottom:1.1em;"><code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">systemd</code>进程在上述目录里面动态创建运行时单元文件，该目录用于针对会话级别的系统单元行为的修改。所有在该目录下面做的改变都将会在系统重启之后消失。</p><h3 style="font-family:inherit;color:inherit;font-size:1.7em;margin:1.2em 0px .6em;">Units的类型</h3><p style="margin-top:0px;margin-bottom:1.1em;"><code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">systemd</code>按单元所描述的资源类型，将诸多单元进行分类。最简单判断资源类型的方式便是查看单元文件的后缀名。下面列出了<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">systemd</code>可识别的单元类型：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>.service</strong>：一个service单元文件描述了如何管理服务器上面的一个服务或者应用。单元文件里面将会包含如何开始或者停止该服务，在何种情况下该服务会自动运行，以及和相关软件的依赖关系及顺序信息。</p></li><li><p><strong>.socket</strong>：一个socket单元文件描述了一个网络或IPC套接字，或者一个消息队列缓存，systemd用其所基于套接字的触发激活。当所定义的activity对于该socket可见的情况下，他们一般会有一个与之相关的.service单元文件会被启动。</p></li><li><p><strong>.device</strong>：描述针对udev或者sysfs文件系统而言必要的systemd管理设备。并非所有的设备都会有.device文件。在下面一些场景下，.device单元是必要的：调整设备、挂载设备、访问设备。</p></li><li><p><strong>.mount</strong>：定义了被systemd管理的挂载点。命名方法是将”/”换为”-“，并在结尾添加.mount。比如/dev/hugepage/挂载点，名称为dev-hugepage.mount</p></li><li><p><strong>automount</strong>：配置.mount定义的挂载点为自动挂载点，前提是必须要有与之对应的.mount单元文件。</p></li><li><p><strong>.swap</strong>：定义交换空间。该文件的名字必须反应和交换空间相关的设备或者路径</p></li><li><p><strong>.target</strong>：为启动或者改变状态提供一个同步点，也可以用作将系统带到一个新的状态。其余的单元通过设定和某个target的关系，和该target的操作绑定到一起。</p></li><li><p><strong>.path</strong>：定义了可以被基于路径的触发激活所使用的路径。默认情况下，当路径到了指定的状态(切换到了指定的路径)，一个同名的.service文件将会启用。这里是采用<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">inotify</code>去监控路径的改变。</p></li><li><p><strong>,timer</strong>：定义了可以由systemd管理的计时器，和<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">cron</code>计划任务类似。当计时器到时，一个匹配的单元将会启动。</p></li><li><p><strong>.snapshot</strong>：被<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">systemctl snapshot</code>命令所创建。可以让您在系统发生改变之后重新构建系统(回滚)。该快照只针对会话有效，用于回滚临时状态。</p></li><li><p><strong>.slice</strong>：与Linux的CGroup相关。其名称反应了其在cgroup树的层次。默认情况下，单元依据其类型的不同被放置在一定的slice里面。</p></li><li><p><strong>.scope</strong>：Scope单元由systemd接收到总线接口的信息而自动生成。这些Scope单元用于管理由外部创建的系统进程。</p></li></ul><p style="margin-top:0px;margin-bottom:1.1em;">如您所见，systemd所管理的单元的种类有很多。很多不同类型的单元协同工作进而添加新的功能。例如一些单元用于触发其他单元，并且提供激活功能。</p><p style="margin-top:0px;margin-bottom:1.1em;">基于功能及管理目的，这里我们将主要关注.service单元。</p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash">Directive1<span class="token operator">=</span>default_value</code></pre><div class="toolbar"></div></div><p>如果片段里面提供了下面的内容，则上述的Directive1的赋值将会被抹除：</p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash">Directive1<span class="token operator">=</span></code></pre><div class="toolbar"></div></div><p style="margin-top:0px;margin-bottom:1.1em;">一般而言，systemd可以允许灵活的配置，例如多种布尔赋值形式都是可以接受的(1, yes, on, true) 或者 (0, no off)。时间格式可以被智能地解析：用一个不含单位的秒，加上系统支持的任意一种时间格式。</p><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">[Unit]区段的指令集</h4><p style="margin-top:0px;margin-bottom:1.1em;">大多数单元文件的第一个区段为[Unit]区段。该区段用于定义该单元的元数据，并且用于配置和其他单元的依赖关系</p><p style="margin-top:0px;margin-bottom:1.1em;">虽然说区段的顺序前后并不影响systemd对于单元文件的解析，但是[Unit]该区段也会被放到第一的位置，主要是因为该区段提供了该单元的总览。在[Unit]区段中，存在着下述常用的指令：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>Descriptions=</strong>：该指令用于描述单元的名称及基本功能。很多种类的systemd工具都将其作为返回值，因此写一些简短有启示性的内容，是一种良好的作风。</p></li><li><p><strong>Documentation=</strong>：该指令提供文档URI列表的位置，既可以是内部的man帮助文档，也可以是网络可访问的URL。<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">systemctl status</code>命令可以显示出该内容。</p></li><li><p><strong>Requires=</strong>：该指令列出了该单元所依赖的重要的其他单元，如果该单元被激活，所列出的那些依赖单元理应也是被激活的状态。若其依赖单元有未被激活的状态，则其本身不会被激活成功。这些单元<strong><span style="color:#FF0000;">和当前单元是并行开启的，并不是先后的关系</span></strong>。</p></li><li><p><strong>Wants=</strong>：该指令与之前的<strong>Requires</strong>相似，但是<strong><span style="color:#FF0000;">宽松一些</span></strong>。systemd将会试图在启动单元的时候，将Wants列表里面的依赖单元也启动，如果依赖单元未找到或者启动失败，并不会影响原单元。推荐用该指令去配置依赖关系。同样，也是并行开启。</p></li><li><p><strong>BindsTo=</strong>：该指令也和<strong>Requires</strong>相似，但是<strong><span style="color:#FF0000;">当依赖单元终止运行的时候，原单元也会终止</span></strong>。</p></li><li><p><strong>Before=</strong>：该指令后面列出的单元直到原单元被启动完成之前，不会完成启动。例如D.service里面添加了<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">Before=A.service B.service C.service</code>，则<strong><span style="color:#FF0000;">如果D和(A,B,C)同时被激活，A，B，C这三个单元会等待D激活完成之后再进行激活过程，换句话说，D排在A,B,C的前面</span></strong>。注意，在这里并没有暗示依赖关系。</p></li><li><p><strong>After=</strong>：该指令和上面的<strong>Before</strong>用法相反。如果D.service里面添加了<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">After=A.service B.service C.service</code>，则<strong><span style="color:#FF0000;">如果D和(A,B,C)同时被激活，D会等待A,B,C激活完成之后，再完成自己的激活，换句话说，A,B,C排在D的前面</span></strong>。注意，在这里并没有暗示依赖关系。</p></li><li><p><strong>Conflicts=</strong>：列出不能够和当前单元一同激活的单元，<strong><span style="color:#FF0000;">如果启动原单元，则Conflicts中列出的单元会被停止</span></strong>。</p></li><li><p><strong>Condition…=</strong>：有很多以Condition开头的指令，目的是为了让管理员在启动单元之前测试Condition中给出的条件是否满足。该选项可以用于提供很对某些系统的条件检测机制。如果条件不满足，则该单元本身会被“友好地”跳过，而不会执行(gracefully skipped)。</p></li><li><p><strong>Assert…=</strong>：与上述<strong>Condition…</strong>类似，该指令检测运行环境的各个方面，从而决定该单元是否应该被激活，与<strong>Condition…</strong>的友好跳过不同，如果某一检测失败，则会导致该单元失败(failure)</p></li></ul><p style="margin-top:0px;margin-bottom:1.1em;">利用上述指令，以及一些实用的关于单元及其依赖的信息，一个操作系统便可以搭建起来了。</p><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">[Install]区段的指令集</h4><p style="margin-top:0px;margin-bottom:1.1em;">在单元文件的另一侧(结尾处)，最后一个区段一般都是[Install]区段。这一区段是可选的，是定义其enable或者disable行为的区段。Enabling一个单元，意味着将其标记为开机自动启动。</p><p style="margin-top:0px;margin-bottom:1.1em;">因为如此，只有能够开机启动的单元会有这个区段。在该区段的指令控制了当该单元设定为开机启动的时候将会发生什么</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>WantedBy=</strong>：该指令是设定开机启动的一种最普遍的方法。该指令允许您设定依赖关系，就如同<strong>Wants=</strong>在[Unit]区段里面一样。不同点在于，WantedBy指令被辅助的单元所包含，确保了主单元的相对干净。当含有该指令的单元被设定为enable的时候，一个新的目录会在/etc/systemd/system下面创建。例如<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">WantedBy=multi-user.target</code>，则在/etc/systemd/system下面会创建一个名为multi-user.target.wants的目录。在其中，会创建一个指向当前单元的符号链接，用以创建依赖性(即创建一个依赖池，放到了.want目录下面，形成了所有multi-user.target的依赖项)，如果将该单元进行disable操作，则会从.want里面移除符号链接，从而从依赖池里面剔除掉。</p></li><li><p><strong>RequiredBy=</strong>：该指令和<strong>WantedBy</strong>十分相似，不过<strong><span style="color:#FF0000;">是强依赖</span></strong>。</p></li><li><p><strong>Alias=</strong>：使得一个单元可以用别名来进行启动</p></li><li><p><strong>Also=</strong>：允许多个单元作为一个集合进行enable或者disable。一般会将所列出的单元进行统一的安装或者卸载</p></li></ul><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">特定单元区段指令集</h4><p style="margin-top:0px;margin-bottom:1.1em;">针对<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">device</code>,<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">target</code>,<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">snapshot</code>和<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">scope</code>单元而言，并不存在特定的单元指令，而下面所提到的单元是拥有自己特定的指令集的区段。</p><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">[Service]区段</h4><p style="margin-top:0px;margin-bottom:1.1em;">[Service]区段用于提供服务可用的配置。</p><p style="margin-top:0px;margin-bottom:1.1em;">在[Service]区段中，一个重要的基本设定是TYPE=。该指令对整个服务按照进程进行归类，并将一些行为作为守护进程。由于其告知systemd如何正确的管理服务并且查到服务的状态，因此其重要性不言而喻。Type指令可以是下述内容的其中一种：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>simple</strong>：设定ExecStart的进程作为主进程。作为<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">Busname=</code>和<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">Type=</code>缺省情况下的默认值。任何与该进程的通信，需要在该单元外部建立相关的通信单元。例如如果需要用套接字进行通信，则需要创建套接字单元。</p></li><li><p><strong>forking</strong>：ExecStart的主服务创建子进程，之后主服务退出(<strong><span style="color:#FF0000;">经典的Unix守护进程的做法</span></strong>)。之后会通知systemd子进程仍然在运行。</p></li><li><p><strong>oneshot</strong>：该种类型通知systemd，ExecStart执行的命令(或进程)是短生命周期的，因此会等待该进程退出之后再执行。该行为是<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">Type=</code>和<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">ExecStart=</code>都缺省的时候的默认值。多用于一次性任务(<strong><span style="color:#FF0000;">比如，修改配置文件，ip命令修改网络配置，…..</span></strong>)，而且此种类型通常需要设定<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">RemainAfterExit=</code>选项</p></li><li><p><strong>dbus</strong>：设置了<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">ExecStart=</code>和<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">BusName=</code>时的默认值。该单元会在D-Bus上面获取由BusName指定的名称，在获取名称之后，systemd才会处理下一个单元。</p></li><li><p><strong>notify</strong>：启动进程需要通过sd_notify接口向systemd发送一个消息通知。而systemd在收到该消息通知之前，会阻塞处理下一个单元的操作。</p></li><li><p><strong>idle</strong>：该进程会延迟到其他作业都调度完毕之后再执行，这样可以避免控制台上面的状态信息与shell脚本的输出混杂在一起。</p></li></ul><p style="margin-top:0px;margin-bottom:1.1em;">一些附加的指令在特定的服务类型下或许有用，例如：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>RemainAfterExit=</strong>：结合<strong>oneshot</strong>使用。决定进程全部退出之后，是否依然将该服务看做是活动状态(active status)，默认值为no</p></li><li><p><strong>PIDFile=</strong>：如果服务类型被标记为”<strong>forking</strong>“，该指令用于设定其PID文件的路径，用于监控。</p></li><li><p><strong>BusName=</strong>：如果服务类型被标为”<strong>bus</strong>“，该指令用于设定与此服务通信所使用的D-Bus名称。</p></li><li><p><strong>NotifyAccess=</strong>：如果服务类型被标记为”<strong>notify</strong>“，设置通过sd_notify访问服务状态通知socket的模式，可以设定为none, main, all之一。none是默认值，表示不更新任何守护进程的状态；main表示只接受主进程的状态更新消息。all表示接受该服务cgroup内所有进程状态的更新消息。</p></li></ul><p style="margin-top:0px;margin-bottom:1.1em;">如下指令定义了<strong>如何管理服务</strong>：<br>注：所谓的”服务进程”是指ExecStartPre, ExecStartPost, ExecStop, ExecStopPost, ExecReload中设置的进程。</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>ExecStart=</strong>：定义了启动服务的绝对路径指令及传入参数。<strong><span style="color:#FF0000;">在除了oneshot服务类型的情况下，ExecStart一般只会在一个单元文件里面存在一行</span></strong>。命令行必须以一个绝对路径表示的可执行文件开始，并且其后的那些参数将依次作为”argv[1] argv[2] …”传递给被执行的进程。 如果在绝对路径前加上可选的 “@” 前缀，那么其后的那些参数将依次作为”argv[0] argv[1] argv[2] …”传递给被执行的进程。 如果在绝对路径前加上可选的 “-” 前缀，那么即使该进程以失败状态(例如非零的返回值或者出现异常)退出，也会被视为成功退出。 如果在绝对路径前加上可选的 “+” 前缀，那么进程将拥有完全的权限(超级用户的特权)。 可以同时使用 “-“, “@”, “+” 前缀， 且顺序任意。</p></li><li><p><strong>ExecStartPre=</strong>：在执行主进程<strong>ExecStart</strong>之前执行的内容。可以有多行，上述内容提到的”-“号对其同样有用，功能与上相同。</p></li><li><p><strong>ExecStartPost=</strong>：在执行主进程<strong>ExecStart</strong>之后执行的内容。可以有多行，上述内容提到的”-“号对其同样有用，功能与上相同。</p></li><li><p><strong>ExecReload=</strong>：是一个可选指令，用于设置当前服务被要求重载的时候所执行的命令行，语法规则与ExecStart相同。</p></li><li><p><strong>ExecStop=</strong>：设置停止服务的命令，如果没有给出，该服务的所有进程都将被强行杀掉</p></li><li><p><strong>ExecStopPost=</strong>：在ExecStop之后执行</p></li><li><p><strong>RestartSec=</strong>：设置在重启服务之前暂停多长时间。默认值为100毫秒</p></li><li><p><strong>Restart=</strong>：设定在何种情况条件下，服务进行重启该选项的值可以取no, always, on-success, on-failure, on-abnormal, on-watchdog, on-abort之一</p></li><li><p><strong>TimeoutSec=</strong>：设定最大启动时长和最大停止时长。亦可以单独地用<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">TimeoutStartSec=</code>和<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">TimeoutStopSec=</code>来设定。</p></li></ul><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">[Socket]区段</h4><p style="margin-top:0px;margin-bottom:1.1em;">Socket单元十分普遍，主要由于很多的服务基于socket激活，从而提供更好的并行以及灵活性。每一个socket单元都需要有一个与之对应的服务单元。当socket接收到activity的时候，其服务单元会被激活。</p><p style="margin-top:0px;margin-bottom:1.1em;">对于设定一个实际的套接字单元而言，如下的指令是常用的：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>ListenStream=</strong>：定义流套接字地址，TCP连接使用。</p></li><li><p><strong>ListenDatagram</strong>：定义数据报套接字地址，UDP连接使用。</p></li><li><p><strong>ListenSequentialPacket=</strong>：定义Unix套接字地址。</p></li><li><p><strong>ListenFIFO</strong>：定义消息队列缓存。</p></li></ul><p style="margin-top:0px;margin-bottom:1.1em;">一些其他套接字单元的特性可以通过这些附加的指令进行控制：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>Accept=</strong>：决定该服务的其余实例是否由于连接的创建而新建。如果设定为false，一个服务实例将会处理所有的连接。</p></li><li><p><strong>SocketUser=</strong>：定义Unix套接字的所有者，默认为root用户。</p></li><li><p><strong>SocketGroup=</strong>：定义Unix套接字的所属组，默认为root组。如果只定义了<strong>SocketUser</strong>，空缺<strong>SocketGroup</strong>，则systemd会选择一个合适的组作为其所属组。</p></li><li><p><strong>SocketMode=</strong>：设定FIFO实体的权限。</p></li><li><p><strong>Service=</strong>：如果本应该与套接字单元所对应的服务单元的名称与套接字单元的名称不同，则可以通过该项来定义服务单元的名称。</p></li></ul><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">[Mount]区段</h4><p style="margin-top:0px;margin-bottom:1.1em;">Mount单元将挂载点的管理交予systemd。<br>其命名规范如下：如果想管理/sys/kernel/config目录，需要创建sys-kernel-config.mount单元文件。<br>常用的指令如下所示：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>What=</strong>：被挂载资源的绝对路径</p></li><li><p><strong>Where=</strong>：挂载点的绝对路径，如果不采用传统的文件系统路径的话，则需要和对应的.service单元的名字相同。</p></li><li><p><strong>Type=</strong>：挂载点的文件系统类型.</p></li><li><p><strong>Options=</strong>：挂载点的option参数，用逗号进行参数之间的分割。</p></li><li><p><strong>SloppyOptions=</strong> ：当有未识别的挂载参数时，是否决定挂载操作成功与失败的布尔值。</p></li><li><p><strong>DirectoryMode=</strong>：若挂载点的父目录需要被创建，则定义父目录的权限。</p></li><li><p><strong>TimeoutSec=</strong>：超时时间。</p></li></ul><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">[Automount]区段</h4><p style="margin-top:0px;margin-bottom:1.1em;">定义自动挂载。仅有两个指令：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>Where=</strong>：同上</p></li><li><p><strong>DirectoryMode=</strong>：同上</p></li></ul><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">[Swap]区段</h4><p style="margin-top:0px;margin-bottom:1.1em;">用于设置交换空间，其命名规范和[Mount]区段的命名规范相似。<br>主要的指令如下所示：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>What=</strong>：交换空间的绝对路径。</p></li><li><p><strong>Priority=</strong>：swap空间的优先级数字编号。</p></li><li><p><strong>Options=</strong>：任意在/etc/fstab里面对于swap空间的参数都可以写在这里，用逗号分割。</p></li><li><p><strong>TimeoutSec=</strong>：超时时间。</p></li></ul><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">[Path]区段</h4><p style="margin-top:0px;margin-bottom:1.1em;">定义为systemd所监控的文件系统路径。需要存在一个与之对应的单元，当特定的监控路径发生状态变化的时候(通过inotify事件)，所对应的单元会被激活。</p><p style="margin-top:0px;margin-bottom:1.1em;">[Path]区段可以包含如下指令：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>PathExists=</strong>：用于检查路径是否存在。如果存在，则相关的单元会被激活。</p></li><li><p><strong>PathExistsGlob=</strong>：功效和上面的相同，不过支持Glob通配符及扩展表达式。</p></li><li><p><strong>PathChanged=</strong>：用于观察路径的变化。当所观察的文件(一切皆文件)关闭的时候，触发相关单元的激活操作。</p></li><li><p><strong>PathModified=</strong>：有着和上面一样的功能，再附加对于文件的写操作的观测。</p></li><li><p><strong>DirectoryNotEmpty=</strong>：当此目录不再是空目录的时候，触发相应的单元激活。</p></li><li><p><strong>Unit=</strong>：设定所需要激活的特定单元的名称。如果没有指定，则会搜寻与该Path文件同名的.service单元文件，作为其关联的单元文件。</p></li><li><p><strong>MakeDirectory=</strong>：在对路径进行观察之前，是否需要建立路径目录。</p></li><li><p><strong>DirectoryMode=</strong>：如果上面的功能被开启，则会设定所创建的路径目录的权限。</p></li></ul><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">[Timer]区段</h4><p style="margin-top:0px;margin-bottom:1.1em;">类似于定义计划任务，可以替代部分<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">cron</code>和<code style="font-family:&#39;Source Code Pro&#39;, monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;">at</code>的功能。同样需要有一个与之关联的单元，当计时器到时的时候，触发该单元。含有的指令如下所示：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>OnActiveSec=</strong>：在.timer单元激活之后多少秒之后执行关联的单元，例如OnActiveSec=50，意味着在.timer激活之后50秒，会激活相应的关联单元。</p></li><li><p><strong>OnBootSec=</strong>：在系统启动之后多少秒执行关联的单元。</p></li><li><p><strong>OnStartupSec=</strong>：在systemd启动之后多少秒执行关联的单元。</p></li><li><p><strong>OnUnitActiveSec=</strong>：根据最后一次相关的单元激活的时间设置计时器。</p></li><li><p><strong>OnUnitInactiveSec=</strong>：根据最后一次相关的单元设定为Inactive的时间设置计时器。</p></li><li><p><strong>OnCalendar=</strong>：设置相关单元的绝对激活时间，参照systemd.time语法格式。</p></li><li><p><strong>AccuracySec=</strong>：设置计时器的精度。默认为一分钟之内。</p></li><li><p><strong>Unit=</strong>：设置计时器到时之后所激活的相关联的单元。如果不设定的话，systemd会寻找与.timer同名的.service单元进行激活。</p></li><li><p><strong>Persistent=</strong>：如果设定为true，如果存在.timer文件非激活时期本应该激活的关联单元，则当.timer激活的时候，会立刻激活这个与timer相关的单元。</p></li><li><p><strong>WakeSystem=</strong>：设定唤醒系统的时间。</p></li></ul><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">[Slice]区段</h4><p style="margin-top:0px;margin-bottom:1.1em;">该区段实际上并不存在.slice特定的配置。不过该区段包含了很多关于资源管理的指令集。<br>一些常用的存在于其他单元文件的[slice]区段，可以从systemd.resource-control的man手册里面查询到。</p><h3 style="font-family:inherit;color:inherit;font-size:1.7em;margin:1.2em 0px .6em;">从单元文件模板创建实例单元</h3><p style="margin-top:0px;margin-bottom:1.1em;">之前我们提到了从模板创建单元文件的点子。本节将详细讲述。</p><p style="margin-top:0px;margin-bottom:1.1em;">单元文件的模板其实与普通的单元文件无异。不过模板提供了修改的灵活性，即通过让特定的配置段去动态地收集运行时的信息。</p><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">模板与实例单元的名称</h4><p style="margin-top:0px;margin-bottom:1.1em;">模板单元文件在单元名称和类型后缀的中间添加了一个@符号，如下所示：</p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash">example@.service</code></pre><div class="toolbar"></div></div><p>从该模板创建的单元文件的名称和上面的文件相比，添加了唯一表示符，添加在@符号和类型后缀之间，如下所示，instance1即为标识符：</p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash">example@instance1.service</code></pre><div class="toolbar"></div></div><p style="margin-top:0px;margin-bottom:1.1em;">实例单元文件一般是模板的软链接，而且拥有唯一的标识符，可以回溯至唯一的模板文件。当systemd管理实例单元的时候，会首先找给定名称的单元，如果找不到的话，则会回溯到一个与之相关的模板单元。</p><h4 style="font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;">模板占位符</h4><p style="margin-top:0px;margin-bottom:1.1em;">模板单元文件的强大之处在于依据操作系统环境动态地替换信息。通过将特定的内容改为占位符，达到上述功能。下面列出一些常用的占位符，这些占位符在生成的实例单元里面会被动态地替换为相关的信息：</p><ul style="margin-bottom:1.1em;" class="list-paddingleft-2"><li><p><strong>%n</strong>：插入单元文件的全名。</p></li><li><p><strong>%N</strong>：保留单元文件中的转义字符。</p></li><li><p><strong>%p</strong>：引用单元文件的前缀，即从开头到@符号之间的内容。</p></li><li><p><strong>%P</strong>：引用单元文件的前缀，并保留转义字符。</p></li><li><p><strong>%i</strong>：引用单元文件的标识符。该选项是最常用的。例如端口号可以作为服务的标识符，而且模板可以利用这个占位符对端口进行详细设定。</p></li><li><p><strong>%I</strong>：引用单元文件的标识符，并保留转义字符。</p></li><li><p><strong>%f</strong>：引用非转义的实例名称或者前缀，并在开头添加”/” 符号。</p></li><li><p><strong>%c</strong>：引用单元的cgroup，移除了标准层次结构的/sys/fs/cgroup/systemd/。</p></li><li><p><strong>%u</strong>：引用运行实例单元的用户。</p></li><li><p><strong>%U</strong>：引用运行实例单元的UID号。</p></li><li><p><strong>%H</strong>：引用运行实例单元的主机名。</p></li><li><p><strong>%%</strong>：用于插入百分比。</p></li></ul><p style="margin-top:0px;margin-bottom:1.1em;">利用上述占位符，systemd将会把该模板所创建的实例单元的对应位置解析为正确的运行时的值。</p><h3 style="font-family:inherit;color:inherit;font-size:1.7em;margin:1.2em 0px .6em;">总结</h3><p style="margin-top:0px;margin-bottom:1.1em;">使用systemd做管理的时候，了解单元与单元文件可以使得管理变得轻松。与很多其他的init系统不同，你不需要为了了解init启动文件或者服务文件而精通一门脚本语言。单元文件利用了尽可能简单声明性质的语法，使得你能够轻易了解其目的、功能及激活动作。</p><p style="margin-top:0px;margin-bottom:1.1em;">将激活的逻辑打散成不同的单元，不仅优化了systemd并行处理的能力，同时让配置变得简单，从而让你可以在不重构其整体连接性质的状态下，对个别的单元进行修改与重启。掌握这些能力能够使你在管理系统的时候更加灵活，给予你更多的力量。</p></div>
+				</div>
+															<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=Linux" target="_blank">Linux</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6" target="_blank">配置文件</a>
+																								<a href="https://blog.51cto.com/search/result?q=systemd" target="_blank">systemd</a>
+																										                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="1926777" userid="4377920">1</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1557426531889">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina">微博</a>
+					  <a class="bds_sqq" data-cmd="sqq">QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin">微信</a>
+					  <img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/qr-url">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/jiangche00/1925623" title="Raspberry Pi AP功能改进: systemd服务封装以及dnsmasq的使用">
+						上一篇：Raspberry Pi AP功...</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/jiangche00/1929991" title="CentOS7 DNS相关实验">
+						下一篇：CentOS7 DNS相关实验</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/jiangche00" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="4377920" src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/wKiom1kz44-BvcLzAAAeAda26sM640_middle.jpg">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/jiangche00" target="_blank" style="display:inline-block;">jiangche00</a>
+										<h3>17篇文章，7W+人气，0粉丝</h3>
+									</div>
+								<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/jiangche00" class="header-img" target="_blank">
+						<img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可" maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="4377920">
+					<input type="hidden" class="reply_id" value="1926777">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList"></div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog" style="display: none;"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);" style="display: none;"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="https://blog.51cto.com/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>411人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="13" href="https://blog.51cto.com/cloumn/detail/13" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTO夏杰</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1424人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="30" href="https://blog.51cto.com/cloumn/detail/30" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>494人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="6" href="https://blog.51cto.com/cloumn/detail/6" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1499人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="18" href="https://blog.51cto.com/cloumn/detail/18" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>453人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="5" href="https://blog.51cto.com/cloumn/detail/5" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/jiangche00/2024996?source=dra" target="_blank">我的友情链接</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/jiangche00/1951540?source=dra" target="_blank">FastDFS + Nginx实现基于CentOS7平台的分布式文件存储与访问</a>
+															<a class="white-space" href="https://blog.51cto.com/cuimk/1347743?source=drt" target="_blank">iptables交互配置脚本【Linux运维之道之脚本案例】</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/liuyu/166381?source=drt" target="_blank">nginx反向代理配置及优化</a>
+															<a class="white-space" href="https://blog.51cto.com/longlei/2065967?source=drt" target="_blank">dnsmasq详解及配置</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/lavasoft/265821?source=drt" target="_blank">Java相对路径读取文件</a>
+															<a class="white-space" href="https://blog.51cto.com/waringid/955939?source=drt" target="_blank">zabbix中文配置指南</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/wzlinux/2094598?source=drt" target="_blank">VMware vCenter 6.0 安装及群集配置介绍</a>
+															<a class="white-space" href="https://blog.51cto.com/simonhu/1588971?source=drt" target="_blank">CentOS 7 网络配置详解</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/13523664/2060430?source=drt" target="_blank">Nginx配置跨域请求 Access-Control-Allow-Origin *</a>
+															<a class="white-space" href="https://blog.51cto.com/yuanbin/115761?source=drt" target="_blank">Samba配置文件常用参数详解</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/ixdba/806622?source=drt" target="_blank">实战Nginx与PHP（FastCGI）的安装、配置与优化</a>
+															<a class="white-space" href="https://blog.51cto.com/fengwan/2391359?source=drh" target="_blank">通过URL参数请求不同的后端服务器</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14154700/2391114?source=drh" target="_blank">基于Linux搭建Apache网站服务配置详解</a>
+															<a class="white-space" href="https://blog.51cto.com/11886307/2391101?source=drh" target="_blank">MySQL读写分离(ProxySQL)</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/9019400/2390937?source=drh" target="_blank">Mysql中间件应用之使用ProxySQL进行数据库读写分离</a>
+															<a class="white-space" href="https://blog.51cto.com/11886307/2389857?source=drh" target="_blank">MySQL的备份还原(xtrabackup)</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/9019400/2389813?source=drh" target="_blank">percona-xtrabackup实现数据库完全，增量的备份和还原（含一些版本问题与坑）</a>
+															<a class="white-space" href="https://blog.51cto.com/11886307/2388443?source=drh" target="_blank">MySQL用户和权限及破解root口令</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/372550/2388086?source=drh" target="_blank">openshift部署 CSR requests from inventory nodes问题处理</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/f92360e227f9d91cdff7ea95120630ef.png" style="width:70px;height:70px;"> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg" style="display: block;">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="1926777" userid="4377920">1</span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>0</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1557426531889">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/qr-url"></a>
+				</div>
+			</div>
+      						<a href="https://blog.51cto.com/jiangche00" class="b-name fr">jiangche00</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/jiangche00" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="4377920" src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/wKiom1kz44-BvcLzAAAeAda26sM640_middle.jpg"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/shCores.js.download"></script>
+<script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/countDown.js.download"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '1926777'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'4377920',
+            'blog_id':'1926777'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/jiangche00';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='4377920'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/jiangche00'
+    	nickname = 'jiangche00'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<blockquote style=\"padding:15px 20px;margin:0 0 1.1em;border-left:5px solid;border-left-width:10px;\"><p style=\"margin-top:0px;font-size:1em;margin-bottom:0px;\">\u539f\u6587\u94fe\u63a5\uff1a<br \/><strong><a href=\"https:\/\/www.digitalocean.com\/community\/tutorials\/understanding-systemd-units-and-unit-files\" style=\"background:transparent;color:#1980e6;text-decoration:none;\" target=\"_blank\">Understanding Systemd Units and Unit Files<\/a><\/strong><\/p><\/blockquote><hr style=\"height:0px;border-right-width:0px;border-bottom-width:0px;border-left-width:0px;border-top-style:solid;margin:2em 0px;\" \/><blockquote style=\"padding:15px 20px;margin:0 0 1.1em;border-left:5px solid;border-left-width:10px;\"><p style=\"margin-top:0px;font-size:1em;margin-bottom:0px;\"><strong>\u5bfc\u8bba<\/strong><br \/>\u76ee\u524d\uff0c\u8d8a\u6765\u8d8a\u591a\u7684Linux\u53d1\u884c\u7248\u6b63\u5728\u91c7\u7528\u6216\u8005\u51c6\u5907\u91c7\u7528systemd\u521d\u59cb\u5316\u7cfb\u7edf\uff0c\u800c\u8fd9\u4e00\u5f3a\u5927\u7684\u7ba1\u7406\u5957\u4ef6\u53ef\u4ee5\u5bf9\u4f60\u7684\u670d\u52a1\u5668\u8fdb\u884c\u591a\u65b9\u9762\u7684\u7ba1\u7406\uff0c\u8b6c\u5982\u670d\u52a1\u7ba1\u7406\u3001\u6302\u8f7d\u8bbe\u5907\u7ba1\u7406\u3001\u7cfb\u7edf\u72b6\u6001\u7ba1\u7406\u3002 \u5728systemd\u91cc\u9762\uff0c\u6240\u8c13\u7684<strong>unit<\/strong>\u662f\u6307<strong>\u4efb\u4f55\u7cfb\u7edf\u53ef\u4ee5\u64cd\u4f5c\u5e76\u7ba1\u7406\u7684\u8d44\u6e90<\/strong>\uff0c\u8fd9\u4e5f\u662fsystemd\u5904\u7406\u7684\u4e3b\u8981\u5bf9\u8c61\u3002\u8fd9\u4e9b\u8d44\u6e90\u5bf9\u8c61\u88ab\u5b9a\u4e49\u5728\u4e00\u4e9b\u914d\u7f6e\u6587\u4ef6\u91cc\u9762\uff0c\u800c\u8fd9\u4e9b\u914d\u7f6e\u6587\u4ef6\u88ab\u79f0\u4e3a<strong>unit files<\/strong>\u3002\u5728\u672c\u6587\u4e2d\uff0c\u6211\u4eec\u5c06\u4e3a\u60a8\u4ecb\u7ecdsystemd\u6240\u80fd\u5904\u7406\u7684\u5404\u79cd\u4e0d\u540c\u7684<strong>unit<\/strong>\u5355\u5143\u3002\u6211\u4eec\u4e5f\u4f1a\u6db5\u76d6\u4ecb\u7ecd\u4e00\u4e9b\u5e38\u7528\u7684\u9488\u5bf9unit files\u7684\u6307\u4ee4\uff0c\u7528\u4ee5\u4f53\u73b0\u8fd9\u4e9b\u8d44\u6e90\u662f\u5982\u4f55\u5728\u7cfb\u7edf\u91cc\u9762\u8fdb\u884c\u5904\u7406\u3002<\/p><\/blockquote><h3 style=\"font-family:inherit;color:inherit;font-size:1.7em;margin:1.2em 0px .6em;\">Systemd Unit\u80fd\u591f\u5e26\u7ed9\u4f60\u4ec0\u4e48\u4e1c\u897f\uff1f<\/h3><p style=\"margin-top:0px;margin-bottom:1.1em;\"><strong>Units<\/strong>\u662f<strong>systemd<\/strong>\u6240\u80fd\u591f\u7ba1\u7406\u7684\u5bf9\u8c61\uff0c\u4ed6\u4eec\u662f\u4e00\u4e9b\u5bf9\u4e8e\u7cfb\u7edf\u8d44\u6e90\u7684<strong>\u6807\u51c6\u5316\u8868\u793a<\/strong>\uff0c\u53ef\u4ee5\u88absystemd\u5957\u4ef6\u7684\u5b88\u62a4\u8fdb\u7a0b\u6240\u7ba1\u7406\uff0c\u540c\u65f6\u4e5f\u53ef\u4ee5\u88ab\u63d0\u4f9b\u7684\u547d\u4ee4\u5de5\u5177\u6240\u64cd\u4f5c\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\"><strong>Units<\/strong>\u5728\u4e00\u5b9a\u7a0b\u5ea6\u4e0a\u548cinit\u7cfb\u7edf\u91cc\u9762\u7684\u670d\u52a1(services)\u6216\u8005\u4f5c\u4e1a(jobs)\u5f88\u76f8\u4f3c\uff0c\u4f46\u662f<strong>Units<\/strong>\u6709\u7740\u66f4\u52a0\u5bbd\u5e7f\u7684\u5b9a\u4e49\uff0c\u53ef\u4ee5\u662f\u62bd\u8c61\u670d\u52a1\uff0c\u7f51\u7edc\u8d44\u6e90\uff0c\u8bbe\u5907\uff0c\u6587\u4ef6\u7cfb\u7edf\u6302\u8f7d\uff0c\u4ee5\u53ca\u9694\u79bb\u6001\u7684\u8d44\u6e90\u6c60\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u8fd9\u79cd<strong>Units<\/strong>\u7684\u89c2\u70b9\u8ba4\u4e3a\uff0c\u5176\u4f59\u90a3\u4e9b\u7531\u5355\u4e00\u7edf\u4e00\u670d\u52a1\u5b9a\u4e49\u7684init\u7cfb\u7edf\u53ef\u4ee5\u5c06\u8fd9\u4e9b\u670d\u52a1\u62c6\u5206\u4e3a\u591a\u4e2a<strong>\u529f\u80fd\u5355\u5143<\/strong>\uff0c\u8fd9\u79cd\u7531\u529f\u80fd(function)\u7ec4\u7ec7\u7684\u5355\u5143\uff0c\u53ef\u4ee5\u8ba9\u60a8\u8f7b\u677e\u5730\u5f00\u542f\u529f\u80fd\uff0c\u505c\u6b62\u529f\u80fd\uff0c\u6216\u6269\u5c55\u529f\u80fd\uff0c\u800c\u4e0d\u7528\u4fee\u6539\u6574\u4e2a\u5355\u5143\u7684\u884c\u4e3a\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\"><strong>Units<\/strong>\u5bb9\u6613\u6267\u884c\u7684\u4e00\u4e9b\u8bbe\u7f6e \u5982\u4e0b\u6240\u793a\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>\u57fa\u4e8e\u5957\u63a5\u5b57(socket-based)\u7684\u89e6\u53d1\u6fc0\u6d3b<\/strong>\uff1a \u4e0e\u670d\u52a1\u76f8\u5173\u7684\u5957\u63a5\u5b57\uff0c\u4ece\u5b88\u62a4\u8fdb\u7a0b\u4e2d\u5265\u79bb\u51fa\u6765\uff0c\u76ee\u7684\u662f\u4e3a\u4e86\u66f4\u597d\u7684\u5206\u5f00\u6765\u8fdb\u884c\u5904\u7406\u3002\u8fd9\u4e48\u505a\u6709\u5f88\u591a\u597d\u5904\uff1a\u6bd4\u5982\u6211\u4eec\u53ef\u4ee5\u5bf9\u670d\u52a1\u5ef6\u8fdf\u542f\u52a8\uff0c\u76f4\u5230\u5176\u76f8\u5173\u7684\u5957\u63a5\u5b57\u53ef\u7528\u4e3a\u6b62\u3002\u6bd4\u5982\u8fd9\u4e48\u505a\u53ef\u4ee5\u5141\u8bb8\u7cfb\u7edf\u5728\u670d\u52a1\u542f\u52a8\u8fc7\u7a0b\u4e4b\u524d\u5148\u521b\u5efa\u597d\u5957\u63a5\u5b57\uff0c\u4ece\u800c\u4f7f\u5f97\u80fd\u591f\u5e76\u884c\u542f\u52a8\u8be5\u670d\u52a1\u7684\u76f8\u5173\u670d\u52a1\u3002<\/p><\/li><li><p><strong>\u57fa\u4e8e\u603b\u7ebf(bus-based)\u7684\u89e6\u53d1\u6fc0\u6d3b<\/strong>\uff1a<strong>Units<\/strong>\u4e5f\u53ef\u4ee5\u88abD-Bus\u63d0\u4f9b\u7684\u603b\u7ebf\u63a5\u53e3\u6fc0\u6d3b\u3002\u5f53\u4e00\u4e2a\u4e0e\u67d0\u4e2a\u5355\u5143\u76f8\u5173\u7684\u603b\u7ebf\u88ab\u53d1\u5e03\u7684\u65f6\u5019\uff0c\u8be5\u5355\u5143\u4fbf\u53ef\u4ee5\u5f00\u59cb\u5de5\u4f5c\u3002<\/p><\/li><li><p><strong>\u57fa\u4e8e\u8def\u5f84(path-based)\u7684\u89e6\u53d1\u6fc0\u6d3b<\/strong>\uff1a\u4e00\u4e2a\u5355\u5143\u53ef\u4ee5\u4f9d\u636e\u67d0\u4e2a\u786e\u5b9a\u7684\u6587\u4ef6\u7cfb\u7edf\u8def\u5f84\u7684\u6d3b\u52a8\u72b6\u6001\u4ee5\u53ca\u53ef\u7528\u6027\u800c\u5f00\u59cb\u5de5\u4f5c\u3002\u76f8\u5f53\u4e8e\u96c6\u6210\u4e86Linux\u7684inotify\u529f\u80fd\u3002<\/p><\/li><li><p><strong>\u9690\u5f0f\u4f9d\u8d56\u6620\u5c04<\/strong>\uff1a\u5927\u90e8\u5206\u5355\u5143\u7684\u4f9d\u8d56\u6811\u53ef\u4ee5\u6709systemd\u81ea\u5df1\u6784\u5efa\u3002\u4f46\u662f\u60a8\u4ecd\u7136\u53ef\u4ee5\u81ea\u5df1\u6dfb\u52a0\u4f9d\u8d56\uff0c\u8c03\u6574\u4fe1\u606f\u3002\u4e0d\u8fc7\u5927\u90e8\u5206\u7684\u4efb\u52a1\u5df2\u7ecf\u4e0d\u7528\u60a8\u4e2a\u4eba\u81ea\u5df1\u5b8c\u6210\u4e86\u3002<\/p><\/li><li><p><strong>\u5b9e\u4f8b\u4e0e\u6a21\u677f<\/strong>\uff1a\u5355\u5143\u6587\u4ef6\u7684\u6a21\u677f\u53ef\u4ee5\u7528\u6765\u7ed9\u540c\u4e00\u4e2a\u5355\u5143\u521b\u5efa\u591a\u4e2a\u5b9e\u4f8b\uff0c\u8fd9\u53ef\u4ee5\u4f7f\u5f97\u5f7c\u6b64\u76f8\u5dee\u4e0d\u591a\u6216\u8005\u672c\u8eab\u662f\u540c\u7cfb\u7684\u5355\u5143\u80fd\u591f\u63d0\u4f9b\u76f8\u540c\u7684\u901a\u7528\u00d7\u00d7\u00d7<\/p><\/li><li><p><strong>\u7b80\u5355\u7684\u5b89\u5168\u52a0\u56fa<\/strong>\uff1a<strong>Units<\/strong>\u53ef\u4ee5\u901a\u8fc7\u6dfb\u52a0\u7b80\u5355\u7684\u6307\u4ee4\u4ece\u800c\u6267\u884c\u4e00\u4e9b\u76f8\u5f53\u4e0d\u9519\u7684\u5b89\u5168\u8bbe\u7f6e\u3002\u4f8b\u5982\u60a8\u53ef\u4ee5\u5bf9\u7279\u5b9a\u7684\u6587\u4ef6\u7cfb\u7edf\u8bbe\u7f6e\u53ea\u8bfb\u6216\u8005\u65e0\u6cd5\u8bbf\u95ee\uff0c\u53ef\u4ee5\u9650\u5236\u5185\u6838\u529f\u80fd\uff0c\u53ef\u4ee5\u975e\u914d\u79c1\u6709\u7684\/tmp\u76ee\u5f55\u4ee5\u53ca\uff0c\u53ef\u4ee5\u8bbe\u7f6e\u7f51\u7edc\u8bbf\u95ee\u63a7\u5236\u3002<\/p><\/li><li><p><strong>\u63d2\u4ef6\u4e0e\u7247\u6bb5<\/strong>\uff1a\u901a\u8fc7\u4f7f\u7528\u7247\u6bb5(snippets)\u8986\u76d6\u7cfb\u7edf\u7684\u5355\u5143\u6587\u4ef6\uff0c\u53ef\u4ee5\u8f7b\u6613\u5730\u6269\u5c55<strong>Units<\/strong>\u529f\u80fd\u3002<\/p><\/li><\/ul><h3 style=\"font-family:inherit;color:inherit;font-size:1.7em;margin:1.2em 0px .6em;\">Systemd \u5355\u5143\u6587\u4ef6\u4ece\u54ea\u91cc\u83b7\u53d6\uff1f<\/h3><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5b9a\u4e49systemd\u5982\u4f55\u5904\u7406\u201c\u5355\u5143\u201d\u7684\u6587\u4ef6\u53ef\u4ee5\u5728\u591a\u4e2a\u4e0d\u540c\u7684\u8def\u5f84\u4e0b\u9762\uff0c\u800c\u6bcf\u4e00\u4e2a\u8def\u5f84\u90fd\u6709\u4e0d\u540c\u7684\u7279\u6027\u548c\u542b\u4e49\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u7cfb\u7edf\u62f7\u8d1d\u7684\u5355\u5143\u6587\u4ef6\u4e00\u822c\u90fd\u4fdd\u5b58\u5728<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">\/lib\/systemd\/system<\/code>\u76ee\u5f55\u5e95\u4e0b\uff0c\u4e00\u822c\u7684\u8f6f\u4ef6\u5b89\u88c5\u90fd\u4f1a\u5c06\u5355\u5143\u6587\u4ef6\u5b89\u88c5\u5230\u8fd9\u4e2a\u76ee\u5f55\u5e95\u4e0b\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\"><strong><span style=\"color:#FF0000;\">\u8be5\u8def\u5f84\u4e0b\u7684\u5355\u5143\u6587\u4ef6\u80fd\u591f\u5728\u4f1a\u8bdd\u91cc\u9762\u4f9d\u636e\u9700\u6c42\u5f00\u542f\u6216\u8005\u505c\u6b62\uff0c\u8fd9\u4e9b\u5355\u5143\u6587\u4ef6\u53c8\u88ab\u6210\u4e3a\u6cdb\u7528\u6216\u666e\u901a\u7684\u5355\u5143\u6587\u4ef6\uff0c\u4e00\u822c\u7531\u4e0a\u6e38\u7684\u9879\u76ee\u7ef4\u62a4\u8005\u7f16\u5199<\/span><\/strong>\uff0c\u5176\u76ee\u7684\u662f\u8ba9systemd\u7cfb\u7edf\u90fd\u80fd\u591f\u8fd0\u884c\u76f8\u5173\u7684\u5355\u5143\u6587\u4ef6\u3002<strong><span style=\"color:#FF0000;\">\u5efa\u8bae\u60a8\u4e0d\u8981\u4fee\u6539\u8fd9\u4e2a\u76ee\u5f55\u91cc\u9762\u7684\u5355\u5143\u6587\u4ef6<\/span><\/strong>\u3002\u60a8\u5e94\u8be5\u8986\u76d6\u8fd9\u4e9b\u6587\u4ef6\uff0c\u5fc5\u8981\u7684\u8bdd\u4f7f\u7528\u53e6\u4e00\u4e2a\u53ef\u4ee5\u53d6\u4ee3\u8be5\u76ee\u5f55\u7684\u76ee\u5f55\uff0c\u5c06\u7f16\u5199\u7684\u5355\u5143\u6587\u4ef6\u653e\u7f6e\u8fdb\u53bb\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5982\u679c\u60a8\u8981\u4fee\u6539\u5355\u5143\u6587\u4ef6\u7684\u539f\u6709\u529f\u80fd\uff0c\u6700\u597d\u5728<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">\/etc\/systemd\/system<\/code>\u76ee\u5f55\u4e0b\u9762\u3002<strong><span style=\"color:#FF0000;\">\u4f4d\u4e8e\u6b64\u76ee\u5f55\u4e0b\u9762\u7684\u5355\u5143\u6587\u4ef6\u6bd4\u5176\u4ed6\u4efb\u4f55\u6587\u4ef6\u7cfb\u7edf\u4f4d\u7f6e\u4e0b\u7684\u5355\u5143\u6587\u4ef6\u7684\u4f18\u5148\u7ea7\u90fd\u8981\u9ad8<\/span><\/strong>\u3002\u5982\u679c\u60a8\u9700\u8981\u4fee\u6539\u7cfb\u7edf\u62f7\u8d1d\u7684\u5355\u5143\u6587\u4ef6\uff0c\u6700\u5b89\u5168\u7075\u6d3b\u7684\u505a\u6cd5\u662f\u5c06\u4e00\u4e2a\u540c\u540d\u7684\u5355\u5143\u6587\u4ef6\u653e\u5230\u8fd9\u4e2a\u76ee\u5f55\u4e0b\u9762\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5982\u679c\u60a8\u53ea\u662f\u9700\u8981\u8986\u76d6\u67d0\u4e9b\u7cfb\u7edf\u5355\u5143\u6587\u4ef6\u7684\u90e8\u5206\u6307\u4ee4(\u5373\u7cfb\u7edf\u5355\u5143\u6587\u4ef6\u7684\u4e00\u90e8\u5206\u5185\u5bb9)\uff0c\u60a8\u53ef\u4ee5\u5728\u4e00\u4e2a\u5b50\u76ee\u5f55\u4e0b\u9762\u4f7f\u7528<strong><span style=\"color:#FF0000;\">\u7247\u6bb5<\/span><\/strong>\u3002\u8fd9\u4e48\u505a\u7684\u8bdd\u4fbf\u4f1a\u5bf9\u7cfb\u7edf\u62f7\u8d1d\u7684\u5355\u5143\u6587\u4ef6\u7684\u6307\u4ee4\u8fdb\u884c\u8ffd\u52a0\u6216\u8005\u4fee\u6539\uff0c\u8ba9\u60a8\u53ea\u9488\u5bf9\u60a8\u9700\u8981\u7684\u6307\u4ee4\u90e8\u5206\uff0c\u800c\u4e0d\u9700\u8981\u4fee\u6539\u6216\u8986\u76d6\u6574\u4e2a\u5355\u5143\u6587\u4ef6\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u6b63\u786e\u7684\u505a\u6cd5\u662f\u521b\u5efa\u4e00\u4e2a\u5355\u5143\u6587\u4ef6\u540d\u5b57\u52a0\u4e0a\u201d.d\u201d\u7684\u5b50\u76ee\u5f55\uff0c\u4f8b\u5982\u67d0\u4e2a\u5355\u5143\u6587\u4ef6\u53eb\u505a<strong><span style=\"color:#00AA00;\">example.service<\/span><\/strong>\uff0c\u5219\u9700\u8981\u521b\u5efa\u4e00\u4e2a\u540d\u4e3a<strong><span style=\"color:#00AA00;\">example.service.d<\/span><\/strong>\u7684\u76ee\u5f55\uff0c\u5728\u8fd9\u4e2a\u76ee\u5f55\u91cc\u9762\uff0c\u4ee5<strong><span style=\"color:#00AA00;\">.conf<\/span><\/strong>\u7ed3\u5c3e\u7684\u6587\u4ef6\u53ef\u4ee5\u7528\u4e8e\u8986\u76d6\u6216\u8005\u6269\u5c55\u5bf9\u5e94\u7684\u7cfb\u7edf\u5355\u5143\u6587\u4ef6\u7684\u5c5e\u6027\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u8fd8\u5b58\u5728\u4e00\u4e2a\u8fd0\u884c\u65f6\u5355\u5143\u5b9a\u4e49\u7684\u76ee\u5f55\uff1a<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">\/run\/systemd\/system<\/code>\u3002\u5728\u8be5\u76ee\u5f55\u4e0b\u7684\u5355\u5143\u6587\u4ef6\u7684\u4f18\u5148\u7ea7\u4ecb\u4e8e<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">\/etc\/systemd\/system<\/code>\u548c<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">\/lib\/systemd\/system<\/code>\u4e4b\u95f4\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\"><code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">systemd<\/code>\u8fdb\u7a0b\u5728\u4e0a\u8ff0\u76ee\u5f55\u91cc\u9762\u52a8\u6001\u521b\u5efa\u8fd0\u884c\u65f6\u5355\u5143\u6587\u4ef6\uff0c\u8be5\u76ee\u5f55\u7528\u4e8e\u9488\u5bf9\u4f1a\u8bdd\u7ea7\u522b\u7684\u7cfb\u7edf\u5355\u5143\u884c\u4e3a\u7684\u4fee\u6539\u3002\u6240\u6709\u5728\u8be5\u76ee\u5f55\u4e0b\u9762\u505a\u7684\u6539\u53d8\u90fd\u5c06\u4f1a\u5728\u7cfb\u7edf\u91cd\u542f\u4e4b\u540e\u6d88\u5931\u3002<\/p><h3 style=\"font-family:inherit;color:inherit;font-size:1.7em;margin:1.2em 0px .6em;\">Units\u7684\u7c7b\u578b<\/h3><p style=\"margin-top:0px;margin-bottom:1.1em;\"><code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">systemd<\/code>\u6309\u5355\u5143\u6240\u63cf\u8ff0\u7684\u8d44\u6e90\u7c7b\u578b\uff0c\u5c06\u8bf8\u591a\u5355\u5143\u8fdb\u884c\u5206\u7c7b\u3002\u6700\u7b80\u5355\u5224\u65ad\u8d44\u6e90\u7c7b\u578b\u7684\u65b9\u5f0f\u4fbf\u662f\u67e5\u770b\u5355\u5143\u6587\u4ef6\u7684\u540e\u7f00\u540d\u3002\u4e0b\u9762\u5217\u51fa\u4e86<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">systemd<\/code>\u53ef\u8bc6\u522b\u7684\u5355\u5143\u7c7b\u578b\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>.service<\/strong>\uff1a\u4e00\u4e2aservice\u5355\u5143\u6587\u4ef6\u63cf\u8ff0\u4e86\u5982\u4f55\u7ba1\u7406\u670d\u52a1\u5668\u4e0a\u9762\u7684\u4e00\u4e2a\u670d\u52a1\u6216\u8005\u5e94\u7528\u3002\u5355\u5143\u6587\u4ef6\u91cc\u9762\u5c06\u4f1a\u5305\u542b\u5982\u4f55\u5f00\u59cb\u6216\u8005\u505c\u6b62\u8be5\u670d\u52a1\uff0c\u5728\u4f55\u79cd\u60c5\u51b5\u4e0b\u8be5\u670d\u52a1\u4f1a\u81ea\u52a8\u8fd0\u884c\uff0c\u4ee5\u53ca\u548c\u76f8\u5173\u8f6f\u4ef6\u7684\u4f9d\u8d56\u5173\u7cfb\u53ca\u987a\u5e8f\u4fe1\u606f\u3002<\/p><\/li><li><p><strong>.socket<\/strong>\uff1a\u4e00\u4e2asocket\u5355\u5143\u6587\u4ef6\u63cf\u8ff0\u4e86\u4e00\u4e2a\u7f51\u7edc\u6216IPC\u5957\u63a5\u5b57\uff0c\u6216\u8005\u4e00\u4e2a\u6d88\u606f\u961f\u5217\u7f13\u5b58\uff0csystemd\u7528\u5176\u6240\u57fa\u4e8e\u5957\u63a5\u5b57\u7684\u89e6\u53d1\u6fc0\u6d3b\u3002\u5f53\u6240\u5b9a\u4e49\u7684activity\u5bf9\u4e8e\u8be5socket\u53ef\u89c1\u7684\u60c5\u51b5\u4e0b\uff0c\u4ed6\u4eec\u4e00\u822c\u4f1a\u6709\u4e00\u4e2a\u4e0e\u4e4b\u76f8\u5173\u7684.service\u5355\u5143\u6587\u4ef6\u4f1a\u88ab\u542f\u52a8\u3002<\/p><\/li><li><p><strong>.device<\/strong>\uff1a\u63cf\u8ff0\u9488\u5bf9udev\u6216\u8005sysfs\u6587\u4ef6\u7cfb\u7edf\u800c\u8a00\u5fc5\u8981\u7684systemd\u7ba1\u7406\u8bbe\u5907\u3002\u5e76\u975e\u6240\u6709\u7684\u8bbe\u5907\u90fd\u4f1a\u6709.device\u6587\u4ef6\u3002\u5728\u4e0b\u9762\u4e00\u4e9b\u573a\u666f\u4e0b\uff0c.device\u5355\u5143\u662f\u5fc5\u8981\u7684\uff1a\u8c03\u6574\u8bbe\u5907\u3001\u6302\u8f7d\u8bbe\u5907\u3001\u8bbf\u95ee\u8bbe\u5907\u3002<\/p><\/li><li><p><strong>.mount<\/strong>\uff1a\u5b9a\u4e49\u4e86\u88absystemd\u7ba1\u7406\u7684\u6302\u8f7d\u70b9\u3002\u547d\u540d\u65b9\u6cd5\u662f\u5c06\u201d\/\u201d\u6362\u4e3a\u201d-\u201c\uff0c\u5e76\u5728\u7ed3\u5c3e\u6dfb\u52a0.mount\u3002\u6bd4\u5982\/dev\/hugepage\/\u6302\u8f7d\u70b9\uff0c\u540d\u79f0\u4e3adev-hugepage.mount<\/p><\/li><li><p><strong>automount<\/strong>\uff1a\u914d\u7f6e.mount\u5b9a\u4e49\u7684\u6302\u8f7d\u70b9\u4e3a\u81ea\u52a8\u6302\u8f7d\u70b9\uff0c\u524d\u63d0\u662f\u5fc5\u987b\u8981\u6709\u4e0e\u4e4b\u5bf9\u5e94\u7684.mount\u5355\u5143\u6587\u4ef6\u3002<\/p><\/li><li><p><strong>.swap<\/strong>\uff1a\u5b9a\u4e49\u4ea4\u6362\u7a7a\u95f4\u3002\u8be5\u6587\u4ef6\u7684\u540d\u5b57\u5fc5\u987b\u53cd\u5e94\u548c\u4ea4\u6362\u7a7a\u95f4\u76f8\u5173\u7684\u8bbe\u5907\u6216\u8005\u8def\u5f84<\/p><\/li><li><p><strong>.target<\/strong>\uff1a\u4e3a\u542f\u52a8\u6216\u8005\u6539\u53d8\u72b6\u6001\u63d0\u4f9b\u4e00\u4e2a\u540c\u6b65\u70b9\uff0c\u4e5f\u53ef\u4ee5\u7528\u4f5c\u5c06\u7cfb\u7edf\u5e26\u5230\u4e00\u4e2a\u65b0\u7684\u72b6\u6001\u3002\u5176\u4f59\u7684\u5355\u5143\u901a\u8fc7\u8bbe\u5b9a\u548c\u67d0\u4e2atarget\u7684\u5173\u7cfb\uff0c\u548c\u8be5target\u7684\u64cd\u4f5c\u7ed1\u5b9a\u5230\u4e00\u8d77\u3002<\/p><\/li><li><p><strong>.path<\/strong>\uff1a\u5b9a\u4e49\u4e86\u53ef\u4ee5\u88ab\u57fa\u4e8e\u8def\u5f84\u7684\u89e6\u53d1\u6fc0\u6d3b\u6240\u4f7f\u7528\u7684\u8def\u5f84\u3002\u9ed8\u8ba4\u60c5\u51b5\u4e0b\uff0c\u5f53\u8def\u5f84\u5230\u4e86\u6307\u5b9a\u7684\u72b6\u6001(\u5207\u6362\u5230\u4e86\u6307\u5b9a\u7684\u8def\u5f84)\uff0c\u4e00\u4e2a\u540c\u540d\u7684.service\u6587\u4ef6\u5c06\u4f1a\u542f\u7528\u3002\u8fd9\u91cc\u662f\u91c7\u7528<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">inotify<\/code>\u53bb\u76d1\u63a7\u8def\u5f84\u7684\u6539\u53d8\u3002<\/p><\/li><li><p><strong>,timer<\/strong>\uff1a\u5b9a\u4e49\u4e86\u53ef\u4ee5\u7531systemd\u7ba1\u7406\u7684\u8ba1\u65f6\u5668\uff0c\u548c<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">cron<\/code>\u8ba1\u5212\u4efb\u52a1\u7c7b\u4f3c\u3002\u5f53\u8ba1\u65f6\u5668\u5230\u65f6\uff0c\u4e00\u4e2a\u5339\u914d\u7684\u5355\u5143\u5c06\u4f1a\u542f\u52a8\u3002<\/p><\/li><li><p><strong>.snapshot<\/strong>\uff1a\u88ab<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">systemctl snapshot<\/code>\u547d\u4ee4\u6240\u521b\u5efa\u3002\u53ef\u4ee5\u8ba9\u60a8\u5728\u7cfb\u7edf\u53d1\u751f\u6539\u53d8\u4e4b\u540e\u91cd\u65b0\u6784\u5efa\u7cfb\u7edf(\u56de\u6eda)\u3002\u8be5\u5feb\u7167\u53ea\u9488\u5bf9\u4f1a\u8bdd\u6709\u6548\uff0c\u7528\u4e8e\u56de\u6eda\u4e34\u65f6\u72b6\u6001\u3002<\/p><\/li><li><p><strong>.slice<\/strong>\uff1a\u4e0eLinux\u7684CGroup\u76f8\u5173\u3002\u5176\u540d\u79f0\u53cd\u5e94\u4e86\u5176\u5728cgroup\u6811\u7684\u5c42\u6b21\u3002\u9ed8\u8ba4\u60c5\u51b5\u4e0b\uff0c\u5355\u5143\u4f9d\u636e\u5176\u7c7b\u578b\u7684\u4e0d\u540c\u88ab\u653e\u7f6e\u5728\u4e00\u5b9a\u7684slice\u91cc\u9762\u3002<\/p><\/li><li><p><strong>.scope<\/strong>\uff1aScope\u5355\u5143\u7531systemd\u63a5\u6536\u5230\u603b\u7ebf\u63a5\u53e3\u7684\u4fe1\u606f\u800c\u81ea\u52a8\u751f\u6210\u3002\u8fd9\u4e9bScope\u5355\u5143\u7528\u4e8e\u7ba1\u7406\u7531\u5916\u90e8\u521b\u5efa\u7684\u7cfb\u7edf\u8fdb\u7a0b\u3002<\/p><\/li><\/ul><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5982\u60a8\u6240\u89c1\uff0csystemd\u6240\u7ba1\u7406\u7684\u5355\u5143\u7684\u79cd\u7c7b\u6709\u5f88\u591a\u3002\u5f88\u591a\u4e0d\u540c\u7c7b\u578b\u7684\u5355\u5143\u534f\u540c\u5de5\u4f5c\u8fdb\u800c\u6dfb\u52a0\u65b0\u7684\u529f\u80fd\u3002\u4f8b\u5982\u4e00\u4e9b\u5355\u5143\u7528\u4e8e\u89e6\u53d1\u5176\u4ed6\u5355\u5143\uff0c\u5e76\u4e14\u63d0\u4f9b\u6fc0\u6d3b\u529f\u80fd\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u57fa\u4e8e\u529f\u80fd\u53ca\u7ba1\u7406\u76ee\u7684\uff0c\u8fd9\u91cc\u6211\u4eec\u5c06\u4e3b\u8981\u5173\u6ce8.service\u5355\u5143\u3002<\/p><pre class=\"brush:bash;toolbar:false\">Directive1=default_value<\/pre><p>\u5982\u679c\u7247\u6bb5\u91cc\u9762\u63d0\u4f9b\u4e86\u4e0b\u9762\u7684\u5185\u5bb9\uff0c\u5219\u4e0a\u8ff0\u7684Directive1\u7684\u8d4b\u503c\u5c06\u4f1a\u88ab\u62b9\u9664\uff1a<\/p><pre class=\"brush:bash;toolbar:false\">Directive1=<\/pre><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u4e00\u822c\u800c\u8a00\uff0csystemd\u53ef\u4ee5\u5141\u8bb8\u7075\u6d3b\u7684\u914d\u7f6e\uff0c\u4f8b\u5982\u591a\u79cd\u5e03\u5c14\u8d4b\u503c\u5f62\u5f0f\u90fd\u662f\u53ef\u4ee5\u63a5\u53d7\u7684(1, yes, on, true) \u6216\u8005 (0, no off)\u3002\u65f6\u95f4\u683c\u5f0f\u53ef\u4ee5\u88ab\u667a\u80fd\u5730\u89e3\u6790\uff1a\u7528\u4e00\u4e2a\u4e0d\u542b\u5355\u4f4d\u7684\u79d2\uff0c\u52a0\u4e0a\u7cfb\u7edf\u652f\u6301\u7684\u4efb\u610f\u4e00\u79cd\u65f6\u95f4\u683c\u5f0f\u3002<\/p><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">[Unit]\u533a\u6bb5\u7684\u6307\u4ee4\u96c6<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5927\u591a\u6570\u5355\u5143\u6587\u4ef6\u7684\u7b2c\u4e00\u4e2a\u533a\u6bb5\u4e3a[Unit]\u533a\u6bb5\u3002\u8be5\u533a\u6bb5\u7528\u4e8e\u5b9a\u4e49\u8be5\u5355\u5143\u7684\u5143\u6570\u636e\uff0c\u5e76\u4e14\u7528\u4e8e\u914d\u7f6e\u548c\u5176\u4ed6\u5355\u5143\u7684\u4f9d\u8d56\u5173\u7cfb<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u867d\u7136\u8bf4\u533a\u6bb5\u7684\u987a\u5e8f\u524d\u540e\u5e76\u4e0d\u5f71\u54cdsystemd\u5bf9\u4e8e\u5355\u5143\u6587\u4ef6\u7684\u89e3\u6790\uff0c\u4f46\u662f[Unit]\u8be5\u533a\u6bb5\u4e5f\u4f1a\u88ab\u653e\u5230\u7b2c\u4e00\u7684\u4f4d\u7f6e\uff0c\u4e3b\u8981\u662f\u56e0\u4e3a\u8be5\u533a\u6bb5\u63d0\u4f9b\u4e86\u8be5\u5355\u5143\u7684\u603b\u89c8\u3002\u5728[Unit]\u533a\u6bb5\u4e2d\uff0c\u5b58\u5728\u7740\u4e0b\u8ff0\u5e38\u7528\u7684\u6307\u4ee4\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>Descriptions=<\/strong>\uff1a\u8be5\u6307\u4ee4\u7528\u4e8e\u63cf\u8ff0\u5355\u5143\u7684\u540d\u79f0\u53ca\u57fa\u672c\u529f\u80fd\u3002\u5f88\u591a\u79cd\u7c7b\u7684systemd\u5de5\u5177\u90fd\u5c06\u5176\u4f5c\u4e3a\u8fd4\u56de\u503c\uff0c\u56e0\u6b64\u5199\u4e00\u4e9b\u7b80\u77ed\u6709\u542f\u793a\u6027\u7684\u5185\u5bb9\uff0c\u662f\u4e00\u79cd\u826f\u597d\u7684\u4f5c\u98ce\u3002<\/p><\/li><li><p><strong>Documentation=<\/strong>\uff1a\u8be5\u6307\u4ee4\u63d0\u4f9b\u6587\u6863URI\u5217\u8868\u7684\u4f4d\u7f6e\uff0c\u65e2\u53ef\u4ee5\u662f\u5185\u90e8\u7684man\u5e2e\u52a9\u6587\u6863\uff0c\u4e5f\u53ef\u4ee5\u662f\u7f51\u7edc\u53ef\u8bbf\u95ee\u7684URL\u3002<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">systemctl status<\/code>\u547d\u4ee4\u53ef\u4ee5\u663e\u793a\u51fa\u8be5\u5185\u5bb9\u3002<\/p><\/li><li><p><strong>Requires=<\/strong>\uff1a\u8be5\u6307\u4ee4\u5217\u51fa\u4e86\u8be5\u5355\u5143\u6240\u4f9d\u8d56\u7684\u91cd\u8981\u7684\u5176\u4ed6\u5355\u5143\uff0c\u5982\u679c\u8be5\u5355\u5143\u88ab\u6fc0\u6d3b\uff0c\u6240\u5217\u51fa\u7684\u90a3\u4e9b\u4f9d\u8d56\u5355\u5143\u7406\u5e94\u4e5f\u662f\u88ab\u6fc0\u6d3b\u7684\u72b6\u6001\u3002\u82e5\u5176\u4f9d\u8d56\u5355\u5143\u6709\u672a\u88ab\u6fc0\u6d3b\u7684\u72b6\u6001\uff0c\u5219\u5176\u672c\u8eab\u4e0d\u4f1a\u88ab\u6fc0\u6d3b\u6210\u529f\u3002\u8fd9\u4e9b\u5355\u5143<strong><span style=\"color:#FF0000;\">\u548c\u5f53\u524d\u5355\u5143\u662f\u5e76\u884c\u5f00\u542f\u7684\uff0c\u5e76\u4e0d\u662f\u5148\u540e\u7684\u5173\u7cfb<\/span><\/strong>\u3002<\/p><\/li><li><p><strong>Wants=<\/strong>\uff1a\u8be5\u6307\u4ee4\u4e0e\u4e4b\u524d\u7684<strong>Requires<\/strong>\u76f8\u4f3c\uff0c\u4f46\u662f<strong><span style=\"color:#FF0000;\">\u5bbd\u677e\u4e00\u4e9b<\/span><\/strong>\u3002systemd\u5c06\u4f1a\u8bd5\u56fe\u5728\u542f\u52a8\u5355\u5143\u7684\u65f6\u5019\uff0c\u5c06Wants\u5217\u8868\u91cc\u9762\u7684\u4f9d\u8d56\u5355\u5143\u4e5f\u542f\u52a8\uff0c\u5982\u679c\u4f9d\u8d56\u5355\u5143\u672a\u627e\u5230\u6216\u8005\u542f\u52a8\u5931\u8d25\uff0c\u5e76\u4e0d\u4f1a\u5f71\u54cd\u539f\u5355\u5143\u3002\u63a8\u8350\u7528\u8be5\u6307\u4ee4\u53bb\u914d\u7f6e\u4f9d\u8d56\u5173\u7cfb\u3002\u540c\u6837\uff0c\u4e5f\u662f\u5e76\u884c\u5f00\u542f\u3002<\/p><\/li><li><p><strong>BindsTo=<\/strong>\uff1a\u8be5\u6307\u4ee4\u4e5f\u548c<strong>Requires<\/strong>\u76f8\u4f3c\uff0c\u4f46\u662f<strong><span style=\"color:#FF0000;\">\u5f53\u4f9d\u8d56\u5355\u5143\u7ec8\u6b62\u8fd0\u884c\u7684\u65f6\u5019\uff0c\u539f\u5355\u5143\u4e5f\u4f1a\u7ec8\u6b62<\/span><\/strong>\u3002<\/p><\/li><li><p><strong>Before=<\/strong>\uff1a\u8be5\u6307\u4ee4\u540e\u9762\u5217\u51fa\u7684\u5355\u5143\u76f4\u5230\u539f\u5355\u5143\u88ab\u542f\u52a8\u5b8c\u6210\u4e4b\u524d\uff0c\u4e0d\u4f1a\u5b8c\u6210\u542f\u52a8\u3002\u4f8b\u5982D.service\u91cc\u9762\u6dfb\u52a0\u4e86<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">Before=A.service B.service C.service<\/code>\uff0c\u5219<strong><span style=\"color:#FF0000;\">\u5982\u679cD\u548c(A,B,C)\u540c\u65f6\u88ab\u6fc0\u6d3b\uff0cA\uff0cB\uff0cC\u8fd9\u4e09\u4e2a\u5355\u5143\u4f1a\u7b49\u5f85D\u6fc0\u6d3b\u5b8c\u6210\u4e4b\u540e\u518d\u8fdb\u884c\u6fc0\u6d3b\u8fc7\u7a0b\uff0c\u6362\u53e5\u8bdd\u8bf4\uff0cD\u6392\u5728A,B,C\u7684\u524d\u9762<\/span><\/strong>\u3002\u6ce8\u610f\uff0c\u5728\u8fd9\u91cc\u5e76\u6ca1\u6709\u6697\u793a\u4f9d\u8d56\u5173\u7cfb\u3002<\/p><\/li><li><p><strong>After=<\/strong>\uff1a\u8be5\u6307\u4ee4\u548c\u4e0a\u9762\u7684<strong>Before<\/strong>\u7528\u6cd5\u76f8\u53cd\u3002\u5982\u679cD.service\u91cc\u9762\u6dfb\u52a0\u4e86<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">After=A.service B.service C.service<\/code>\uff0c\u5219<strong><span style=\"color:#FF0000;\">\u5982\u679cD\u548c(A,B,C)\u540c\u65f6\u88ab\u6fc0\u6d3b\uff0cD\u4f1a\u7b49\u5f85A,B,C\u6fc0\u6d3b\u5b8c\u6210\u4e4b\u540e\uff0c\u518d\u5b8c\u6210\u81ea\u5df1\u7684\u6fc0\u6d3b\uff0c\u6362\u53e5\u8bdd\u8bf4\uff0cA,B,C\u6392\u5728D\u7684\u524d\u9762<\/span><\/strong>\u3002\u6ce8\u610f\uff0c\u5728\u8fd9\u91cc\u5e76\u6ca1\u6709\u6697\u793a\u4f9d\u8d56\u5173\u7cfb\u3002<\/p><\/li><li><p><strong>Conflicts=<\/strong>\uff1a\u5217\u51fa\u4e0d\u80fd\u591f\u548c\u5f53\u524d\u5355\u5143\u4e00\u540c\u6fc0\u6d3b\u7684\u5355\u5143\uff0c<strong><span style=\"color:#FF0000;\">\u5982\u679c\u542f\u52a8\u539f\u5355\u5143\uff0c\u5219Conflicts\u4e2d\u5217\u51fa\u7684\u5355\u5143\u4f1a\u88ab\u505c\u6b62<\/span><\/strong>\u3002<\/p><\/li><li><p><strong>Condition\u2026=<\/strong>\uff1a\u6709\u5f88\u591a\u4ee5Condition\u5f00\u5934\u7684\u6307\u4ee4\uff0c\u76ee\u7684\u662f\u4e3a\u4e86\u8ba9\u7ba1\u7406\u5458\u5728\u542f\u52a8\u5355\u5143\u4e4b\u524d\u6d4b\u8bd5Condition\u4e2d\u7ed9\u51fa\u7684\u6761\u4ef6\u662f\u5426\u6ee1\u8db3\u3002\u8be5\u9009\u9879\u53ef\u4ee5\u7528\u4e8e\u63d0\u4f9b\u5f88\u5bf9\u67d0\u4e9b\u7cfb\u7edf\u7684\u6761\u4ef6\u68c0\u6d4b\u673a\u5236\u3002\u5982\u679c\u6761\u4ef6\u4e0d\u6ee1\u8db3\uff0c\u5219\u8be5\u5355\u5143\u672c\u8eab\u4f1a\u88ab\u201c\u53cb\u597d\u5730\u201d\u8df3\u8fc7\uff0c\u800c\u4e0d\u4f1a\u6267\u884c(gracefully skipped)\u3002<\/p><\/li><li><p><strong>Assert\u2026=<\/strong>\uff1a\u4e0e\u4e0a\u8ff0<strong>Condition\u2026<\/strong>\u7c7b\u4f3c\uff0c\u8be5\u6307\u4ee4\u68c0\u6d4b\u8fd0\u884c\u73af\u5883\u7684\u5404\u4e2a\u65b9\u9762\uff0c\u4ece\u800c\u51b3\u5b9a\u8be5\u5355\u5143\u662f\u5426\u5e94\u8be5\u88ab\u6fc0\u6d3b\uff0c\u4e0e<strong>Condition\u2026<\/strong>\u7684\u53cb\u597d\u8df3\u8fc7\u4e0d\u540c\uff0c\u5982\u679c\u67d0\u4e00\u68c0\u6d4b\u5931\u8d25\uff0c\u5219\u4f1a\u5bfc\u81f4\u8be5\u5355\u5143\u5931\u8d25(failure)<\/p><\/li><\/ul><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5229\u7528\u4e0a\u8ff0\u6307\u4ee4\uff0c\u4ee5\u53ca\u4e00\u4e9b\u5b9e\u7528\u7684\u5173\u4e8e\u5355\u5143\u53ca\u5176\u4f9d\u8d56\u7684\u4fe1\u606f\uff0c\u4e00\u4e2a\u64cd\u4f5c\u7cfb\u7edf\u4fbf\u53ef\u4ee5\u642d\u5efa\u8d77\u6765\u4e86\u3002<\/p><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">[Install]\u533a\u6bb5\u7684\u6307\u4ee4\u96c6<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5728\u5355\u5143\u6587\u4ef6\u7684\u53e6\u4e00\u4fa7(\u7ed3\u5c3e\u5904)\uff0c\u6700\u540e\u4e00\u4e2a\u533a\u6bb5\u4e00\u822c\u90fd\u662f[Install]\u533a\u6bb5\u3002\u8fd9\u4e00\u533a\u6bb5\u662f\u53ef\u9009\u7684\uff0c\u662f\u5b9a\u4e49\u5176enable\u6216\u8005disable\u884c\u4e3a\u7684\u533a\u6bb5\u3002Enabling\u4e00\u4e2a\u5355\u5143\uff0c\u610f\u5473\u7740\u5c06\u5176\u6807\u8bb0\u4e3a\u5f00\u673a\u81ea\u52a8\u542f\u52a8\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u56e0\u4e3a\u5982\u6b64\uff0c\u53ea\u6709\u80fd\u591f\u5f00\u673a\u542f\u52a8\u7684\u5355\u5143\u4f1a\u6709\u8fd9\u4e2a\u533a\u6bb5\u3002\u5728\u8be5\u533a\u6bb5\u7684\u6307\u4ee4\u63a7\u5236\u4e86\u5f53\u8be5\u5355\u5143\u8bbe\u5b9a\u4e3a\u5f00\u673a\u542f\u52a8\u7684\u65f6\u5019\u5c06\u4f1a\u53d1\u751f\u4ec0\u4e48<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>WantedBy=<\/strong>\uff1a\u8be5\u6307\u4ee4\u662f\u8bbe\u5b9a\u5f00\u673a\u542f\u52a8\u7684\u4e00\u79cd\u6700\u666e\u904d\u7684\u65b9\u6cd5\u3002\u8be5\u6307\u4ee4\u5141\u8bb8\u60a8\u8bbe\u5b9a\u4f9d\u8d56\u5173\u7cfb\uff0c\u5c31\u5982\u540c<strong>Wants=<\/strong>\u5728[Unit]\u533a\u6bb5\u91cc\u9762\u4e00\u6837\u3002\u4e0d\u540c\u70b9\u5728\u4e8e\uff0cWantedBy\u6307\u4ee4\u88ab\u8f85\u52a9\u7684\u5355\u5143\u6240\u5305\u542b\uff0c\u786e\u4fdd\u4e86\u4e3b\u5355\u5143\u7684\u76f8\u5bf9\u5e72\u51c0\u3002\u5f53\u542b\u6709\u8be5\u6307\u4ee4\u7684\u5355\u5143\u88ab\u8bbe\u5b9a\u4e3aenable\u7684\u65f6\u5019\uff0c\u4e00\u4e2a\u65b0\u7684\u76ee\u5f55\u4f1a\u5728\/etc\/systemd\/system\u4e0b\u9762\u521b\u5efa\u3002\u4f8b\u5982<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">WantedBy=multi-user.target<\/code>\uff0c\u5219\u5728\/etc\/systemd\/system\u4e0b\u9762\u4f1a\u521b\u5efa\u4e00\u4e2a\u540d\u4e3amulti-user.target.wants\u7684\u76ee\u5f55\u3002\u5728\u5176\u4e2d\uff0c\u4f1a\u521b\u5efa\u4e00\u4e2a\u6307\u5411\u5f53\u524d\u5355\u5143\u7684\u7b26\u53f7\u94fe\u63a5\uff0c\u7528\u4ee5\u521b\u5efa\u4f9d\u8d56\u6027(\u5373\u521b\u5efa\u4e00\u4e2a\u4f9d\u8d56\u6c60\uff0c\u653e\u5230\u4e86.want\u76ee\u5f55\u4e0b\u9762\uff0c\u5f62\u6210\u4e86\u6240\u6709multi-user.target\u7684\u4f9d\u8d56\u9879)\uff0c\u5982\u679c\u5c06\u8be5\u5355\u5143\u8fdb\u884cdisable\u64cd\u4f5c\uff0c\u5219\u4f1a\u4ece.want\u91cc\u9762\u79fb\u9664\u7b26\u53f7\u94fe\u63a5\uff0c\u4ece\u800c\u4ece\u4f9d\u8d56\u6c60\u91cc\u9762\u5254\u9664\u6389\u3002<\/p><\/li><li><p><strong>RequiredBy=<\/strong>\uff1a\u8be5\u6307\u4ee4\u548c<strong>WantedBy<\/strong>\u5341\u5206\u76f8\u4f3c\uff0c\u4e0d\u8fc7<strong><span style=\"color:#FF0000;\">\u662f\u5f3a\u4f9d\u8d56<\/span><\/strong>\u3002<\/p><\/li><li><p><strong>Alias=<\/strong>\uff1a\u4f7f\u5f97\u4e00\u4e2a\u5355\u5143\u53ef\u4ee5\u7528\u522b\u540d\u6765\u8fdb\u884c\u542f\u52a8<\/p><\/li><li><p><strong>Also=<\/strong>\uff1a\u5141\u8bb8\u591a\u4e2a\u5355\u5143\u4f5c\u4e3a\u4e00\u4e2a\u96c6\u5408\u8fdb\u884cenable\u6216\u8005disable\u3002\u4e00\u822c\u4f1a\u5c06\u6240\u5217\u51fa\u7684\u5355\u5143\u8fdb\u884c\u7edf\u4e00\u7684\u5b89\u88c5\u6216\u8005\u5378\u8f7d<\/p><\/li><\/ul><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">\u7279\u5b9a\u5355\u5143\u533a\u6bb5\u6307\u4ee4\u96c6<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u9488\u5bf9<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">device<\/code>,<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">target<\/code>,<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">snapshot<\/code>\u548c<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">scope<\/code>\u5355\u5143\u800c\u8a00\uff0c\u5e76\u4e0d\u5b58\u5728\u7279\u5b9a\u7684\u5355\u5143\u6307\u4ee4\uff0c\u800c\u4e0b\u9762\u6240\u63d0\u5230\u7684\u5355\u5143\u662f\u62e5\u6709\u81ea\u5df1\u7279\u5b9a\u7684\u6307\u4ee4\u96c6\u7684\u533a\u6bb5\u3002<\/p><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">[Service]\u533a\u6bb5<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">[Service]\u533a\u6bb5\u7528\u4e8e\u63d0\u4f9b\u670d\u52a1\u53ef\u7528\u7684\u914d\u7f6e\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5728[Service]\u533a\u6bb5\u4e2d\uff0c\u4e00\u4e2a\u91cd\u8981\u7684\u57fa\u672c\u8bbe\u5b9a\u662fTYPE=\u3002\u8be5\u6307\u4ee4\u5bf9\u6574\u4e2a\u670d\u52a1\u6309\u7167\u8fdb\u7a0b\u8fdb\u884c\u5f52\u7c7b\uff0c\u5e76\u5c06\u4e00\u4e9b\u884c\u4e3a\u4f5c\u4e3a\u5b88\u62a4\u8fdb\u7a0b\u3002\u7531\u4e8e\u5176\u544a\u77e5systemd\u5982\u4f55\u6b63\u786e\u7684\u7ba1\u7406\u670d\u52a1\u5e76\u4e14\u67e5\u5230\u670d\u52a1\u7684\u72b6\u6001\uff0c\u56e0\u6b64\u5176\u91cd\u8981\u6027\u4e0d\u8a00\u800c\u55bb\u3002Type\u6307\u4ee4\u53ef\u4ee5\u662f\u4e0b\u8ff0\u5185\u5bb9\u7684\u5176\u4e2d\u4e00\u79cd\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>simple<\/strong>\uff1a\u8bbe\u5b9aExecStart\u7684\u8fdb\u7a0b\u4f5c\u4e3a\u4e3b\u8fdb\u7a0b\u3002\u4f5c\u4e3a<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">Busname=<\/code>\u548c<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">Type=<\/code>\u7f3a\u7701\u60c5\u51b5\u4e0b\u7684\u9ed8\u8ba4\u503c\u3002\u4efb\u4f55\u4e0e\u8be5\u8fdb\u7a0b\u7684\u901a\u4fe1\uff0c\u9700\u8981\u5728\u8be5\u5355\u5143\u5916\u90e8\u5efa\u7acb\u76f8\u5173\u7684\u901a\u4fe1\u5355\u5143\u3002\u4f8b\u5982\u5982\u679c\u9700\u8981\u7528\u5957\u63a5\u5b57\u8fdb\u884c\u901a\u4fe1\uff0c\u5219\u9700\u8981\u521b\u5efa\u5957\u63a5\u5b57\u5355\u5143\u3002<\/p><\/li><li><p><strong>forking<\/strong>\uff1aExecStart\u7684\u4e3b\u670d\u52a1\u521b\u5efa\u5b50\u8fdb\u7a0b\uff0c\u4e4b\u540e\u4e3b\u670d\u52a1\u9000\u51fa(<strong><span style=\"color:#FF0000;\">\u7ecf\u5178\u7684Unix\u5b88\u62a4\u8fdb\u7a0b\u7684\u505a\u6cd5<\/span><\/strong>)\u3002\u4e4b\u540e\u4f1a\u901a\u77e5systemd\u5b50\u8fdb\u7a0b\u4ecd\u7136\u5728\u8fd0\u884c\u3002<\/p><\/li><li><p><strong>oneshot<\/strong>\uff1a\u8be5\u79cd\u7c7b\u578b\u901a\u77e5systemd\uff0cExecStart\u6267\u884c\u7684\u547d\u4ee4(\u6216\u8fdb\u7a0b)\u662f\u77ed\u751f\u547d\u5468\u671f\u7684\uff0c\u56e0\u6b64\u4f1a\u7b49\u5f85\u8be5\u8fdb\u7a0b\u9000\u51fa\u4e4b\u540e\u518d\u6267\u884c\u3002\u8be5\u884c\u4e3a\u662f<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">Type=<\/code>\u548c<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">ExecStart=<\/code>\u90fd\u7f3a\u7701\u7684\u65f6\u5019\u7684\u9ed8\u8ba4\u503c\u3002\u591a\u7528\u4e8e\u4e00\u6b21\u6027\u4efb\u52a1(<strong><span style=\"color:#FF0000;\">\u6bd4\u5982\uff0c\u4fee\u6539\u914d\u7f6e\u6587\u4ef6\uff0cip\u547d\u4ee4\u4fee\u6539\u7f51\u7edc\u914d\u7f6e\uff0c\u2026..<\/span><\/strong>)\uff0c\u800c\u4e14\u6b64\u79cd\u7c7b\u578b\u901a\u5e38\u9700\u8981\u8bbe\u5b9a<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">RemainAfterExit=<\/code>\u9009\u9879<\/p><\/li><li><p><strong>dbus<\/strong>\uff1a\u8bbe\u7f6e\u4e86<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">ExecStart=<\/code>\u548c<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">BusName=<\/code>\u65f6\u7684\u9ed8\u8ba4\u503c\u3002\u8be5\u5355\u5143\u4f1a\u5728D-Bus\u4e0a\u9762\u83b7\u53d6\u7531BusName\u6307\u5b9a\u7684\u540d\u79f0\uff0c\u5728\u83b7\u53d6\u540d\u79f0\u4e4b\u540e\uff0csystemd\u624d\u4f1a\u5904\u7406\u4e0b\u4e00\u4e2a\u5355\u5143\u3002<\/p><\/li><li><p><strong>notify<\/strong>\uff1a\u542f\u52a8\u8fdb\u7a0b\u9700\u8981\u901a\u8fc7sd_notify\u63a5\u53e3\u5411systemd\u53d1\u9001\u4e00\u4e2a\u6d88\u606f\u901a\u77e5\u3002\u800csystemd\u5728\u6536\u5230\u8be5\u6d88\u606f\u901a\u77e5\u4e4b\u524d\uff0c\u4f1a\u963b\u585e\u5904\u7406\u4e0b\u4e00\u4e2a\u5355\u5143\u7684\u64cd\u4f5c\u3002<\/p><\/li><li><p><strong>idle<\/strong>\uff1a\u8be5\u8fdb\u7a0b\u4f1a\u5ef6\u8fdf\u5230\u5176\u4ed6\u4f5c\u4e1a\u90fd\u8c03\u5ea6\u5b8c\u6bd5\u4e4b\u540e\u518d\u6267\u884c\uff0c\u8fd9\u6837\u53ef\u4ee5\u907f\u514d\u63a7\u5236\u53f0\u4e0a\u9762\u7684\u72b6\u6001\u4fe1\u606f\u4e0eshell\u811a\u672c\u7684\u8f93\u51fa\u6df7\u6742\u5728\u4e00\u8d77\u3002<\/p><\/li><\/ul><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u4e00\u4e9b\u9644\u52a0\u7684\u6307\u4ee4\u5728\u7279\u5b9a\u7684\u670d\u52a1\u7c7b\u578b\u4e0b\u6216\u8bb8\u6709\u7528\uff0c\u4f8b\u5982\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>RemainAfterExit=<\/strong>\uff1a\u7ed3\u5408<strong>oneshot<\/strong>\u4f7f\u7528\u3002\u51b3\u5b9a\u8fdb\u7a0b\u5168\u90e8\u9000\u51fa\u4e4b\u540e\uff0c\u662f\u5426\u4f9d\u7136\u5c06\u8be5\u670d\u52a1\u770b\u505a\u662f\u6d3b\u52a8\u72b6\u6001(active status)\uff0c\u9ed8\u8ba4\u503c\u4e3ano<\/p><\/li><li><p><strong>PIDFile=<\/strong>\uff1a\u5982\u679c\u670d\u52a1\u7c7b\u578b\u88ab\u6807\u8bb0\u4e3a\u201d<strong>forking<\/strong>\u201c\uff0c\u8be5\u6307\u4ee4\u7528\u4e8e\u8bbe\u5b9a\u5176PID\u6587\u4ef6\u7684\u8def\u5f84\uff0c\u7528\u4e8e\u76d1\u63a7\u3002<\/p><\/li><li><p><strong>BusName=<\/strong>\uff1a\u5982\u679c\u670d\u52a1\u7c7b\u578b\u88ab\u6807\u4e3a\u201d<strong>bus<\/strong>\u201c\uff0c\u8be5\u6307\u4ee4\u7528\u4e8e\u8bbe\u5b9a\u4e0e\u6b64\u670d\u52a1\u901a\u4fe1\u6240\u4f7f\u7528\u7684D-Bus\u540d\u79f0\u3002<\/p><\/li><li><p><strong>NotifyAccess=<\/strong>\uff1a\u5982\u679c\u670d\u52a1\u7c7b\u578b\u88ab\u6807\u8bb0\u4e3a\u201d<strong>notify<\/strong>\u201c\uff0c\u8bbe\u7f6e\u901a\u8fc7sd_notify\u8bbf\u95ee\u670d\u52a1\u72b6\u6001\u901a\u77e5socket\u7684\u6a21\u5f0f\uff0c\u53ef\u4ee5\u8bbe\u5b9a\u4e3anone, main, all\u4e4b\u4e00\u3002none\u662f\u9ed8\u8ba4\u503c\uff0c\u8868\u793a\u4e0d\u66f4\u65b0\u4efb\u4f55\u5b88\u62a4\u8fdb\u7a0b\u7684\u72b6\u6001\uff1bmain\u8868\u793a\u53ea\u63a5\u53d7\u4e3b\u8fdb\u7a0b\u7684\u72b6\u6001\u66f4\u65b0\u6d88\u606f\u3002all\u8868\u793a\u63a5\u53d7\u8be5\u670d\u52a1cgroup\u5185\u6240\u6709\u8fdb\u7a0b\u72b6\u6001\u7684\u66f4\u65b0\u6d88\u606f\u3002<\/p><\/li><\/ul><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5982\u4e0b\u6307\u4ee4\u5b9a\u4e49\u4e86<strong>\u5982\u4f55\u7ba1\u7406\u670d\u52a1<\/strong>\uff1a<br \/>\u6ce8\uff1a\u6240\u8c13\u7684\u201d\u670d\u52a1\u8fdb\u7a0b\u201d\u662f\u6307ExecStartPre, ExecStartPost, ExecStop, ExecStopPost, ExecReload\u4e2d\u8bbe\u7f6e\u7684\u8fdb\u7a0b\u3002<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>ExecStart=<\/strong>\uff1a\u5b9a\u4e49\u4e86\u542f\u52a8\u670d\u52a1\u7684\u7edd\u5bf9\u8def\u5f84\u6307\u4ee4\u53ca\u4f20\u5165\u53c2\u6570\u3002<strong><span style=\"color:#FF0000;\">\u5728\u9664\u4e86oneshot\u670d\u52a1\u7c7b\u578b\u7684\u60c5\u51b5\u4e0b\uff0cExecStart\u4e00\u822c\u53ea\u4f1a\u5728\u4e00\u4e2a\u5355\u5143\u6587\u4ef6\u91cc\u9762\u5b58\u5728\u4e00\u884c<\/span><\/strong>\u3002\u547d\u4ee4\u884c\u5fc5\u987b\u4ee5\u4e00\u4e2a\u7edd\u5bf9\u8def\u5f84\u8868\u793a\u7684\u53ef\u6267\u884c\u6587\u4ef6\u5f00\u59cb\uff0c\u5e76\u4e14\u5176\u540e\u7684\u90a3\u4e9b\u53c2\u6570\u5c06\u4f9d\u6b21\u4f5c\u4e3a\u201dargv[1] argv[2] \u2026\u201d\u4f20\u9012\u7ed9\u88ab\u6267\u884c\u7684\u8fdb\u7a0b\u3002 \u5982\u679c\u5728\u7edd\u5bf9\u8def\u5f84\u524d\u52a0\u4e0a\u53ef\u9009\u7684 \u201c@\u201d \u524d\u7f00\uff0c\u90a3\u4e48\u5176\u540e\u7684\u90a3\u4e9b\u53c2\u6570\u5c06\u4f9d\u6b21\u4f5c\u4e3a\u201dargv[0] argv[1] argv[2] \u2026\u201d\u4f20\u9012\u7ed9\u88ab\u6267\u884c\u7684\u8fdb\u7a0b\u3002 \u5982\u679c\u5728\u7edd\u5bf9\u8def\u5f84\u524d\u52a0\u4e0a\u53ef\u9009\u7684 \u201c-\u201d \u524d\u7f00\uff0c\u90a3\u4e48\u5373\u4f7f\u8be5\u8fdb\u7a0b\u4ee5\u5931\u8d25\u72b6\u6001(\u4f8b\u5982\u975e\u96f6\u7684\u8fd4\u56de\u503c\u6216\u8005\u51fa\u73b0\u5f02\u5e38)\u9000\u51fa\uff0c\u4e5f\u4f1a\u88ab\u89c6\u4e3a\u6210\u529f\u9000\u51fa\u3002 \u5982\u679c\u5728\u7edd\u5bf9\u8def\u5f84\u524d\u52a0\u4e0a\u53ef\u9009\u7684 \u201c+\u201d \u524d\u7f00\uff0c\u90a3\u4e48\u8fdb\u7a0b\u5c06\u62e5\u6709\u5b8c\u5168\u7684\u6743\u9650(\u8d85\u7ea7\u7528\u6237\u7684\u7279\u6743)\u3002 \u53ef\u4ee5\u540c\u65f6\u4f7f\u7528 \u201c-\u201c, \u201c@\u201d, \u201c+\u201d \u524d\u7f00\uff0c \u4e14\u987a\u5e8f\u4efb\u610f\u3002<\/p><\/li><li><p><strong>ExecStartPre=<\/strong>\uff1a\u5728\u6267\u884c\u4e3b\u8fdb\u7a0b<strong>ExecStart<\/strong>\u4e4b\u524d\u6267\u884c\u7684\u5185\u5bb9\u3002\u53ef\u4ee5\u6709\u591a\u884c\uff0c\u4e0a\u8ff0\u5185\u5bb9\u63d0\u5230\u7684\u201d-\u201c\u53f7\u5bf9\u5176\u540c\u6837\u6709\u7528\uff0c\u529f\u80fd\u4e0e\u4e0a\u76f8\u540c\u3002<\/p><\/li><li><p><strong>ExecStartPost=<\/strong>\uff1a\u5728\u6267\u884c\u4e3b\u8fdb\u7a0b<strong>ExecStart<\/strong>\u4e4b\u540e\u6267\u884c\u7684\u5185\u5bb9\u3002\u53ef\u4ee5\u6709\u591a\u884c\uff0c\u4e0a\u8ff0\u5185\u5bb9\u63d0\u5230\u7684\u201d-\u201c\u53f7\u5bf9\u5176\u540c\u6837\u6709\u7528\uff0c\u529f\u80fd\u4e0e\u4e0a\u76f8\u540c\u3002<\/p><\/li><li><p><strong>ExecReload=<\/strong>\uff1a\u662f\u4e00\u4e2a\u53ef\u9009\u6307\u4ee4\uff0c\u7528\u4e8e\u8bbe\u7f6e\u5f53\u524d\u670d\u52a1\u88ab\u8981\u6c42\u91cd\u8f7d\u7684\u65f6\u5019\u6240\u6267\u884c\u7684\u547d\u4ee4\u884c\uff0c\u8bed\u6cd5\u89c4\u5219\u4e0eExecStart\u76f8\u540c\u3002<\/p><\/li><li><p><strong>ExecStop=<\/strong>\uff1a\u8bbe\u7f6e\u505c\u6b62\u670d\u52a1\u7684\u547d\u4ee4\uff0c\u5982\u679c\u6ca1\u6709\u7ed9\u51fa\uff0c\u8be5\u670d\u52a1\u7684\u6240\u6709\u8fdb\u7a0b\u90fd\u5c06\u88ab\u5f3a\u884c\u6740\u6389<\/p><\/li><li><p><strong>ExecStopPost=<\/strong>\uff1a\u5728ExecStop\u4e4b\u540e\u6267\u884c<\/p><\/li><li><p><strong>RestartSec=<\/strong>\uff1a\u8bbe\u7f6e\u5728\u91cd\u542f\u670d\u52a1\u4e4b\u524d\u6682\u505c\u591a\u957f\u65f6\u95f4\u3002\u9ed8\u8ba4\u503c\u4e3a100\u6beb\u79d2<\/p><\/li><li><p><strong>Restart=<\/strong>\uff1a\u8bbe\u5b9a\u5728\u4f55\u79cd\u60c5\u51b5\u6761\u4ef6\u4e0b\uff0c\u670d\u52a1\u8fdb\u884c\u91cd\u542f\u8be5\u9009\u9879\u7684\u503c\u53ef\u4ee5\u53d6no, always, on-success, on-failure, on-abnormal, on-watchdog, on-abort\u4e4b\u4e00<\/p><\/li><li><p><strong>TimeoutSec=<\/strong>\uff1a\u8bbe\u5b9a\u6700\u5927\u542f\u52a8\u65f6\u957f\u548c\u6700\u5927\u505c\u6b62\u65f6\u957f\u3002\u4ea6\u53ef\u4ee5\u5355\u72ec\u5730\u7528<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">TimeoutStartSec=<\/code>\u548c<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">TimeoutStopSec=<\/code>\u6765\u8bbe\u5b9a\u3002<\/p><\/li><\/ul><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">[Socket]\u533a\u6bb5<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">Socket\u5355\u5143\u5341\u5206\u666e\u904d\uff0c\u4e3b\u8981\u7531\u4e8e\u5f88\u591a\u7684\u670d\u52a1\u57fa\u4e8esocket\u6fc0\u6d3b\uff0c\u4ece\u800c\u63d0\u4f9b\u66f4\u597d\u7684\u5e76\u884c\u4ee5\u53ca\u7075\u6d3b\u6027\u3002\u6bcf\u4e00\u4e2asocket\u5355\u5143\u90fd\u9700\u8981\u6709\u4e00\u4e2a\u4e0e\u4e4b\u5bf9\u5e94\u7684\u670d\u52a1\u5355\u5143\u3002\u5f53socket\u63a5\u6536\u5230activity\u7684\u65f6\u5019\uff0c\u5176\u670d\u52a1\u5355\u5143\u4f1a\u88ab\u6fc0\u6d3b\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5bf9\u4e8e\u8bbe\u5b9a\u4e00\u4e2a\u5b9e\u9645\u7684\u5957\u63a5\u5b57\u5355\u5143\u800c\u8a00\uff0c\u5982\u4e0b\u7684\u6307\u4ee4\u662f\u5e38\u7528\u7684\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>ListenStream=<\/strong>\uff1a\u5b9a\u4e49\u6d41\u5957\u63a5\u5b57\u5730\u5740\uff0cTCP\u8fde\u63a5\u4f7f\u7528\u3002<\/p><\/li><li><p><strong>ListenDatagram<\/strong>\uff1a\u5b9a\u4e49\u6570\u636e\u62a5\u5957\u63a5\u5b57\u5730\u5740\uff0cUDP\u8fde\u63a5\u4f7f\u7528\u3002<\/p><\/li><li><p><strong>ListenSequentialPacket=<\/strong>\uff1a\u5b9a\u4e49Unix\u5957\u63a5\u5b57\u5730\u5740\u3002<\/p><\/li><li><p><strong>ListenFIFO<\/strong>\uff1a\u5b9a\u4e49\u6d88\u606f\u961f\u5217\u7f13\u5b58\u3002<\/p><\/li><\/ul><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u4e00\u4e9b\u5176\u4ed6\u5957\u63a5\u5b57\u5355\u5143\u7684\u7279\u6027\u53ef\u4ee5\u901a\u8fc7\u8fd9\u4e9b\u9644\u52a0\u7684\u6307\u4ee4\u8fdb\u884c\u63a7\u5236\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>Accept=<\/strong>\uff1a\u51b3\u5b9a\u8be5\u670d\u52a1\u7684\u5176\u4f59\u5b9e\u4f8b\u662f\u5426\u7531\u4e8e\u8fde\u63a5\u7684\u521b\u5efa\u800c\u65b0\u5efa\u3002\u5982\u679c\u8bbe\u5b9a\u4e3afalse\uff0c\u4e00\u4e2a\u670d\u52a1\u5b9e\u4f8b\u5c06\u4f1a\u5904\u7406\u6240\u6709\u7684\u8fde\u63a5\u3002<\/p><\/li><li><p><strong>SocketUser=<\/strong>\uff1a\u5b9a\u4e49Unix\u5957\u63a5\u5b57\u7684\u6240\u6709\u8005\uff0c\u9ed8\u8ba4\u4e3aroot\u7528\u6237\u3002<\/p><\/li><li><p><strong>SocketGroup=<\/strong>\uff1a\u5b9a\u4e49Unix\u5957\u63a5\u5b57\u7684\u6240\u5c5e\u7ec4\uff0c\u9ed8\u8ba4\u4e3aroot\u7ec4\u3002\u5982\u679c\u53ea\u5b9a\u4e49\u4e86<strong>SocketUser<\/strong>\uff0c\u7a7a\u7f3a<strong>SocketGroup<\/strong>\uff0c\u5219systemd\u4f1a\u9009\u62e9\u4e00\u4e2a\u5408\u9002\u7684\u7ec4\u4f5c\u4e3a\u5176\u6240\u5c5e\u7ec4\u3002<\/p><\/li><li><p><strong>SocketMode=<\/strong>\uff1a\u8bbe\u5b9aFIFO\u5b9e\u4f53\u7684\u6743\u9650\u3002<\/p><\/li><li><p><strong>Service=<\/strong>\uff1a\u5982\u679c\u672c\u5e94\u8be5\u4e0e\u5957\u63a5\u5b57\u5355\u5143\u6240\u5bf9\u5e94\u7684\u670d\u52a1\u5355\u5143\u7684\u540d\u79f0\u4e0e\u5957\u63a5\u5b57\u5355\u5143\u7684\u540d\u79f0\u4e0d\u540c\uff0c\u5219\u53ef\u4ee5\u901a\u8fc7\u8be5\u9879\u6765\u5b9a\u4e49\u670d\u52a1\u5355\u5143\u7684\u540d\u79f0\u3002<\/p><\/li><\/ul><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">[Mount]\u533a\u6bb5<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">Mount\u5355\u5143\u5c06\u6302\u8f7d\u70b9\u7684\u7ba1\u7406\u4ea4\u4e88systemd\u3002<br \/>\u5176\u547d\u540d\u89c4\u8303\u5982\u4e0b\uff1a\u5982\u679c\u60f3\u7ba1\u7406\/sys\/kernel\/config\u76ee\u5f55\uff0c\u9700\u8981\u521b\u5efasys-kernel-config.mount\u5355\u5143\u6587\u4ef6\u3002<br \/>\u5e38\u7528\u7684\u6307\u4ee4\u5982\u4e0b\u6240\u793a\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>What=<\/strong>\uff1a\u88ab\u6302\u8f7d\u8d44\u6e90\u7684\u7edd\u5bf9\u8def\u5f84<\/p><\/li><li><p><strong>Where=<\/strong>\uff1a\u6302\u8f7d\u70b9\u7684\u7edd\u5bf9\u8def\u5f84\uff0c\u5982\u679c\u4e0d\u91c7\u7528\u4f20\u7edf\u7684\u6587\u4ef6\u7cfb\u7edf\u8def\u5f84\u7684\u8bdd\uff0c\u5219\u9700\u8981\u548c\u5bf9\u5e94\u7684.service\u5355\u5143\u7684\u540d\u5b57\u76f8\u540c\u3002<\/p><\/li><li><p><strong>Type=<\/strong>\uff1a\u6302\u8f7d\u70b9\u7684\u6587\u4ef6\u7cfb\u7edf\u7c7b\u578b.<\/p><\/li><li><p><strong>Options=<\/strong>\uff1a\u6302\u8f7d\u70b9\u7684option\u53c2\u6570\uff0c\u7528\u9017\u53f7\u8fdb\u884c\u53c2\u6570\u4e4b\u95f4\u7684\u5206\u5272\u3002<\/p><\/li><li><p><strong>SloppyOptions=<\/strong> \uff1a\u5f53\u6709\u672a\u8bc6\u522b\u7684\u6302\u8f7d\u53c2\u6570\u65f6\uff0c\u662f\u5426\u51b3\u5b9a\u6302\u8f7d\u64cd\u4f5c\u6210\u529f\u4e0e\u5931\u8d25\u7684\u5e03\u5c14\u503c\u3002<\/p><\/li><li><p><strong>DirectoryMode=<\/strong>\uff1a\u82e5\u6302\u8f7d\u70b9\u7684\u7236\u76ee\u5f55\u9700\u8981\u88ab\u521b\u5efa\uff0c\u5219\u5b9a\u4e49\u7236\u76ee\u5f55\u7684\u6743\u9650\u3002<\/p><\/li><li><p><strong>TimeoutSec=<\/strong>\uff1a\u8d85\u65f6\u65f6\u95f4\u3002<\/p><\/li><\/ul><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">[Automount]\u533a\u6bb5<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5b9a\u4e49\u81ea\u52a8\u6302\u8f7d\u3002\u4ec5\u6709\u4e24\u4e2a\u6307\u4ee4\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>Where=<\/strong>\uff1a\u540c\u4e0a<\/p><\/li><li><p><strong>DirectoryMode=<\/strong>\uff1a\u540c\u4e0a<\/p><\/li><\/ul><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">[Swap]\u533a\u6bb5<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u7528\u4e8e\u8bbe\u7f6e\u4ea4\u6362\u7a7a\u95f4\uff0c\u5176\u547d\u540d\u89c4\u8303\u548c[Mount]\u533a\u6bb5\u7684\u547d\u540d\u89c4\u8303\u76f8\u4f3c\u3002<br \/>\u4e3b\u8981\u7684\u6307\u4ee4\u5982\u4e0b\u6240\u793a\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>What=<\/strong>\uff1a\u4ea4\u6362\u7a7a\u95f4\u7684\u7edd\u5bf9\u8def\u5f84\u3002<\/p><\/li><li><p><strong>Priority=<\/strong>\uff1aswap\u7a7a\u95f4\u7684\u4f18\u5148\u7ea7\u6570\u5b57\u7f16\u53f7\u3002<\/p><\/li><li><p><strong>Options=<\/strong>\uff1a\u4efb\u610f\u5728\/etc\/fstab\u91cc\u9762\u5bf9\u4e8eswap\u7a7a\u95f4\u7684\u53c2\u6570\u90fd\u53ef\u4ee5\u5199\u5728\u8fd9\u91cc\uff0c\u7528\u9017\u53f7\u5206\u5272\u3002<\/p><\/li><li><p><strong>TimeoutSec=<\/strong>\uff1a\u8d85\u65f6\u65f6\u95f4\u3002<\/p><\/li><\/ul><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">[Path]\u533a\u6bb5<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5b9a\u4e49\u4e3asystemd\u6240\u76d1\u63a7\u7684\u6587\u4ef6\u7cfb\u7edf\u8def\u5f84\u3002\u9700\u8981\u5b58\u5728\u4e00\u4e2a\u4e0e\u4e4b\u5bf9\u5e94\u7684\u5355\u5143\uff0c\u5f53\u7279\u5b9a\u7684\u76d1\u63a7\u8def\u5f84\u53d1\u751f\u72b6\u6001\u53d8\u5316\u7684\u65f6\u5019(\u901a\u8fc7inotify\u4e8b\u4ef6)\uff0c\u6240\u5bf9\u5e94\u7684\u5355\u5143\u4f1a\u88ab\u6fc0\u6d3b\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">[Path]\u533a\u6bb5\u53ef\u4ee5\u5305\u542b\u5982\u4e0b\u6307\u4ee4\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>PathExists=<\/strong>\uff1a\u7528\u4e8e\u68c0\u67e5\u8def\u5f84\u662f\u5426\u5b58\u5728\u3002\u5982\u679c\u5b58\u5728\uff0c\u5219\u76f8\u5173\u7684\u5355\u5143\u4f1a\u88ab\u6fc0\u6d3b\u3002<\/p><\/li><li><p><strong>PathExistsGlob=<\/strong>\uff1a\u529f\u6548\u548c\u4e0a\u9762\u7684\u76f8\u540c\uff0c\u4e0d\u8fc7\u652f\u6301Glob\u901a\u914d\u7b26\u53ca\u6269\u5c55\u8868\u8fbe\u5f0f\u3002<\/p><\/li><li><p><strong>PathChanged=<\/strong>\uff1a\u7528\u4e8e\u89c2\u5bdf\u8def\u5f84\u7684\u53d8\u5316\u3002\u5f53\u6240\u89c2\u5bdf\u7684\u6587\u4ef6(\u4e00\u5207\u7686\u6587\u4ef6)\u5173\u95ed\u7684\u65f6\u5019\uff0c\u89e6\u53d1\u76f8\u5173\u5355\u5143\u7684\u6fc0\u6d3b\u64cd\u4f5c\u3002<\/p><\/li><li><p><strong>PathModified=<\/strong>\uff1a\u6709\u7740\u548c\u4e0a\u9762\u4e00\u6837\u7684\u529f\u80fd\uff0c\u518d\u9644\u52a0\u5bf9\u4e8e\u6587\u4ef6\u7684\u5199\u64cd\u4f5c\u7684\u89c2\u6d4b\u3002<\/p><\/li><li><p><strong>DirectoryNotEmpty=<\/strong>\uff1a\u5f53\u6b64\u76ee\u5f55\u4e0d\u518d\u662f\u7a7a\u76ee\u5f55\u7684\u65f6\u5019\uff0c\u89e6\u53d1\u76f8\u5e94\u7684\u5355\u5143\u6fc0\u6d3b\u3002<\/p><\/li><li><p><strong>Unit=<\/strong>\uff1a\u8bbe\u5b9a\u6240\u9700\u8981\u6fc0\u6d3b\u7684\u7279\u5b9a\u5355\u5143\u7684\u540d\u79f0\u3002\u5982\u679c\u6ca1\u6709\u6307\u5b9a\uff0c\u5219\u4f1a\u641c\u5bfb\u4e0e\u8be5Path\u6587\u4ef6\u540c\u540d\u7684.service\u5355\u5143\u6587\u4ef6\uff0c\u4f5c\u4e3a\u5176\u5173\u8054\u7684\u5355\u5143\u6587\u4ef6\u3002<\/p><\/li><li><p><strong>MakeDirectory=<\/strong>\uff1a\u5728\u5bf9\u8def\u5f84\u8fdb\u884c\u89c2\u5bdf\u4e4b\u524d\uff0c\u662f\u5426\u9700\u8981\u5efa\u7acb\u8def\u5f84\u76ee\u5f55\u3002<\/p><\/li><li><p><strong>DirectoryMode=<\/strong>\uff1a\u5982\u679c\u4e0a\u9762\u7684\u529f\u80fd\u88ab\u5f00\u542f\uff0c\u5219\u4f1a\u8bbe\u5b9a\u6240\u521b\u5efa\u7684\u8def\u5f84\u76ee\u5f55\u7684\u6743\u9650\u3002<\/p><\/li><\/ul><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">[Timer]\u533a\u6bb5<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u7c7b\u4f3c\u4e8e\u5b9a\u4e49\u8ba1\u5212\u4efb\u52a1\uff0c\u53ef\u4ee5\u66ff\u4ee3\u90e8\u5206<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">cron<\/code>\u548c<code style=\"font-family:'Source Code Pro', monospace;font-size:.9em;padding:2px 4px;color:#c7254e;background-color:#f9f2f4;white-space:normal;\">at<\/code>\u7684\u529f\u80fd\u3002\u540c\u6837\u9700\u8981\u6709\u4e00\u4e2a\u4e0e\u4e4b\u5173\u8054\u7684\u5355\u5143\uff0c\u5f53\u8ba1\u65f6\u5668\u5230\u65f6\u7684\u65f6\u5019\uff0c\u89e6\u53d1\u8be5\u5355\u5143\u3002\u542b\u6709\u7684\u6307\u4ee4\u5982\u4e0b\u6240\u793a\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>OnActiveSec=<\/strong>\uff1a\u5728.timer\u5355\u5143\u6fc0\u6d3b\u4e4b\u540e\u591a\u5c11\u79d2\u4e4b\u540e\u6267\u884c\u5173\u8054\u7684\u5355\u5143\uff0c\u4f8b\u5982OnActiveSec=50\uff0c\u610f\u5473\u7740\u5728.timer\u6fc0\u6d3b\u4e4b\u540e50\u79d2\uff0c\u4f1a\u6fc0\u6d3b\u76f8\u5e94\u7684\u5173\u8054\u5355\u5143\u3002<\/p><\/li><li><p><strong>OnBootSec=<\/strong>\uff1a\u5728\u7cfb\u7edf\u542f\u52a8\u4e4b\u540e\u591a\u5c11\u79d2\u6267\u884c\u5173\u8054\u7684\u5355\u5143\u3002<\/p><\/li><li><p><strong>OnStartupSec=<\/strong>\uff1a\u5728systemd\u542f\u52a8\u4e4b\u540e\u591a\u5c11\u79d2\u6267\u884c\u5173\u8054\u7684\u5355\u5143\u3002<\/p><\/li><li><p><strong>OnUnitActiveSec=<\/strong>\uff1a\u6839\u636e\u6700\u540e\u4e00\u6b21\u76f8\u5173\u7684\u5355\u5143\u6fc0\u6d3b\u7684\u65f6\u95f4\u8bbe\u7f6e\u8ba1\u65f6\u5668\u3002<\/p><\/li><li><p><strong>OnUnitInactiveSec=<\/strong>\uff1a\u6839\u636e\u6700\u540e\u4e00\u6b21\u76f8\u5173\u7684\u5355\u5143\u8bbe\u5b9a\u4e3aInactive\u7684\u65f6\u95f4\u8bbe\u7f6e\u8ba1\u65f6\u5668\u3002<\/p><\/li><li><p><strong>OnCalendar=<\/strong>\uff1a\u8bbe\u7f6e\u76f8\u5173\u5355\u5143\u7684\u7edd\u5bf9\u6fc0\u6d3b\u65f6\u95f4\uff0c\u53c2\u7167systemd.time\u8bed\u6cd5\u683c\u5f0f\u3002<\/p><\/li><li><p><strong>AccuracySec=<\/strong>\uff1a\u8bbe\u7f6e\u8ba1\u65f6\u5668\u7684\u7cbe\u5ea6\u3002\u9ed8\u8ba4\u4e3a\u4e00\u5206\u949f\u4e4b\u5185\u3002<\/p><\/li><li><p><strong>Unit=<\/strong>\uff1a\u8bbe\u7f6e\u8ba1\u65f6\u5668\u5230\u65f6\u4e4b\u540e\u6240\u6fc0\u6d3b\u7684\u76f8\u5173\u8054\u7684\u5355\u5143\u3002\u5982\u679c\u4e0d\u8bbe\u5b9a\u7684\u8bdd\uff0csystemd\u4f1a\u5bfb\u627e\u4e0e.timer\u540c\u540d\u7684.service\u5355\u5143\u8fdb\u884c\u6fc0\u6d3b\u3002<\/p><\/li><li><p><strong>Persistent=<\/strong>\uff1a\u5982\u679c\u8bbe\u5b9a\u4e3atrue\uff0c\u5982\u679c\u5b58\u5728.timer\u6587\u4ef6\u975e\u6fc0\u6d3b\u65f6\u671f\u672c\u5e94\u8be5\u6fc0\u6d3b\u7684\u5173\u8054\u5355\u5143\uff0c\u5219\u5f53.timer\u6fc0\u6d3b\u7684\u65f6\u5019\uff0c\u4f1a\u7acb\u523b\u6fc0\u6d3b\u8fd9\u4e2a\u4e0etimer\u76f8\u5173\u7684\u5355\u5143\u3002<\/p><\/li><li><p><strong>WakeSystem=<\/strong>\uff1a\u8bbe\u5b9a\u5524\u9192\u7cfb\u7edf\u7684\u65f6\u95f4\u3002<\/p><\/li><\/ul><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">[Slice]\u533a\u6bb5<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u8be5\u533a\u6bb5\u5b9e\u9645\u4e0a\u5e76\u4e0d\u5b58\u5728.slice\u7279\u5b9a\u7684\u914d\u7f6e\u3002\u4e0d\u8fc7\u8be5\u533a\u6bb5\u5305\u542b\u4e86\u5f88\u591a\u5173\u4e8e\u8d44\u6e90\u7ba1\u7406\u7684\u6307\u4ee4\u96c6\u3002<br \/>\u4e00\u4e9b\u5e38\u7528\u7684\u5b58\u5728\u4e8e\u5176\u4ed6\u5355\u5143\u6587\u4ef6\u7684[slice]\u533a\u6bb5\uff0c\u53ef\u4ee5\u4ecesystemd.resource-control\u7684man\u624b\u518c\u91cc\u9762\u67e5\u8be2\u5230\u3002<\/p><h3 style=\"font-family:inherit;color:inherit;font-size:1.7em;margin:1.2em 0px .6em;\">\u4ece\u5355\u5143\u6587\u4ef6\u6a21\u677f\u521b\u5efa\u5b9e\u4f8b\u5355\u5143<\/h3><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u4e4b\u524d\u6211\u4eec\u63d0\u5230\u4e86\u4ece\u6a21\u677f\u521b\u5efa\u5355\u5143\u6587\u4ef6\u7684\u70b9\u5b50\u3002\u672c\u8282\u5c06\u8be6\u7ec6\u8bb2\u8ff0\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5355\u5143\u6587\u4ef6\u7684\u6a21\u677f\u5176\u5b9e\u4e0e\u666e\u901a\u7684\u5355\u5143\u6587\u4ef6\u65e0\u5f02\u3002\u4e0d\u8fc7\u6a21\u677f\u63d0\u4f9b\u4e86\u4fee\u6539\u7684\u7075\u6d3b\u6027\uff0c\u5373\u901a\u8fc7\u8ba9\u7279\u5b9a\u7684\u914d\u7f6e\u6bb5\u53bb\u52a8\u6001\u5730\u6536\u96c6\u8fd0\u884c\u65f6\u7684\u4fe1\u606f\u3002<\/p><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">\u6a21\u677f\u4e0e\u5b9e\u4f8b\u5355\u5143\u7684\u540d\u79f0<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u6a21\u677f\u5355\u5143\u6587\u4ef6\u5728\u5355\u5143\u540d\u79f0\u548c\u7c7b\u578b\u540e\u7f00\u7684\u4e2d\u95f4\u6dfb\u52a0\u4e86\u4e00\u4e2a@\u7b26\u53f7\uff0c\u5982\u4e0b\u6240\u793a\uff1a<\/p><pre class=\"brush:bash;toolbar:false\">example@.service<\/pre><p>\u4ece\u8be5\u6a21\u677f\u521b\u5efa\u7684\u5355\u5143\u6587\u4ef6\u7684\u540d\u79f0\u548c\u4e0a\u9762\u7684\u6587\u4ef6\u76f8\u6bd4\uff0c\u6dfb\u52a0\u4e86\u552f\u4e00\u8868\u793a\u7b26\uff0c\u6dfb\u52a0\u5728@\u7b26\u53f7\u548c\u7c7b\u578b\u540e\u7f00\u4e4b\u95f4\uff0c\u5982\u4e0b\u6240\u793a\uff0cinstance1\u5373\u4e3a\u6807\u8bc6\u7b26\uff1a<\/p><pre class=\"brush:bash;toolbar:false\">example@instance1.service<\/pre><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5b9e\u4f8b\u5355\u5143\u6587\u4ef6\u4e00\u822c\u662f\u6a21\u677f\u7684\u8f6f\u94fe\u63a5\uff0c\u800c\u4e14\u62e5\u6709\u552f\u4e00\u7684\u6807\u8bc6\u7b26\uff0c\u53ef\u4ee5\u56de\u6eaf\u81f3\u552f\u4e00\u7684\u6a21\u677f\u6587\u4ef6\u3002\u5f53systemd\u7ba1\u7406\u5b9e\u4f8b\u5355\u5143\u7684\u65f6\u5019\uff0c\u4f1a\u9996\u5148\u627e\u7ed9\u5b9a\u540d\u79f0\u7684\u5355\u5143\uff0c\u5982\u679c\u627e\u4e0d\u5230\u7684\u8bdd\uff0c\u5219\u4f1a\u56de\u6eaf\u5230\u4e00\u4e2a\u4e0e\u4e4b\u76f8\u5173\u7684\u6a21\u677f\u5355\u5143\u3002<\/p><h4 style=\"font-family:inherit;color:inherit;font-size:1.25em;margin:1.2em 0px .6em;\">\u6a21\u677f\u5360\u4f4d\u7b26<\/h4><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u6a21\u677f\u5355\u5143\u6587\u4ef6\u7684\u5f3a\u5927\u4e4b\u5904\u5728\u4e8e\u4f9d\u636e\u64cd\u4f5c\u7cfb\u7edf\u73af\u5883\u52a8\u6001\u5730\u66ff\u6362\u4fe1\u606f\u3002\u901a\u8fc7\u5c06\u7279\u5b9a\u7684\u5185\u5bb9\u6539\u4e3a\u5360\u4f4d\u7b26\uff0c\u8fbe\u5230\u4e0a\u8ff0\u529f\u80fd\u3002\u4e0b\u9762\u5217\u51fa\u4e00\u4e9b\u5e38\u7528\u7684\u5360\u4f4d\u7b26\uff0c\u8fd9\u4e9b\u5360\u4f4d\u7b26\u5728\u751f\u6210\u7684\u5b9e\u4f8b\u5355\u5143\u91cc\u9762\u4f1a\u88ab\u52a8\u6001\u5730\u66ff\u6362\u4e3a\u76f8\u5173\u7684\u4fe1\u606f\uff1a<\/p><ul style=\"margin-bottom:1.1em;\" class=\"list-paddingleft-2\"><li><p><strong>%n<\/strong>\uff1a\u63d2\u5165\u5355\u5143\u6587\u4ef6\u7684\u5168\u540d\u3002<\/p><\/li><li><p><strong>%N<\/strong>\uff1a\u4fdd\u7559\u5355\u5143\u6587\u4ef6\u4e2d\u7684\u8f6c\u4e49\u5b57\u7b26\u3002<\/p><\/li><li><p><strong>%p<\/strong>\uff1a\u5f15\u7528\u5355\u5143\u6587\u4ef6\u7684\u524d\u7f00\uff0c\u5373\u4ece\u5f00\u5934\u5230@\u7b26\u53f7\u4e4b\u95f4\u7684\u5185\u5bb9\u3002<\/p><\/li><li><p><strong>%P<\/strong>\uff1a\u5f15\u7528\u5355\u5143\u6587\u4ef6\u7684\u524d\u7f00\uff0c\u5e76\u4fdd\u7559\u8f6c\u4e49\u5b57\u7b26\u3002<\/p><\/li><li><p><strong>%i<\/strong>\uff1a\u5f15\u7528\u5355\u5143\u6587\u4ef6\u7684\u6807\u8bc6\u7b26\u3002\u8be5\u9009\u9879\u662f\u6700\u5e38\u7528\u7684\u3002\u4f8b\u5982\u7aef\u53e3\u53f7\u53ef\u4ee5\u4f5c\u4e3a\u670d\u52a1\u7684\u6807\u8bc6\u7b26\uff0c\u800c\u4e14\u6a21\u677f\u53ef\u4ee5\u5229\u7528\u8fd9\u4e2a\u5360\u4f4d\u7b26\u5bf9\u7aef\u53e3\u8fdb\u884c\u8be6\u7ec6\u8bbe\u5b9a\u3002<\/p><\/li><li><p><strong>%I<\/strong>\uff1a\u5f15\u7528\u5355\u5143\u6587\u4ef6\u7684\u6807\u8bc6\u7b26\uff0c\u5e76\u4fdd\u7559\u8f6c\u4e49\u5b57\u7b26\u3002<\/p><\/li><li><p><strong>%f<\/strong>\uff1a\u5f15\u7528\u975e\u8f6c\u4e49\u7684\u5b9e\u4f8b\u540d\u79f0\u6216\u8005\u524d\u7f00\uff0c\u5e76\u5728\u5f00\u5934\u6dfb\u52a0\u201d\/\u201d \u7b26\u53f7\u3002<\/p><\/li><li><p><strong>%c<\/strong>\uff1a\u5f15\u7528\u5355\u5143\u7684cgroup\uff0c\u79fb\u9664\u4e86\u6807\u51c6\u5c42\u6b21\u7ed3\u6784\u7684\/sys\/fs\/cgroup\/systemd\/\u3002<\/p><\/li><li><p><strong>%u<\/strong>\uff1a\u5f15\u7528\u8fd0\u884c\u5b9e\u4f8b\u5355\u5143\u7684\u7528\u6237\u3002<\/p><\/li><li><p><strong>%U<\/strong>\uff1a\u5f15\u7528\u8fd0\u884c\u5b9e\u4f8b\u5355\u5143\u7684UID\u53f7\u3002<\/p><\/li><li><p><strong>%H<\/strong>\uff1a\u5f15\u7528\u8fd0\u884c\u5b9e\u4f8b\u5355\u5143\u7684\u4e3b\u673a\u540d\u3002<\/p><\/li><li><p><strong>%%<\/strong>\uff1a\u7528\u4e8e\u63d2\u5165\u767e\u5206\u6bd4\u3002<\/p><\/li><\/ul><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5229\u7528\u4e0a\u8ff0\u5360\u4f4d\u7b26\uff0csystemd\u5c06\u4f1a\u628a\u8be5\u6a21\u677f\u6240\u521b\u5efa\u7684\u5b9e\u4f8b\u5355\u5143\u7684\u5bf9\u5e94\u4f4d\u7f6e\u89e3\u6790\u4e3a\u6b63\u786e\u7684\u8fd0\u884c\u65f6\u7684\u503c\u3002<\/p><h3 style=\"font-family:inherit;color:inherit;font-size:1.7em;margin:1.2em 0px .6em;\">\u603b\u7ed3<\/h3><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u4f7f\u7528systemd\u505a\u7ba1\u7406\u7684\u65f6\u5019\uff0c\u4e86\u89e3\u5355\u5143\u4e0e\u5355\u5143\u6587\u4ef6\u53ef\u4ee5\u4f7f\u5f97\u7ba1\u7406\u53d8\u5f97\u8f7b\u677e\u3002\u4e0e\u5f88\u591a\u5176\u4ed6\u7684init\u7cfb\u7edf\u4e0d\u540c\uff0c\u4f60\u4e0d\u9700\u8981\u4e3a\u4e86\u4e86\u89e3init\u542f\u52a8\u6587\u4ef6\u6216\u8005\u670d\u52a1\u6587\u4ef6\u800c\u7cbe\u901a\u4e00\u95e8\u811a\u672c\u8bed\u8a00\u3002\u5355\u5143\u6587\u4ef6\u5229\u7528\u4e86\u5c3d\u53ef\u80fd\u7b80\u5355\u58f0\u660e\u6027\u8d28\u7684\u8bed\u6cd5\uff0c\u4f7f\u5f97\u4f60\u80fd\u591f\u8f7b\u6613\u4e86\u89e3\u5176\u76ee\u7684\u3001\u529f\u80fd\u53ca\u6fc0\u6d3b\u52a8\u4f5c\u3002<\/p><p style=\"margin-top:0px;margin-bottom:1.1em;\">\u5c06\u6fc0\u6d3b\u7684\u903b\u8f91\u6253\u6563\u6210\u4e0d\u540c\u7684\u5355\u5143\uff0c\u4e0d\u4ec5\u4f18\u5316\u4e86systemd\u5e76\u884c\u5904\u7406\u7684\u80fd\u529b\uff0c\u540c\u65f6\u8ba9\u914d\u7f6e\u53d8\u5f97\u7b80\u5355\uff0c\u4ece\u800c\u8ba9\u4f60\u53ef\u4ee5\u5728\u4e0d\u91cd\u6784\u5176\u6574\u4f53\u8fde\u63a5\u6027\u8d28\u7684\u72b6\u6001\u4e0b\uff0c\u5bf9\u4e2a\u522b\u7684\u5355\u5143\u8fdb\u884c\u4fee\u6539\u4e0e\u91cd\u542f\u3002\u638c\u63e1\u8fd9\u4e9b\u80fd\u529b\u80fd\u591f\u4f7f\u4f60\u5728\u7ba1\u7406\u7cfb\u7edf\u7684\u65f6\u5019\u66f4\u52a0\u7075\u6d3b\uff0c\u7ed9\u4e88\u4f60\u66f4\u591a\u7684\u529b\u91cf\u3002<\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"翻译：理解Systemd Unit和Unit Files",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1557426530; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div><div id="zhichiBtnBox" style="position: fixed; z-index: 2147483583; box-shadow: rgba(15, 66, 76, 0.25) 0px 0px 14px 0px; width: 60px; height: 60px; border-radius: 50%; background-color: rgb(66, 133, 244); background-image: url(&quot;//www.sobot.com/chat/frame/imgs/icon.png&quot;); background-repeat: no-repeat; background-position: 18px -58px; right: 40px; bottom: 90px; display: none;"><a hidefocus="" id="zhichiBtn" style="position:relative;text-decoration: none; outline: none; font-family: Microsoft Yahei, Arial, Helvetica; color: #fff; font-size: 16px; display: inline-block; margin: 0; padding: 0; border: none; line-height:43px; float:none;width:100%;height:100%;border-radius:50%;"><span class="zc-advice-icon-btn-title" style="box-shadow: rgba(107, 113, 114, 0.15) 0px 2px 4px 0px; border: 1px solid rgb(235, 239, 240); font-family: &quot;Microsoft Yahei&quot;, Arial, Helvetica; color: rgb(85, 85, 86); font-size: 13px; margin: 0px; text-align: right; background: rgb(255, 255, 255); position: absolute; top: 15px; right: 70px; text-overflow: ellipsis; white-space: nowrap; word-break: normal; display: none; border-radius: 3px; padding: 0px 5px; height: 30px; line-height: 30px;">咨询在线客服</span></a><i style="position:absolute;top:0px;right:0px;padding:1px;line-height:20px;text-align:center;color:#fff;font-weight:bold;height:18px;min-width:18px;background-color:#ed5c5c;border-radius:18px;font-size:12px;display:none;font-style:normal;" id="zhichiCount"></i></div>
+<script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/marked.min.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/highlight.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/detail_mp.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/detail.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/details_new.js.download"></script><script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/copy.js.download"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/pageview.html"></iframe>
+</div>
+
+<script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/pvlog.js.download"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type="text/javascript">
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/jquery.cookie.js.download"></script>
+<script src="./翻译：理解Systemd Unit和Unit Files-技术成就梦想-51CTO博客_files/time-on-page.js.download" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+
+
+</body></html>

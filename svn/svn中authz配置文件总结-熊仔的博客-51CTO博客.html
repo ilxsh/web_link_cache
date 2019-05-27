@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<!-- saved from url=(0038)https://blog.51cto.com/9821177/1745074 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="https://blog.51cto.com/favicon.ico">
+        <title>svn中authz配置文件总结-熊仔的博客-51CTO博客</title>
+    <meta name="keywords" content="svn,authz,配置简单">
+<meta name="description" content="svn+apache的配置文件无非就是subversion.conf有关apache的给svn的模块配置) &amp;nbsp;authz（用户角色权限配置） passwd（用户密码）passwd无非就是新建用户或者修改密码用。authz相对较为复杂，下面举个例子[group]
+admin&amp;nbsp;=&amp;nbsp;aaa,bbb,ccc
+vip&amp;nbsp;=&amp;nbsp;a1
+man&amp;nbsp;=&amp;nbsp">    <link href="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/header.css" rel="stylesheet"><link href="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/other.css" rel="stylesheet"><link href="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/right.css" rel="stylesheet"><link href="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/blog_details.css" rel="stylesheet"><link href="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/highlight.css" rel="stylesheet">
+    <script type="text/javascript" async="" src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/vds.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/push.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/hm.js.download"></script><script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/jquery.min.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/cookie.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/login.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/common.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/mbox.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/follow.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/vip.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/window.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/share.js.download"></script><link rel="stylesheet" href="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/share_style0_16.css"><style></style></head>
+<body>
+<img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201905/09/35b614858be88dc3aa22df9d911acb79.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url(&#39;https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png&#39;) 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=9&amp;pc" target="_blank">
+  <img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/d82b6251b6923be0ee6899d541dd5013.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li><a href="https://blog.51cto.com/">首页</a></li>
+      <li><a href="https://blog.51cto.com/original">文章</a></li>
+      <li><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+      
+    </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com/" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com/" target="_blank">WOT</a>
+            <a href="http://www.51cto.com/" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2F9821177%2F1745074&amp;logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2F9821177%2F1745074" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index" target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onclick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/box.js.download"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=8" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201905/10/f03e83cf3ff05f0ad357127c73d9c748.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog62',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/entrance.js.download" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box" style="min-height: 859px;">
+      <link rel="stylesheet" href="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/mdeShow.css">
+  <link rel="stylesheet" href="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/prism.css">
+  <script type="text/javascript" charset="utf-8" src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/prism.js.download"></script>
+<link rel="stylesheet" href="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/tinyscrollbar.css">
+<script type="text/javascript" src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/jquery.tinyscrollbar.js.download"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">svn中authz配置文件总结</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/9821177" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="9811177" src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/wKioL1df4cmBR9y7AAAMgE9CgE8656_middle.jpg"></a>
+				</div>
+				<a href="https://blog.51cto.com/9821177" class="name fl" target="_blank" style="margin-right:0;">sheep1355</a>
+												<a class="comment comment-num fr"><font class="comment_number">1</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">19108人阅读</a>
+				<a href="javascript:;" class="time fr">2016-02-25 17:49:16</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><p>svn+apache的配置文件无非就是subversion.conf有关apache的给svn的模块配置) &nbsp;authz（用户角色权限配置） passwd（用户密码）</p><p>passwd无非就是新建用户或者修改密码用。</p><p>authz相对较为复杂，下面举个例子</p><div class="code-toolbar"><pre class="brush:bash;toolbar:false;  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>group<span class="token punctuation">]</span>
+admin <span class="token operator">=</span> aaa,bbb,ccc
+vip <span class="token operator">=</span> a1
+<span class="token function">man</span> <span class="token operator">=</span> b1
+custom <span class="token operator">=</span> c1   //这里先设定有这么多个角色和用户
+        //假设库的名字叫cp
+        //下面在cp下建立2个平行的目录vip和main
+<span class="token punctuation">[</span>/<span class="token punctuation">]</span>
+@admin<span class="token operator">=</span>rw     //表示根目录下只有admin才有读写权限  
+<span class="token punctuation">[</span>cp:/<span class="token punctuation">]</span>
+*<span class="token operator">=</span>r         //在cp库下，除了admin下，所有人都有读的权限
+@admin<span class="token operator">=</span>rw    //在cp库下，admin具有读写的权限
+<span class="token punctuation">[</span>cp:/vip<span class="token punctuation">]</span> 
+*<span class="token operator">=</span>        //除了vip和admin之外，所有人没有任何权限
+@vip<span class="token operator">=</span>rw       //
+@admin<span class="token operator">=</span>rw        //
+<span class="token punctuation">[</span>cp:/main<span class="token punctuation">]</span>
+*<span class="token operator">=</span>         //除了以下角色外，其他人没有任何权限
+@admin<span class="token operator">=</span>rw    //
+@vip<span class="token operator">=</span>rw    //
+@man<span class="token operator">=</span>r        //</code></pre><div class="toolbar"></div></div><p>如果出现有的目录下有子目录的话，那么在目录中有权限的角色在子目录中也应该有相应角色权限。</p><p>也就是说，子目录可以继承母目录的角色权限。</p><p>比如 vip这个目录下面有vip1这个目录，那么vip和admin依然有对vip1进行rw的权限。</p><p>3.15补充</p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>/<span class="token punctuation">]</span>
+@admin<span class="token operator">=</span>rw     //表示根目录下只有admin才有读写权限  
+<span class="token punctuation">[</span>cp:/<span class="token punctuation">]</span>
+*<span class="token operator">=</span>r         //在cp库下，除了admin下，所有人都有读的权限
+@admin<span class="token operator">=</span>rw    //在cp库下，admin具有读写的权限
+<span class="token punctuation">[</span>cp:/vip<span class="token punctuation">]</span> 
+*<span class="token operator">=</span>        //除了vip和admin之外，所有人没有任何权限
+@vip<span class="token operator">=</span>rw       //
+@admin<span class="token operator">=</span>rw        //
+<span class="token punctuation">[</span>cp:/main<span class="token punctuation">]</span>
+*<span class="token operator">=</span>         //除了以下角色外，其他人没有任何权限
+@admin<span class="token operator">=</span>rw    //
+@vip<span class="token operator">=</span>rw    //
+@man<span class="token operator">=</span>r        //
+<span class="token punctuation">[</span>cp:/main/01-aaa<span class="token punctuation">]</span> //admin和test能访问，admin能看到，vip用户是看不到有这个目录的
+@test<span class="token operator">=</span>rw
+@admin<span class="token operator">=</span>rw</code></pre><div class="toolbar"></div></div><p>这里补充一下，目录中还有目录特别设置权限的话，如果上一级用户拥有权限但是没有拥有特定的这个权限的话，是看不到的该文件夹的。或者说，拥有子目录权限但是没有主目录权限的话，可以直接通过完全的子目录链接来达到访问的目的。</p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者sheep1355的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+									<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=svn" target="_blank">svn</a>
+																								<a href="https://blog.51cto.com/search/result?q=authz" target="_blank">authz</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E9%85%8D%E7%BD%AE%E7%AE%80%E5%8D%95" target="_blank">配置简单</a>
+															                				<a class="last" href="https://blog.51cto.com/9821177/category4.html" target="_blank"><i></i>linux日常工具及管理</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="1745074" userid="9811177">1</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1557494059520">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina">微博</a>
+					  <a class="bds_sqq" data-cmd="sqq">QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin">微信</a>
+					  <img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/qr-url">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/9821177/1744784" title="svn的搭建与使用">
+						上一篇：svn的搭建与使用</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/9821177/1745575" title="tomcat 主要配置解析（1）">
+						下一篇：tomcat 主要配置解析（1）</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/9821177" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="9811177" src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/wKioL1df4cmBR9y7AAAMgE9CgE8656_middle.jpg">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/9821177" target="_blank" style="display:inline-block;">sheep1355</a>
+										<h3>26篇文章，7W+人气，0粉丝</h3>
+									</div>
+								<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/9821177" class="header-img" target="_blank">
+						<img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可" maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="9811177">
+					<input type="hidden" class="reply_id" value="1745074">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+							<div class="comment-number" id="comment_pl">
+					<p class="number fl"><span class="comment_number">1</span>条评论</p>
+					<a class="time-last time fr comment-sort" id="sort-desc" flag="desc" page="1">按时间倒序</a>
+				    <a class="time-first time fr comment-sort on" id="sort-asc" flag="asc" page="2">按时间正序</a>
+				    <div class="clear"></div>
+				</div>
+						<div class="commentList"><div class="commentList-box cbox-686139" id="686139"><div class="comment-1 publish_user_id reply_id_box comment_number-list" rid="686139"><div class="top"><div class="is-vip-bg-6 fl header-con"><a href="https://blog.51cto.com/11669719" class="header-img"><img class="is-vip-img-bg is-vip-img-4" src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/noavatar_middle.gif"><i class="vip-icon vip-icon-4"></i></a></div><div class="head-right jf-list-box"><p class="name"><a href="https://blog.51cto.com/11669719">xiao521340</a></p><div class="time"><span class="fl">1楼&nbsp;&nbsp;2017-07-19 17:57:56</span><span class="reply-btn fr" data-type="1"></span><span class="zan fr" blog_id="686139" type="2" userid="11659719"></span><div class="clear"></div></div><input type="hidden" class="reply_id" value="686139"><input type="hidden" class="user_id" value="11659719"><input type="hidden" class="first_pid" value="686139"></div></div><div class="con">[cp:/main]|@|*= &nbsp;  &nbsp;  &nbsp; //除了以下角色外，其他人没有任何权限|@|@admin=rw &nbsp;  //|@|@vip=rw &nbsp;  //|@|@man=r &nbsp;  &nbsp;   //|@|[cp:/main/01-aaa] //admin和test能访问，admin能看到，vip用户是看不到有这个目录的|@|vip用户已经对/main目录有读写权限，为什么不能看到/main/01-aaa目录</div></div><div class="comment-2"><ul class="comment-2-list" flag="686139"></ul></div></div></div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog" style="display: none;"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);" style="display: none;"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="https://blog.51cto.com/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>411人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="13" href="https://blog.51cto.com/cloumn/detail/13" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTO夏杰</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1426人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="30" href="https://blog.51cto.com/cloumn/detail/30" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>494人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="6" href="https://blog.51cto.com/cloumn/detail/6" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1500人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="18" href="https://blog.51cto.com/cloumn/detail/18" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>453人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="5" href="https://blog.51cto.com/cloumn/detail/5" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/9821177/2041810?source=dra" target="_blank">我的友情链接</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/9821177/1858188?source=dra" target="_blank">基础版jenkins从搭建到使用教程</a>
+															<a class="white-space" href="https://blog.51cto.com/mengsir/1137081?source=drt" target="_blank">如何解决SVN Commit failed (details follow): Access denied</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/flyingcat2013/1580692?source=drt" target="_blank">SVN cleanup操作反复失败解决办法</a>
+															<a class="white-space" href="https://blog.51cto.com/lhflinux/506243?source=drt" target="_blank">Linux下svn 安装搭建配置流程</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/lavasoft/1418694?source=drt" target="_blank">Cannot load supported formats: Cannot run program "svn": CreateProcess error=2</a>
+															<a class="white-space" href="https://blog.51cto.com/853056088/2138855?source=drt" target="_blank">ldap+ldap-account-manager+svn+apache+php做账号管理</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/yangwen/103066?source=drt" target="_blank">Eclipse下使用SVN版本控制</a>
+															<a class="white-space" href="https://blog.51cto.com/19940919/2095011?source=drt" target="_blank">Linux下搭建SVN服务器</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/baidutech/826768?source=drt" target="_blank">Linux下常用SVN命令</a>
+															<a class="white-space" href="https://blog.51cto.com/linuxg/1790033?source=drt" target="_blank">Jenkins 持续集成平台构建之通过svn提交代码</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/songxj/396113?source=drt" target="_blank">Linux SVN 服务器配置以及客户端使用</a>
+															<a class="white-space" href="https://blog.51cto.com/14126565/2376426?source=drh" target="_blank">Confluence 未授权 RCE (CVE-2019-3396) 漏洞分析</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/51ctoeditor/2372856?source=drh" target="_blank">亿级日搜索量的美团如何构建高效的搜索系统？</a>
+															<a class="white-space" href="https://blog.51cto.com/13475644/2365470?source=drh" target="_blank">玩转KVM：怎么追查KVM故障</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/1197822/2362963?source=drh" target="_blank">mysql5.7.25主从同步图解(主:CentOS7.5,从win10)</a>
+															<a class="white-space" href="https://blog.51cto.com/thinklili/2360858?source=drh" target="_blank">springboot2+exporter+prometheus+grafana搭建监控体系</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/3126109/2356807?source=drh" target="_blank">使用Alpine Linux和Oracle jre6构建Tomcat6镜像及应用容器化</a>
+															<a class="white-space" href="https://blog.51cto.com/502703956/2340024?source=drh" target="_blank">zabbix监控华为USG6000防火墙</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14084875/2336085?source=drh" target="_blank">iUAP云运维平台v3.0全面支持基于K8s的微服务架构</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/f92360e227f9d91cdff7ea95120630ef.png" style="width:70px;height:70px;"> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg" style="display: block;">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="1745074" userid="9811177">1</span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>2</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number">1</font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1557494059520">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/qr-url"></a>
+				</div>
+			</div>
+      						<a href="https://blog.51cto.com/9821177" class="b-name fr">sheep1355</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/9821177" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="9811177" src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/wKioL1df4cmBR9y7AAAMgE9CgE8656_middle.jpg"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/shCores.js.download"></script>
+<script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/countDown.js.download"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '1745074'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'9811177',
+            'blog_id':'1745074'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/9821177';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='9811177'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/9821177'
+    	nickname = 'sheep1355'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<p>svn+apache\u7684\u914d\u7f6e\u6587\u4ef6\u65e0\u975e\u5c31\u662fsubversion.conf\u6709\u5173apache\u7684\u7ed9svn\u7684\u6a21\u5757\u914d\u7f6e) &nbsp;authz\uff08\u7528\u6237\u89d2\u8272\u6743\u9650\u914d\u7f6e\uff09 passwd\uff08\u7528\u6237\u5bc6\u7801\uff09<\/p><p>passwd\u65e0\u975e\u5c31\u662f\u65b0\u5efa\u7528\u6237\u6216\u8005\u4fee\u6539\u5bc6\u7801\u7528\u3002<\/p><p>authz\u76f8\u5bf9\u8f83\u4e3a\u590d\u6742\uff0c\u4e0b\u9762\u4e3e\u4e2a\u4f8b\u5b50<\/p><pre class=\"brush:bash;toolbar:false;\">[group]\nadmin&nbsp;=&nbsp;aaa,bbb,ccc\nvip&nbsp;=&nbsp;a1\nman&nbsp;=&nbsp;b1\ncustom&nbsp;=&nbsp;c1&nbsp;&nbsp;&nbsp;\/\/\u8fd9\u91cc\u5148\u8bbe\u5b9a\u6709\u8fd9\u4e48\u591a\u4e2a\u89d2\u8272\u548c\u7528\u6237\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u5047\u8bbe\u5e93\u7684\u540d\u5b57\u53ebcp\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u4e0b\u9762\u5728cp\u4e0b\u5efa\u7acb2\u4e2a\u5e73\u884c\u7684\u76ee\u5f55vip\u548cmain\n[\/]\n@admin=rw&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u8868\u793a\u6839\u76ee\u5f55\u4e0b\u53ea\u6709admin\u624d\u6709\u8bfb\u5199\u6743\u9650&nbsp;&nbsp;\n[cp:\/]\n*=r&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u5728cp\u5e93\u4e0b\uff0c\u9664\u4e86admin\u4e0b\uff0c\u6240\u6709\u4eba\u90fd\u6709\u8bfb\u7684\u6743\u9650\n@admin=rw&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u5728cp\u5e93\u4e0b\uff0cadmin\u5177\u6709\u8bfb\u5199\u7684\u6743\u9650\n[cp:\/vip]&nbsp;\n*=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u9664\u4e86vip\u548cadmin\u4e4b\u5916\uff0c\u6240\u6709\u4eba\u6ca1\u6709\u4efb\u4f55\u6743\u9650\n@vip=rw&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\n@admin=rw&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\n[cp:\/main]\n*=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u9664\u4e86\u4ee5\u4e0b\u89d2\u8272\u5916\uff0c\u5176\u4ed6\u4eba\u6ca1\u6709\u4efb\u4f55\u6743\u9650\n@admin=rw&nbsp;&nbsp;&nbsp;&nbsp;\/\/\n@vip=rw&nbsp;&nbsp;&nbsp;&nbsp;\/\/\n@man=r&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/<\/pre><p>\u5982\u679c\u51fa\u73b0\u6709\u7684\u76ee\u5f55\u4e0b\u6709\u5b50\u76ee\u5f55\u7684\u8bdd\uff0c\u90a3\u4e48\u5728\u76ee\u5f55\u4e2d\u6709\u6743\u9650\u7684\u89d2\u8272\u5728\u5b50\u76ee\u5f55\u4e2d\u4e5f\u5e94\u8be5\u6709\u76f8\u5e94\u89d2\u8272\u6743\u9650\u3002<\/p><p>\u4e5f\u5c31\u662f\u8bf4\uff0c\u5b50\u76ee\u5f55\u53ef\u4ee5\u7ee7\u627f\u6bcd\u76ee\u5f55\u7684\u89d2\u8272\u6743\u9650\u3002<\/p><p>\u6bd4\u5982 vip\u8fd9\u4e2a\u76ee\u5f55\u4e0b\u9762\u6709vip1\u8fd9\u4e2a\u76ee\u5f55\uff0c\u90a3\u4e48vip\u548cadmin\u4f9d\u7136\u6709\u5bf9vip1\u8fdb\u884crw\u7684\u6743\u9650\u3002<\/p><p>3.15\u8865\u5145<\/p><pre class=\"brush:bash;toolbar:false\">[\/]\n@admin=rw&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u8868\u793a\u6839\u76ee\u5f55\u4e0b\u53ea\u6709admin\u624d\u6709\u8bfb\u5199\u6743\u9650&nbsp;&nbsp;\n[cp:\/]\n*=r&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u5728cp\u5e93\u4e0b\uff0c\u9664\u4e86admin\u4e0b\uff0c\u6240\u6709\u4eba\u90fd\u6709\u8bfb\u7684\u6743\u9650\n@admin=rw&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u5728cp\u5e93\u4e0b\uff0cadmin\u5177\u6709\u8bfb\u5199\u7684\u6743\u9650\n[cp:\/vip]&nbsp;\n*=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u9664\u4e86vip\u548cadmin\u4e4b\u5916\uff0c\u6240\u6709\u4eba\u6ca1\u6709\u4efb\u4f55\u6743\u9650\n@vip=rw&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\n@admin=rw&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\n[cp:\/main]\n*=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\u9664\u4e86\u4ee5\u4e0b\u89d2\u8272\u5916\uff0c\u5176\u4ed6\u4eba\u6ca1\u6709\u4efb\u4f55\u6743\u9650\n@admin=rw&nbsp;&nbsp;&nbsp;&nbsp;\/\/\n@vip=rw&nbsp;&nbsp;&nbsp;&nbsp;\/\/\n@man=r&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/\/\n[cp:\/main\/01-aaa]&nbsp;\/\/admin\u548ctest\u80fd\u8bbf\u95ee\uff0cadmin\u80fd\u770b\u5230\uff0cvip\u7528\u6237\u662f\u770b\u4e0d\u5230\u6709\u8fd9\u4e2a\u76ee\u5f55\u7684\n@test=rw\n@admin=rw<\/pre><p>\u8fd9\u91cc\u8865\u5145\u4e00\u4e0b\uff0c\u76ee\u5f55\u4e2d\u8fd8\u6709\u76ee\u5f55\u7279\u522b\u8bbe\u7f6e\u6743\u9650\u7684\u8bdd\uff0c\u5982\u679c\u4e0a\u4e00\u7ea7\u7528\u6237\u62e5\u6709\u6743\u9650\u4f46\u662f\u6ca1\u6709\u62e5\u6709\u7279\u5b9a\u7684\u8fd9\u4e2a\u6743\u9650\u7684\u8bdd\uff0c\u662f\u770b\u4e0d\u5230\u7684\u8be5\u6587\u4ef6\u5939\u7684\u3002\u6216\u8005\u8bf4\uff0c\u62e5\u6709\u5b50\u76ee\u5f55\u6743\u9650\u4f46\u662f\u6ca1\u6709\u4e3b\u76ee\u5f55\u6743\u9650\u7684\u8bdd\uff0c\u53ef\u4ee5\u76f4\u63a5\u901a\u8fc7\u5b8c\u5168\u7684\u5b50\u76ee\u5f55\u94fe\u63a5\u6765\u8fbe\u5230\u8bbf\u95ee\u7684\u76ee\u7684\u3002<\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"svn中authz配置文件总结",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1557494065; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/marked.min.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/highlight.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/detail_mp.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/detail.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/details_new.js.download"></script><script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/copy.js.download"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/pageview.html"></iframe>
+</div>
+
+<script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/pvlog.js.download"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type="text/javascript">
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/jquery.cookie.js.download"></script>
+<script src="./svn中authz配置文件总结-熊仔的博客-51CTO博客_files/time-on-page.js.download" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+
+
+<div id="zhichiBtnBox" style="position: fixed; z-index: 2147483583; box-shadow: rgba(15, 66, 76, 0.25) 0px 0px 14px 0px; width: 60px; height: 60px; border-radius: 50%; background-color: rgb(66, 133, 244); background-image: url(&quot;//www.sobot.com/chat/frame/imgs/icon.png&quot;); background-repeat: no-repeat; background-position: 18px -58px; right: 40px; bottom: 90px; display: none;"><a hidefocus="" id="zhichiBtn" style="position:relative;text-decoration: none; outline: none; font-family: Microsoft Yahei, Arial, Helvetica; color: #fff; font-size: 16px; display: inline-block; margin: 0; padding: 0; border: none; line-height:43px; float:none;width:100%;height:100%;border-radius:50%;"><span class="zc-advice-icon-btn-title" style="box-shadow: rgba(107, 113, 114, 0.15) 0px 2px 4px 0px; border: 1px solid rgb(235, 239, 240); font-family: &quot;Microsoft Yahei&quot;, Arial, Helvetica; color: rgb(85, 85, 86); font-size: 13px; margin: 0px; text-align: right; background: rgb(255, 255, 255); position: absolute; top: 15px; right: 70px; text-overflow: ellipsis; white-space: nowrap; word-break: normal; display: none; border-radius: 3px; padding: 0px 5px; height: 30px; line-height: 30px;">咨询在线客服</span></a><i style="position:absolute;top:0px;right:0px;padding:1px;line-height:20px;text-align:center;color:#fff;font-weight:bold;height:18px;min-width:18px;background-color:#ed5c5c;border-radius:18px;font-size:12px;display:none;font-style:normal;" id="zhichiCount"></i></div></body></html>

@@ -1,0 +1,1269 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0038)https://improve.iteye.com/blog/1413884 -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh-CN" dir="ltr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script type="text/javascript" async="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/pcqm"></script><script type="text/javascript" async="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/pcqm(1)"></script><script type="text/javascript" async="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/pcqm(2)"></script>
+  
+  <title>
+    linux端口映射 ssh命令 - improve - ITeye博客
+  </title>
+  <meta name="description" content="在开发过程中，因为网络环境的原因，需要通过某一台服务器访问其他服务器的一些端口，这里就涉及到端口映射的问题。     当前自己现状及需求  1.本地机器window系统，有CRT工具2.本地通过CRT可以通过Internet访问到内网中的机器172.18.1.34   3.但是本地通过CRT访问不到内网中的机器172.18.1.144     需求是想在本地访问172.18.1.144上web应用对 ...">
+  <meta name="keywords" content=" linux端口映射 ssh命令">
+  <link rel="shortcut icon" href="https://improve.iteye.com/images/favicon.ico" type="image/x-icon">
+  <link rel="search" type="application/opensearchdescription+xml" href="https://improve.iteye.com/open_search.xml" title="ITeye">
+  <link href="https://improve.iteye.com/rss" rel="alternate" title="improve" type="application/rss+xml">
+  <link href="./linux端口映射 ssh命令 - improve - ITeye博客_files/blog.css" media="screen" rel="stylesheet" type="text/css">
+<link href="./linux端口映射 ssh命令 - improve - ITeye博客_files/blue.css" media="screen" rel="stylesheet" type="text/css">
+  <script type="text/javascript" async="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/analytics.js.download"></script><script type="text/javascript" async="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/auto_dup"></script><script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/hm.js.download"></script><script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/hm.js(1).download"></script><script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/application.js.download" type="text/javascript"></script>
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?e19a8b00cf63f716d774540875007664";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+<style>
+/* 折叠效果 */
+.hide-main-content{
+    position: relative;
+}
+.hide-article-box {
+    display: none;
+    position: absolute;
+    z-index: 9999;
+    bottom: -1px;
+    width: 100%;
+    padding-top: 160px;
+    background-image: -webkit-gradient(linear,left top, left bottom,from(rgba(255,255,255,0)),color-stop(70%, #fff));
+    background-image: linear-gradient(-180deg,rgba(255,255,255,0) 0%,#fff 70%);
+}
+.hide-article-box #btn-readmore{
+    color: #ca0c16;
+    border: 1px solid #ca0c16;
+    margin: 10px auto;
+    padding: 0 8px;
+    display: block;
+    font-size: 14px;
+    border-radius: 4px;
+    text-align: center;
+    background-color: transparent;
+    height: 34px;
+    width: 74px;
+    line-height: 32px;
+    min-width: 72px;
+    cursor: pointer;
+}
+.hide-article-box #btn-readmore:hover{
+    background: #ca0c16;
+    color:#fff;
+    text-decoration: none;
+}
+</style>
+<!-- 因INS广告原因 需要提前引入jquery -->
+<script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/jquery-1.11.1.min.js.download" type="text/javascript"></script>
+<script type="text/javascript">var jQuery = jQuery.noConflict();// 解决jq与prototype.js命名空间冲突的问题</script>
+<script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/fixed-sidebar.js.download" type="text/javascript"></script>
+
+    <link href="./linux端口映射 ssh命令 - improve - ITeye博客_files/SyntaxHighlighter.css" media="screen" rel="stylesheet" type="text/css">
+  <script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/shCoreCommon.js.download" type="text/javascript"></script>
+<script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/hotkey.js.download" type="text/javascript"></script>
+  <script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/code_favorites.js.download" type="text/javascript"></script>
+<script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/weiboshare.js.download" type="text/javascript"></script>
+
+  <!-- 请置于所有广告位代码之前 -->
+  <script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/ds.js.download"></script>
+  <link ref="canonical" href="http://improve.iteye.com/blog/1413884">
+  <script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/c.js.download"></script><link rel="stylesheet" type="text/css" href="./linux端口映射 ssh命令 - improve - ITeye博客_files/recommend.css"><link rel="stylesheet" type="text/css" href="./linux端口映射 ssh命令 - improve - ITeye博客_files/iconfont.css"></head><body><div id="BAIDU_DUP_fp_wrapper" style="position: absolute; left: -1px; bottom: -1px; z-index: 0; width: 0px; height: 0px; overflow: hidden; visibility: hidden; display: none;"><iframe id="BAIDU_DUP_fp_iframe" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/o.html" style="width: 0px; height: 0px; visibility: hidden; display: none;"></iframe></div><svg aria-hidden="true" style="position: absolute; width: 0px; height: 0px; overflow: hidden;"><symbol id="fanyi" viewBox="0 0 1084 1024"><path d="M602.416429 647.439059v75.390494h120.470588v-120.470588h-75.029082l195.493647-193.939577V481.882353h180.597459c33.322165 0 60.289506 26.967341 60.289506 60.235294 0 0.722824-0.012047 1.439624-0.036141 2.1504v236.640377c0.024094 0.710776 0.036141 1.427576 0.036141 2.1504 0 33.261929-26.967341 60.235294-60.235294 60.235294H843.357606v120.470588c0 33.261929-26.967341 60.229271-60.235294 60.22927s-60.235294-26.967341-60.235295-60.235294v-120.470588H542.090782c-33.267953 0-60.235294-26.967341-60.235294-60.235294l0.006024-16.022588 120.554917-119.597177z m240.935153-45.080094v120.470588h120.380235v-120.470588h-120.380235z m-403.534306-46.585977l-27.732329-67.861082H186.479676l-70.716235 167.936c-12.9024 30.659765-48.224376 45.056-78.884141 32.141553-30.659765-12.908424-45.049976-48.2304-32.141553-78.890165l240.941176-572.223247A60.253365 60.253365 0 0 1 301.782076 0.006024a60.253365 60.253365 0 0 1 56.380236 37.466352l174.242635 426.429742 352.798117-350.033318c23.612235-23.431529 61.7472-23.280941 85.17873 0.331294 23.431529 23.612235 23.280941 61.753224-0.331294 85.184753L200.394029 963.029835c-23.612235 23.431529-61.753224 23.280941-85.184753-0.331294-23.431529-23.612235-23.280941-61.753224 0.337318-85.184753l324.270682-321.7408z m-138.842353-339.787294L237.209841 367.441318H362.860664L300.974923 215.979671z"></path></symbol><symbol id="shouji" viewBox="0 0 1024 1024"><path d="M768 670.72V102.4H256v568.32h512z m0 51.2H256v199.68h512v-199.68z m102.4-619.52v819.2c0 56.55552-45.84448 102.4-102.4 102.4H256c-56.55552 0-102.4-45.84448-102.4-102.4V102.4C153.6 45.84448 199.44448 0 256 0h512c56.55552 0 102.4 45.84448 102.4 102.4zM512 870.4c-28.27776 0-51.2-22.92224-51.2-51.2s22.92224-51.2 51.2-51.2 51.2 22.92224 51.2 51.2-22.92224 51.2-51.2 51.2z"></path></symbol><symbol id="yuedushu" viewBox="0 0 1462 1024"><path d="M731.428571 1024c-259.320686 0-495.879314-146.753829-709.668571-440.246857-29.015771-39.840914-29.015771-103.665371 0-143.506286C235.556571 146.761143 472.107886 0 731.428571 0c259.320686 0 495.879314 146.753829 709.668572 440.246857 29.015771 39.840914 29.015771 103.665371 0 143.506286C1227.300571 877.238857 990.749257 1024 731.428571 1024z m0-841.142857c-195.2256 0-375.632457 107.132343-545.865142 329.142857 170.232686 222.010514 350.639543 329.142857 545.865142 329.142857 195.2256 0 375.632457-107.132343 545.865143-329.142857C1107.053714 289.989486 926.646857 182.857143 731.428571 182.857143z m0 621.714286c-161.579886 0-292.571429-130.991543-292.571428-292.571429s130.991543-292.571429 292.571428-292.571429 292.571429 130.991543 292.571429 292.571429-130.991543 292.571429-292.571429 292.571429z m0-182.857143c60.591543 0 109.714286-49.122743 109.714286-109.714286 0-60.591543-49.122743-109.714286-109.714286-109.714286-60.591543 0-109.714286 49.122743-109.714285 109.714286 0 60.591543 49.122743 109.714286 109.714285 109.714286z"></path></symbol></svg><script onload="window[&#39;cambrian_sync_loader_success155739817903827&#39;]()" onerror="window[&#39;cambrian_sync_loader_fail_155739817903827&#39;]()" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/main.8b2bc869.js.download"></script>
+  <script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/recommend.js.download"></script><script language="javascript" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/iconfont.js.download"></script>
+
+
+
+  <div id="header">
+    <div id="blog_site_nav">
+  <a href="https://www.iteye.com/" class="homepage">首页</a>
+  <a href="https://www.iteye.com/news">资讯</a>
+  <a href="https://www.iteye.com/magazines">精华</a>
+  <a href="https://www.iteye.com/forums">论坛</a>
+  <a href="https://www.iteye.com/ask">问答</a>
+  <a href="https://www.iteye.com/blogs">博客</a>
+  <a href="https://www.iteye.com/blogs/subjects">专栏</a>
+  <a href="https://www.iteye.com/groups">群组</a>
+<!--  <a href="#" onclick="return false;" id="msna"><u>更多</u> <small>▼</small></a>-->
+<!--  <div class="quick_menu" style="display:none;">-->
+<!--    <a target="_blank" href="https://job.iteye.com/iteye">知识库</a>-->
+<!--    <a href="https:///search">搜索</a>-->
+<!--  </div>-->
+</div>
+
+    <div id="user_nav">
+
+      <a href="https://improve.iteye.com/login" class="welcome" title="登录">您还未登录 !</a>
+    <a href="https://improve.iteye.com/login">登录</a>
+    <!--<a href="/signup" class="nobg">注册</a>-->
+    <!--<a href="https://passport.csdn.net/account/mobileregister?from=https://www.iteye.com">注册</a>-->
+  </div>
+
+
+  </div>
+
+  <div id="page">
+<!--    <div id="branding" class="clearfix">-->
+<!--      <div id="blog_name">-->
+<!--        <h1><a href="/">-->
+<!--            </a></h1>-->
+<!--      </div>-->
+<!--      <div id='fd'></div>-->
+<!--      <div id="blog_navbar">-->
+<!--        <ul>-->
+          
+          
+          
+          
+          
+          
+<!--        </ul>-->
+
+<!--        <div class="search">-->
+<!--          <form action="/blog/search" method="get">-->
+<!--            <input class="search_text" id="query" name="query" style="margin-left: 10px;width: 110px;" type="text"-->
+<!--              value="" />-->
+<!--            <input class="submit_search" type="submit" value="" />-->
+<!--          </form>-->
+<!--        </div>-->
+<!--        <div id="fd"></div>-->
+<!--      </div>-->
+<!--    </div>-->
+    `
+    <div id="content" class="clearfix">
+      <div id="local">
+        <div class="local_top"></div>
+        <div id="blog_owner">
+  <div id="blog_owner_logo"><a href="https://improve.iteye.com/"><img alt="improve的博客" class="logo" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/user-logo.gif" title="improve的博客: improve" width=""></a></div>
+  <div id="blog_owner_name">improve</div>
+</div>
+
+        <div id="blog_actions">
+          <ul>
+            <li>浏览:
+              122350 次</li>
+            
+            <li>性别:
+              <img alt="Icon_minigender_1" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/icon_minigender_1.gif" title="男">
+            </li>
+            
+            
+            <li>来自:
+              南京
+            </li>
+            
+            <li>
+              <img src="./linux端口映射 ssh命令 - improve - ITeye博客_files/offline.gif">
+            </li>
+            
+          </ul>
+        </div>
+
+        <div id="user_visits" class="clearfix">
+          <h5>最近访客 <span style="font-weight:normal;font-size:12px;padding-left:30px;">
+              <a href="https://improve.iteye.com/blog/user_visits">更多访客&gt;&gt;</a></span></h5>
+          
+          <div class="user_visit">
+            <div class="logo"><a href="https://281303159.iteye.com/" target="_blank"><img alt="相见恨晚love的博客" class="logo" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/user-logo-thumb.gif" title="相见恨晚love的博客: " width="48px"></a></div>
+            <div class="left">
+              <a href="https://281303159.iteye.com/" target="_blank" title="相见恨晚love">相见恨晚love</a>
+            </div>
+          </div>
+          
+          <div class="user_visit">
+            <div class="logo"><a href="https://chenyidong52331314.iteye.com/" target="_blank"><img alt="chenyidong52331314的博客" class="logo" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/user-logo-thumb.gif" title="chenyidong52331314的博客: " width="48px"></a></div>
+            <div class="left">
+              <a href="https://chenyidong52331314.iteye.com/" target="_blank" title="chenyidong52331314">chenyidong52331314</a>
+            </div>
+          </div>
+          
+          <div class="user_visit">
+            <div class="logo"><a href="https://jaying007.iteye.com/" target="_blank"><img alt="jaying007的博客" class="logo" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/user-logo-thumb.gif" title="jaying007的博客: jaying007" width="48px"></a></div>
+            <div class="left">
+              <a href="https://jaying007.iteye.com/" target="_blank" title="jaying007">jaying007</a>
+            </div>
+          </div>
+          
+          <div class="user_visit">
+            <div class="logo"><a href="https://fanshuyao.iteye.com/" target="_blank"><img alt="蕃薯耀的博客" class="logo" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/412d4a00-6f3f-3488-adfe-e943ea2c7cff-thumb.jpg" title="蕃薯耀的博客: 蕃薯耀" width="48px"></a></div>
+            <div class="left">
+              <a href="https://fanshuyao.iteye.com/" target="_blank" title="蕃薯耀">蕃薯耀</a>
+            </div>
+          </div>
+          
+        </div>
+
+        <div id="user_title_list" class="clearfix">
+          <h5>博主相关</h5>
+          <li>
+            <a href="https://improve.iteye.com/">博客</a>
+          </li>
+
+          <li>
+            <a href="https://improve.iteye.com/weibo">微博</a>
+          </li>
+
+          <li>
+            <a href="https://improve.iteye.com/album">相册</a>
+          </li>
+
+          <li>
+            <a href="https://improve.iteye.com/link">收藏</a>
+          </li>
+
+          <li>
+            <a href="https://improve.iteye.com/blog/guest_book">留言</a>
+          </li>
+
+          <li>
+            <a href="https://improve.iteye.com/blog/profile">关于我</a>
+          </li>
+        </div>
+
+        
+
+                <div id="blog_menu">
+          <h5>文章分类</h5>
+          <ul>
+            <li>
+              <a href="https://improve.iteye.com/">全部博客 (68)</a>
+            </li>
+            
+            <li>
+              <a href="https://improve.iteye.com/category/19470">集成框架 (18)</a>
+              </li>
+              
+            <li>
+              <a href="https://improve.iteye.com/category/19471">java (20)</a>
+              </li>
+              
+            <li>
+              <a href="https://improve.iteye.com/category/95241">数据库 (7)</a>
+              </li>
+              
+            <li>
+              <a href="https://improve.iteye.com/category/101090">web前端 (14)</a>
+              </li>
+              
+            <li>
+              <a href="https://improve.iteye.com/category/101093">应用服务器 (8)</a>
+              </li>
+              
+            <li>
+              <a href="https://improve.iteye.com/category/213676">操作系统 (4)</a>
+              </li>
+              
+            <li>
+              <a href="https://improve.iteye.com/category/101099">other (3)</a>
+              </li>
+              
+            <li>
+              <a href="https://improve.iteye.com/category/101111">英语学习 (1)</a>
+              </li>
+              
+            <li>
+              <a href="https://improve.iteye.com/category/237798">mysql (2)</a>
+              </li>
+              
+            <li>
+              <a href="https://improve.iteye.com/category/237885">Eclipse (1)</a>
+              </li>
+              
+          </ul>
+        </div>
+        <div id="month_blogs">
+          <h5>社区版块</h5>
+          <ul>
+            <li>
+              <a href="https://improve.iteye.com/blog/news">我的资讯</a> (
+              0)</li>
+            <li>
+              <a href="https://improve.iteye.com/blog/post">我的论坛</a> (
+              3)
+            </li>
+            <li>
+              <a href="https://improve.iteye.com/blog/answered_problems">我的问答</a> (
+              0)</li>
+          </ul>
+        </div>
+        <div id="month_blogs">
+          <h5>存档分类</h5>
+          <ul>
+            
+            <li>
+              <a href="https://improve.iteye.com/blog/monthblog/2015-03">2015-03</a>
+              (
+              1)</li>
+            
+            <li>
+              <a href="https://improve.iteye.com/blog/monthblog/2014-12">2014-12</a>
+              (
+              1)</li>
+            
+            <li>
+              <a href="https://improve.iteye.com/blog/monthblog/2012-09">2012-09</a>
+              (
+              1)</li>
+            
+            <li>
+              <a href="https://improve.iteye.com/blog/monthblog_more">更多存档...</a>
+            </li>
+          </ul>
+        </div>
+        
+        
+
+        <div id="guest_books">
+          <h5>最新评论</h5>
+          <ul>
+            
+            <li>
+              <a href="https://chen-zujun.iteye.com/" target="_blank" title="chen_zujun">chen_zujun</a>：
+              &nbsp;<br>
+              <a href="https://improve.iteye.com/blog/465601#bc2275651">java Object生成实例的new和newInstance的区别?</a>
+            </li>
+            
+            <li>
+              <a href="https://honey00125.iteye.com/" target="_blank" title="honey00125">honey00125</a>：
+              感谢楼主分享！<br>
+              <a href="https://improve.iteye.com/blog/976663#bc2193318">JQuery权威指南源代码整理下载</a>
+            </li>
+            
+            <li>
+              <a href="https://jojay90.iteye.com/" target="_blank" title="Jojay90">Jojay90</a>：
+              真的不错, 谢谢此分享!<br>
+              <a href="https://improve.iteye.com/blog/976663#bc2191486">JQuery权威指南源代码整理下载</a>
+            </li>
+            
+            <li>
+              <a href="https://wjyuian.iteye.com/" target="_blank" title="wjyuian">wjyuian</a>：
+              感谢楼主，好资料，，下了看看<br>
+              <a href="https://improve.iteye.com/blog/976663#bc2190926">JQuery权威指南源代码整理下载</a>
+            </li>
+            
+            <li>
+              <a href="https://toefllitong.iteye.com/" target="_blank" title="toefllitong">toefllitong</a>：
+              感谢楼主的分享，支持越来越多的人分享<br>
+              <a href="https://improve.iteye.com/blog/976663#bc2129334">JQuery权威指南源代码整理下载</a>
+            </li>
+            
+          </ul>
+        </div>
+
+        <div class="local_bottom"></div>
+        
+        <div id="nav_show_top_stop" style="position: fixed; top: 1971px;">
+            <div>
+              <!-- 广告位：PC端-iteye博客详情页左侧Button1-200*200 -->
+              
+              <!-- Ads ID 423 -->
+              
+            </div>
+            <div>
+              <!-- 广告位：PC端-iteye博客详情页左侧Button2-200*200 -->
+              
+              <!-- Ads ID 424 -->
+              
+            </div>
+          </div>
+      </div>
+      
+      <div id="main" class="">
+        
+
+
+
+        
+
+
+<div class="h-entry" style="display:none">
+  <a href="https://improve.iteye.com/" class="p-author" target="_blank">improve</a>
+</div>
+
+
+<div class="blog_main">
+  <script type="application/ld+json">
+    {
+        "@context": "https://zhanzhang.baidu.com/contexts/cambrian.jsonld",
+        "@id": "http://improve.iteye.com/blog/1413884",
+        "title": "linux端口映射 ssh命令",
+        "images": [],
+        "description": "",
+        "pubDate": "2012-02-21T18:01:30"
+    }
+  </script>
+  <div class="blog_title">
+    <h3>
+      <a href="https://improve.iteye.com/blog/1413884">linux端口映射 ssh命令</a>
+      <em class="actions">      </em>
+    </h3>
+    <ul class="blog_categories"><strong>博客分类：</strong> <li><a href="https://improve.iteye.com/category/213676">操作系统</a></li> </ul>
+        <div class="news_tag">&nbsp;</div>
+  </div>
+
+  <div id="blog_content" class="hide-main-content">
+    <div class="hide-article-box text-center" style="display: none;">
+      <a class="btn" id="btn-readmore">阅读更多</a>
+    </div>
+    <p>在开发过程中，因为网络环境的原因，需要通过某一台服务器访问其他服务器的一些端口，这里就涉及到端口映射的问题。</p>
+<p>&nbsp;</p>
+<p>当前自己现状及需求</p>
+<p>1.本地机器window系统，有CRT工具<br>2.本地通过CRT可以通过Internet访问到内网中的机器172.18.1.34 </p>
+<p>3.但是本地通过CRT访问不到内网中的机器172.18.1.144</p>
+<p>&nbsp;</p>
+<p>需求是想在本地访问172.18.1.144上web应用对应端口是80</p>
+<p>&nbsp;</p>
+<p>解决过程：</p>
+<p>1.通过CRT登陆到172.18.1.34 机器上执行：ssh -C -f -N -g -L 8080:127.0.0.1:80 172.18.1.144</p>
+<p>&nbsp;&nbsp; <span style="color: #ff0000;">目的 把144的80端口映射到 34的8080上</span></p>
+<p>&nbsp;</p>
+<p>2.在本地的CRT上做端口转发,把34上的8080端口映射到本地的8080上</p>
+<p>&nbsp;&nbsp; </p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; <img width="374" alt="CRT 端口转发设置" src="http://www.hmport.com/images/144-80.jpg" height="410"></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><a name="N1009D"><span class="smalltitle">端口转发概述</span></a></p>
+<p>让我们先来了解一下端口转发的概念吧。我们知道，SSH 会自动加密和解密所有 SSH 客户端与服务端之间的网络数据。但是，SSH 还同时提供了一个非常有用的功能，这就是端口转发。它能够将其他 TCP 端口的网络数据通过 SSH 链接来转发，并且自动提供了相应的加密及解密服务。这一过程有时也被叫做“隧道”（tunneling），这是因为 SSH 为其他 TCP 链接提供了一个安全的通道来进行传输而得名。例如，Telnet，SMTP，LDAP 这些 TCP 应用均能够从中得益，避免了用户名，密码以及隐私信息的明文传输。而与此同时，如果您工作环境中的防火墙限制了一些网络端口的使用，但是允许 SSH 的连接，那么也是能够通过将 TCP 端口转发来使用 SSH 进行通讯。总的来说 SSH 端口转发能够提供两大功能：</p>
+<ol>
+<li>加密 SSH Client 端至 SSH Server 端之间的通讯数据。</li>
+<li>突破防火墙的限制完成一些之前无法建立的 TCP 连接。</li>
+</ol>
+<p><br><a name="N100B0"><strong>图 1. SSH 端口转发</strong></a><br><img width="459" alt="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/image001.jpg" height="319">&nbsp;</p>
+<p>如上图所示，使用了端口转发之后，TCP 端口 A 与 B 之间现在并不直接通讯，而是转发到了 SSH 客户端及服务端来通讯，从而自动实现了数据加密并同时绕过了防火墙的限制。</p>
+<div class="ibm-alternate-rule">
+<hr>
+</div>
+<p class="ibm-ind-link ibm-back-to-top"><a class="ibm-anchor-up-link" href="https://improve.iteye.com/admin/blogs/1413884/#ibm-pcon">回页首</a></p>
+<p><a name="2.%E7%AC%AC%E4%BA%8C%E9%83%A8%E5%88%86%20%E6%9C%AC%E5%9C%B0%E8%BD%AC%E5%8F%91%E4%B8%8E%E8%BF%9C%E7%A8%8B%E8%BD%AC%E5%8F%91"><span class="atitle">第二部分 本地转发与远程转发</span></a></p>
+<p><a name="N100C6"><span class="smalltitle">本地转发实例分析</span></a></p>
+<p>我们先来看第一个例子，在实验室里有一台 LDAP 服务器（LdapServerHost），但是限制了只有本机上部署的应用才能直接连接此 LDAP 服务器。如果我们由于调试或者测试的需要想临时从远程机器（LdapClientHost）直接连接到这个 LDAP 服务器 , 有什么方法能够实现呢？</p>
+<p>答案无疑是本地端口转发了，它的命令格式是：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">ssh -L &lt;local port&gt;:&lt;remote host&gt;:&lt;remote port&gt; &lt;SSH hostname&gt;</pre>
+</td>
+</tr></tbody></table>
+<p>在 LdapClientHost 上执行如下命令即可建立一个 SSH 的本地端口转发，例如：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">$ ssh -L 7001:localhost:389 LdapServerHost</pre>
+</td>
+</tr></tbody></table>
+<p><br><br><a name="N100DE"><strong>图 2. 本地端口转发</strong></a><br>&nbsp;<img width="465" alt="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/image002.jpg" height="323"></p>
+<p>这里需要注意的是本例中我们选择了 7001 端口作为本地的监听端口，在选择端口号时要注意非管理员帐号是无权绑定 1-1023 端口的，所以一般是选用一个 1024-65535 之间的并且尚未使用的端口号即可。</p>
+<p>然后我们可以将远程机器（LdapClientHost）上的应用直接配置到本机的 7001 端口上（而不是 LDAP 服务器的 389 端口上）。之后的数据流将会是下面这个样子：</p>
+<ul>
+<li>我们在 LdapClientHost 上的应用将数据发送到本机的 7001 端口上，</li>
+<li>而本机的 SSH Client 会将 7001 端口收到的数据加密并转发到 LdapServertHost 的 SSH Server 上。</li>
+<li>SSH Server 会解密收到的数据并将之转发到监听的 LDAP 389 端口上，</li>
+<li>最后再将从 LDAP 返回的数据原路返回以完成整个流程。</li>
+</ul>
+<p>我们可以看到，这整个流程应用并没有直接连接 LDAP 服务器，而是连接到了本地的一个监听端口，但是 SSH 端口转发完成了剩下的所有事情，加密，转发，解密，通讯。</p>
+<p>这里有几个地方需要注意：</p>
+<ol>
+<li>SSH 端口转发是通过 SSH 连接建立起来的，我们必须保持这个 SSH 连接以使端口转发保持生效。一旦关闭了此连接，相应的端口转发也会随之关闭。</li>
+<li>我们只能在建立 SSH 连接的同时创建端口转发，而不能给一个已经存在的 SSH 连接增加端口转发。</li>
+<li>你可能会疑惑上面命令中的 &lt;remote host&gt; 为什么用 localhost，它指向的是哪台机器呢？在本例中，它指向 LdapServertHost 。我们为什么用 localhost 而不是 IP 地址或者主机名呢？其实这个取决于我们之前是如何限制 LDAP 只有本机才能访问。如果只允许 lookback 接口访问的话，那么自然就只有 localhost 或者 IP 为 127.0.0.1 才能访问了，而不能用真实 IP 或者主机名。</li>
+<li>命令中的 &lt;remote host&gt; 和 &lt;SSH hostname&gt; 必须是同一台机器么？其实是不一定的，它们可以是两台不同的机器。我们在后面的例子里会详细阐述这点。</li>
+<li>好了，我们已经在 LdapClientHost 建立了端口转发，那么这个端口转发可以被其他机器使用么？比如能否新增加一台 LdapClientHost2 来直接连接 LdapClientHost 的 7001 端口？答案是不行的，在主流 SSH 实现中，本地端口转发绑定的是 lookback 接口，这意味着只有 localhost 或者 127.0.0.1 才能使用本机的端口转发 , 其他机器发起的连接只会得到“ connection refused. ”。好在 SSH 同时提供了 GatewayPorts 关键字，我们可以通过指定它与其他机器共享这个本地端口转发。<br><code>ssh -g -L &lt;local port&gt;:&lt;remote host&gt;:&lt;remote port&gt; &lt;SSH hostname&gt;</code> </li>
+</ol>
+<p><a name="N1011D"><span class="smalltitle">远程转发实例分析</span></a></p>
+<p>我们来看第二个例子，这次假设由于网络或防火墙的原因我们不能用 SSH 直接从 LdapClientHost 连接到 LDAP 服务器（LdapServertHost），但是反向连接却是被允许的。那此时我们的选择自然就是远程端口转发了。</p>
+<p>它的命令格式是：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">ssh -R &lt;local port&gt;:&lt;remote host&gt;:&lt;remote port&gt; &lt;SSH hostname&gt;</pre>
+</td>
+</tr></tbody></table>
+<p>例如在 LDAP 服务器（LdapServertHost）端执行如下命令：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">$ ssh -R 7001:localhost:389 LdapClientHost</pre>
+</td>
+</tr></tbody></table>
+<p><br><br><a name="N10135"><strong>图 3. 远程端口转发</strong></a><br>&nbsp;<img width="467" alt="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/image003.jpg" height="313"></p>
+<p>和本地端口转发相比，这次的图里，SSH Server 和 SSH Client 的位置对调了一下，但是数据流依然是一样的。我们在 LdapClientHost 上的应用将数据发送到本机的 7001 端口上，而本机的 SSH Server 会将 7001 端口收到的数据加密并转发到 LdapServertHost 的 SSH Client 上。 SSH Client 会解密收到的数据并将之转发到监听的 LDAP 389 端口上，最后再将从 LDAP 返回的数据原路返回以完成整个流程。</p>
+<p>看到这里，你是不是会有点糊涂了么？为什么叫本地转发，而有时又叫远程转发？这两者有什么区别？</p>
+<p><a name="N10148"><span class="smalltitle">本地转发与远程转发的对比与分析</span></a></p>
+<p>不错，SSH Server，SSH Client，LdapServertHost，LdapClientHost，本地转发，远程转发，这么多的名词的确容易让人糊涂。让我们来分析一下其中的结构吧。首先，SSH 端口转发自然需要 SSH 连接，而 SSH 连接是有方向的，从 SSH Client 到 SSH Server 。而我们的应用也是有方向的，比如需要连接 LDAP Server 时，LDAP Server 自然就是 Server 端，我们应用连接的方向也是从应用的 Client 端连接到应用的 Server 端。如果这两个连接的方向一致，那我们就说它是本地转发。而如果两个方向不一致，我们就说它是远程转发。</p>
+<p>我们可以回忆上面的两个例子来做个对照。</p>
+<p>本地转发时：</p>
+<p>LdapClientHost 同时是应用的客户端，也是 SSH Client，这两个连接都从它指向 LdapServertHost（既是 LDAP 服务端，也是 SSH Server）。</p>
+<p>远程转发时：</p>
+<p>LdapClientHost 是应用的客户端，但却是 SSH Server ；而 LdapServertHost 是 LDAP 的服务端，但却是 SSH Client 。这样两个连接的方向刚好相反。</p>
+<p>另一个方便记忆的方法是，Server 端的端口都是预定义的固定端口（SSH Server 的端口 22，LDAP 的端口 389），而 Client 端的端口都是动态可供我们选择的端口（如上述例子中选用的 7001 端口）。如果 Server 端的两个端口都在同一台机器，Client 端的两个端口都在另一台机器上，那么这就是本地连接；如果这四个端口交叉分布在两个机器上，每台机器各有一个 Server 端端口，一个 Client 端端口，那就是远程连接。</p>
+<p>弄清楚了两者的区别之后，再来看看两者的相同之处。如果你所在的环境下，既允许 LdapClientHost 发起 SSH 连接到 LdapServerHost，也允许 LdapServerHost 发起 SSH 连接到 LdapClientHost 。那么这时我们选择本地转发或远程转发都是可以的，能完成一样的功能。</p>
+<p>接着让我们来看个进阶版的端口转发。我们之前涉及到的各种连接 / 转发都只涉及到了两台机器，还记得我们在本地转发中提到的一个问题么？本地转发命令中的 &lt;remote host&gt; 和 &lt;SSH hostname&gt; 可以是不同的机器么？</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">ssh -L &lt;local port&gt;:&lt;remote host&gt;:&lt;remote port&gt; &lt;SSH hostname&gt;</pre>
+</td>
+</tr></tbody></table>
+<p>答案是可以的！让我们来看一个涉及到四台机器 (A,B,C,D) 的例子。</p>
+<p><br><a name="N10171"><strong>图 4. 多主机转发应用</strong></a><br>&nbsp;<img width="468" alt="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/image004.jpg" height="332"></p>
+<p>在 SSH Client(C) 执行下列命令来建立 SSH 连接以及端口转发：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">$ ssh -g -L 7001:&lt;B&gt;:389 &lt;D&gt;</pre>
+</td>
+</tr></tbody></table>
+<p>然后在我们的应用客户端（A）上配置连接机器（C ）的 7001 端口即可。注意我们在命令中指定了“ -g ”参数以保证机器（A）能够使用机器（C）建立的本地端口转发。而另一个值得注意的地方是，在上述连接中，（A）&lt;-&gt; (C) 以及 (B)&lt;-&gt;(D) 之间的连接并不是安全连接，它们之间没有经过 SSH 的加密及解密。如果他们之间的网络并不是值得信赖的网络连接，我们就需要谨慎使用这种连接方式了。</p>
+<div class="ibm-alternate-rule">
+<hr>
+</div>
+<p class="ibm-ind-link ibm-back-to-top"><a class="ibm-anchor-up-link" href="https://improve.iteye.com/admin/blogs/1413884/#ibm-pcon">回页首</a></p>
+<p><a name="3.%E7%AC%AC%E4%B8%89%E9%83%A8%E5%88%86%20%E5%85%B6%E4%BB%96%E7%B1%BB%E5%9E%8B%E7%9A%84%E8%BD%AC%E5%8F%91"><span class="atitle">第三部分 其他类型的转发</span></a></p>
+<p><a name="N1018E"><span class="smalltitle">动态转发实例分析</span></a></p>
+<p>恩，动态转发，听上去很酷。当你看到这里时，有没有想过我们已经讨论过了本地转发，远程转发，但是前提都是要求有一个固定的应用服务端的端口号，例如前面例子中的 LDAP 服务端的 389 端口。那如果没有这个端口号怎么办？等等，什么样的应用会没有这个端口号呢？嗯，比如说用浏览器进行 Web 浏览，比如说 MSN 等等。</p>
+<p>当我们在一个不安全的 WiFi 环境下上网，用 SSH 动态转发来保护我们的网页浏览及 MSN 信息无疑是十分必要的。让我们先来看一下动态转发的命令格式：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">$ ssh -D &lt;local port&gt; &lt;SSH Server&gt;</pre>
+</td>
+</tr></tbody></table>
+<p>例如：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">$ ssh -D 7001 &lt;SSH Server&gt;</pre>
+</td>
+</tr></tbody></table>
+<p><br><br><a name="N101A6"><strong>图 5. 动态端口转发</strong></a><br>&nbsp;<img width="479" alt="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/image005.jpg" height="311"></p>
+<p>似乎很简单，我们依然选择了 7001 作为本地的端口号，其实在这里 SSH 是创建了一个 SOCKS 代理服务。来看看帮助文档中对 -D 参数的描述：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">-D port 
+ This works by allocating a socket to listen to port on the local 
+ side, and whenever a connection is made to this port, the con- 
+ nection is forwarded over the secure channel, and the applica- 
+ tion protocol is then used to determine where to connect to from 
+ the remote machine.  Currently the SOCKS4 and SOCKS5 protocols 
+ are supported, and ssh will act as a SOCKS server.  Only root 
+ can forward privileged ports.  Dynamic port forwardings can also 
+ be specified in the configuration file.</pre>
+</td>
+</tr></tbody></table>
+<p>之后的使用就简单了，我们可以直接使用 localhost:7001 来作为正常的 SOCKS 代理来使用，直接在浏览器或 MSN 上设置即可。在 SSH Client 端无法访问的网站现在也都可以正常浏览。而这里需要值得注意的是，此时 SSH 所包护的范围只包括从浏览器端（SSH Client 端）到 SSH Server 端的连接，并不包含从 SSH Server 端 到目标网站的连接。如果后半截连接的安全不能得到充分的保证的话，这种方式仍不是合适的解决方案。</p>
+<p><a name="N101BD"><span class="smalltitle">X 协议转发实例分析</span></a></p>
+<p>好了，让我们来看最后一个例子 - X 协议转发。</p>
+<p>我们日常工作当中，可能会经常会远程登录到 Linux/Unix/Solaris/HP 等机器上去做一些开发或者维护，也经常需要以 GUI 方式运行一些程序，比如要求图形化界面来安装 DB2/WebSphere 等等。这时候通常有两种选择来实现：VNC 或者 X 窗口，让我们来看看后者。</p>
+<p>使用 X 窗口通常需要分别安装：X Client 和 X Server 。在本例中我们的 X Client 就是所访问的远程 Linux/Unix/Solaris/HP，而我们的 X Server 则是发起访问的本地机器（例如你面前正在使用的笔记本或台式机）。把 X Client 端的 X 窗口显示在 X Server 端需要先行在 X Client 端指定 X Server 的位置，命令格式如下：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">export DISPLAY=&lt;X Server IP&gt;:&lt;display #&gt;.&lt;virtual #&gt;</pre>
+</td>
+</tr></tbody></table>
+<p>例如：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">export DISPLAY=myDesktop:1.0</pre>
+</td>
+</tr></tbody></table>
+<p>然后直接运行 X 应用即可，X 窗口就会自动在我们的本地端打开。</p>
+<p>一切运行正常，但是，这时候 IT 部门突然在远程 Linux/Unix/Solaris/HP 前面加了一道防火墙。非常不幸的是，X 协议并不在允许通过的列表之内。怎么办？只能使用 VNC 了么？不，其实只要使用了 SSH 端口转发即可通过，同时也对 X 通讯数据做了加密，真是一举两得。（当然，使用此方法前最好先咨询相关 IT 部门是否符合相应的安全条例，以免造成违规操作。）</p>
+<p>建立命令也很简单，直接从本地机器（X Server 端）发起一个如下的 SSH 连接即可：</p>
+<p>&nbsp;</p>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>
+<td class="code-outline">
+<pre class="displaycode">$ ssh -X &lt;SSH Server&gt;</pre>
+</td>
+</tr></tbody></table>
+<p><br><br><a name="N101E5"><strong>图 5. X 转发</strong></a><br>&nbsp;<img width="474" alt="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/image006.jpg" height="304"></p>
+<p>建立连接之后就可以直接运行远程的 X 应用。注意建立 X 转发之后会自动设置 DISPLAY 环境变量，通常会被设置成<code>localhost:10.0</code>，我们无需也不应该在连接之后再进行修改此环境变量。</p>
+<p>一个比较常见的场景是，我们的本地机器是 Windows 操作系统，这时可以选择开源的 XMing 来作为我们的 XServer，而 SSH Client 则可以任意选择了，例如 PuTTY，Cygwin 均可以配置 访问 SSH 的同时建立 X 转发。</p>
+<div class="ibm-alternate-rule">
+<hr>
+</div>
+<p class="ibm-ind-link ibm-back-to-top"><a class="ibm-anchor-up-link" href="https://improve.iteye.com/admin/blogs/1413884/#ibm-pcon">回页首</a></p>
+<p><a name="4.%E7%AC%AC%E5%9B%9B%E9%83%A8%E5%88%86%20%E6%80%BB%E7%BB%93"><span class="atitle">第四部分 总结</span></a></p>
+<p>至此，我们已经完成了本地端口转发，远程端口转发，动态端口转发以及 X 转发的介绍。回顾起来，总的思路是通过将 TCP 连接转发到 SSH 通道上以解决数据加密以及突破防火墙的种种限制。对一些已知端口号的应用，例如 Telnet/LDAP/SMTP，我们可以使用本地端口转发或者远程端口转发来达到目的。动态端口转发则可以实现 SOCKS 代理从而加密以及突破防火墙对 Web 浏览的限制。对于 X 应用，无疑是 X 转发最为适用了。虽然每一部分我们都只是简单的介绍了一下，但如果能灵活应用这些技巧，相信对我们的日常生活 / 工作也是会有所帮助的。</p>
+<p>&lt;!-- CMA ID: 442463 --&gt;&lt;!-- Site ID: 10 --&gt;&lt;!-- XSLT stylesheet used to transform this file: dw-article-6.0-beta.xsl --&gt;</p>
+<p><a name="resources"><span class="atitle">参考资料 </span></a></p>
+<ul>
+<li>
+<a href="http://oreilly.com.cn/book.php?bn=7-5083-1085-3">《 SSH 权威指南》</a>（O'Reilly 图书）详细介绍了 SSH 相关的更多技术内幕及相关技巧。<br><br>
+</li>
+<li>
+<a href="http://www.ibm.com/developerworks/cn/linux/">在</a><a href="http://www.ibm.com/developerworks/cn/linux/">developerWorks</a><a href="http://www.ibm.com/developerworks/cn/linux/">中国网站</a><a href="http://www.ibm.com/developerworks/cn/linux/">Linux</a><a href="http://www.ibm.com/developerworks/cn/linux/">专区</a>中学习更多 Linux 方面的知识。<br><br>
+</li>
+</ul>
+<p><a name="author"><span class="atitle">作者简介</span></a></p>
+<div class="ibm-container ibm-portrait-module ibm-alternate-two">
+<div class="ibm-container-body">
+<p><a name="author1"></a>申毅，IBM中国软件开发中心 WebSphere Portal 部门软件工程师。目前从事于 WebSphere Portal z/OS 升级包的开发工作。同时较为关注 Linux/Mac 平台上的相关技术。</p>
+</div>
+<div class="ibm-container-body">
+<p><a name="author2"></a>邵华，IBM中国软件开发中心 WebSphere Portal 部门软件工程师。目前从事于 WebSphere Portal FVT 的相关工作，对 Linux 及 Web 相关技术较为关注。</p>
+</div>
+</div>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+  
+
+  <div>
+    <!-- 广告位：PC端-iteye博客详情页底部banner2-728*90 -->
+    <script>
+      (function() {
+          var s = "_" + Math.random().toString(36).slice(2);
+          document.write('<div id="' + s + '"></div>');
+          (window.slotbydup=window.slotbydup || []).push({
+              id: '4774193',
+              container: s,
+              size: '728,90',
+              display: 'inlay-fix'
+          });
+      })();
+      jQuery(function(){
+        window.csdn.recommendSide({
+          contentBox: "recommend",
+          postBox: jQuery(".news-right-side"),
+          query:'linux端口映射 ssh命令',
+          popu:'725'
+        })
+      });
+    </script><div id="_9f0vu8uetlm"></div><script charset="utf-8" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/pcqm(3)"></script><a href="http://www.baidu.com/cb.php?c=IgF_pyfqnHmkPjbvrHT0IZ0qnfK9ujYzrH6YrjmY0Aw-5Hnsn16YnjT0TAq15HfLP1fkrHn0T1dBrH6zm1bLPj9BmhmsnH0v0AwY5HDdPHT1rH6krjf0IgF_5y9YIZK1rBtEuywdQhP1uA38UhNYQLwETA-WQvG9IhDk5LNYUNq1ULNzmvRqmhkEuv-Yug--0ZFb5HDk0AFV5HD0TZcqn0KdpyfqnHRLPjnvnfKEpyfqnHc4rj6kP0KWpyfqP1n4PHn10AqLUWYs0ZK45HcsP6KWThnqPHcknjR" target="_blank" style="text-decoration:none;">
+<div style="font-size:17px;color:#f13d3d;font-family: SF Pro Display,Roboto,Noto,Arial,PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif;width:728px;height:25px;font-weight:bold;">资深Java项目团队历时1年打造，实战精髓大揭秘！</div>
+<div style="font-size:13px;color:#666;font-family: SF Pro Display,Roboto,Noto,Arial,PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif;height:35px;margin-top:10px;">Java系统学习全案：五大阶段学习系统规划、8大企业级项目贯穿全程。限时2折秒杀。立省4688元！</div>
+
+</a>
+  </div>
+
+
+
+  <div id="bottoms" class="clearfix">
+    
+    <div id="share_weibo">分享到：
+      <a data-type="sina" href="javascript:;" title="分享到新浪微博"><img src="./linux端口映射 ssh命令 - improve - ITeye博客_files/sina.jpg"></a>
+      <a data-type="qq" href="javascript:;" title="分享到腾讯微博"><img src="./linux端口映射 ssh命令 - improve - ITeye博客_files/tec.jpg"></a>
+    </div>
+  </div>
+
+  <div class="blog_nav">
+    <div class="pre_next">
+      <a href="https://improve.iteye.com/blog/1422605" class="next" title="linux日常使用命令">linux日常使用命令</a>
+      |
+      <a href="https://improve.iteye.com/blog/1335606" class="pre" title="linux命令分析日志">linux命令分析日志</a>
+    </div>
+  </div>
+  <div class="blog_bottom">
+    <ul>
+      <li>2012-02-21 18:01</li>
+      <li>浏览 10788</li>
+      <li><a href="https://improve.iteye.com/blog/1413884#comments">评论(0)</a></li>
+      
+      
+      <li>分类:<a href="https://www.iteye.com/blogs/category/os">操作系统</a></li>      
+      <li class="last"><a href="https://www.iteye.com/wiki/blog/1413884" target="_blank" class="more">查看更多</a></li>
+    </ul>    
+  </div>
+    
+  <div class="blog_comment">
+    <h5>评论</h5>
+    <a id="comments" name="comments"></a>
+    
+    
+    
+  </div>
+
+  <div class="blog_comment">
+    <h5>发表评论</h5>
+            <p style="text-align:center; margin-top:30px;margin-bottom:0px;"><a href="https://improve.iteye.com/login" style="background-color:white;"> <img src="./linux端口映射 ssh命令 - improve - ITeye博客_files/login_icon.png" style="vertical-align:middle; margin-right: 10px;"></a><a href="https://improve.iteye.com/login">  您还没有登录,请您登录后再发表评论 </a></p>
+      </div>
+  </div>
+  
+      
+<div class="boutique-curr-box blog_comment">
+	  <div class="boutique-curr clearfix" id="album_detail_wrap">
+	    <h5 class="h3titles">相关资源推荐</h5>
+			<ul style="margin-top: 8px" class="clearfix">
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/iteye_18021/article/details/82280490" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/iteye_18021/article/details/82280490,-&quot;}" target="_blank" title="linux端口映射 ssh命令"><em class="related_suggestion_highlight">linux</em><em class="related_suggestion_highlight">端口映射</em> <em class="related_suggestion_highlight">ssh</em><em class="related_suggestion_highlight">命令</em></a>
+              <p>
+                在开发过程中，因为网络环境的原因，需要通过某一台服务器访问其他服务器的一些端口，这里就涉及到<em class="related_suggestion_highlight">端口映射</em>的问题。
+&nbsp;
+当前自己现状及需求
+1.本地机器window系统，有CRT工具2.本地通过CRT可以通过Internet访问到内网中的机器172.18.1.34 
+3.但是本地通过CRT访问不到内网中的机器172.18.1.144
+&nbsp;
+需求是想在本地访问172.18.1.144上web应用...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/gao12333/article/details/73466544" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/gao12333/article/details/73466544,-&quot;}" target="_blank" title="在Linux系统下使用SSH实现端口映射的方法">在<em class="related_suggestion_highlight">Linux</em>系统下使用<em class="related_suggestion_highlight">SSH</em>实现<em class="related_suggestion_highlight">端口映射</em>的方法</a>
+              <p>
+                可以将远端服务器一个端口remote_port绑定到本地端口port，其中-C是进行数据压缩，-f是后台操作，只有当提示用 户名密码的时候才转向前台。-N是不执行远端<em class="related_suggestion_highlight">命令</em>，在只是端口转发时这条<em class="related_suggestion_highlight">命令</em>很有用处。-g 是允许远端主机连接本地转发端口。-R表明是将远端主机<em class="related_suggestion_highlight">端口映射</em>到本地端口。如果是-L，则是将本地<em class="related_suggestion_highlight">端口映射</em>到远端主机端口。
+<em class="related_suggestion_highlight">ssh</em>的三个强大的端口转发<em class="related_suggestion_highlight">命令</em>：
+转发到远端：<em class="related_suggestion_highlight">ssh</em> -C -f
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/boliang319/article/details/48656985" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/boliang319/article/details/48656985,-&quot;}" target="_blank" title="ssh端口映射总结"><em class="related_suggestion_highlight">ssh</em><em class="related_suggestion_highlight">端口映射</em>总结</a>
+              <p>
+                <em class="related_suggestion_highlight">ssh</em>的确很强大，可以很方便的实现从本地端口到远程端口的映射，通常情况下使用 -L 或者 -R参数，例如：
+<em class="related_suggestion_highlight">ssh</em> xxx@xxx.xxx -L 8080:RemoteIP:RemotePort
+但是需要说明的是RemoteIP可以是127.0.0.1，此时127.0.0.1指的是远程计算机，而非本机地址。
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/mzliuzh/article/details/71638702" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/mzliuzh/article/details/71638702,-&quot;}" target="_blank" title="通过ssh将mysql服务器端口映射到本机端口">通过<em class="related_suggestion_highlight">ssh</em>将mysql服务器<em class="related_suggestion_highlight">端口映射</em>到本机端口</a>
+              <p>
+                一台mysql服务器192.168.1.108因安全问题，未开启远程数据访问，可以通过<em class="related_suggestion_highlight">ssh</em>到服务<em class="related_suggestion_highlight">端口映射</em>到另一台服务器192.168.1.188，作为本机端口访问。
+
+
+
+1、在192.168.1.108服务器上：
+
+<em class="related_suggestion_highlight">ssh</em> -R 3306:localhost:3306 mysql@192.168.1.188
+
+
+mysql 为192.168.1.188的<em class="related_suggestion_highlight">操作系统</em>登录名
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/oufuji/article/details/50358756" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/oufuji/article/details/50358756,-&quot;}" target="_blank" title="一条ssh命令实现端口转发，实现跨机器直接访问">一条<em class="related_suggestion_highlight">ssh</em><em class="related_suggestion_highlight">命令</em>实现端口转发，实现跨机器直接访问</a>
+              <p>
+                一条<em class="related_suggestion_highlight">ssh</em><em class="related_suggestion_highlight">命令</em>实现端口转发，实现跨机器直接访问
+#（实验环境没有跨网段，实际情况，第三方机器访问不是192.168.100.11那个IP，而是其他网口IP，侦听端口对即可）
+#本机192.168.100.12监听来自对6180端口发起连接的请求，然后把数据全部转发到192.168.100.11的6180端口去
+#功能场景：192.168.100.12和192.168.100.11在内网可以连
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/java1909/article/details/83601304" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/java1909/article/details/83601304,-&quot;}" target="_blank" title="iptables实现端口转发、端口映射与双向通路">iptables实现端口转发、<em class="related_suggestion_highlight">端口映射</em>与双向通路</a>
+              <p>
+                项目上线，有两台服务器，A在公网。<em class="related_suggestion_highlight">linux</em> rhel5.4，运行php开发的一个打折购物网：[color=black][url=http://www.spzhekou.com]尚品折扣[/url][/color]，数据库部署到内网中，每次导入数据都要<em class="related_suggestion_highlight">ssh</em>到公网，然后再转到内网。一次采集了一些服装品牌的数据，比如，[color=black][url=http://www.spzhekou.com...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/penzchan/article/details/47687447" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/penzchan/article/details/47687447,-&quot;}" target="_blank" title="ssh反向隧道实验——没有端口映射的前提下，让外网访问内网服务器"><em class="related_suggestion_highlight">ssh</em>反向隧道实验——没有<em class="related_suggestion_highlight">端口映射</em>的前提下，让外网访问内网服务器</a>
+              <p>
+                摘要&nbsp;设想这样一种场景：
+ 在局域网中架设了一台服务器，但是又没有网关的配置权限（比如企业内部局域网内搭建的测试服务器，你又不是网管;比如校园网内部学生为学习而练习搭建的服务器等等），同时还希望外网用户能方便的访问到我这台内网服务器中，应该如何实现呢？
+<em class="related_suggestion_highlight">linux</em>&nbsp;<em class="related_suggestion_highlight">ssh</em>&nbsp;反向隧道&nbsp;apache
+
+
+
+
+有关<em class="related_suggestion_highlight">ssh</em>反向隧道的概念和用法详情可以google，这里不再细表，只是做一个实验
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/vbaspdelphi/article/details/70141793" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/vbaspdelphi/article/details/70141793,-&quot;}" target="_blank" title="supervisord + ssh = 本地端口映射到远端端口">supervisord + <em class="related_suggestion_highlight">ssh</em> = 本地<em class="related_suggestion_highlight">端口映射</em>到远端端口</a>
+              <p>
+                [program:remotejenkins]
+priority=1
+command=/usr/bin/<em class="related_suggestion_highlight">ssh</em>pass -p 'xxx' <em class="related_suggestion_highlight">ssh</em> -o ServerAliveInterval=2 -oStrictHostKeyChecking=no -L 0.0.0.0:18080:192.168.55.35:8080 -p xxx root@xxx -N
+directory=/tmp
+autost
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/keeplifer/article/details/79060664" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/keeplifer/article/details/79060664,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/keeplifer/article/details/79060664,-&quot;}" target="_blank" title="麒麟堡垒机ssh/telnet操作命令识别技术说明">麒麟堡垒机<em class="related_suggestion_highlight">ssh</em>/telnet操作<em class="related_suggestion_highlight">命令</em>识别技术说明</a>
+              <p>
+                开源堡垒机除了录相，还需要做操作辨认，首要的操作辨认功用包括：
+<em class="related_suggestion_highlight">ssh</em>/telnet的操作指令辨认
+ftp/sftp&nbsp;&nbsp;的操作指令辨认
+RDP/VNC/X11 的翻开窗口title辨认
+RDP/VNC/X11 窗口中的文字辨认
+RDP&nbsp; 剪切版内容辨认
+RDP/VNC/X11&nbsp;键盘记载
+&nbsp;
+关于一个只能录相的开源堡垒机，其可用性是十分差的，由于开源堡垒机的审计功用首要用于事后，假如
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/yhddh2008/article/details/84698325" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/yhddh2008/article/details/84698325,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/yhddh2008/article/details/84698325,-&quot;}" target="_blank" title="linux下VMWare 端口映射与转发的例子"><em class="related_suggestion_highlight">linux</em>下VMWare <em class="related_suggestion_highlight">端口映射</em>与转发的例子</a>
+              <p>
+                
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/lzz957748332/article/details/79619736" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/lzz957748332/article/details/79619736,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/lzz957748332/article/details/79619736,-&quot;}" target="_blank" title="SSH和Netcat完成临时内网穿透"><em class="related_suggestion_highlight">SSH</em>和Netcat完成临时内网穿透</a>
+              <p>
+                场景是这样的，前几天问运维同学要了一个测试机，只有内网IP，大部分情况够用，但是呢，偶尔也需要看看web页面什么的，怎么解决呢，正好我有个VPS，所以就想用<em class="related_suggestion_highlight">SSH</em>做个反向隧道，可以在家里也能访问到测试机的web服务，大部分都是临时使用，用完就关闭就好，安全风险也不是很大。
+
+
+
+
+连接互联网的电脑 ---&amp;amp;gt; 公网IP（vps) &amp;amp;lt;--<em class="related_suggestion_highlight">ssh</em>隧道--&amp;amp;gt; 内网测试机
+
+解决方案...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/dajitui2024/article/details/79396562" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/dajitui2024/article/details/79396562,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/dajitui2024/article/details/79396562,-&quot;}" target="_blank" title="kali下端口转发的一种方案">https://blog.csdn.net/dajitui2024/article/details/79396562</a>
+              <p>
+                
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/u014621518/article/details/77087252" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/u014621518/article/details/77087252,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/u014621518/article/details/77087252,-&quot;}" target="_blank" title="SSH服务审计工具ssh-audit"><em class="related_suggestion_highlight">SSH</em>服务审计工具<em class="related_suggestion_highlight">ssh</em>-audit</a>
+              <p>
+                <em class="related_suggestion_highlight">SSH</em>服务审计工具<em class="related_suggestion_highlight">ssh</em>-audit
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/Sky786905664/article/details/60580594" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/Sky786905664/article/details/60580594,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/Sky786905664/article/details/60580594,-&quot;}" target="_blank" title="菜鸟学Linux命令:ssh命令 远程登录">菜鸟学<em class="related_suggestion_highlight">Linux</em><em class="related_suggestion_highlight">命令</em>:<em class="related_suggestion_highlight">ssh</em><em class="related_suggestion_highlight">命令</em> 远程登录</a>
+              <p>
+                1、查看<em class="related_suggestion_highlight">SSH</em>客户端版本
+有的时候需要确认一下<em class="related_suggestion_highlight">SSH</em>客户端及其相应的版本号。使用<em class="related_suggestion_highlight">ssh</em> -V<em class="related_suggestion_highlight">命令</em>可以得到版本号。需要注意的是，<em class="related_suggestion_highlight">Linux</em>一般自带的是Open<em class="related_suggestion_highlight">SSH</em>: 下面的例子即表明该系统正在使用Open<em class="related_suggestion_highlight">SSH</em>：
+$ <em class="related_suggestion_highlight">ssh</em> -V 
+Open<em class="related_suggestion_highlight">SSH</em>_3.9p1, OpenSSL 0.9.7a Feb 19 2003
+下面的例子表明该系统正在使用<em class="related_suggestion_highlight">SSH</em>2：
+$ <em class="related_suggestion_highlight">ssh</em> -V 
+<em class="related_suggestion_highlight">ssh</em>:
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/lin252552/article/details/80104709" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/lin252552/article/details/80104709,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/lin252552/article/details/80104709,-&quot;}" target="_blank" title="linux使用端口映射工具rinetd远程管理云redis实例"><em class="related_suggestion_highlight">linux</em>使用<em class="related_suggestion_highlight">端口映射</em>工具rinetd远程管理云redis实例</a>
+              <p>
+                公司大量使用了云服务，只有管理员才有登录权限，偏偏我加入了管理组却看不到实例，无奈自己想办法。数次搜索后找到了rinetd这款插件。rinetd一款<em class="related_suggestion_highlight">linux</em>下简单便捷的<em class="related_suggestion_highlight">端口映射</em>，转发，重定向工具方案：wget下载官方包wget http://www.boutell.com/rinetd/http/rinetd.tar.gz解压安装tar xvzf rinetd.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;makemak...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/dliyuedong/article/details/21559561" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/dliyuedong/article/details/21559561,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/dliyuedong/article/details/21559561,-&quot;}" target="_blank" title="ssh远程端口转发"><em class="related_suggestion_highlight">ssh</em>远程端口转发</a>
+              <p>
+                朋友在自己主机上开启了tomcat服务，很想让任何人都能访问到，可惜访问不了，于是我打算使用<em class="related_suggestion_highlight">ssh</em>借助阿里云主机帮他实现一下。
+
+
+操作：&nbsp;
+&nbsp; 1 修改服务器<em class="related_suggestion_highlight">ssh</em>配置文件，在/etc/<em class="related_suggestion_highlight">ssh</em>/<em class="related_suggestion_highlight">ssh</em>d_config中加入下面一句话，为了能够实现全局访问，<em class="related_suggestion_highlight">ssh</em>中 -g参数不知道为什么没有效果，所以只好这么改了。
+&nbsp; &nbsp;GatewayPorts yes
+
+&nbsp;2 使用<em class="related_suggestion_highlight">SSH</em>远程端口转
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/MaxWoods/article/details/77539888" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/MaxWoods/article/details/77539888,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/MaxWoods/article/details/77539888,-&quot;}" target="_blank" title="VirtualBox虚拟机中安装CentOS 7（二）映射SSH端口">VirtualBox虚拟机中安装CentOS 7（二）映射<em class="related_suggestion_highlight">SSH</em>端口</a>
+              <p>
+                CentOS 7在VirtualBox中安装完成并启用网络后，现在使用<em class="related_suggestion_highlight">端口映射</em>将22<em class="related_suggestion_highlight">端口映射</em>到本机22端口，方便使用<em class="related_suggestion_highlight">ssh</em>进行连接
+1.打开在虚拟机的网络设置，点开高级--端口转发
+
+如下图所示，加入一个<em class="related_suggestion_highlight">SSH</em>端口22的转发，主机端口可以不和子系统端口相同（比如122）：
+
+
+在xShell中建立到虚拟机的<em class="related_suggestion_highlight">ssh</em>连接，如下图所示，如果上面主机端口设为122，则下机的端口也要对应改为12
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/u010034154/article/details/75071996" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/u010034154/article/details/75071996,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/u010034154/article/details/75071996,-&quot;}" target="_blank" title="linux ssh 远程服务器的端口转发到本地端口"><em class="related_suggestion_highlight">linux</em> <em class="related_suggestion_highlight">ssh</em> 远程服务器的端口转发到本地端口</a>
+              <p>
+                比如能<em class="related_suggestion_highlight">ssh</em>登陆上服务器，但是MySql数据库的端口却屏蔽了，远程不能访问，只用<em class="related_suggestion_highlight">ssh</em>的端口转发就可以使本地访问。
+<em class="related_suggestion_highlight">ssh</em> -L 3307:127.0.0.1:3306 root@123.45.123.12 -N该<em class="related_suggestion_highlight">命令</em>输入后提示输入正确密码后没有任何提示即代表开启转发，Ctrl+C关闭端口转发。
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/cvMat/article/details/87000479" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/cvMat/article/details/87000479,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/cvMat/article/details/87000479,-&quot;}" target="_blank" title="SSH端口转发——tensorboard访问"><em class="related_suggestion_highlight">SSH</em>端口转发——tensorboard访问</a>
+              <p>
+                背景：
+有一台服务器B(工作机)需要通过服务器A(跳板机)才可以访问，现在要在服务器B中部署tensorflow训练环境，并通过tensorboard监控训练过程，由于在服务器上无法使用浏览器，因此需要在本机上使用浏览器才可以可视化训练过程，此时就需要使用<em class="related_suggestion_highlight">ssh</em>的端口转发技术。
+
+
+
+...
+              </p>
+						</li>
+				
+						<li class="news-recommends-ajax">
+              
+              <a href="https://blog.csdn.net/CSXIAOYAOJIANXIAN/article/details/63055375" data-track-click="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/CSXIAOYAOJIANXIAN/article/details/63055375,-&quot;}" data-track-view="{&quot;mod&quot;:&quot;popu_712&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/CSXIAOYAOJIANXIAN/article/details/63055375,-&quot;}" target="_blank" title="安装记录：NAT123实现端口映射，SSH登陆内网主机">安装记录：NAT123实现<em class="related_suggestion_highlight">端口映射</em>，<em class="related_suggestion_highlight">SSH</em>登陆内网主机</a>
+              <p>
+                安装记录：NAT123实现<em class="related_suggestion_highlight">端口映射</em>，<em class="related_suggestion_highlight">SSH</em>登陆内网主机切换Root执行，以Ubuntu16.04为例1 查看<em class="related_suggestion_highlight">操作系统</em>版本#uname  -r ——查看版本，或uname -a，或cat /proc/version要求使用2.8.x或更新版本的<em class="related_suggestion_highlight">Linux</em>系统2 安装启动过程2.1 本地环境更新#apt-get update ——debian/ubuntu系统使用的<em class="related_suggestion_highlight">命令</em>#yum update ——cen
+              </p>
+						</li>
+				
+			</ul>
+	  </div>
+</div>
+
+    
+
+</div>
+
+
+<script type="text/javascript">
+  dp.SyntaxHighlighter.HighlightAll('code', true, true);
+
+  $$('#main .blog_content pre[name=code]').each(function(pre, index){ // blog content
+    var post_id = 1413884;
+    var location = window.location;
+    source_url = location.protocol + "//" + location.host + location.pathname + location.search;
+    pre.writeAttribute('codeable_id', post_id);
+    pre.writeAttribute('codeable_type', "Blog");
+    pre.writeAttribute('source_url', source_url);
+    pre.writeAttribute('pre_index', index);
+    pre.writeAttribute('title', 'linux端口映射 ssh命令');
+  });
+
+  fix_image_size($$('div.blog_content img'), 700);
+
+  function processComment() {
+    $$('#main .blog_comment > div').each(function(comment){// comment
+      var post_id = comment.id.substr(2);
+      $$("#"+comment.id+" pre[name=code]").each(function(pre, index){
+        var location = window.location;
+        source_url = location.protocol + "//" + location.host + location.pathname + location.search;
+        source_url += "#" + comment.id;
+        pre.writeAttribute('codeable_id', post_id);
+        pre.writeAttribute('codeable_type', "BlogComment");
+        pre.writeAttribute('source_url', source_url);
+        pre.writeAttribute('pre_index', index);
+        pre.writeAttribute('title', 'linux端口映射 ssh命令');
+      });
+    });
+  }
+
+  function quote_comment(id) {
+    new Ajax.Request('/editor/quote', {
+      parameters: {'id':id, 'type':'BlogComment'},
+      onSuccess:function(response){editor.bbcode_editor.textarea.insertAfterSelection(response.responseText);
+        Element.scrollTo(editor.bbcode_editor.textarea.element);}
+    });
+  }
+
+  code_favorites_init();
+  processComment();
+  new WeiboShare({share_buttons: $('share_weibo'), img_scope: $('blog_content')});
+</script>
+
+
+
+
+      </div>
+      
+        <div class="blog-sidebar">
+          <div class="blog-sidebar-fixed">
+            <div class="news-right-side">
+
+            <div class="newbox recommend"><div class="recommend-right">
+  <ul class="recommend-fixed-box">  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/iteye_18021/article/details/82280490,-&quot;}"><a href="https://blog.csdn.net/iteye_18021/article/details/82280490" target="_blank"><div class="content clearfix"><h5 class="" title="linux端口映射" ssh&#21629;&#20196;="">linux端口映射 ssh命令</h5><span class="time">2012-02-21</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>136</span></div><div class="right-item-desc">在开发过程中，因为网络环境的原因，需要通过某一台服务器访问其他服务器的一些端口，这里就涉及到端口映射的问题。
+&nbsp;
+当前自己现状及需求
+1.本地机器window系统，有CRT工具2.本地通过CRT可以通过Internet访问到内网中的机器172.18.1.34 
+3.但是本地通过CRT访问不到内网中的机器172.18.1.144
+&nbsp;
+需求是想在本地访问172.18.1.144上web应用...</div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/gao12333/article/details/73466544,-&quot;}"><a href="https://blog.csdn.net/gao12333/article/details/73466544" target="_blank"><div class="content clearfix"><h5 class="" title="在Linux系统下使用SSH实现端口映射的方法">在Linux系统下使用SSH实现端口映射的方法</h5><span class="time">2017-06-19</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>449</span></div><div class="right-item-desc">可以将远端服务器一个端口remote_port绑定到本地端口port，其中-C是进行数据压缩，-f是后台操作，只有当提示用 户名密码的时候才转向前台。-N是不执行远端命令，在只是端口转发时这条命令很有用处。-g 是允许远端主机连接本地转发端口。-R表明是将远端主机端口映射到本地端口。如果是-L，则是将本地端口映射到远端主机端口。
+ssh的三个强大的端口转发命令：
+转发到远端：ssh -C -f</div></a></li><div style="border-bottom: none;" id="_4yrandh8sx3" class="right-item ad_item"><iframe id="iframeu3586193_0" name="iframeu3586193_0" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/pcqm.html" width="280" height="70" align="center,center" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" style="border:0;vertical-align:bottom;margin:0;width:280px;height:70px" allowtransparency="true"></iframe></div>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/boliang319/article/details/48656985,-&quot;}"><a href="https://blog.csdn.net/boliang319/article/details/48656985" target="_blank"><div class="content clearfix"><h5 class="" title="ssh端口映射总结">ssh端口映射总结</h5><span class="time">2015-09-22</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>5833</span></div><div class="right-item-desc">ssh的确很强大，可以很方便的实现从本地端口到远程端口的映射，通常情况下使用 -L 或者 -R参数，例如：
+ssh xxx@xxx.xxx -L 8080:RemoteIP:RemotePort
+但是需要说明的是RemoteIP可以是127.0.0.1，此时127.0.0.1指的是远程计算机，而非本机地址。</div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/mzliuzh/article/details/71638702,-&quot;}"><a href="https://blog.csdn.net/mzliuzh/article/details/71638702" target="_blank"><div class="content clearfix"><h5 class="" title="通过ssh将mysql服务器端口映射到本机端口">通过ssh将mysql服务器端口映射到本机端口</h5><span class="time">2017-05-11</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>2640</span></div><div class="right-item-desc">一台mysql服务器192.168.1.108因安全问题，未开启远程数据访问，可以通过ssh到服务端口映射到另一台服务器192.168.1.188，作为本机端口访问。
+
+
+
+1、在192.168.1.108服务器上：
+
+ssh -R 3306:localhost:3306 mysql@192.168.1.188
+
+
+mysql 为192.168.1.188的操作系统登录名
+
+</div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/oufuji/article/details/50358756,-&quot;}"><a href="https://blog.csdn.net/oufuji/article/details/50358756" target="_blank"><div class="content clearfix"><h5 class="" title="一条ssh命令实现端口转发，实现跨机器直接访问">一条ssh命令实现端口转发，实现跨机器直接访问</h5><span class="time">2015-12-19</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>7129</span></div><div class="right-item-desc">一条ssh命令实现端口转发，实现跨机器直接访问
+#（实验环境没有跨网段，实际情况，第三方机器访问不是192.168.100.11那个IP，而是其他网口IP，侦听端口对即可）
+#本机192.168.100.12监听来自对6180端口发起连接的请求，然后把数据全部转发到192.168.100.11的6180端口去
+#功能场景：192.168.100.12和192.168.100.11在内网可以连</div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/java1909/article/details/83601304,-&quot;}"><a href="https://blog.csdn.net/java1909/article/details/83601304" target="_blank"><div class="content clearfix"><h5 class="" title="iptables实现端口转发、端口映射与双向通路">iptables实现端口转发、端口映射与双向通路</h5><span class="time">2010-04-17</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>54</span></div><div class="right-item-desc">项目上线，有两台服务器，A在公网。linux rhel5.4，运行php开发的一个打折购物网：[color=black][url=http://www.spzhekou.com]尚品折扣[/url][/color]，数据库部署到内网中，每次导入数据都要ssh到公网，然后再转到内网。一次采集了一些服装品牌的数据，比如，[color=black][url=http://www.spzhekou.com...</div></a></li><div style="border-bottom: none;" id="_oo42ndp1ef9" class="right-item ad_item"><iframe id="iframeu3591305_0" name="iframeu3591305_0" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/pcqm(4).html" width="280" height="70" align="center,center" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" style="border:0;vertical-align:bottom;margin:0;width:280px;height:70px" allowtransparency="true"></iframe></div>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/penzchan/article/details/47687447,-&quot;}"><a href="https://blog.csdn.net/penzchan/article/details/47687447" target="_blank"><div class="content clearfix"><h5 class="" title="ssh反向隧道实验——没有端口映射的前提下，让外网访问内网服务器">ssh反向隧道实验——没有端口映射的前提下，让外网访问内网服务器</h5><span class="time">2015-08-15</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>2813</span></div><div class="right-item-desc">摘要&nbsp;设想这样一种场景：
+ 在局域网中架设了一台服务器，但是又没有网关的配置权限（比如企业内部局域网内搭建的测试服务器，你又不是网管;比如校园网内部学生为学习而练习搭建的服务器等等），同时还希望外网用户能方便的访问到我这台内网服务器中，应该如何实现呢？
+linux&nbsp;ssh&nbsp;反向隧道&nbsp;apache
+
+
+
+
+有关ssh反向隧道的概念和用法详情可以google，这里不再细表，只是做一个实验</div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/vbaspdelphi/article/details/70141793,-&quot;}"><a href="https://blog.csdn.net/vbaspdelphi/article/details/70141793" target="_blank"><div class="content clearfix"><h5 class="" title="supervisord" +="" ssh="本地端口映射到远端端口">supervisord + ssh = 本地端口映射到远端端口</h5><span class="time">2017-04-12</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>565</span></div><div class="right-item-desc">[program:remotejenkins]
+priority=1
+command=/usr/bin/sshpass -p 'xxx' ssh -o ServerAliveInterval=2 -oStrictHostKeyChecking=no -L 0.0.0.0:18080:192.168.55.35:8080 -p xxx root@xxx -N
+directory=/tmp
+autost</div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/yhddh2008/article/details/84698325,-&quot;}"><a href="https://blog.csdn.net/yhddh2008/article/details/84698325" target="_blank"><div class="content clearfix"><h5 class="" title="linux下VMWare" &#31471;&#21475;&#26144;&#23556;&#19982;&#36716;&#21457;&#30340;&#20363;&#23376;="">linux下VMWare 端口映射与转发的例子</h5><span class="time">2015-01-26</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>29</span></div><div class="right-item-desc">
+首先，保证是NAT方式虚拟机和主机连接，并且想把虚拟机的某个端口暴露给外网，也就是主机所在的网络。 我这里的环境是vmware workstation 10，网上谈到的通过UI去控制的方法在这个版本上不可行
+1、进入下面目录
+/etc/vmware/vmnet8/nat/nat.conf
+2、编辑这个文件，在文件的最后可以看到：
+[incomingtcp]
+# Use these w...</div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/lzz957748332/article/details/79619736,-&quot;}"><a href="https://blog.csdn.net/lzz957748332/article/details/79619736" target="_blank"><div class="content clearfix"><h5 class="" title="SSH和Netcat完成临时内网穿透">SSH和Netcat完成临时内网穿透</h5><span class="time">2018-03-20</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>394</span></div><div class="right-item-desc">
+  场景是这样的，前几天问运维同学要了一个测试机，只有内网IP，大部分情况够用，但是呢，偶尔也需要看看web页面什么的，怎么解决呢，正好我有个VPS，所以就想用SSH做个反向隧道，可以在家里也能访问到测试机的web服务，大部分都是临时使用，用完就关闭就好，安全风险也不是很大。
+
+
+
+
+连接互联网的电脑 ---&amp;amp;gt; 公网IP（vps) &amp;amp;lt;--ssh隧道--&amp;amp;gt; 内网测试机
+
+解决方案...</div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/dajitui2024/article/details/79396562,-&quot;}"><a href="https://blog.csdn.net/dajitui2024/article/details/79396562" target="_blank"><div class="content clearfix"><h5 class="" title="kali下端口转发的一种方案">kali下端口转发的一种方案</h5><span class="time">2018-02-28</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>658</span></div><div class="right-item-desc">                      参考：https://www.youtube.com/watch?v=BeGtWV-AXnQapt-get install network-manager-pptp
+apt-get install network-manager-pptp-gnome
+访问：https://www.vpnbook.com/freevpn操作如图最后访问：http://ww...</div></a></li><div style="border-bottom: none;" id="_1wfhblr0dvg" class="right-item ad_item"><iframe id="iframeu3591311_0" name="iframeu3591311_0" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/pcqm(5).html" width="280" height="70" align="center,center" vspace="0" hspace="0" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" style="border:0;vertical-align:bottom;margin:0;width:280px;height:70px" allowtransparency="true"></iframe></div>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/Sky786905664/article/details/60580594,-&quot;}"><a href="https://blog.csdn.net/Sky786905664/article/details/60580594" target="_blank"><div class="content clearfix"><h5 class="" title="菜鸟学Linux命令:ssh命令" &#36828;&#31243;&#30331;&#24405;="">菜鸟学Linux命令:ssh命令 远程登录</h5><span class="time">2017-03-06</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>26175</span></div><div class="right-item-desc">1、查看SSH客户端版本
+有的时候需要确认一下SSH客户端及其相应的版本号。使用ssh -V命令可以得到版本号。需要注意的是，Linux一般自带的是OpenSSH: 下面的例子即表明该系统正在使用OpenSSH：
+$ ssh -V 
+OpenSSH_3.9p1, OpenSSL 0.9.7a Feb 19 2003
+下面的例子表明该系统正在使用SSH2：
+$ ssh -V 
+ssh: </div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/lin252552/article/details/80104709,-&quot;}"><a href="https://blog.csdn.net/lin252552/article/details/80104709" target="_blank"><div class="content clearfix"><h5 class="" title="linux使用端口映射工具rinetd远程管理云redis实例">linux使用端口映射工具rinetd远程管理云redis实例</h5><span class="time">2018-04-27</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>151</span></div><div class="right-item-desc">公司大量使用了云服务，只有管理员才有登录权限，偏偏我加入了管理组却看不到实例，无奈自己想办法。数次搜索后找到了rinetd这款插件。rinetd一款linux下简单便捷的端口映射，转发，重定向工具方案：wget下载官方包wget http://www.boutell.com/rinetd/http/rinetd.tar.gz解压安装tar xvzf rinetd.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;makemak...</div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/dliyuedong/article/details/21559561,-&quot;}"><a href="https://blog.csdn.net/dliyuedong/article/details/21559561" target="_blank"><div class="content clearfix"><h5 class="" title="ssh远程端口转发">ssh远程端口转发</h5><span class="time">2014-03-19</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>9841</span></div><div class="right-item-desc">朋友在自己主机上开启了tomcat服务，很想让任何人都能访问到，可惜访问不了，于是我打算使用ssh借助阿里云主机帮他实现一下。
+
+
+操作：&nbsp;
+&nbsp; 1 修改服务器ssh配置文件，在/etc/ssh/sshd_config中加入下面一句话，为了能够实现全局访问，ssh中 -g参数不知道为什么没有效果，所以只好这么改了。
+&nbsp; &nbsp;GatewayPorts yes
+
+&nbsp;2 使用SSH远程端口转</div></a></li>  <li class="right-item cebian_item" data-track-click="{&quot;mod&quot;:&quot;popu_725&quot;,&quot;con&quot;:&quot;,https://blog.csdn.net/MaxWoods/article/details/77539888,-&quot;}"><a href="https://blog.csdn.net/MaxWoods/article/details/77539888" target="_blank"><div class="content clearfix"><h5 class="" title="VirtualBox虚拟机中安装CentOS" 7&#65288;&#20108;&#65289;&#26144;&#23556;ssh&#31471;&#21475;="">VirtualBox虚拟机中安装CentOS 7（二）映射SSH端口</h5><span class="time">2017-08-24</span><span class="read so_read"> <svg class="icon no-active hover-hide" aria-hidden="true"><use xlink:href="#yuedushu"></use></svg>377</span></div><div class="right-item-desc">CentOS 7在VirtualBox中安装完成并启用网络后，现在使用端口映射将22端口映射到本机22端口，方便使用ssh进行连接
+1.打开在虚拟机的网络设置，点开高级--端口转发
+
+如下图所示，加入一个SSH端口22的转发，主机端口可以不和子系统端口相同（比如122）：
+
+
+在xShell中建立到虚拟机的ssh连接，如下图所示，如果上面主机端口设为122，则下机的端口也要对应改为12</div></a></li></ul>
+</div></div></div>
+            <div class="persion_article">
+
+            <div class="right_box footer_box csdn-tracking-statistics" data-mod="popu_475" data-dsm="post">        <div class="contact-box" id="footer-contact-box"><div class="img-box"><a href="https://edu.csdn.net/?utm_source=csdn_footer" target="_blank"><img src="./linux端口映射 ssh命令 - improve - ITeye博客_files/edu-QR.png" alt="CSDN学院" style="padding: 6px;"></a><p class="app-text">CSDN学院</p></div><div class="img-box fr"><img style="padding:6px;" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/job-QR.png" alt="CSDN企业招聘"><p class="app-text">CSDN企业招聘</p></div></div>        <div class="contact-info">        <p><svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><path d="M2.167 2h11.666C14.478 2 15 2.576 15 3.286v9.428c0 .71-.522 1.286-1.167 1.286H2.167C1.522 14 1 13.424 1 12.714V3.286C1 2.576 1.522 2 2.167 2zm-.164 3v1L8 10l6-4V5L8 9 2.003 5z" fill="#5c5c5c" fill-rule="evenodd"></path></svg><a href="mailto:webmaster@csdn.net" target="_blank"><span class="txt">kefu@csdn.net</span></a>        <em class="width126"><svg t="1538013544186" width="17" height="17" style="" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23556" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><style type="text/css"></style></defs><path d="M902.60033922 650.96445566c-18.0718526-100.84369837-94.08399771-166.87723736-94.08399771-166.87723737 10.87530062-91.53186599-28.94715402-107.78733693-28.94715401-107.78733691C771.20003413 93.08221664 517.34798062 98.02553561 511.98620441 98.16348824 506.65661791 98.02553561 252.75857992 93.08221664 244.43541101 376.29988138c0 0-39.79946279 16.25547094-28.947154 107.78733691 0 0-75.98915247 66.03353901-94.0839977 166.87723737 0 0-9.63372291 170.35365477 86.84146124 20.85850523 0 0 21.70461757 56.79068296 61.50407954 107.78733692 0 0-71.1607951 23.19910867-65.11385185 83.46161052 0 0-2.43717093 67.16015592 151.93232126 62.56172014 0 0 108.5460788-8.0932473 141.10300432-52.14626271H526.33792324c32.57991817 44.05301539 141.10300431 52.1462627 141.10300431 52.14626271 154.3235077 4.59843579 151.95071457-62.56172013 151.95071457-62.56172014 6.00095876-60.26250183-65.11385185-83.46161053-65.11385185-83.46161052 39.77647014-50.99665395 61.4810877-107.78733693 61.4810877-107.78733692 96.45219231 149.49514952 86.84146124-20.85850523 86.84146125-20.85850523" p-id="23557" fill="#5c5c5c"></path></svg><a href="http://wpa.b.qq.com/cgi/wpa.php?ln=1&amp;key=XzgwMDE4MDEwNl80ODc3MzVfODAwMTgwMTA2XzJf" class="qqcustomer_s" target="_blank"><span class="txt">QQ客服</span></a></em></p>        <p><em class="width126"><svg t="1538012951761" width="17" height="17" style="" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23083" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><style type="text/css"></style></defs><path d="M466.4934485 880.02006511C264.6019863 859.18313878 107.13744214 688.54706608 107.13744214 481.14947309 107.13744214 259.68965394 286.68049114 80.14660493 508.14031029 80.14660493s401.00286817 179.54304901 401.00286814 401.00286816v1.67343191C908.30646249 737.58941724 715.26799489 943.85339507 477.28978337 943.85339507c-31.71423369 0-62.61874229-3.67075386-92.38963569-10.60739903 30.09478346-11.01226158 56.84270313-29.63593923 81.5933008-53.22593095z m-205.13036267-398.87059202a246.77722444 246.77722444 0 0 0 493.5544489 0 30.85052691 30.85052691 0 0 0-61.70105383 0 185.07617062 185.07617062 0 0 1-370.15234125 0 30.85052691 30.85052691 0 0 0-61.70105382 0z" p-id="23084" fill="#5c5c5c"></path></svg><a href="http://bbs.csdn.net/forums/Service" target="_blank"><span class="txt">客服论坛</span></a></em>        <svg t="1538013874294" width="17" height="17" style="" viewBox="0 0 1194 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23784" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><style type="text/css"></style></defs><path d="M1031.29689505 943.85339507h-863.70679012A71.98456279 71.98456279 0 0 1 95.60554212 871.86883228v-150.85178906c0-28.58329658 16.92325492-54.46750945 43.13135785-65.93861527l227.99160176-99.75813425c10.55341735-4.61543317 18.24580594-14.0082445 20.72896295-25.23643277l23.21211998-105.53417343a71.95757195 71.95757195 0 0 1 70.28414006-56.51881307h236.95255971c33.79252817 0 63.02360485 23.5090192 70.28414004 56.51881307l23.21211997 105.53417343c2.48315701 11.25517912 10.17554562 20.62099961 20.72896296 25.23643277l227.99160177 99.75813425a71.98456279 71.98456279 0 0 1 43.13135783 65.93861527v150.85178906A71.98456279 71.98456279 0 0 1 1031.26990421 943.85339507z m-431.85339506-143.94213475c143.94213474 0 143.94213474-48.34058941 143.94213474-107.96334876s-64.45411922-107.96334877-143.94213474-107.96334877c-79.51500637 0-143.94213474 48.34058941-143.94213475 107.96334877s0 107.96334877 143.94213475 107.96334876zM1103.254467 296.07330247v148.9894213a35.97878598 35.97878598 0 0 1-44.15700966 35.03410667l-143.94213473-33.57660146a36.0057768 36.0057768 0 0 1-27.80056231-35.03410668V296.1002933c-35.97878598-47.98970852-131.95820302-71.98456279-287.91126031-71.98456279S347.53801649 248.11058478 311.53223967 296.1002933v115.385829c0 16.73431906-11.52508749 31.25538946-27.80056233 35.03410668l-143.94213473 33.57660146A35.97878598 35.97878598 0 0 1 95.63253297 445.06272377V296.07330247C162.81272673 152.13116772 330.77670658 80.14660493 599.47049084 80.14660493s436.63077325 71.98456279 503.81096699 215.92669754z" p-id="23785" fill="#5c5c5c"></path></svg>400-660-0108 </p>        <p style="text-align:center">工作时间 8:30-22:00</p>        </div>        <div class="bg-gray">            <div class="feed_copyright">            <p><a class="right-dotte" href="https://www.csdn.net/company/index.html#about" target="_blank">关于我们</a><a href="https://www.csdn.net/company/index.html#recruit" target="_blank" class="right-dotte">招聘</a><a href="https://www.csdn.net/company/index.html#contact" target="_blank" class="right-dotte">广告服务</a>            <a href="https://www.csdn.net/gather/A" target="_blank" class="footer_baidu">            网站地图</a></p>            <p class="fz12_baidu"><a href="https://zn.baidu.com/cse/home/index" target="_blank"><svg width="13" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M8.392 7.013c1.014 1.454 2.753 2.8 2.753 2.8s1.303 1.017.47 2.98c-.833 1.962-3.876.942-3.876.942s-1.122-.36-2.424-.072c-1.303.291-2.426.181-2.426.181s-1.523.037-1.957-1.888c-.434-1.927 1.52-2.982 1.666-3.161.145-.183 1.159-.873 1.81-1.963.653-1.09 2.608-1.962 3.984.181zm1.23 5.706V9.346H8.64v2.534h-.937s-.3-.044-.356-.285V9.33l-.925.015v2.518s.042.627.925.855h2.277zm-3.685.013V7.951l-.896-.014v1.295H3.987s-1.054.086-1.422 1.28c-.129.798.114 1.266.156 1.368.043.099.383.682 1.238.852h1.978zm-2.433-1.45c-.087-.286.013-.613.057-.741.042-.128.228-.427.61-.54h.855v1.948h-.797s-.555-.029-.725-.668zm6.877-8.775c-.143.909-.865 2.108-1.99 1.962-1.121-.144-1.375-1.16-1.267-2.179C7.214 1.458 8.21.18 9.007.364c.796.18 1.52 1.235 1.374 2.143zm-4.09-.345c0 1.197-.68 2.164-1.52 2.164S3.25 3.36 3.25 2.162C3.25.967 3.932 0 4.77 0c.842 0 1.52.967 1.52 2.162zm4.854 2.09c1.34 0 1.701 1.309 1.701 1.743 0 .438.182 2.29-1.485 2.326-1.667.037-1.737-1.126-1.737-1.96 0-.874.179-2.11 1.52-2.11zm-7.93.581c.045.398.253 2.217-1.27 2.544C.427 7.704-.14 5.947.028 5.124c0 0 .18-1.78 1.412-1.89.98-.085 1.7.986 1.774 1.6z" fill="#999" fill-rule="evenodd"></path></svg><em>百度提供站内搜索</em></a>&nbsp;<a href="http://www.miibeian.gov.cn/publish/query/indexFirst.action" target="_blank" class="ml14">京ICP备19004658号</a></p>            <p class="fz12_baidu">©1999-2019 北京创新乐知网络技术有限公司 </p>            </div>        </div>        <div class="allow-info-box">        <p><a href="https://csdnimg.cn/cdn/content-toolbar/csdn-ICP.png" target="_blank">经营性网站备案信息</a>        <em class="width126"><a href="http://www.cyberpolice.cn/" target="_blank"><span>网络110报警服务</span></a></em></p>        <p><a href="http://www.bjjubao.org/" target="_blank"><span>北京互联网违法和不良信息举报中心</span></a></p>        <p><a href="http://www.12377.cn/" target="_blank"><span>中国互联网举报中心</span></a><a href="https://download.csdn.net/index.php/tutelage/" target="_blank"><span style="margin-left:8px">家长监护</span></a></p>        </div>        </div></div>
+          </div>
+        </div>
+            <script>
+        setTimeout(function () {
+          var naviga_offsetTop = 0;
+
+          function onload_function() {
+            naviga_offsetTop = jQuery("#nav_show_top_stop").position().top;
+            jQuery(window).bind("scroll", naviga_stay_top);
+            jQuery(window).bind("mousewheel", naviga_stay_top);
+            jQuery(document).bind("scroll", naviga_stay_top);
+            jQuery(document).bind("mousewheel", naviga_stay_top);
+          }
+
+          function naviga_stay_top() {
+
+            var scrollTop = jQuery(document).scrollTop();
+            if (scrollTop > (naviga_offsetTop + 250)) {
+              jQuery("#nav_show_top_stop").css({
+                "position": "fixed"
+              });
+              jQuery("#nav_show_top_stop").css({
+                "top": "0px"
+              });
+            } else {
+              jQuery("#nav_show_top_stop").css({
+                "position": "fixed"
+              });
+              jQuery("#nav_show_top_stop").css({
+                "top": naviga_offsetTop + 250 - scrollTop + "px"
+              });
+            }
+          }
+          jQuery(document).ready(onload_function());
+        }, 200);
+      </script>
+    </div>
+          <script>
+          setTimeout(function () {
+              not_loading = true;
+              pageNum = 3;
+              oList = jQuery("#album_detail_wrap");
+              jQuery(window).scroll(function() {
+                  var scrollTop = jQuery(this).scrollTop();
+                  var scrollHeight = jQuery(document).height() ;
+                  var windowHeight = jQuery(this).height();
+                  if (scrollTop + windowHeight >= scrollHeight) {
+                      if(not_loading){
+                          refreshMore();
+                          setTimeout(function(){
+                              getMore();
+                          },100);
+                      }else{
+                          jQuery(".dl_more").remove();
+                      }
+                  }
+              });
+
+              function getMore(){
+                  not_loading = false;
+                  console.log("getMore......");
+                  jQuery.ajax({
+                      type: 'get',
+                      url: "/blog/ajax_get_blog_recommends/1413884",
+                      data:{
+                          page:pageNum
+                      },
+                      //async: false,
+                      dataType: 'json',
+                      success: function (resobj) {
+                          var totalNum = resobj.total_pages;
+                          if(pageNum <= totalNum && resobj.oHtml != '' ){
+                              jQuery(".dl_more").remove();
+                              oList.find('ul').append(resobj.oHtml);
+                              refreshMore();
+                              not_loading = true;
+                              pageNum++;
+                          }else{
+                              not_loading = false;
+                              noMore();
+                          }
+                      },
+                      error: function (err) {
+                          console.log(err);
+                      }
+                  });
+              }
+
+              function noMore(){
+                  jQuery(".dl_more").remove();
+                  if(oList.find(".dl_no_more").length ==0){
+                      oList.append('<div class="dl_no_more" style="font-size:14px; color:#0F8AC6; text-align:center;padding-top:10px; ">我们是很有底线的</div>');
+                  }
+              }
+
+              function refreshMore(){
+                  if(oList.find(".dl_more").length ==0){
+                      oList.append('<div class="dl_more" style="font-size:14px; color:#0F8AC6; text-align:center;padding-top:10px;">上滑加载更多</div>');
+                  }
+              }
+          }, 200);
+      </script>
+  
+    <div id="footer" class="clearfix">
+      <!-- <div id="copyright">
+        <hr />
+        声明：ITeye文章版权属于作者，受法律保护。没有作者书面许可不得转载。若作者同意转载，必须以超链接形式标明文章原始出处和作者。<br />
+        &copy; 2003-
+        2019 ITeye.com. All rights reserved. [ 京ICP证110151号 京公网安备110105010620 ]
+      </div> -->
+      <div id="ad_pop">
+        <div class="J_adv" data-view="true" data-mod="ad_popu_64" data-mtp="62" data-order="21" data-con="ad_content_2070">
+          <script id="popuLayer_js_q" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/popuLayer.js.download" defer="" type="text/javascript"></script>
+          <!-- 广告位：PC端-iteye博客详情右侧弹窗-300*250 -->
+          
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript">
+  document.write("<img src='https://stat.iteye.com/?url="+ encodeURIComponent(document.location.href) + "&referrer=" + encodeURIComponent(document.referrer) + "&user_id=' width='0' height='0' />");
+</script><img src="./linux端口映射 ssh命令 - improve - ITeye博客_files/saved_resource" width="0" height="0">
+
+
+
+   Global site tag (gtag.js) - Google Analytics
+  <script async="" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/js"></script>
+  <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-127895514-6');
+  </script>
+
+  
+  
+  <link href="./linux端口映射 ssh命令 - improve - ITeye博客_files/content_toolbar.css" rel="stylesheet">
+<script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/jquery-1.11.1.min.js.download" type="text/javascript"></script>
+<script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/publib_footer-1.0.3.js.download" data-isfootertrack="false" type="text/javascript"></script><link rel="stylesheet" type="text/css" href="./linux端口映射 ssh命令 - improve - ITeye博客_files/pub_footer_1.0.3.css">
+<script id="csdn-toolbar-id" btnid="header_notice_num" wrapid="note1" count="5" subcount="5" type="text/javascript" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/content_toolbar.js.download"></script><script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/notify.js.download"></script><script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/main.js.download"></script>
+<script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/tracking-1.0.1.js.download" type="text/javascript"></script>
+<script language="javascript" type="text/javascript" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/async-1.0.1.js.download"></script>
+<script type="text/javascript" charset="utf-8" src="./linux端口映射 ssh命令 - improve - ITeye博客_files/track.js.download"></script>
+<style>
+  .userinfo {display: none !important;}
+  .persion_article h3{
+    background: none !important;
+    border-bottom: none!important;
+    padding: 0!important;
+    margin-bottom: 0!important;
+    line-height: 1!important;
+  }
+  .persion_article .right_box{
+    margin-top: 0!important;
+  }
+  .persion_article .footer_box .feed_new_tit span{
+    padding-left: 0!important;
+  }
+</style>
+<script>
+(function($){
+  var windowHeight = $(window).height(),
+      contentHeight = $(".hide-main-content").height()
+      windowHeight = windowHeight * 1.2 //获得可视区域高度
+      if(contentHeight > windowHeight){
+        $(".hide-article-box").show()
+        $(".hide-main-content").css({'height': windowHeight,'overflow':'hidden'})
+        $(".hide-article-box").find("#btn-readmore").click(function(){
+          $(this).parents('.hide-main-content').removeAttr('style')
+          $(this).parent().hide()
+        })
+      }
+})(jQuery)
+</script>
+<script type="text/javascript">var $csdn_iteye_jq = jQuery.noConflict();// 解决jq与prototype.js命名空间冲突的问题</script>
+  
+  
+  <script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/web-storage-cache.min.js.download" type="text/javascript"></script>
+  <script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/replace.min.js.download" type="text/javascript"></script>
+  
+
+
+<script>
+  var jQuery = jQuery.noConflict();
+  setTimeout(function($){
+    window.csdn.fixedSidebar({
+        targetBox: $('.persion_article'), //判断到达底部的div,公共footer可选 $('.persion_article'),$('.public_pc_right_footer2018')
+        mainBox: $("#main"), //侧边栏旁边的主体div,默认 $("main")
+        sidebar: $(".blog-sidebar-fixed"), //侧边栏,默认 $("aside")
+        direction: 'right', //侧边栏浮动方向,可选'right','left',
+        position: 'fixed',//定位方式
+        bottom: 0,
+        zIndex: 99,
+        sidebarRightMargin: 8,//direction为left,侧边栏距离mainbox的右边距
+        sidebarLeftMargin: 37,//direction为right,侧边栏距离mainbox的左边距
+    })
+  },200,jQuery)
+  </script>
+
+<script src="./linux端口映射 ssh命令 - improve - ITeye博客_files/c.js(1).download" async="" defer=""></script></body></html>
