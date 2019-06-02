@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<!-- saved from url=(0040)http://www.it610.com/article/2789586.htm -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com</title>
+<meta name="keywords" content="open,VPN,网络安全,休闲,BSD,用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三)">
+<meta name="description" content="年前相声演员封箱，我们封服务器，年前一周可以从繁重的hadoop劳动中挤点时间出来写点东西了。接上一章，说一下OpenVPN的详细配置。以备大集群的扩展需要。默认情况下，OpenVPN对客户端仅支持255.255.255.252这样的子网掩码。在windows客户端下，可以敲openvpn.exe--show-valid-subnets查看合法的客户端地址分配范围，按照VLSM(可变长子网掩码)的">
+
+<!--[if lt IE 9]>
+<script src="/r/cms/html5.js" type="text/javascript"></script>
+<![endif]-->
+<link href="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/html5.css" rel="stylesheet" type="text/css">
+
+<link href="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/front.css" rel="stylesheet" type="text/css">
+<link href="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/jquery.ui.css" rel="stylesheet" type="text/css">
+<script src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/hm.js.download"></script><script src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/jquery.js.download" type="text/javascript"></script>
+<script src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/jquery-ui.js.download" type="text/javascript"></script>
+<script src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/front.js.download" type="text/javascript"></script>
+<link rel="shortcut icon" href="http://www.it610.com/favicon.ico" type="image/x-icon">
+<script src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/baidutongji_it610.js.download" type="text/javascript"></script>
+<script type="text/javascript">
+$(function() {
+Cms.attachment("","2789586","0","attach");
+Cms.viewCount("","2789586");
+});
+</script>
+<script type="text/javascript" src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/shCore.js.download"></script>
+<script type="text/javascript" src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/shLegacy.js.download"></script>
+<script type="text/javascript" src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/shAutoloader.js.download"></script>
+<link type="text/css" rel="stylesheet" href="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/shCoreDefault.css">
+</head>
+<body style="">
+<div class="container">
+<div class="theTop">
+	<div class="theTopLeft">
+    <div id="loginCsiDiv"></div>
+<script type="text/javascript">
+$(function(){
+	Cms.loginCsi("","loginCsiDiv",{"returnUrl":"/article/2789586.htm"});
+});
+</script>
+    </div>
+    <div class="theTopRight">
+    <a href="http://www.it610.com/tag.jspx" target="_blank">Tags</a>&nbsp;|&nbsp;<a href="http://www.it610.com/guestbook.jspx" target="_blank">留言板</a>&nbsp;|&nbsp;<a href="http://www.it610.com/rss.jspx" target="_blank">RSS订阅</a>&nbsp;|&nbsp;<a onclick="SetHome(window.location)" href="javascript:void(0)">设为首页</a>&nbsp;|&nbsp;<a onclick="AddFavorite(window.location,document.title)" href="javascript:void(0)">加入收藏</a>&nbsp;
+    <a name="gb2big5" id="gb2big5" href="javascript:StranBody()" title="點擊以繁體中文方式浏覽">繁體中文</a>
+	<script language="Javascript" src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/gb2big5.js.download"></script>
+    </div>
+</div>
+<script type="text/javascript" language="javascript">
+   //加入收藏
+       function AddFavorite(sURL, sTitle) {
+           sURL =encodeURI(sURL); 
+       try{   
+          window.external.addFavorite(sURL, sTitle);   
+       }catch(e) {   
+          try{   
+              window.sidebar.addPanel(sTitle, sURL, "");   
+           }catch (e){   
+              alert("您的浏览器不支持自动加入收藏功能，请使用Ctrl+D进行添加，或手动在浏览器里进行设置！");
+          }   
+       }
+   }
+   
+   //设为首页
+   function SetHome(url){
+       if (document.all) {
+          document.body.style.behavior='url(#default#homepage)';
+             document.body.setHomePage(url);
+       }else{
+           alert("您的浏览器不支持自动设置页面为首页功能，请您手动在浏览器里设置该页面为首页！");
+       }
+   }
+</script><script>
+//delay延迟时间（毫秒）
+$(function() {
+	$("input[name=q]").autocomplete({
+		 source: "/search/v_ajax_list.jspx",
+		 minLength: 2,
+		 max:5,
+		 delay:100,
+		 autoFocus: true,
+		 select: function(e, ui) {
+			 $("input[name='q']").val(ui.item.value);
+			 $("#searchForm").submit();
+		 },
+		 success: function( data ) {
+			    response( $.map( data.items, function( item ) {
+			        return {
+			         label: '<B>' + item.id + '</B><br>' + item.label,
+			         value: item.id
+			        }
+			       }));
+		}
+	});
+});
+function qkeypress(){
+	var q=$("input[name=q]");
+	if(q.val().trim()!=""){
+		$("input[name=q]").autocomplete("enable");
+	}else{
+		$("input[name=q]").autocomplete("disable");
+	}
+}
+</script>
+<div class="pageTitle">
+    <!-- LOGO_begin -->
+    <div class="webLogo" style="border:0px solid red;width:180px;">
+        <img alt="www.it610.com" src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/webLogo2.png">
+    </div>
+    <!-- LOGO_end -->
+    <!-- AD_begin -->
+    <div style="border:0px solid red;float:left;margin-top:5px;margin-left:10px;">
+               <a href="http://www.sicheng.net/" target="_blank">
+               <img src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/shop4.png">
+               </a>
+    </div>
+    <!-- AD_end -->
+    <!-- 搜索_begin -->
+    <div class="searchCon" style="border:0px solid red;width:300px;">
+        <form action="http://www.it610.com/search.jspx" target="_blank" id="searchForm">
+        <div class="ui-widget">
+            <div class="searchBg">
+            	<input name="q" value="请输入关键词" type="text" onfocus="if(this.value==&#39;请输入关键词&#39;)this.value=&#39;&#39;" onkeypress="qkeypress()" onblur="if(this.value==&#39;&#39;)this.value=&#39;请输入关键词&#39;" maxlength="50" autocomplete="off" style="border:0;width:98%;" class="ui-autocomplete-input"><span role="status" aria-live="polite" class="ui-helper-hidden-accessible"></span>
+            </div>
+		</div>
+            <input type="submit" class="searchMenu" value="">
+        </form>
+    </div>
+    <!-- 搜索_end -->
+</div>
+<div class="clear"></div><div id="menu" class="page box relative">
+    <dl id="topmenu">  
+                <dt class="menu_first"><a href="http://www.it610.com/" target="_self"><span>首 页</span></a></dt>
+        <dt><a href="http://www.it610.com/language/index.htm" target="_self"><span>编程语言</span></a></dt>
+        <dt><a href="http://www.it610.com/web/index.htm" target="_self"><span>Web前端</span></a></dt>
+        <dt><a href="http://www.it610.com/architecture/index.htm" target="_self"><span>系统架构</span></a></dt>
+        <dt><a href="http://www.it610.com/db/index.htm" target="_self"><span>数据库</span></a></dt>
+        <dt><a href="http://www.it610.com/mobile/index.htm" target="_self"><span>移动开发</span></a></dt>
+        <dt><a href="http://www.it610.com/os/index.htm" target="_self"><span>操作系统</span></a></dt>
+        <dt><a href="http://www.it610.com/opensource/index.htm" target="_self"><span>开源软件</span></a></dt>
+        <dt><a href="http://www.it610.com/Internet/index.htm" target="_self"><span>互联网</span></a></dt>
+        <dt><a href="http://www.it610.com/Industry/index.htm" target="_self"><span>软件应用</span></a></dt>
+        <dt><a href="http://www.it610.com/management/index.htm" target="_self"><span>研发管理</span></a></dt>
+        <dt><a href="http://www.it610.com/life/index.htm" target="_self"><span>IT生活</span></a></dt>
+    </dl>
+</div>
+<div class="clear"></div>	<!-- 左栏_begin -->
+	<div class="w670 mt10" style="width:980px;">
+        <div class="website">当前位置：<a href="http://www.it610.com/">首页</a> &gt; <a target="_blank" href="http://www.it610.com/info/index.htm">资讯</a> &gt; <a target="_blank" href="http://www.it610.com/info3/index.htm">热门博客</a> &gt; 正文</div>
+        <div class="clear"></div>
+        
+        <div class="newsTex">
+            <h1>用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三)</h1>
+
+            <div class="msgbar">发表于： 2012-01-13 &nbsp;  作者：Slaytanic &nbsp; 来源：转载 &nbsp;  浏览：<span id="views"></span>
+            <span id="cancelSpan" style="display:none; cursor: pointer;">取消收藏</span>
+            <span id="comfirmSpan" style="display:none;cursor: pointer;">收藏</span>
+            </div>
+            <div class="news_tag">
+            <a href="http://www.it610.com/tag/4913.jspx" title="open">open</a> <a href="http://www.it610.com/tag/5114.jspx" title="VPN">VPN</a> <a href="http://www.it610.com/tag/6138.jspx" title="网络安全">网络安全</a> <a href="http://www.it610.com/tag/19038.jspx" title="休闲">休闲</a> <a href="http://www.it610.com/tag/15374.jspx" title="BSD">BSD</a> 
+            </div>
+             <!-- 社会化分享 start -->
+             <!-- 社会化分享 end -->
+            
+	    <!-- ad开始 -->
+        <div class="" style="border:0px solid red;">
+               <a href="http://www.sicheng.net/" target="_blank">
+               <img src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/shop2.png">
+               </a>
+        </div>            
+            <!-- ad结束 -->
+            <div class="clear"></div>
+                        
+            <div class="summary"><span style="color:#ff0000; font-weight:bold;">摘要:</span> 年前相声演员封箱，我们封服务器，年前一周可以从繁重的hadoop劳动中挤点时间出来写点东西了。接上一章，说一下OpenVPN的详细配置。以备大集群的扩展需要。默认情况下，OpenVPN对客户端仅支持255.255.255.252这样的子网掩码。在windows客户端下，可以敲openvpn.exe--show-valid-subnets查看合法的客户端地址分配范围，按照VLSM(可变长子网掩码)的</div>
+
+            <div class="newsCon">
+                <div class="showContent">
+  年前相声演员封箱，我们封服务器，年前一周可以从繁重的hadoop劳动中挤点时间出来写点东西了。 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   接上一章，说一下OpenVPN的详细配置。以备大集群的扩展需要。 
+ </div> 
+ <div>
+   默认情况下，OpenVPN对客户端仅支持255.255.255.252这样的子网掩码。在windows客户端下，可以敲 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div> 
+  <div> 
+   <div>
+     openvpn.exe --show-valid-subnets 
+   </div> 
+  </div> 
+  <br> 
+ </div> 
+ <div>
+   查看合法的客户端地址分配范围，按照VLSM(可变长子网掩码)的规则，一共有64组，128个可用的地址。除去Server所使用的地址，一共有127个，那么我们面临一个问题，如果服务器的数量超过127个，该怎么办？另外，还有个问题是，OpenVPN的分发地址是DHCP的，但是集群内的其他服务器肯定不能DHCP，否则就乱套了，该怎么办？ 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   那么，实际上现在有两个问题，固定IP的问题，和VPN的路由问题。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   一、固定IP问题 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   这个问题可以这样解决，按照我们上两节所讲的OpenVPN的Server.conf配置，加一行。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div> 
+  <div> 
+   <div>
+     #mkdir /etc/openvpn/ccd 
+    <br>#vi /etc/openvpn/server.conf 
+    <br> 
+    <br>client-config-dir /etc/openvpn/ccd 
+    <br> 
+    <br>#-------------整个的配置文件看起来应该是下面这样----------- 
+    <br> 
+    <br>port 1194 
+    <br>proto tcp 
+    <br>dev tun 
+    <br>ca /etc/openvpn/ca.crt 
+    <br>cert /etc/openvpn/hadoopmaster.crt 
+    <br>key /etc/openvpn/hadoopmaster.key&nbsp;&nbsp;&nbsp;&nbsp;# This file should be kept secret 
+    <br>dh /etc/openvpn/dh1024.pem 
+    <br>server 10.8.0.0 255.255.0.0 
+    <br>ifconfig-pool-persist ipp.txt 
+    <br>push "dhcp-option DNS 10.8.0.1" 
+    <br>push "dhcp-option DNS 202.106.0.20" #客户端获得的DNS地址 
+    <br> 
+    <br> push "route 10.9.0.0 255.255.0.0" 
+    <br>push "route 10.8.0.0 255.255.0.0" 
+    <br> 
+    <br> route 10.9.0.0 255.255.0.0 
+    <br> 
+    <br>client-to-client 
+    <br> 
+    <br> 
+    <b>client-config-dir /etc/openvpn/ccd</b> 
+    <br> 
+    <br>keepalive 10 120 
+    <br>comp-lzo 
+    <br>persist-key 
+    <br>persist-tun 
+    <br>status openvpn-status.log 
+    <br>log openvpn.log 
+    <br>verb 3 
+    <br> 
+   </div> 
+  </div> 
+  <br> 
+ </div> 
+ <div>
+   黄底加粗的字体，是需要新加入的。但是，也不要忽略红色字体，那是我们需要解决的第二个问题，也就是集群扩展所面临的路由问题。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   我们来看下新建的/etc/openvpn/ccd下面都有些什么东西 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div> 
+  <div> 
+   <div>
+     #ls -la 
+    <br>drwxr-xr-x 2 root root 4096 Jan 13 12:13 . 
+    <br>drwxr-xr-x 3 root root 4096 Jan 13 12:20 .. 
+    <br>-rw-r--r-- 1 root root&nbsp;&nbsp;&nbsp;&nbsp; 32 Jan 13 11:52 slayer 
+    <br>#cat slayer 
+    <br>ifconfig-push 10.8.0.254 10.8.0.253 
+    <br># 
+   </div> 
+  </div> 
+  <br> 
+ </div> 
+ <div>
+   里面有一个文件，也就是以创建client key时所取的名字命名的一个文本文件，内容是 
+ </div> 
+ <div>
+   ifconfig-push 10.8.0.254 10.8.0.253 
+ </div> 
+ <div>
+   也就是让OpenVPN在DHCP时，将10.8.0.254地址，push给slayer的主机，且Point-to-Point地址是10.8.0.253 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   那这样岂不是10.8.0.0/31地址池里又少了一半？其实不是，如果你想指定某台服务器IP是253，就这样写 
+ </div> 
+ <div>
+   ifconfig-push 10.8.0.253 10.8.0.254 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   如果你不想用这种方法，可以去掉配置文件中的client-to-client 
+ </div> 
+ <div>
+   指定 
+ </div> 
+ <div>
+   ifconfig-push 10.8.0.253 255.255.255.0 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   照此推理，你要指定局域网内的其他服务器被分配固定的Ip地址，只需要按照该服务器创建key时候的名字建立这个文件，把IP地址和对端地址写进去就可以了。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   那么，这个固定IP的问题解决了。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   二、解决一下集群扩展的路由问题 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   回到问题一的解决过程中，配置文件的红色部分。扩展集群只需加入红色字体部分，让OpenVPN在push地址的过程中，将10.9.0.0的路由表push到客户端机器内，就可以实现不同网段间的互访了。在范例中，你看到，10.9.0.0和10.8.0.0，这是A类地址，本来就可以互访。不过，请注意看子网掩码的配置，255.255.0.0，也就是说，我是用A类地址但是是B类地址的子网掩码，也就是在默认没有路由的情况下，是不可相互访问的。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   你有多少个子网，就需要写多少条push "route IP MASK"，否则你即使连上了服务器，也是无法访问其他网段的服务器的，原因很简单，没有路由表。回包也就没有路由。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   还有一点，如果你增加了路由，Windows客户端需要退出OpenVPN程序再重启才可以将路由表保存在你自己的电脑里，仅仅断开连接是没用的。而Linux则没有该限制。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   整个OpenVPN的配置过程中，涉及的网络基础概念比较多，需要对OSI七层模型，子网划分，隧道连接有一定的概念。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   这样的好处是，节省一大笔费用，支持VPN的交换机和路由器一般都价格不菲。而这个办法，除了找个破PC之外，无需任何额外的支出。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   再一个，如果你自认为破解技术很强悍，可以尝试攻击OpenBSD+OpenVPN，通常我不认为你能成功，除非你搞DDOS或者偷到了csr文件搞middle-man攻击。再要不然就只能绑架网管搞严刑拷打刑讯逼供了，通常这招会比较管用。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div>
+   祝新年愉快。 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <div> 
+  <br> 
+ </div> 
+ <p>本文出自 “实践检验真理” 博客，谢绝转载！</p> 
+</div>
+                <p><a href="http://www.it610.com/article/2789586.htm" title="用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三)">用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三)</a></p>
+            </div>
+            <div class="pagebar"></div>
+
+             <!-- 评分开始 -->
+             <div class="score">
+<!-- 评分页面 -->
+<div>
+    <!-- 系统默认的2号分组是星级评分 -->
+  <!-- 平均评分有二级缓存，评分后不会立即显示新的平均评分 -->
+  <!-- 其他 -->
+  <ul>
+      <li style="float:left;cursor: pointer;" onclick="Cms.score(&#39;&#39;,2789586,1);">
+         <p> <span id="score-item-1">0</span>票</p>
+         <p><img src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/m1.gif" alt="开心"></p>
+         <p>开心</p>
+      </li>
+      <li style="float:left;cursor: pointer;" onclick="Cms.score(&#39;&#39;,2789586,2);">
+         <p> <span id="score-item-2">0</span>票</p>
+         <p><img src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/m2.gif" alt="板砖"></p>
+         <p>板砖</p>
+      </li>
+      <li style="float:left;cursor: pointer;" onclick="Cms.score(&#39;&#39;,2789586,3);">
+         <p> <span id="score-item-3">0</span>票</p>
+         <p><img src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/m3.gif" alt="感动"></p>
+         <p>感动</p>
+      </li>
+      <li style="float:left;cursor: pointer;" onclick="Cms.score(&#39;&#39;,2789586,4);">
+         <p> <span id="score-item-4">0</span>票</p>
+         <p><img src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/m4.gif" alt="有用"></p>
+         <p>有用</p>
+      </li>
+      <li style="float:left;cursor: pointer;" onclick="Cms.score(&#39;&#39;,2789586,5);">
+         <p> <span id="score-item-5">0</span>票</p>
+         <p><img src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/m5.gif" alt="疑问"></p>
+         <p>疑问</p>
+      </li>
+      <li style="float:left;cursor: pointer;" onclick="Cms.score(&#39;&#39;,2789586,6);">
+         <p> <span id="score-item-6">0</span>票</p>
+         <p><img src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/m6.gif" alt="难过"></p>
+         <p>难过</p>
+      </li>
+      <li style="float:left;cursor: pointer;" onclick="Cms.score(&#39;&#39;,2789586,7);">
+         <p> <span id="score-item-7">0</span>票</p>
+         <p><img src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/m7.gif" alt="无聊"></p>
+         <p>无聊</p>
+      </li>
+      <li style="float:left;cursor: pointer;" onclick="Cms.score(&#39;&#39;,2789586,8);">
+         <p> <span id="score-item-8">0</span>票</p>
+         <p><img src="./用OpenBSD和OpenVPN构建坚不可摧的服务器集群(三) - 热门博客 - IT610.com_files/m8.gif" alt="震惊"></p>
+         <p>震惊</p>
+      </li>
+   </ul>   
+   <script type="text/javascript">
+	$(function() {
+		Cms.scoreCount("","2789586");
+	});
+</script>
+</div>
+
+             </div>
+             <!-- 评分结束 -->
+            <div class="other">
+            <div class="ding" onclick="Cms.up(&#39;&#39;,2789586,0);"><span id="ups"></span>
+            <span id="ups"></span>
+            <p>顶</p>
+            </div>
+            <div class="cai" onclick="Cms.down(&#39;&#39;,2789586,0);"><span id="downs"></span>
+            <span id="downs"></span>
+            <p>踩</p>
+            </div>
+            </div>
+        </div>
+        <div class="clear-10"></div>
+        <div class="hundred100">
+            <div class="rim06">
+                <!--网友评论_Begin-->
+                <!--网友评论_End-->
+            </div>
+        </div>
+        <div class="clear-10"></div>
+     
+    </div>
+    <!-- 左栏_end -->
+
+<div class="clear"></div>
+
+<div class="clear-10"></div>
+<div class="footBg">
+    <div class="footBglm">
+    <a target="_blank" href="http://www.it610.com/">首页</a> - 
+    <a target="_blank" href="http://www.it610.com/about.htm">关于我们</a> - 
+    <a onclick="SetHome(window.location)" href="javascript:void(0)">设为首页</a> - 
+    <a onclick="AddFavorite(window.location,document.title)" href="javascript:void(0)">加入收藏</a> - 
+    <a target="_blank" href="http://www.it610.com/search2.htm">站内搜索</a> - 
+    <a target="_blank" href="http://www.it610.com/sitemap.xml">Sitemap</a>
+    </div>
+    <div class="clear-10"></div>
+    版权所有 IT知识库 CopyRight © 2009-2015 IT知识库 IT610.com , All Rights Reserved.
+    <a href="http://www.miibeian.gov.cn/" rel="nofollow" target="_blank">京ICP备09083238号</a><br>
+      
+</div></div>  
+
+<ul class="ui-autocomplete ui-menu ui-widget ui-widget-content ui-corner-all" id="ui-id-1" tabindex="0" style="z-index: 1; display: none;"></ul></body></html>

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<!-- saved from url=(0039)https://blog.51cto.com/slaytanic/763411 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="https://blog.51cto.com/favicon.ico">
+        <title>用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客</title>
+    <meta name="keywords" content="***,Open,网络安全,休闲,BSD">
+<meta name="description" content="年前相声演员封箱，我们封服务器，年前一周可以从繁重的hadoop劳动中挤点时间出来写点东西了。接上一章，说一下Open***的详细配置。以备大集群的扩展需要。默认情况下，Open***对客户端仅支持255.255.255.252这样的子网掩码。在windows客户端下，可以敲open***.exe --show-valid-subnets查看合法的客户端地址分配范围，按照VLSM(可变长子网掩码)">    <link href="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/header.css" rel="stylesheet"><link href="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/other.css" rel="stylesheet"><link href="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/right.css" rel="stylesheet"><link href="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/blog_details.css" rel="stylesheet"><link href="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/highlight.css" rel="stylesheet">
+    <script type="text/javascript" async="" src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/vds.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/push.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/hm.js.download"></script><script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/jquery.min.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/cookie.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/login.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/common.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/mbox.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/follow.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/vip.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/window.js.download"></script><style></style><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/share.js.download"></script><link rel="stylesheet" href="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/share_style0_16.css"></head>
+<body>
+<img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201905/21/be0cf56d1367de626aa182705a55b41b.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url(&#39;https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png&#39;) 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/index" target="_blank">
+  <img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/b34787fdca7c0f79454d01324caaee07.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li><a href="https://blog.51cto.com/">首页</a></li>
+      <li><a href="https://blog.51cto.com/original">文章</a></li>
+      <li><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com/" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com/" target="_blank">WOT</a>
+            <a href="http://www.51cto.com/" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fslaytanic%2F763411&amp;logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fslaytanic%2F763411" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index" target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onclick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/box.js.download"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/index" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201905/27/b5dbf0b4c2b8e1d745369467b0450444.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog69',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/entrance.js.download" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box" style="min-height: 859px;">
+      <link rel="stylesheet" href="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/mdeShow.css">
+  <link rel="stylesheet" href="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/prism.css">
+  <script type="text/javascript" charset="utf-8" src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/prism.js.download"></script>
+<link rel="stylesheet" href="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/tinyscrollbar.css">
+<script type="text/javascript" src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/jquery.tinyscrollbar.js.download"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">用OpenBSD和Open×××构建坚不可摧的服务器集群(三)</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/slaytanic" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="2057708" src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/wKiom1LOCziArBrLAAAY3QD51sw455_middle.jpg"></a>
+				</div>
+				<a href="https://blog.51cto.com/slaytanic" class="name fl" target="_blank" style="margin-right:0;">Slaytanic</a>
+									                	                    <a id="checkFollow1_2057708" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">1</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">2654人阅读</a>
+				<a href="javascript:;" class="time fr">2012-01-13 16:04:44</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result">年前相声演员封箱，我们封服务器，年前一周可以从繁重的hadoop劳动中挤点时间出来写点东西了。<div><br></div><div>接上一章，说一下Open×××的详细配置。以备大集群的扩展需要。</div><div>默认情况下，Open×××对客户端仅支持255.255.255.252这样的子网掩码。在windows客户端下，可以敲</div><div><br></div><div><div><div style="color: #000000;BACKGROUND-COLOR: #eeeeee;font-family: Verdana,宋体;width: 98%;line-height:16px;BORDER: #cccccc 1px solid;PADDING: 4px;FONT-SIZE: 10pt;WORD-BREAK: break-all;">open***.exe --show-valid-subnets</div></div><br></div><div>查看合法的客户端地址分配范围，按照VLSM(可变长子网掩码)的规则，一共有64组，128个可用的地址。除去Server所使用的地址，一共有127个，那么我们面临一个问题，如果服务器的数量超过127个，该怎么办？另外，还有个问题是，Open×××的分发地址是DHCP的，但是集群内的其他服务器肯定不能DHCP，否则就乱套了，该怎么办？</div><div><br></div><div>那么，实际上现在有两个问题，固定IP的问题，和×××的路由问题。</div><div><br></div><div>一、固定IP问题</div><div><br></div><div>这个问题可以这样解决，按照我们上两节所讲的Open×××的Server.conf配置，加一行。</div><div><br></div><div><div><div style="background-color: rgb(238, 238, 238); font-family: Verdana, 宋体; width: 98%; line-height: 16px; border-top-color: rgb(204, 204, 204); border-right-color: rgb(204, 204, 204); border-bottom-color: rgb(204, 204, 204); border-left-color: rgb(204, 204, 204); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; font-size: 10pt; word-break: break-all; ">#mkdir /etc/open***/ccd<br>#vi /etc/open***/server.conf<br><br>client-config-dir /etc/open***/ccd<br><br>#-------------整个的配置文件看起来应该是下面这样-----------<br><br>port 1194<br>proto tcp<br>dev tun<br>ca /etc/open***/ca.crt<br>cert /etc/open***/hadoopmaster.crt<br>key /etc/open***/hadoopmaster.key&nbsp;&nbsp;&nbsp;&nbsp;# This file should be kept secret<br>dh /etc/open***/dh1024.pem<br>server 10.8.0.0 255.255.0.0<br>ifconfig-pool-persist ipp.txt<br>push "dhcp-option DNS 10.8.0.1"<br>push "dhcp-option DNS 202.106.0.20" #客户端获得的DNS地址<br><br><font style="background-color: rgb(255, 0, 0); "><font style="background-color: rgb(220, 220, 220); "><font style="background-color: rgb(245, 245, 245); " color="#ff0000">push "route 10.9.0.0 255.255.0.0"</font></font></font><br>push "route 10.8.0.0 255.255.0.0"<br><br><font class="Apple-style-span" color="#ff0000">route 10.9.0.0 255.255.0.0</font><br><br>client-to-client<br><br><b><font style="background-color: rgb(255, 255, 0); ">client-config-dir /etc/open***/ccd</font></b><br><br>keepalive 10 120<br>comp-lzo<br>persist-key<br>persist-tun<br>status open***-status.log<br>log open***.log<br>verb 3<br></div></div><br></div><div>黄底加粗的字体，是需要新加入的。但是，也不要忽略红色字体，那是我们需要解决的第二个问题，也就是集群扩展所面临的路由问题。</div><div><br></div><div>我们来看下新建的/etc/open***/ccd下面都有些什么东西</div><div><br></div><div><div><div style="color: #000000;BACKGROUND-COLOR: #eeeeee;font-family: Verdana,宋体;width: 98%;line-height:16px;BORDER: #cccccc 1px solid;PADDING: 4px;FONT-SIZE: 10pt;WORD-BREAK: break-all;">#ls -la<br>drwxr-xr-x 2 root root 4096 Jan 13 12:13 .<br>drwxr-xr-x 3 root root 4096 Jan 13 12:20 ..<br>-rw-r--r-- 1 root root&nbsp;&nbsp;&nbsp;&nbsp; 32 Jan 13 11:52 slayer<br>#cat slayer<br>ifconfig-push 10.8.0.254 10.8.0.253<br>#</div></div><br></div><div>里面有一个文件，也就是以创建client key时所取的名字命名的一个文本文件，内容是</div><div>ifconfig-push 10.8.0.254 10.8.0.253</div><div>也就是让Open×××在DHCP时，将10.8.0.254地址，push给slayer的主机，且Point-to-Point地址是10.8.0.253</div><div><br></div><div>那这样岂不是10.8.0.0/31地址池里又少了一半？其实不是，如果你想指定某台服务器IP是253，就这样写</div><div>ifconfig-push 10.8.0.253 10.8.0.254</div><div><br></div><div>如果你不想用这种方法，可以去掉配置文件中的client-to-client</div><div>指定</div><div>ifconfig-push 10.8.0.253 255.255.255.0</div><div><br></div><div>照此推理，你要指定局域网内的其他服务器被分配固定的Ip地址，只需要按照该服务器创建key时候的名字建立这个文件，把IP地址和对端地址写进去就可以了。</div><div><br></div><div>那么，这个固定IP的问题解决了。</div><div><br></div><div>二、解决一下集群扩展的路由问题</div><div><br></div><div>回到问题一的解决过程中，配置文件的红色部分。扩展集群只需加入红色字体部分，让Open×××在push地址的过程中，将10.9.0.0的路由表push到客户端机器内，就可以实现不同网段间的互访了。在范例中，你看到，10.9.0.0和10.8.0.0，这是A类地址，本来就可以互访。不过，请注意看子网掩码的配置，255.255.0.0，也就是说，我是用A类地址但是是B类地址的子网掩码，也就是在默认没有路由的情况下，是不可相互访问的。</div><div><br></div><div>你有多少个子网，就需要写多少条push "route IP MASK"，否则你即使连上了服务器，也是无法访问其他网段的服务器的，原因很简单，没有路由表。回包也就没有路由。</div><div><br></div><div>还有一点，如果你增加了路由，Windows客户端需要退出Open×××程序再重启才可以将路由表保存在你自己的电脑里，仅仅断开连接是没用的。而Linux则没有该限制。</div><div><br></div><div>整个Open×××的配置过程中，涉及的网络基础概念比较多，需要对OSI七层模型，子网划分，隧道连接有一定的概念。</div><div><br></div><div>这样的好处是，节省一大笔费用，支持×××的交换机和路由器一般都价格不菲。而这个办法，除了找个破PC之外，无需任何额外的支出。</div><div><br></div><div>再一个，如果你自认为破解技术很强悍，可以尝试攻击OpenBSD+Open×××，通常我不认为你能成功，除非你搞DDOS或者偷到了csr文件搞middle-man攻击。再要不然就只能绑架网管搞严刑拷打刑讯逼供了，通常这招会比较管用。</div><div><br></div><div>祝新年愉快。</div><div><br></div><div><br></div></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者Slaytanic的原创作品，谢绝转载，否则将追究法律责任</div>
+									<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=***" target="_blank">***</a>
+																								<a href="https://blog.51cto.com/search/result?q=Open" target="_blank">Open</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8" target="_blank">网络安全</a>
+																																					                				<a class="last" href="https://blog.51cto.com/slaytanic/category2.html" target="_blank"><i></i>*BSD</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="763411" userid="2057708">0</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1559058607311">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina">微博</a>
+					  <a class="bds_sqq" data-cmd="sqq">QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin">微信</a>
+					  <img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/qr-url">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/slaytanic/762612" title="对OpenBSD中的OSPF和BGP路由协议的探索">
+						上一篇：对OpenBSD中的OSPF和B...</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/slaytanic/765821" title="OpenBSD，FreeBSD，Linux硬盘速度对比">
+						下一篇：OpenBSD，FreeBSD，...</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/slaytanic" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="2057708" src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/wKiom1LOCziArBrLAAAY3QD51sw455_middle.jpg">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/slaytanic" target="_blank" style="display:inline-block;">Slaytanic</a>
+										<h3>142篇文章，357W+人气，211粉丝</h3>
+									</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_2057708" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/slaytanic" class="header-img" target="_blank">
+						<img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可" maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="2057708">
+					<input type="hidden" class="reply_id" value="763411">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+							<div class="comment-number" id="comment_pl">
+					<p class="number fl"><span class="comment_number">1</span>条评论</p>
+					<a class="time-last time fr comment-sort" id="sort-desc" flag="desc" page="1">按时间倒序</a>
+				    <a class="time-first time fr comment-sort on" id="sort-asc" flag="asc" page="2">按时间正序</a>
+				    <div class="clear"></div>
+				</div>
+						<div class="commentList"><div class="commentList-box cbox-542545" id="542545"><div class="comment-1 publish_user_id reply_id_box comment_number-list" rid="542545"><div class="top"><div class="is-vip-bg-6 fl header-con"><a href="https://blog.51cto.com/1055745601" class="header-img"><img class="is-vip-img-bg is-vip-img-4" src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/wKiom1LOBLejzkjyAAASy_0uLAk467_middle.jpg"></a></div><div class="head-right jf-list-box"><p class="name"><a href="https://blog.51cto.com/1055745601">我欲轻狂</a></p><div class="time"><span class="fl">1楼&nbsp;&nbsp;2013-03-11 13:04:21</span><span class="reply-btn fr" data-type="1"></span><span class="zan fr" blog_id="542545" type="2" userid="5003160"></span><div class="clear"></div></div><input type="hidden" class="reply_id" value="542545"><input type="hidden" class="user_id" value="5003160"><input type="hidden" class="first_pid" value="542545"></div></div><div class="con">服务器集群部分没看到有，不知道是没时间写呢，还是怎么样了？</div></div><div class="comment-2"><ul class="comment-2-list" flag="542545"></ul></div></div></div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog" style="display: none;"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);" style="display: none;"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="https://blog.51cto.com/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1524人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="18" href="https://blog.51cto.com/cloumn/detail/18" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/10" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/9d82eccb4e3c371eaeac41193bbef757.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/10" target="_blank"> 基于Kubernetes企业级容器云平台落地与实践</a>
+									<h3 class="white-space">容器私有云平台实践之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/lizhenliang" target="_blank">李振良OK</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>580人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="10" href="https://blog.51cto.com/cloumn/detail/10" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/8" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/5366d1f50328a62facbf5db1d91c319a.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/8" target="_blank"> VMware vSAN中小企业应用案例</a>
+									<h3 class="white-space">掌握VMware超融合技术</h3>
+									<h4 class="white-space">共41章&nbsp;|&nbsp;<a href="https://blog.51cto.com/wangchunhai" target="_blank">王春海</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>337人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="8" href="https://blog.51cto.com/cloumn/detail/8" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>502人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="6" href="https://blog.51cto.com/cloumn/detail/6" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>456人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="5" href="https://blog.51cto.com/cloumn/detail/5" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/slaytanic/2376811?source=dra" target="_blank">Hadoop运维记录系列（二十七）</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/slaytanic/2376695?source=dra" target="_blank">Hadoop运维记录系列（二十六）</a>
+															<a class="white-space" href="https://blog.51cto.com/windows2008/74285?source=drt" target="_blank">解决电脑网络受限制或无连接造成无法上网的方法</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/simonhu/1588971?source=drt" target="_blank">CentOS 7 网络配置详解</a>
+															<a class="white-space" href="https://blog.51cto.com/369369/805726?source=drt" target="_blank">Linux下网络流量实时监控工具大全</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/52android/496621?source=drt" target="_blank">Android网络编程之Http通信</a>
+															<a class="white-space" href="https://blog.51cto.com/ganbing/2087598?source=drt" target="_blank">“深入浅出”来解读Docker网络核心原理</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/eeproxy/1747073?source=drt" target="_blank">影梭shadowsocks使用教程,windows电脑+谷歌浏览器实现网络代理</a>
+															<a class="white-space" href="https://blog.51cto.com/andygao/817518?source=drt" target="_blank">Vmware vSphere 5.0系列教程之四  vSphere网络原理及vSwitch简介</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/gloomyfish/2105427?source=drt" target="_blank">VGG卷积神经网络模型解析</a>
+															<a class="white-space" href="https://blog.51cto.com/12268222/2392042?source=drt" target="_blank">Android9 原生系统网络感叹号消除</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/lanxiaomi/1964958?source=drt" target="_blank">网络安全思维导图（全套11张）</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2354375?source=drh" target="_blank">解析DELL R710服务器迁移操作内容</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sun510/2166076?source=drh" target="_blank">开学季出大事：某教育局丢失3台虚拟机</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2164979?source=drh" target="_blank">EVA4400存储虚拟机+数据库数据恢复成功案例</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sun510/2159782?source=drh" target="_blank">服务器数据恢复通用方法+服务器分区丢失恢复案例</a>
+															<a class="white-space" href="https://blog.51cto.com/13642258/2151655?source=drh" target="_blank">在CentOS7上部署squid缓存服务器及代理功能</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sun510/2149069?source=drh" target="_blank">EMC 5400服务器raid阵列瘫痪数据恢复成功案例</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2146600?source=drh" target="_blank">服务器数据恢复案例 / raid5阵列多块硬盘离线处理方法</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sun510/2144160?source=drh" target="_blank">华为存储服务器卷丢失数据恢复成功案例</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/f92360e227f9d91cdff7ea95120630ef.png" style="width:70px;height:70px;"> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg" style="display: block;">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="763411" userid="2057708"></span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>0</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number">1</font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1559058607311">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/qr-url"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_2057708" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a href="https://blog.51cto.com/slaytanic" class="b-name fr">Slaytanic</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/slaytanic" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="2057708" src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/wKiom1LOCziArBrLAAAY3QD51sw455_middle.jpg"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/shCores.js.download"></script>
+<script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/countDown.js.download"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '763411'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'2057708',
+            'blog_id':'763411'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/slaytanic';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='2057708'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/slaytanic'
+    	nickname = 'Slaytanic'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_2057708'),'2057708','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_2057708'),'2057708','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_2057708'),'2057708','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("\u5e74\u524d\u76f8\u58f0\u6f14\u5458\u5c01\u7bb1\uff0c\u6211\u4eec\u5c01\u670d\u52a1\u5668\uff0c\u5e74\u524d\u4e00\u5468\u53ef\u4ee5\u4ece\u7e41\u91cd\u7684hadoop\u52b3\u52a8\u4e2d\u6324\u70b9\u65f6\u95f4\u51fa\u6765\u5199\u70b9\u4e1c\u897f\u4e86\u3002<div><br \/><\/div><div>\u63a5\u4e0a\u4e00\u7ae0\uff0c\u8bf4\u4e00\u4e0bOpen\u00d7\u00d7\u00d7\u7684\u8be6\u7ec6\u914d\u7f6e\u3002\u4ee5\u5907\u5927\u96c6\u7fa4\u7684\u6269\u5c55\u9700\u8981\u3002<\/div><div>\u9ed8\u8ba4\u60c5\u51b5\u4e0b\uff0cOpen\u00d7\u00d7\u00d7\u5bf9\u5ba2\u6237\u7aef\u4ec5\u652f\u6301255.255.255.252\u8fd9\u6837\u7684\u5b50\u7f51\u63a9\u7801\u3002\u5728windows\u5ba2\u6237\u7aef\u4e0b\uff0c\u53ef\u4ee5\u6572<\/div><div><br \/><\/div><div><div><div style=\"color: #000000;BACKGROUND-COLOR: #eeeeee;font-family: Verdana,\u5b8b\u4f53;width: 98%;line-height:16px;BORDER: #cccccc 1px solid;PADDING: 4px;FONT-SIZE: 10pt;WORD-BREAK: break-all;\">open***.exe --show-valid-subnets<\/div><\/div><br \/><\/div><div>\u67e5\u770b\u5408\u6cd5\u7684\u5ba2\u6237\u7aef\u5730\u5740\u5206\u914d\u8303\u56f4\uff0c\u6309\u7167VLSM(\u53ef\u53d8\u957f\u5b50\u7f51\u63a9\u7801)\u7684\u89c4\u5219\uff0c\u4e00\u5171\u670964\u7ec4\uff0c128\u4e2a\u53ef\u7528\u7684\u5730\u5740\u3002\u9664\u53bbServer\u6240\u4f7f\u7528\u7684\u5730\u5740\uff0c\u4e00\u5171\u6709127\u4e2a\uff0c\u90a3\u4e48\u6211\u4eec\u9762\u4e34\u4e00\u4e2a\u95ee\u9898\uff0c\u5982\u679c\u670d\u52a1\u5668\u7684\u6570\u91cf\u8d85\u8fc7127\u4e2a\uff0c\u8be5\u600e\u4e48\u529e\uff1f\u53e6\u5916\uff0c\u8fd8\u6709\u4e2a\u95ee\u9898\u662f\uff0cOpen\u00d7\u00d7\u00d7\u7684\u5206\u53d1\u5730\u5740\u662fDHCP\u7684\uff0c\u4f46\u662f\u96c6\u7fa4\u5185\u7684\u5176\u4ed6\u670d\u52a1\u5668\u80af\u5b9a\u4e0d\u80fdDHCP\uff0c\u5426\u5219\u5c31\u4e71\u5957\u4e86\uff0c\u8be5\u600e\u4e48\u529e\uff1f<\/div><div><br \/><\/div><div>\u90a3\u4e48\uff0c\u5b9e\u9645\u4e0a\u73b0\u5728\u6709\u4e24\u4e2a\u95ee\u9898\uff0c\u56fa\u5b9aIP\u7684\u95ee\u9898\uff0c\u548c\u00d7\u00d7\u00d7\u7684\u8def\u7531\u95ee\u9898\u3002<\/div><div><br \/><\/div><div>\u4e00\u3001\u56fa\u5b9aIP\u95ee\u9898<\/div><div><br \/><\/div><div>\u8fd9\u4e2a\u95ee\u9898\u53ef\u4ee5\u8fd9\u6837\u89e3\u51b3\uff0c\u6309\u7167\u6211\u4eec\u4e0a\u4e24\u8282\u6240\u8bb2\u7684Open\u00d7\u00d7\u00d7\u7684Server.conf\u914d\u7f6e\uff0c\u52a0\u4e00\u884c\u3002<\/div><div><br \/><\/div><div><div><div style=\"background-color: rgb(238, 238, 238); font-family: Verdana, \u5b8b\u4f53; width: 98%; line-height: 16px; border-top-color: rgb(204, 204, 204); border-right-color: rgb(204, 204, 204); border-bottom-color: rgb(204, 204, 204); border-left-color: rgb(204, 204, 204); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; font-size: 10pt; word-break: break-all; \">#mkdir \/etc\/open***\/ccd<br \/>#vi \/etc\/open***\/server.conf<br \/><br \/>client-config-dir \/etc\/open***\/ccd<br \/><br \/>#-------------\u6574\u4e2a\u7684\u914d\u7f6e\u6587\u4ef6\u770b\u8d77\u6765\u5e94\u8be5\u662f\u4e0b\u9762\u8fd9\u6837-----------<br \/><br \/>port 1194<br \/>proto tcp<br \/>dev tun<br \/>ca \/etc\/open***\/ca.crt<br \/>cert \/etc\/open***\/hadoopmaster.crt<br \/>key \/etc\/open***\/hadoopmaster.key&nbsp;&nbsp;&nbsp;&nbsp;# This file should be kept secret<br \/>dh \/etc\/open***\/dh1024.pem<br \/>server 10.8.0.0 255.255.0.0<br \/>ifconfig-pool-persist ipp.txt<br \/>push \"dhcp-option DNS 10.8.0.1\"<br \/>push \"dhcp-option DNS 202.106.0.20\" #\u5ba2\u6237\u7aef\u83b7\u5f97\u7684DNS\u5730\u5740<br \/><br \/><font style=\"background-color: rgb(255, 0, 0); \"><font style=\"background-color: rgb(220, 220, 220); \"><font style=\"background-color: rgb(245, 245, 245); \" color=\"#ff0000\">push \"route 10.9.0.0 255.255.0.0\"<\/font><\/font><\/font><br \/>push \"route 10.8.0.0 255.255.0.0\"<br \/><br \/><font class=\"Apple-style-span\" color=\"#ff0000\">route 10.9.0.0 255.255.0.0<\/font><br \/><br \/>client-to-client<br \/><br \/><b><font style=\"background-color: rgb(255, 255, 0); \">client-config-dir \/etc\/open***\/ccd<\/font><\/b><br \/><br \/>keepalive 10 120<br \/>comp-lzo<br \/>persist-key<br \/>persist-tun<br \/>status open***-status.log<br \/>log open***.log<br \/>verb 3<br \/><\/div><\/div><br \/><\/div><div>\u9ec4\u5e95\u52a0\u7c97\u7684\u5b57\u4f53\uff0c\u662f\u9700\u8981\u65b0\u52a0\u5165\u7684\u3002\u4f46\u662f\uff0c\u4e5f\u4e0d\u8981\u5ffd\u7565\u7ea2\u8272\u5b57\u4f53\uff0c\u90a3\u662f\u6211\u4eec\u9700\u8981\u89e3\u51b3\u7684\u7b2c\u4e8c\u4e2a\u95ee\u9898\uff0c\u4e5f\u5c31\u662f\u96c6\u7fa4\u6269\u5c55\u6240\u9762\u4e34\u7684\u8def\u7531\u95ee\u9898\u3002<\/div><div><br \/><\/div><div>\u6211\u4eec\u6765\u770b\u4e0b\u65b0\u5efa\u7684\/etc\/open***\/ccd\u4e0b\u9762\u90fd\u6709\u4e9b\u4ec0\u4e48\u4e1c\u897f<\/div><div><br \/><\/div><div><div><div style=\"color: #000000;BACKGROUND-COLOR: #eeeeee;font-family: Verdana,\u5b8b\u4f53;width: 98%;line-height:16px;BORDER: #cccccc 1px solid;PADDING: 4px;FONT-SIZE: 10pt;WORD-BREAK: break-all;\">#ls -la<br \/>drwxr-xr-x 2 root root 4096 Jan 13 12:13 .<br \/>drwxr-xr-x 3 root root 4096 Jan 13 12:20 ..<br \/>-rw-r--r-- 1 root root&nbsp;&nbsp;&nbsp;&nbsp; 32 Jan 13 11:52 slayer<br \/>#cat slayer<br \/>ifconfig-push 10.8.0.254 10.8.0.253<br \/>#<\/div><\/div><br \/><\/div><div>\u91cc\u9762\u6709\u4e00\u4e2a\u6587\u4ef6\uff0c\u4e5f\u5c31\u662f\u4ee5\u521b\u5efaclient key\u65f6\u6240\u53d6\u7684\u540d\u5b57\u547d\u540d\u7684\u4e00\u4e2a\u6587\u672c\u6587\u4ef6\uff0c\u5185\u5bb9\u662f<\/div><div>ifconfig-push 10.8.0.254 10.8.0.253<\/div><div>\u4e5f\u5c31\u662f\u8ba9Open\u00d7\u00d7\u00d7\u5728DHCP\u65f6\uff0c\u5c0610.8.0.254\u5730\u5740\uff0cpush\u7ed9slayer\u7684\u4e3b\u673a\uff0c\u4e14Point-to-Point\u5730\u5740\u662f10.8.0.253<\/div><div><br \/><\/div><div>\u90a3\u8fd9\u6837\u5c82\u4e0d\u662f10.8.0.0\/31\u5730\u5740\u6c60\u91cc\u53c8\u5c11\u4e86\u4e00\u534a\uff1f\u5176\u5b9e\u4e0d\u662f\uff0c\u5982\u679c\u4f60\u60f3\u6307\u5b9a\u67d0\u53f0\u670d\u52a1\u5668IP\u662f253\uff0c\u5c31\u8fd9\u6837\u5199<\/div><div>ifconfig-push 10.8.0.253 10.8.0.254<\/div><div><br \/><\/div><div>\u5982\u679c\u4f60\u4e0d\u60f3\u7528\u8fd9\u79cd\u65b9\u6cd5\uff0c\u53ef\u4ee5\u53bb\u6389\u914d\u7f6e\u6587\u4ef6\u4e2d\u7684client-to-client<\/div><div>\u6307\u5b9a<\/div><div>ifconfig-push 10.8.0.253 255.255.255.0<\/div><div><br \/><\/div><div>\u7167\u6b64\u63a8\u7406\uff0c\u4f60\u8981\u6307\u5b9a\u5c40\u57df\u7f51\u5185\u7684\u5176\u4ed6\u670d\u52a1\u5668\u88ab\u5206\u914d\u56fa\u5b9a\u7684Ip\u5730\u5740\uff0c\u53ea\u9700\u8981\u6309\u7167\u8be5\u670d\u52a1\u5668\u521b\u5efakey\u65f6\u5019\u7684\u540d\u5b57\u5efa\u7acb\u8fd9\u4e2a\u6587\u4ef6\uff0c\u628aIP\u5730\u5740\u548c\u5bf9\u7aef\u5730\u5740\u5199\u8fdb\u53bb\u5c31\u53ef\u4ee5\u4e86\u3002<\/div><div><br \/><\/div><div>\u90a3\u4e48\uff0c\u8fd9\u4e2a\u56fa\u5b9aIP\u7684\u95ee\u9898\u89e3\u51b3\u4e86\u3002<\/div><div><br \/><\/div><div>\u4e8c\u3001\u89e3\u51b3\u4e00\u4e0b\u96c6\u7fa4\u6269\u5c55\u7684\u8def\u7531\u95ee\u9898<\/div><div><br \/><\/div><div>\u56de\u5230\u95ee\u9898\u4e00\u7684\u89e3\u51b3\u8fc7\u7a0b\u4e2d\uff0c\u914d\u7f6e\u6587\u4ef6\u7684\u7ea2\u8272\u90e8\u5206\u3002\u6269\u5c55\u96c6\u7fa4\u53ea\u9700\u52a0\u5165\u7ea2\u8272\u5b57\u4f53\u90e8\u5206\uff0c\u8ba9Open\u00d7\u00d7\u00d7\u5728push\u5730\u5740\u7684\u8fc7\u7a0b\u4e2d\uff0c\u5c0610.9.0.0\u7684\u8def\u7531\u8868push\u5230\u5ba2\u6237\u7aef\u673a\u5668\u5185\uff0c\u5c31\u53ef\u4ee5\u5b9e\u73b0\u4e0d\u540c\u7f51\u6bb5\u95f4\u7684\u4e92\u8bbf\u4e86\u3002\u5728\u8303\u4f8b\u4e2d\uff0c\u4f60\u770b\u5230\uff0c10.9.0.0\u548c10.8.0.0\uff0c\u8fd9\u662fA\u7c7b\u5730\u5740\uff0c\u672c\u6765\u5c31\u53ef\u4ee5\u4e92\u8bbf\u3002\u4e0d\u8fc7\uff0c\u8bf7\u6ce8\u610f\u770b\u5b50\u7f51\u63a9\u7801\u7684\u914d\u7f6e\uff0c255.255.0.0\uff0c\u4e5f\u5c31\u662f\u8bf4\uff0c\u6211\u662f\u7528A\u7c7b\u5730\u5740\u4f46\u662f\u662fB\u7c7b\u5730\u5740\u7684\u5b50\u7f51\u63a9\u7801\uff0c\u4e5f\u5c31\u662f\u5728\u9ed8\u8ba4\u6ca1\u6709\u8def\u7531\u7684\u60c5\u51b5\u4e0b\uff0c\u662f\u4e0d\u53ef\u76f8\u4e92\u8bbf\u95ee\u7684\u3002<\/div><div><br \/><\/div><div>\u4f60\u6709\u591a\u5c11\u4e2a\u5b50\u7f51\uff0c\u5c31\u9700\u8981\u5199\u591a\u5c11\u6761push \"route IP MASK\"\uff0c\u5426\u5219\u4f60\u5373\u4f7f\u8fde\u4e0a\u4e86\u670d\u52a1\u5668\uff0c\u4e5f\u662f\u65e0\u6cd5\u8bbf\u95ee\u5176\u4ed6\u7f51\u6bb5\u7684\u670d\u52a1\u5668\u7684\uff0c\u539f\u56e0\u5f88\u7b80\u5355\uff0c\u6ca1\u6709\u8def\u7531\u8868\u3002\u56de\u5305\u4e5f\u5c31\u6ca1\u6709\u8def\u7531\u3002<\/div><div><br \/><\/div><div>\u8fd8\u6709\u4e00\u70b9\uff0c\u5982\u679c\u4f60\u589e\u52a0\u4e86\u8def\u7531\uff0cWindows\u5ba2\u6237\u7aef\u9700\u8981\u9000\u51faOpen\u00d7\u00d7\u00d7\u7a0b\u5e8f\u518d\u91cd\u542f\u624d\u53ef\u4ee5\u5c06\u8def\u7531\u8868\u4fdd\u5b58\u5728\u4f60\u81ea\u5df1\u7684\u7535\u8111\u91cc\uff0c\u4ec5\u4ec5\u65ad\u5f00\u8fde\u63a5\u662f\u6ca1\u7528\u7684\u3002\u800cLinux\u5219\u6ca1\u6709\u8be5\u9650\u5236\u3002<\/div><div><br \/><\/div><div>\u6574\u4e2aOpen\u00d7\u00d7\u00d7\u7684\u914d\u7f6e\u8fc7\u7a0b\u4e2d\uff0c\u6d89\u53ca\u7684\u7f51\u7edc\u57fa\u7840\u6982\u5ff5\u6bd4\u8f83\u591a\uff0c\u9700\u8981\u5bf9OSI\u4e03\u5c42\u6a21\u578b\uff0c\u5b50\u7f51\u5212\u5206\uff0c\u96a7\u9053\u8fde\u63a5\u6709\u4e00\u5b9a\u7684\u6982\u5ff5\u3002<\/div><div><br \/><\/div><div>\u8fd9\u6837\u7684\u597d\u5904\u662f\uff0c\u8282\u7701\u4e00\u5927\u7b14\u8d39\u7528\uff0c\u652f\u6301\u00d7\u00d7\u00d7\u7684\u4ea4\u6362\u673a\u548c\u8def\u7531\u5668\u4e00\u822c\u90fd\u4ef7\u683c\u4e0d\u83f2\u3002\u800c\u8fd9\u4e2a\u529e\u6cd5\uff0c\u9664\u4e86\u627e\u4e2a\u7834PC\u4e4b\u5916\uff0c\u65e0\u9700\u4efb\u4f55\u989d\u5916\u7684\u652f\u51fa\u3002<\/div><div><br \/><\/div><div>\u518d\u4e00\u4e2a\uff0c\u5982\u679c\u4f60\u81ea\u8ba4\u4e3a\u7834\u89e3\u6280\u672f\u5f88\u5f3a\u608d\uff0c\u53ef\u4ee5\u5c1d\u8bd5\u653b\u51fbOpenBSD+Open\u00d7\u00d7\u00d7\uff0c\u901a\u5e38\u6211\u4e0d\u8ba4\u4e3a\u4f60\u80fd\u6210\u529f\uff0c\u9664\u975e\u4f60\u641eDDOS\u6216\u8005\u5077\u5230\u4e86csr\u6587\u4ef6\u641emiddle-man\u653b\u51fb\u3002\u518d\u8981\u4e0d\u7136\u5c31\u53ea\u80fd\u7ed1\u67b6\u7f51\u7ba1\u641e\u4e25\u5211\u62f7\u6253\u5211\u8baf\u903c\u4f9b\u4e86\uff0c\u901a\u5e38\u8fd9\u62db\u4f1a\u6bd4\u8f83\u7ba1\u7528\u3002<\/div><div><br \/><\/div><div>\u795d\u65b0\u5e74\u6109\u5feb\u3002<\/div><div><br \/><\/div><div><br \/><\/div>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"用OpenBSD和Open×××构建坚不可摧的服务器集群(三)",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1559058606; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div><div id="zhichiBtnBox" style="position: fixed; z-index: 2147483583; box-shadow: rgba(15, 66, 76, 0.25) 0px 0px 14px 0px; width: 60px; height: 60px; border-radius: 50%; background-color: rgb(66, 133, 244); background-image: url(&quot;//www.sobot.com/chat/frame/imgs/icon.png&quot;); background-repeat: no-repeat; background-position: 18px -58px; right: 40px; bottom: 90px; display: none;"><a hidefocus="" id="zhichiBtn" style="position:relative;text-decoration: none; outline: none; font-family: Microsoft Yahei, Arial, Helvetica; color: #fff; font-size: 16px; display: inline-block; margin: 0; padding: 0; border: none; line-height:43px; float:none;width:100%;height:100%;border-radius:50%;"><span class="zc-advice-icon-btn-title" style="box-shadow: rgba(107, 113, 114, 0.15) 0px 2px 4px 0px; border: 1px solid rgb(235, 239, 240); font-family: &quot;Microsoft Yahei&quot;, Arial, Helvetica; color: rgb(85, 85, 86); font-size: 13px; margin: 0px; text-align: right; background: rgb(255, 255, 255); position: absolute; top: 15px; right: 70px; text-overflow: ellipsis; white-space: nowrap; word-break: normal; display: none; border-radius: 3px; padding: 0px 5px; height: 30px; line-height: 30px;">咨询在线客服</span></a><i style="position:absolute;top:0px;right:0px;padding:1px;line-height:20px;text-align:center;color:#fff;font-weight:bold;height:18px;min-width:18px;background-color:#ed5c5c;border-radius:18px;font-size:12px;display:none;font-style:normal;" id="zhichiCount"></i></div><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/offlineMsgSize.action"></script>
+<script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/marked.min.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/highlight.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/detail_mp.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/detail.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/details_new.js.download"></script><script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/copy.js.download"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/pageview.html"></iframe>
+</div>
+
+<script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/pvlog.js.download"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type="text/javascript">
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/jquery.cookie.js.download"></script>
+<script src="./用OpenBSD和Open×××构建坚不可摧的服务器集群(三)-实践检验真理-51CTO博客_files/time-on-page.js.download" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+
+
+</body></html>

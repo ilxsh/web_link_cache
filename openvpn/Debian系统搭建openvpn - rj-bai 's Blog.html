@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<!-- saved from url=(0036)https://blog.rj-bai.com/post/78.html -->
+<html class="no-js"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="HandheldFriendly" content="true">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no">
+<meta http-equiv="x-dns-prefetch-control" content="on">
+<link rel="dns-prefetch" href="https://res.rj-bai.com/">
+<link rel="dns-prefetch" href="https://cdn.rj-bai.com/">
+<title>Debian系统搭建openvpn - rj-bai 's Blog</title>
+<meta property="og:title" content="Debian系统搭建openvpn">
+<meta property="og:site_name" content="rj-bai &#39;s Blog">
+<meta property="og:type" content="article">
+<meta property="og:description" content="最近准备上一套新项目，云服务器也重新买了一套，还是老样子，后端节点和数据库木有公网IP，叫我明天一天搞完，今天晚上买的服务器，我擦咧，这下有事情做了，总比闲着强吧，然后今天就是把vpn，和SNA...">
+<meta property="og:url" content="https://blog.rj-bai.com/post/78.html">
+<meta property="article:published_time" content="2016-12-15T13:40:00+00:00">
+<meta property="article:modified_time" content="2018-12-12T10:53:29+00:00">
+<meta name="twitter:title" content="Debian系统搭建openvpn">
+<meta name="twitter:description" content="最近准备上一套新项目，云服务器也重新买了一套，还是老样子，后端节点和数据库木有公网IP，叫我明天一天搞完，今天晚上买的服务器，我擦咧，这下有事情做了，总比闲着强吧，然后今天就是把vpn，和SNA..."><meta name="twitter:card" content="summary"><meta name="description" content="最近准备上一套新项目，云服务器也重新买了一套，还是老样子，后端节点和数据库木有公网IP，叫我明天一天搞完，今天晚上买的服务器，我擦咧，这下有事情做了，总比闲着强吧，然后今天就是把vpn，和SNA...">
+<meta name="keywords" content="debian,vpn">
+<meta name="template" content="Mirages">
+<link rel="pingback" href="https://blog.rj-bai.com/action/xmlrpc">
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://blog.rj-bai.com/action/xmlrpc?rsd">
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="https://blog.rj-bai.com/action/xmlrpc?wlw">
+<link rel="alternate" type="application/rss+xml" title="Debian系统搭建openvpn » rj-bai &#39;s Blog » RSS 2.0" href="https://blog.rj-bai.com/feed/post/78.html">
+<link rel="alternate" type="application/rdf+xml" title="Debian系统搭建openvpn » rj-bai &#39;s Blog » RSS 1.0" href="https://blog.rj-bai.com/feed/rss/post/78.html">
+<link rel="alternate" type="application/atom+xml" title="Debian系统搭建openvpn » rj-bai &#39;s Blog » ATOM 1.0" href="https://blog.rj-bai.com/feed/atom/post/78.html">
+<style type="text/css">
+.post-content {
+    word-break: break-all;
+}
+</style><style type="text/css">
+    /* Font - Mirages Custom */
+        @font-face {
+        font-family: 'Mirages Custom';
+        font-style: normal;
+        font-weight: 300;
+        src:
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/300.woff) format('woff'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/300.ttf) format('truetype');
+    }
+    @font-face {
+        font-family: 'Mirages Custom';
+        font-style: italic;
+        font-weight: 300;
+        src:
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/300i.woff) format('woff'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/300i.ttf) format('truetype');
+    }
+    @font-face {
+        font-family: 'Mirages Custom';
+        font-style: normal;
+        font-weight: 400;
+        src:
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/400.woff) format('woff'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/400.ttf) format('truetype');
+    }
+    @font-face {
+        font-family: 'Mirages Custom';
+        font-style: italic;
+        font-weight: 400;
+        src:
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/400i.woff) format('woff'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/400i.ttf) format('truetype');
+    }
+    @font-face {
+        font-family: 'Mirages Custom';
+        font-style: normal;
+        font-weight: 500;
+        src:
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/500.woff) format('woff'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/500.ttf) format('truetype');
+    }
+    @font-face {
+        font-family: 'Mirages Custom';
+        font-style: italic;
+        font-weight: 500;
+        src:
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/500i.woff) format('woff'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/500i.ttf) format('truetype');
+    }
+        @font-face {
+        font-family: 'Mirages Custom';
+        font-style: normal;
+        font-weight: 700;
+        src:
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/700.woff) format('woff'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/700.ttf) format('truetype');
+    }
+    @font-face {
+        font-family: 'Mirages Custom';
+        font-style: italic;
+        font-weight: 700;
+        src:
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/700i.woff) format('woff'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Myriad/700i.ttf) format('truetype');
+    }
+    @font-face {
+        font-family: 'Consolas';
+        font-style: normal;
+        font-weight: 400;
+        src:
+            local('Consolas'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Consolas/400.eot) format('embedded-opentype'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Consolas/400.woff2) format('woff2'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Consolas/400.woff) format('woff'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Consolas/400.ttf) format('truetype'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Consolas/400.svg#Consolas) format('svg');
+    }
+    @font-face {
+        font-family: 'Consolas';
+        font-style: normal;
+        font-weight: 700;
+        src:
+            local('Consolas'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Consolas/700.eot) format('embedded-opentype'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Consolas/700.woff2) format('woff2'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Consolas/700.woff) format('woff'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Consolas/700.ttf) format('truetype'),
+            url(https://cdn.rj-bai.com/usr/themes/Mirages/usr/font/Consolas/700.svg#Consolas) format('svg');
+    }
+
+    /* Lora */
+    @font-face {
+        font-family: 'Lora';
+        font-style: normal;
+        font-weight: 400;
+        src:
+                local('Lora Regular'),
+                local('Lora-Regular'),
+                url(https://cdn.rj-bai.com/usr/themes/Mirages/font/Lora/400.woff2) format('woff2'),
+                url(https://cdn.rj-bai.com/usr/themes/Mirages/font/Lora/400.woff) format('woff');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+        font-family: 'Lora';
+        font-style: normal;
+        font-weight: 700;
+        src:
+                local('Lora Bold'),
+                local('Lora-Bold'),
+                url(https://cdn.rj-bai.com/usr/themes/Mirages/font/Lora/700.woff2) format('woff2'),
+                url(https://cdn.rj-bai.com/usr/themes/Mirages/font/Lora/700.woff) format('woff');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+</style>
+<link rel="stylesheet" href="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/mirages.min.css">
+<script src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/hm.js.download"></script><script type="text/javascript">
+    window['LocalConst'] = {
+        THEME_VERSION: "1.7.9",
+        BASE_SCRIPT_URL: "https://cdn.rj-bai.com/usr/themes/Mirages/",
+        DEV_MODE: false,
+        IS_MOBILE: false,
+        IS_PHONE: false,
+        IS_TABLET: false,
+        HAS_LOGIN: false,
+        IS_HTTPS: true,
+        ENABLE_PJAX: true,
+        ENABLE_WEBP: false,
+        SHOW_TOC: false,
+        ENABLE_IMAGE_SIZE_OPTIMIZE: true,
+        THEME_COLOR: '#796E5D',
+        DISQUS_SHORT_NAME: '',
+        COMMENT_SYSTEM: 0,
+        OWO_API: 'https://cdn.rj-bai.com/usr/themes/Mirages/js/1.7.9/OwO.json',
+        COMMENT_SYSTEM_DISQUS: 1,
+        COMMENT_SYSTEM_DUOSHUO: 2,
+        COMMENT_SYSTEM_EMBED: 0,
+        PJAX_LOAD_STYLE: 0,
+        PJAX_LOAD_STYLE_SIMPLE: 0,
+        PJAX_LOAD_STYLE_CIRCLE: 1,
+        AUTO_NIGHT_SHIFT: true,
+        USE_MIRAGES_DARK: false,
+        PREFERS_DARK_MODE: false,
+        LIGHT_THEME_CLASS: "theme-white",
+        TOC_AT_LEFT: false,
+        SERIF_LOAD_NOTICE: '加载 Serif 字体可能需要 10 秒钟左右，请耐心等待',
+        ROOT_FONT_SIZE: '100',
+        BIAOQING_PAOPAO_PATH: '',
+        BIAOQING_ARU_PATH: '',
+        CDN_TYPE_OTHERS: -1,
+        CDN_TYPE_QINIU: 1,
+        CDN_TYPE_UPYUN: 2,
+        CDN_TYPE_LOCAL: 3,
+        CDN_TYPE_ALIYUN_OSS: 4,
+        CDN_TYPE_QCLOUD_CI: 5,
+        KEY_CDN_TYPE: '',
+        UPYUN_SPLIT_TAG: '!',
+        COMMENTS_ORDER: 'DESC',
+        ENABLE_FLOW_CHART: false,
+        HIDE_CODE_LINE_NUMBER: true    };
+    var Mlog = function (message) {
+        if (LocalConst.DEV_MODE) {
+            console.log(message);
+        }
+    };
+                    LocalConst.BIAOQING_PAOPAO_PATH = 'https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/';
+        LocalConst.BIAOQING_ARU_PATH = 'https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/';
+        var BIAOQING_PAOPAO_PATH = LocalConst.BIAOQING_PAOPAO_PATH;
+        var BIAOQING_ARU_PATH = LocalConst.BIAOQING_ARU_PATH;
+                LocalConst.KEY_CDN_TYPE = 'mirages-cdn-type';
+        LocalConst.UPYUN_SPLIT_TAG = '!';
+    </script>
+    <script>
+        var hour = new Date().getHours();
+        if (hour <= 5 || hour >= 22) {
+            LocalConst.USE_MIRAGES_DARK = true;
+        }
+    </script>
+
+    <link rel="shortcut icon" href="https://blog.rj-bai.com/favicon.ico">
+
+
+
+<script type="text/javascript">
+    var autoHideElements = {};
+    var CSS = function (css) {
+        var link = document.createElement('link');
+        link.setAttribute('rel', 'stylesheet');
+        link.href = css;
+        document.head.appendChild(link);
+    };
+    var STYLE = function (style, type) {
+        type = type || 'text/css';
+        var s = document.createElement('style');
+        s.type = type;
+        s.textContent = style;
+        document.head.appendChild(s);
+    };
+    var JS = function (js, async) {
+        async = async || false;
+        var sc = document.createElement('script'), s = document.scripts[0];
+        sc.src = js; sc.async = async;
+        s.parentNode.insertBefore(sc, s);
+    };
+    var registAutoHideElement = function (selector) {
+        var tmp = autoHideElements[selector];
+        if (typeof(tmp) !== 'undefined') {
+            return;
+        }
+        var element = document.querySelector(selector);
+        if (element && typeof(Headroom) !== "undefined") {
+            var headroom = new Headroom(element, {
+                tolerance: 5,
+                offset : 5,
+                classes: {
+                    initial: "show",
+                    pinned: "show",
+                    unpinned: "hide"
+                }
+            });
+            headroom.init();
+            autoHideElements[selector] = headroom;
+        }
+    };
+    var getImageAddon = function (cdnType, width, height) {
+        if (!LocalConst.ENABLE_IMAGE_SIZE_OPTIMIZE) {
+            return "";
+        }
+        var addon = "?";
+        if (cdnType == LocalConst.CDN_TYPE_UPYUN) {
+            addon = LocalConst.UPYUN_SPLIT_TAG;
+        }
+        var ratio = window.devicePixelRatio || 1;
+        width = width || window.innerWidth;
+        height = height || window.innerHeight;
+        width = width || 0;
+        height = height || 0;
+        if (width == 0 && height == 0) {
+            return "";
+        }
+        var format = "";
+        if (LocalConst.ENABLE_WEBP) {
+            if (cdnType == LocalConst.CDN_TYPE_ALIYUN_OSS) {
+                format = "/format,webp"
+            } else {
+                format = "/format/webp";
+            }
+        }
+        if (width >= height) {
+            if (cdnType == LocalConst.CDN_TYPE_UPYUN) {
+                addon += "/fw/" + parseInt(width * ratio) + "/quality/75" + format;
+            } else if(cdnType == LocalConst.CDN_TYPE_ALIYUN_OSS) {
+                addon += "x-oss-process=image/resize,w_" + parseInt(width * ratio) + "/quality,Q_75" + format;
+            } else {
+                addon += "imageView2/2/w/" + parseInt(width * ratio) + "/q/75" + format;
+            }
+        } else {
+            if (cdnType == LocalConst.CDN_TYPE_UPYUN) {
+                addon += "/fh/" + parseInt(width * ratio) + "/quality/75" + format;
+            } else if(cdnType == LocalConst.CDN_TYPE_ALIYUN_OSS) {
+                addon += "x-oss-process=image/resize,h_" + parseInt(width * ratio) + "/quality,Q_75" + format;
+            } else {
+                addon += "imageView2/2/h/" + parseInt(height * ratio) + "/q/75" + format;
+            }
+        }
+        return addon;
+    };
+    var getBgHeight = function(windowHeight, bannerHeight, mobileBannerHeight){
+        windowHeight = windowHeight || 560;
+        if (windowHeight > window.screen.availHeight) {
+            windowHeight = window.screen.availHeight;
+        }
+        bannerHeight = bannerHeight.trim();
+        mobileBannerHeight = mobileBannerHeight.trim();
+        if (window.innerHeight > window.innerWidth) {
+            bannerHeight = parseFloat(mobileBannerHeight);
+        } else {
+            bannerHeight = parseFloat(bannerHeight);
+        }
+        bannerHeight = Math.round(windowHeight * bannerHeight / 100);
+        return bannerHeight;
+    };
+    var registLoadBanner = function () {
+        if (window.asyncBannerLoadNum >= 0) {
+            window.asyncBannerLoadNum ++;
+            Mlog("Loading Banner..." + window.asyncBannerLoadNum);
+        }
+    };
+    var remove = function (element) {
+        if (element) {
+            if (typeof element['remove'] === 'function') {
+                element.remove();
+            } else if (element.parentNode) {
+                element.parentNode.removeChild(element);
+            }
+        }
+    };
+    var loadBanner = function (img, backgroundImage, backgroundPosition, wrap, cdnType, width, height, blured) {
+        var background = wrap.querySelector('.blog-background');
+        var container = wrap.querySelector('.lazyload-container');
+
+        if (!background) {
+            console.warn("background is null", background);
+            return;
+        }
+        if (!container) {
+            console.warn("container is null", container);
+            return;
+        }
+
+        var imageSrc = backgroundImage + getImageAddon(cdnType, width, height);
+
+        background.classList.add("loading");
+
+        remove(img);
+        if (typeof(backgroundPosition) === 'string' && backgroundPosition.length > 0) {
+            container.style.backgroundPosition = backgroundPosition;
+            background.style.backgroundPosition = backgroundPosition;
+        }
+        container.style.backgroundImage = 'url(' + img.src + ')';
+        container.classList.add('loaded');
+
+        blured = blured || false;
+        if (blured) {
+            return;
+        }
+
+        // load Src background image
+        var largeImage = new Image();
+        largeImage.src = imageSrc;
+        largeImage.onload = function() {
+            remove(this);
+            background.style.backgroundImage = 'url(' + imageSrc + ')';
+            background.classList.remove('loading');
+            container.classList.remove('loaded');
+            setTimeout(function () {
+                remove(container);
+                if (window.asyncBannerLoadCompleteNum >= 0) {
+                    window.asyncBannerLoadCompleteNum ++;
+                    Mlog("Loaded Banner: " + window.asyncBannerLoadCompleteNum);
+                    if (window.asyncBannerLoadCompleteNum === window.asyncBannerLoadNum) {
+                        window.asyncBannerLoadNum = -1170;
+                        window.asyncBannerLoadCompleteNum = -1170;
+                        $('body').trigger("ajax-banner:done");
+                    }
+                }
+            }, 1001);
+        };
+    };
+    var loadPrefersDarkModeState = function () {
+        var indicator = document.createElement('div');
+        indicator.className = 'dark-mode-state-indicator';
+        document.body.appendChild(indicator);
+        if (getDeviceState(indicator) === 11) {
+            LocalConst.PREFERS_DARK_MODE = true;
+        }
+        remove(indicator);
+    };
+    var getDeviceState = function(element) {
+        var zIndex;
+
+        if (window.getComputedStyle) {
+            // modern browsers
+            zIndex = window.getComputedStyle(element).getPropertyValue('z-index');
+        } else if (element.currentStyle) {
+            // ie8-
+            zIndex = element.currentStyle['z-index'];
+        }
+
+        return parseInt(zIndex, 10);
+    }
+</script>
+<style type="text/css">
+    body, button, input, optgroup, select, textarea {
+        font-family: 'Mirages Custom', 'Merriweather', 'Open Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft Yahei', 'WenQuanYi Micro Hei',  'Segoe UI Emoji', 'Segoe UI Symbol', Helvetica, Arial, sans-serif;
+    }
+    .github-box, .github-box .github-box-title h3 {
+        font-family: 'Mirages Custom', 'Merriweather', 'Open Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft Yahei', 'WenQuanYi Micro Hei',  'Segoe UI Emoji', 'Segoe UI Symbol', Helvetica, Arial, sans-serif !important;
+    }
+    .aplayer {
+        font-family: 'Mirages Custom', 'Myriad Pro', 'Myriad Set Pro', 'Open Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft Yahei', 'WenQuanYi Micro Hei',  Helvetica, arial, sans-serif !important;
+    }
+    /* Serif */
+    body.content-lang-en.content-serif .post-content {
+        font-family: 'Lora', 'PT Serif', 'Source Serif Pro', Georgia, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft Yahei', 'WenQuanYi Micro Hei',  serif;
+    }
+    body.content-lang-en.content-serif.serif-fonts .post-content {
+        font-family: 'Lora', 'PT Serif', 'Source Serif Pro', 'Noto Serif CJK SC', 'Noto Serif CJK', 'Noto Serif SC', 'Source Han Serif SC', 'Source Han Serif', 'source-han-serif-sc', 'PT Serif', 'SongTi SC', 'MicroSoft Yahei',  serif;
+    }
+    body.serif-fonts .post-content, body.serif-fonts .blog-title {
+        font-family: 'Noto Serif CJK SC', 'Noto Serif CJK', 'Noto Serif SC', 'Source Han Serif SC', 'Source Han Serif', 'source-han-serif-sc', 'PT Serif', 'SongTi SC', 'MicroSoft Yahei',  Georgia, serif;
+    }
+    .dark-mode-state-indicator {
+        position: absolute;
+        top: -999em;
+        left: -999em;
+
+        z-index: 1;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .dark-mode-state-indicator {
+            z-index: 11;
+        }
+    }
+</style>
+<style type="text/css">
+    /** 页面样式调整 */
+    
+    </style>
+<!-- 主题主色调 -->
+<style type="text/css">
+    /* Color - Custom */
+    body.color-custom a {
+        color: #796E5D;
+    }
+    body.color-custom *::selection {
+        background: #796E5D;
+        color: #fff;
+    }
+    body.color-custom #index article a, body.color-custom #post article a, body.color-custom #archive article a {
+        color: #796E5D;
+    }
+    body.color-custom #footer a:after, body.color-custom #header .nav li a:after, body.color-custom #post .post-meta a:after, body.color-custom #index .comments a:after, body.color-custom #index .post-content a:after, body.color-custom #post .post-content a:after, body.color-custom #archive .post-content a:after, body.color-custom #archive .comments a:after, body.color-custom #comments a:after {
+        border-color: #796E5D;
+    }
+    body.color-custom .post-content a {
+        color: #796E5D;
+    }
+    body.color-custom .post-near {
+        color: #796E5D;
+    }
+    body.color-custom #nav .search-box .search{
+        color: #796E5D;
+    }
+    body.color-custom #comments .comment-list a, body.color-custom #comments .respond a  {
+        color: #796E5D;
+    }
+    body.color-custom #comments .widget-title {
+        color: #796E5D;
+    }
+    body.color-custom .color-main {
+        color: #796E5D !important;
+    }
+    body.color-custom #disqus_thread a {
+        color: #796E5D;
+    }
+    body.color-custom #footer a {
+        color: #796E5D;
+    }
+    body.color-custom .github-box .github-box-download .download:hover{
+        border-color: #796E5D !important;
+        background-color: rgba(121, 110, 93, 0.4) !important;
+    }
+    body.color-custom .sp-progress {
+        background: linear-gradient(45deg, rgba(121, 110, 93, 0), rgba(121, 110, 93, 0.1) 25%, rgba(121, 110, 93, 0.35) 50%, rgb(121, 110, 93) 75%, rgba(121, 110, 93, 0.1));
+    }
+
+    li.index-menu-item.current>a.index-menu-link, body.color-custom li.index-menu-item.current>a.index-menu-link{
+        color: #796E5D;
+        border-left: .125rem solid #796E5D;
+    }
+
+    body.color-custom .post-content .content-file:hover .content-file-icon,
+    body.color-custom .post-content .content-file:hover .content-file-filename,
+    body.color-custom .comment-content .content-file:hover .content-file-icon,
+    body.color-custom .comment-content .content-file:hover .content-file-filename,
+    body.color-custom.theme-sunset .post-content .content-file:hover .content-file-icon,
+    body.color-custom.theme-sunset .post-content .content-file:hover .content-file-filename,
+    body.color-custom.theme-sunset .comment-content .content-file:hover .content-file-icon,
+    body.color-custom.theme-sunset .comment-content .content-file:hover .content-file-filename {
+        color: #796E5D;
+    }
+
+    body.color-custom .post-content .content-file:hover,
+    body.color-custom .comment-content .content-file:hover,
+    body.color-custom.theme-sunset .post-content .content-file:hover,
+    body.color-custom.theme-sunset .comment-content .content-file:hover {
+        border-color: #796E5D;
+    }
+
+    /* Color - Custom Dark */
+    body.theme-dark a {
+        color: #796E5D;
+    }
+    body.theme-dark.color-custom *::selection {
+        background: #796E5D;
+        color: #fff;
+    }
+    body.theme-dark.color-custom #index article a, body.theme-dark.color-custom #post article a, body.theme-dark.color-custom #archive article a {
+        color: #796E5D;
+    }
+    body.theme-dark.color-custom #footer a:after,
+    body.theme-dark.color-custom #header .nav li a:after,
+    body.theme-dark.color-custom #post .post-meta a:after,
+    body.theme-dark.color-custom #index .comments a:after,
+    body.theme-dark.color-custom #index .post-content a:after,
+    body.theme-dark.color-custom #post .post-content a:after,
+    body.theme-dark.color-custom #archive .post-content a:after,
+    body.theme-dark.color-custom #archive .comments a:after,
+    body.theme-dark.color-custom #comments a:after
+    {
+        border-color: #796E5D;
+    }
+    body.theme-dark.color-custom .post-content a {
+        color: #796E5D;
+    }
+    body.theme-dark.color-custom .post-near {
+        color: #796E5D;
+    }
+    body.theme-dark.color-custom #nav .search-box .search {
+        color: #796E5D;
+    }
+    body.theme-dark.color-custom #comments .comment-list a, body.theme-dark.color-custom #comments .respond a  {
+        color: #796E5D;
+    }
+    body.theme-dark.color-custom #comments .widget-title {
+        color: #796E5D;
+    }
+    body.theme-dark.color-custom .color-main {
+        color: #796E5D !important;
+    }
+    body.theme-dark.color-custom #disqus_thread a {
+        color: #796E5D;
+    }
+    body.theme-dark.color-custom #footer a {
+        color: #796E5D;
+    }
+    body.theme-dark.color-custom .github-box .github-box-download .download:hover{
+        border-color: #796E5D !important;
+        background-color: rgba(121, 110, 93, 0.4) !important;
+    }
+    body.color-custom.theme-dark #index .post-content a:not(.no-icon), body.color-custom.theme-dark #archive .post-content a:not(.no-icon),body.color-custom.theme-dark #post .post-content a:not(.no-icon) {
+        color: #796E5D;
+    }
+    body.color-custom.theme-dark li.index-menu-item.current>a.index-menu-link {
+        color: #796E5D;
+        border-left: .125rem solid #796E5D;
+    }
+    body.color-custom.theme-dark .sp-progress {
+        background: linear-gradient(45deg, rgba(121, 110, 93, 0), rgba(121, 110, 93, 0.1) 25%, rgba(121, 110, 93, 0.35) 50%, rgb(121, 110, 93) 75%, rgba(121, 110, 93, 0.1));
+    }
+
+    body.color-custom.theme-dark .post-content .content-file:hover .content-file-icon,
+    body.color-custom.theme-dark .post-content .content-file:hover .content-file-filename,
+    body.color-custom.theme-dark .comment-content .content-file:hover .content-file-icon,
+    body.color-custom.theme-dark .comment-content .content-file:hover .content-file-filename {
+        color: #796E5D;
+    }
+    body.color-custom.theme-dark .post-content .content-file:hover,
+    body.color-custom.theme-dark .comment-content .content-file:hover {
+        border-color: #796E5D;
+    }
+
+    /*桌面端*/
+    body.color-custom #index .post .post-title:hover,body.color-custom #archive .post .post-title:hover {
+        color: #796E5D;
+    }
+    body.color-custom.theme-dark #index .post .post-title:hover,body.color-custom.theme-dark #archive .post .post-title:hover {
+        color: #796E5D;
+    }
+</style>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?d5995def31a5b35e2085d80c3c1e25f6";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>
+    var _czc = _czc || [];
+    var _hmt = _hmt || [];
+</script>
+</head>
+<body class="theme-white color-custom card desktop windows chrome not-safari use-navbar show-back-to-top">
+    <script>
+        loadPrefersDarkModeState();
+        if (LocalConst.USE_MIRAGES_DARK || (LocalConst.AUTO_NIGHT_SHIFT && LocalConst.PREFERS_DARK_MODE)) {
+            var body = document.querySelector("body");
+            body.classList.remove('theme-white');
+            body.classList.add('theme-dark');
+        }
+    </script>
+<!--[if lt IE 9]>
+<div class="browse-happy" role="dialog">当前网页 <strong>不支持</strong> 你正在使用的浏览器. 为了正常的访问, 请 <a href="http://browsehappy.com/">升级你的浏览器</a>.</div>
+<![endif]-->
+<div class="sp-progress" style="opacity: 0;"></div>
+<div id="wrap">
+    <span id="backtop" class="waves-effect waves-button"><i class="fa fa-angle-up"></i></span>
+    <header>
+    <a id="toggle-nav" class="btn btn-primary" href="javascript:void(0);"><span>MENU</span></a>
+<nav id="site-navigation" class="sidebar no-user-select" role="navigation">
+    <div id="nav">
+        <div class="author navbar-header">
+            <a href="https://blog.rj-bai.com/about.html">
+                <img src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/2019215110528.jpg" alt="Avatar" width="100" height="100">
+            </a>
+        </div>
+        <div class="search-box navbar-header">
+            <form class="form" id="search-form" action="https://blog.rj-bai.com/" role="search">
+                <input id="search" type="text" name="s" required="" placeholder="搜索..." class="search search-form-input">
+                <button id="search_btn" type="submit" class="search-btn"><i class="fa fa-search"></i></button>
+            </form>
+        </div>
+        <ul id="menu-menu-1" class="menu navbar-nav">
+                        <li class="menu-item"><a href="https://blog.rj-bai.com/">首页</a></li>
+            <li>
+                <a class="slide-toggle">文章分类</a>
+                <div class="category-list hide">
+                                        <ul class="list"><li class="category-level-0 category-parent"><a href="https://blog.rj-bai.com/category/server/">应用服务器</a></li><li class="category-level-0 category-parent"><a href="https://blog.rj-bai.com/category/clutter/">杂乱文章</a></li><li class="category-level-0 category-parent"><a href="https://blog.rj-bai.com/category/others/">东拉西扯</a></li></ul>                </div>
+            </li>
+                                    <li class="menu-item"><a class="" href="https://blog.rj-bai.com/archives.html" title="时间归档">时间归档</a></li>
+                        <li class="menu-item"><a class="" href="https://blog.rj-bai.com/about.html" title="关于">关于</a></li>
+                    </ul>
+    </div>
+                <div id="nav-toolbar">
+            <div class="side-toolbar">
+                <ul class="side-toolbar-list">
+                                            <li><a id="side-toolbar-rss" href="https://blog.rj-bai.com/feed" title="RSS"><i class="fa fa-feed"></i></a></li>
+                                                                                    <li><a id="side-toolbar-read-settings" href="javascript:void(0);" title="阅读设置"><i class="fa fa-font"></i></a></li>
+                                    </ul>
+                <div class="read-settings-container animated">
+                    <div class="read-settings animated">
+                        <div class="font-size-controls animated">
+                            <button type="button" class="font-size-control control-btn-smaller waves-effect waves-button" data-mode="smaller">A</button>
+                            <button type="button" class="font-size-display" disabled="">100%</button>
+                            <button type="button" class="font-size-control control-btn-larger waves-effect waves-button" data-mode="larger">A</button>
+                        </div>
+                        <div class="background-color-controls animated">
+                            <ul>
+                                <li><a href="javascript:void(0)" title="自动模式" class="background-color-control auto selected" data-mode="auto"><i class="fa fa-adjust"></i></a></li>
+                                <li><a href="javascript:void(0)" title="日间模式" class="background-color-control white " data-mode="white"><i class="fa fa-check-circle"></i></a></li>
+                                <li><a href="javascript:void(0)" title="日落模式" class="background-color-control sunset " data-mode="sunset"><i class="fa fa-check-circle"></i></a></li>
+                                <li><a href="javascript:void(0)" title="夜间模式" class="background-color-control dark " data-mode="dark"><i class="fa fa-check-circle"></i></a></li>
+                            </ul>
+                        </div>
+                        <div class="font-family-controls">
+                            <button type="button" class="font-family-control  control-btn-serif" data-mode="serif">Serif</button>
+                            <button type="button" class="font-family-control selected control-btn-sans-serif" data-mode="sans-serif">Sans Serif</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+<!-- Fixed navbar -->
+<nav class="navbar navbar-expand-md navbar-color fixed-top no-user-select">
+    <div class="container-fluid">
+                <a class="navbar-brand " href="https://blog.rj-bai.com/"><img src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/2019415130514.png" alt="Logo" height="40"></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="https://blog.rj-bai.com/">首页</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="https://blog.rj-bai.com/post/78.html#" id="dashboard-dropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        文章分类                    </a>
+                                        <ul class="dropdown-menu"><li class="dropdown-item category-level-0 category-parent"><a href="https://blog.rj-bai.com/category/server/">应用服务器</a></li><li class="dropdown-item category-level-0 category-parent"><a href="https://blog.rj-bai.com/category/clutter/">杂乱文章</a></li><li class="dropdown-item category-level-0 category-parent"><a href="https://blog.rj-bai.com/category/others/">东拉西扯</a></li></ul>                </li>
+                                                                        <li class="nav-item"><a class="nav-link" href="https://blog.rj-bai.com/archives.html" title="时间归档">时间归档</a></li>
+                                                        <li class="nav-item"><a class="nav-link" href="https://blog.rj-bai.com/about.html" title="关于">关于</a></li>
+                                            </ul>
+
+                        <ul class="navbar-nav side-toolbar-list">
+                <li class="navbar-search-container">
+                    <a id="navbar-search" class="search-form-input" href="javascript:void(0);" title="搜索..."><i class="fa fa-search"></i></a>
+                    <form class="search-form" action="https://blog.rj-bai.com/" role="search">
+                        <input type="text" name="s" required="" placeholder="搜索..." class="search">
+                    </form>
+                </li>
+                                                    <li>
+                        <a id="nav-side-toolbar-read-settings" href="javascript:void(0);" title="阅读设置"><i class="fa fa-font"></i></a>
+                        <div class="read-settings-container animated">
+                            <div class="read-settings animated">
+                                <div class="font-size-controls animated">
+                                    <button type="button" class="font-size-control control-btn-smaller waves-effect waves-button" data-mode="smaller">A</button>
+                                    <button type="button" class="font-size-display" disabled="">100%</button>
+                                    <button type="button" class="font-size-control control-btn-larger waves-effect waves-button" data-mode="larger">A</button>
+                                </div>
+                                <div class="background-color-controls animated">
+                                    <ul>
+                                        <li><a href="javascript:void(0)" title="自动模式" class="background-color-control auto selected" data-mode="auto"><i class="fa fa-adjust"></i></a></li>
+                                        <li><a href="javascript:void(0)" title="日间模式" class="background-color-control white " data-mode="white"><i class="fa fa-check-circle"></i></a></li>
+                                        <li><a href="javascript:void(0)" title="日落模式" class="background-color-control sunset " data-mode="sunset"><i class="fa fa-check-circle"></i></a></li>
+                                        <li><a href="javascript:void(0)" title="夜间模式" class="background-color-control dark " data-mode="dark"><i class="fa fa-check-circle"></i></a></li>
+                                    </ul>
+                                </div>
+                                <div class="font-family-controls">
+                                    <button type="button" class="font-family-control  control-btn-serif" data-mode="serif">Serif</button>
+                                    <button type="button" class="font-family-control selected control-btn-sans-serif" data-mode="sans-serif">Sans Serif</button>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                            </ul>
+        </div>
+    </div>
+</nav>    </header>
+    
+    <div id="body">
+        <style type="text/css">
+    /** 页面样式调整 */
+                div#comments{
+        margin-top: 0;
+    }
+                        #footer{
+        padding: 1.25rem 0;
+    }
+        
+                .inner {
+        background-color: rgba(0,0,0,0.25);
+    }
+        #masthead {
+        min-height: 12.5rem;
+    }
+                </style>
+<style type="text/css">
+    </style>        <script type="text/javascript">
+            var wrap = document.querySelector('#wrap');
+            wrap.classList.remove('display-menu-tree');
+            var body = document.querySelector('body');
+            body.classList.remove('display-menu-tree');
+            LocalConst.TOC_AT_LEFT = false;
+            
+                        if (body.classList.contains('no-banner')) {
+                body.classList.remove('no-banner');
+            }                        if (body.classList.contains('content-lang-en')) {
+                body.classList.remove('content-lang-en');
+            }                        if (body.classList.contains('content-serif')) {
+                body.classList.remove('content-serif');
+            }            LocalConst.SHOW_TOC = false;
+                    </script>
+        <script type="text/javascript">
+(function () {
+    window.TypechoComment = {
+        dom : function (id) {
+            return document.getElementById(id);
+        },
+    
+        create : function (tag, attr) {
+            var el = document.createElement(tag);
+        
+            for (var key in attr) {
+                el.setAttribute(key, attr[key]);
+            }
+        
+            return el;
+        },
+
+        reply : function (cid, coid) {
+            var comment = this.dom(cid), parent = comment.parentNode,
+                response = this.dom('respond-post-78'), input = this.dom('comment-parent'),
+                form = 'form' == response.tagName ? response : response.getElementsByTagName('form')[0],
+                textarea = response.getElementsByTagName('textarea')[0];
+
+            if (null == input) {
+                input = this.create('input', {
+                    'type' : 'hidden',
+                    'name' : 'parent',
+                    'id'   : 'comment-parent'
+                });
+
+                form.appendChild(input);
+            }
+
+            input.setAttribute('value', coid);
+
+            if (null == this.dom('comment-form-place-holder')) {
+                var holder = this.create('div', {
+                    'id' : 'comment-form-place-holder'
+                });
+
+                response.parentNode.insertBefore(holder, response);
+            }
+
+            comment.appendChild(response);
+            this.dom('cancel-comment-reply-link').style.display = '';
+
+            if (null != textarea && 'text' == textarea.name) {
+                textarea.focus();
+            }
+
+            return false;
+        },
+
+        cancelReply : function () {
+            var response = this.dom('respond-post-78'),
+            holder = this.dom('comment-form-place-holder'), input = this.dom('comment-parent');
+
+            if (null != input) {
+                input.parentNode.removeChild(input);
+            }
+
+            if (null == holder) {
+                return true;
+            }
+
+            this.dom('cancel-comment-reply-link').style.display = 'none';
+            holder.parentNode.insertBefore(response, holder);
+            return false;
+        }
+    };
+})();
+</script>
+<script type="text/javascript">
+var registCommentEvent = function() {
+    var event = document.addEventListener ? {
+        add: 'addEventListener',
+        focus: 'focus',
+        load: 'DOMContentLoaded'
+    } : {
+        add: 'attachEvent',
+        focus: 'onfocus',
+        load: 'onload'
+    };
+    var r = document.getElementById('respond-post-78');
+        
+    if (null != r) {
+        var forms = r.getElementsByTagName('form');
+        if (forms.length > 0) {
+            var f = forms[0], textarea = f.getElementsByTagName('textarea')[0], added = false;
+
+            if (null != textarea && 'text' == textarea.name) {
+                textarea[event.add](event.focus, function () {
+                    if (!added) {
+                        var input = document.createElement('input');
+                        input.type = 'hidden';
+                        
+                        input.name = '_';
+                            input.value = (function () {
+    var _GQesu4 = '19e'//'xR'
++''///*'F'*/'F'
++'4c5'//'W'
++''///*'5ar'*/'5ar'
++'d'//'25'
++//'3VF'
+'1'+''///*'0'*/'0'
++//'M'
+'2'+'6'//'c3c'
++''///*'Di'*/'Di'
++'aa6'//'itN'
++//'O6W'
+'53'+'cc9'//'3zu'
++'49'//'Q'
++//'A'
+'A'+/* 'D'//'D' */''+'5c5'//'7G'
++/* 'n'//'n' */''+'8'//'jb'
++'7'//'D'
++//'d2B'
+'3'+'e'//'EFK'
++'9'//'4ea'
++//'h'
+'2'+'2'//'jfV'
++/* 'tmA'//'tmA' */''+//'sA'
+'ba', _jZkOTd3 = [[20,21]];
+    
+    for (var i = 0; i < _jZkOTd3.length; i ++) {
+        _GQesu4 = _GQesu4.substring(0, _jZkOTd3[i][0]) + _GQesu4.substring(_jZkOTd3[i][1]);
+    }
+
+    return _GQesu4;
+})();
+                        //console.log('https://blog.rj-bai.com/post/78.html');
+                        //console.log('https://blog.rj-bai.com/post/78.html');
+                        f.appendChild(input);
+                        
+                        input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'checkReferer';
+                        input.value = 'false';
+                        
+                        f.appendChild(input);
+                        
+
+                        added = true;
+                    }
+                });
+            }
+        }
+    }
+};
+</script>                    <a id="toggle-menu-tree" class="" href="javascript:void(0);"><i class="fa fa-angle-left"></i></a>
+            <div id="post-menu">
+                <div id="toc-wrap">
+                    <div id="toc-content">
+                        <h2 id="post-menu-title">文章目录</h2>
+                        <div class="index-menu"><ul class="index-menu-list"><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_1" title="安装 openvpn 要求"><span class="menu-content">安装 openvpn 要求</span></a></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_2" title="安装openvpn"><span class="menu-content">安装openvpn</span></a></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_3" title="openvpn配置"><span class="menu-content">openvpn配置</span></a><ul class="index-menu-list" style="display: none;"><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_4" title="1.生成证书"><span class="menu-content">1.生成证书</span></a></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_5" title="2.生成服务器端证书和秘钥"><span class="menu-content">2.生成服务器端证书和秘钥</span></a></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_6" title="3.生成客户端证书和密钥"><span class="menu-content">3.生成客户端证书和密钥</span></a></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_7" title="4.生成Diffie Hellman参数："><span class="menu-content">4.生成Diffie Hellman参数：</span></a></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_8" title="5.配置OpenVPN服务器端文件"><span class="menu-content">5.配置OpenVPN服务器端文件</span></a></li></ul></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_9" title="配置iptables及转发"><span class="menu-content">配置iptables及转发</span></a></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_10" title="客户端配置"><span class="menu-content">客户端配置</span></a><ul class="index-menu-list" style="display: none;"><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_11" title="1.添加openvpn用户"><span class="menu-content">1.添加openvpn用户</span></a></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_12" title="2.删除openvpn用户"><span class="menu-content">2.删除openvpn用户</span></a></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_13" title="3.添加完成之后进到keys里面下载对应的一切"><span class="menu-content">3.添加完成之后进到keys里面下载对应的一切</span></a></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_14" title="编辑client.ovpn文件"><span class="menu-content">编辑client.ovpn文件</span></a><ul class="index-menu-list" style="display: none;"><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_15" title="安装vpn客户端"><span class="menu-content">安装vpn客户端</span></a></li></ul></li></ul></li><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_16" title="linux连接vpn"><span class="menu-content">linux连接vpn</span></a><ul class="index-menu-list" style="display: none;"><li class="index-menu-item"><a data-scroll="" class="index-menu-link" href="https://blog.rj-bai.com/post/78.html#menu_index_17" title="1.安装vpn"><span class="menu-content">1.安装vpn</span></a></li></ul></li></ul></div>                    </div>
+                </div>
+            </div>
+            <script type="text/javascript">
+                LocalConst.SHOW_TOC = true;
+            </script>
+                        <header id="masthead" class="align-center align-middle " style="height: 644px;">
+            <div class="blog-background" style="background-image: url(&quot;//res.rj-bai.com/img/90505-unsplash.jpg?imageView2/2/w/1920/q/75&quot;);"></div>
+                        
+            <script type="text/javascript">
+            var blurBanner = false;                if (!blurBanner) registLoadBanner();
+            </script>
+            
+                        <script type="text/javascript">
+                var head = document.querySelector("#masthead");
+                var bgHeight = getBgHeight(window.innerHeight, '70', '60');
+                head.style.height = bgHeight + "px";
+                            </script>
+                        <div class="inner">
+                <div class="container">
+                    <h1 class="blog-title" style="">
+                        Debian 系统搭建 openvpn                    </h1>
+                    <h2 class="blog-description font-mono" style="">
+                        2016 年 12 月 15 日・<a href="https://blog.rj-bai.com/category/server/">应用服务器</a>                    </h2>
+                </div>
+
+            </div>
+                    </header>
+                    <div class="container">
+            <div class="row">
+
+
+
+<div id="post" role="main">
+    <article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
+        <div class="display-none" itemscope="" itemprop="author" itemtype="http://schema.org/Person">
+            <meta itemprop="name" content="大林">
+            <meta itemprop="url" content="http://blog.rj-bai.com">
+        </div>
+        <div class="display-none" itemscope="" itemprop="publisher" itemtype="http://schema.org/Organization">
+            <meta itemprop="name" content="大林">
+            <div itemscope="" itemprop="logo" itemtype="http://schema.org/ImageObject">
+                <meta itemprop="url" content="https://secure.gravatar.com/avatar/b2076c68c43d71919b6f932eeb4f69c5?s=50&amp;r=PG&amp;d=">
+            </div>
+        </div>
+        <meta itemprop="url mainEntityOfPage" content="https://blog.rj-bai.com/post/78.html">
+        <meta itemprop="datePublished" content="2016-12-15T13:40:00+00:00">
+        <meta itemprop="dateModified" content="2018-12-12T10:53:29+00:00">
+        <meta itemprop="headline" content="Debian系统搭建openvpn">
+        <meta itemprop="image" content="//res.rj-bai.com/img/90505-unsplash.jpg">
+                <div class="post-content" itemprop="articleBody">
+                        <p>最近准备上一套新项目，云服务器也重新买了一套，还是老样子，后端节点和数据库木有公网 IP，叫我明天一天搞完，今天晚上买的服务器，我擦咧，这下有事情做了，总比闲着强吧，然后今天就是把 vpn，和 SNAT 做了，因为只有一个公网 IP。由于这种 vpn 是第一次搞，记录一下，下面使用的是 Debian7.0 操作系统，开撸开撸。</p><span id="menu_index_1" name="menu_index_1"></span><h2>安装 openvpn 要求<span class="toc">展开目录</span></h2><p>openvpn 需要 tun 和 iptables_nat 模块支持，检查一下</p><pre><code class="lang-bash hljs">root@10-9-128-245:~<span class="hljs-comment">#&nbsp;cat&nbsp;/dev/net/tun</span>
+cat:&nbsp;/dev/net/tun:&nbsp;File&nbsp;descriptor&nbsp;<span class="hljs-keyword">in</span>&nbsp;bad&nbsp;state</code></pre><p>返回信息是 cat: /dev/net/tun: File descriptor in bad state 说明可以使用</p><span id="menu_index_2" name="menu_index_2"></span><h2>安装 openvpn<span class="toc">展开目录</span></h2><p>OpenVPN 需要 lzo 支持，可以 OpenVPN 与 lzo 一起安装</p><pre><code class="lang-bash hljs">root@10-9-128-245:~<span class="hljs-comment">#&nbsp;apt-get&nbsp;update</span>
+root@10-9-128-245:~<span class="hljs-comment">#&nbsp;apt-get&nbsp;install&nbsp;openvpn&nbsp;lzop</span></code></pre><span id="menu_index_3" name="menu_index_3"></span><h2>openvpn 配置<span class="toc">展开目录</span></h2><span id="menu_index_4" name="menu_index_4"></span><h3>1. 生成证书<span class="toc">展开目录</span></h3><pre><code class="lang-bash hljs">root@10-9-128-245:~<span class="hljs-comment">#&nbsp;cp&nbsp;-r&nbsp;/usr/share/doc/openvpn/examples/easy-rsa/&nbsp;/etc/openvpn/</span>
+root@10-9-128-245:~<span class="hljs-comment">#&nbsp;cd&nbsp;/etc/openvpn/easy-rsa/2.0</span>
+root@10-9-128-245:/etc/openvpn/easy-rsa/2.0<span class="hljs-comment">#&nbsp;source&nbsp;vars</span>
+root@10-9-128-245:/etc/openvpn/easy-rsa/2.0<span class="hljs-comment">#&nbsp;./clean-all</span>
+root@10-9-128-245:/etc/openvpn/easy-rsa/2.0<span class="hljs-comment">#&nbsp;./build-ca</span></code></pre><p>一路 y 回车</p><span id="menu_index_5" name="menu_index_5"></span><h3>2. 生成服务器端证书和秘钥<span class="toc">展开目录</span></h3><pre><code class="lang-bash hljs">root@10-9-128-245:/etc/openvpn/easy-rsa/2.0<span class="hljs-comment">#&nbsp;./build-key-server&nbsp;server</span></code></pre><p>一路 y 回车<br>我还是先回家吧，明天继续</p><p>2016 年 12 月 15 日 21:50:28</p><span id="menu_index_6" name="menu_index_6"></span><h3>3. 生成客户端证书和密钥<span class="toc">展开目录</span></h3><pre><code class="lang-bash hljs">root@10-9-128-245:/etc/openvpn/easy-rsa/2.0<span class="hljs-comment">#&nbsp;./build-key&nbsp;client</span></code></pre><p>一路 y 回车</p><span id="menu_index_7" name="menu_index_7"></span><h3>4. 生成 Diffie Hellman 参数：<span class="toc">展开目录</span></h3><pre><code class="lang-bash hljs">root@10-9-128-245:/etc/openvpn/easy-rsa/2.0<span class="hljs-comment">#&nbsp;./build-dh</span></code></pre><span id="menu_index_8" name="menu_index_8"></span><h3>5. 配置 OpenVPN 服务器端文件<span class="toc">展开目录</span></h3><p>编辑 /etc/openvpn/server.conf 文件，没有就手动创建，我的配置文件如下。尽量不要使用 upd 协议和 1194 端口，因为在国内很多接入商都不允许，导致 1194 端被封不能用。当然你也可以试一下，如果被封了就换一下。</p><pre><code class="lang-bash hljs"><span class="hljs-built_in">local</span>&nbsp;11.1.1.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">##服务器IP</span>
+port&nbsp;12306&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#占用端口，保证和其他没冲突，</span>
+proto&nbsp;tcp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#使用TCP协议</span>
+dev&nbsp;tun&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#使用tun模式，也可以使用tap</span>
+
+ca&nbsp;/etc/openvpn/easy-rsa/2.0/keys/ca.crt&nbsp;&nbsp;&nbsp;&nbsp;
+cert&nbsp;/etc/openvpn/easy-rsa/2.0/keys/server.crt
+key&nbsp;/etc/openvpn/easy-rsa/2.0/keys/server.key
+dh&nbsp;/etc/openvpn/easy-rsa/2.0/keys/dh1024.pem&nbsp;&nbsp;<span class="hljs-comment">#指定证书路径</span>
+
+ifconfig-pool-persist&nbsp;/etc/openvpn/ipp.txt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#存放每个人所使用的IP</span>
+
+server&nbsp;12.166.221.0&nbsp;255.255.255.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#客户端dhcp，不要和客户端冲突</span>
+push&nbsp;<span class="hljs-string">"route&nbsp;10.9.0.0&nbsp;255.255.0.0"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#vpn访问网段，就是服务器地址段，我的是10.9网段的</span>
+client-to-client&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#允许客户端之间互相访问</span>
+
+keepalive&nbsp;20&nbsp;120&nbsp;&nbsp;<span class="hljs-comment">#保持连接时间</span>
+comp-lzo&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#开启vpn压缩</span>
+<span class="hljs-comment">#duplicate-cn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#如果不止一个人使用该证书，去掉注释</span>
+
+user&nbsp;openvpn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#运行属主</span>
+group&nbsp;openvpn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#运行属组</span>
+
+persist-key
+persist-tun&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">##持久化选项可以尽量避免访问在重启时由于用户权限降低而无法访问的某些资源。</span>
+status&nbsp;openvpn-status1.log&nbsp;&nbsp;&nbsp;&nbsp;
+<span class="hljs-built_in">log</span>-append&nbsp;&nbsp;openvpn1.log&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+verb&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-comment">#日志级别&nbsp;0-9&nbsp;等级越高，记录的越多</span>
+mute&nbsp;20</code></pre><span id="menu_index_9" name="menu_index_9"></span><h2>配置 iptables 及转发<span class="toc">展开目录</span></h2><pre><code class="lang-bash hljs">root@10-9-128-245:~<span class="hljs-comment">#&nbsp;iptables&nbsp;-t&nbsp;nat&nbsp;-A&nbsp;POSTROUTING&nbsp;-s&nbsp;12.166.221.0/24&nbsp;-o&nbsp;eth0&nbsp;-j&nbsp;MASQUERADE</span></code></pre><p>注意，12.166 的那个换成自己的客户端 hdcp 我的 eth0 是内网网卡，eth1 是外网网卡。这条策略是将所有的 12.166.221.0 网段的包转发给 eth0<br>iptables 保存配置文件</p><pre><code class="lang-bash hljs">root@10-9-128-245:~<span class="hljs-comment">#&nbsp;iptables-save&nbsp;&gt;&nbsp;/etc/iptables-rules&nbsp;&nbsp;&nbsp;&nbsp;#保存配置</span>
+root@10-9-128-245:~<span class="hljs-comment">#&nbsp;vim&nbsp;/etc/iptables-rules&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#编辑保存的配置文件，不要的删掉</span>
+root@10-9-128-245:~<span class="hljs-comment">#&nbsp;iptables-restore&nbsp;&lt;&nbsp;/etc/iptables-rules&nbsp;&nbsp;&nbsp;#恢复配置文件</span></code></pre><p>修改 /sysctl.conf</p><pre><code class="lang-bash hljs">root@10-9-128-245:~<span class="hljs-comment">#&nbsp;vim&nbsp;/etc/sysctl.conf</span>
+net.ipv4.ip_forward&nbsp;=&nbsp;1
+root@10-9-128-245:~<span class="hljs-comment">#&nbsp;sysctl&nbsp;-p&nbsp;#重新载入，立即生效</span></code></pre><p>重启 openvpn，然后 ifconfig 看一下，会多一个 tun0 虚拟网卡</p><pre><code class="lang-bash hljs">root@10-9-128-245:~<span class="hljs-comment">#&nbsp;/etc/init.d/openvpn&nbsp;restart</span>
+[&nbsp;ok&nbsp;]&nbsp;Stopping&nbsp;virtual&nbsp;private&nbsp;network&nbsp;daemon:&nbsp;server.
+[&nbsp;ok&nbsp;]&nbsp;Starting&nbsp;virtual&nbsp;private&nbsp;network&nbsp;daemon:&nbsp;server.
+root@10-9-128-245:~<span class="hljs-comment">#&nbsp;ifconfig</span></code></pre><p><img alt="" title="" data-mirages-cdn-type="1" src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/20170927124743_21064.png" data-action="zoom"></p><span id="menu_index_10" name="menu_index_10"></span><h2>客户端配置<span class="toc">展开目录</span></h2><span id="menu_index_11" name="menu_index_11"></span><h3>1. 添加 openvpn 用户<span class="toc">展开目录</span></h3><pre><code class="lang-bash hljs">root@10-9-128-245:~<span class="hljs-comment">#&nbsp;cd&nbsp;/etc/openvpn/easy-rsa/2.0/</span>
+root@10-9-128-245:/etc/openvpn/easy-rsa/2.0<span class="hljs-comment">#&nbsp;source&nbsp;vars&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###必需步骤</span>
+root@10-9-128-245:/etc/openvpn/easy-rsa/2.0<span class="hljs-comment">#&nbsp;./build-key&nbsp;dalin&nbsp;&nbsp;&nbsp;&nbsp;#用户名，一路回车y</span></code></pre><span id="menu_index_12" name="menu_index_12"></span><h3>2. 删除 openvpn 用户<span class="toc">展开目录</span></h3><pre><code class="lang-bash hljs">root@10-9-128-245:/etc/openvpn/easy-rsa/2.0<span class="hljs-comment">#&nbsp;source&nbsp;vars</span>
+root@10-9-128-245:/etc/openvpn/easy-rsa/2.0<span class="hljs-comment">#&nbsp;./revoke-full&nbsp;username</span></code></pre><span id="menu_index_13" name="menu_index_13"></span><h3>3. 添加完成之后进到 keys 里面下载对应的一切<span class="toc">展开目录</span></h3><pre><code class="lang-bash hljs">root@10-9-128-245:/etc/openvpn/easy-rsa/2.0/keys<span class="hljs-comment">#&nbsp;sz&nbsp;dalin.*</span>
+root@10-9-128-245:/etc/openvpn/easy-rsa/2.0/keys<span class="hljs-comment">#&nbsp;sz&nbsp;ca.*</span></code></pre><p>全部下载下来，一共是 5 个，如果所示，除了 client.ovpn 文件，需要手动创建</p><p><img alt="" title="" data-mirages-cdn-type="1" src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/20170927124743_89961.png" data-action="zoom"></p><span id="menu_index_14" name="menu_index_14"></span><h3>编辑 client.ovpn 文件<span class="toc">展开目录</span></h3><pre><code class="lang-diff hljs">client&nbsp;&nbsp;&nbsp;#这个不能改
+proto&nbsp;tcp&nbsp;&nbsp;#要与server.conf一致
+dev&nbsp;tun&nbsp;&nbsp;&nbsp;&nbsp;#要与server.conf一致
+remote&nbsp;主机外网IP&nbsp;12306
+
+ca&nbsp;ca.crt&nbsp;&nbsp;&nbsp;
+cert&nbsp;dalin.crt
+key&nbsp;dalin.key&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#对应所下载的证书
+
+resolv-retry&nbsp;infinite
+nobind
+mute-replay-warnings
+
+keepalive&nbsp;20&nbsp;120
+comp-lzo
+#user&nbsp;openvpn
+#group&nbsp;openvpn
+
+persist-key
+persist-tun
+status&nbsp;openvpn-status.log
+log-append&nbsp;openvpn.log
+verb&nbsp;3
+mute&nbsp;20</code></pre><span id="menu_index_15" name="menu_index_15"></span><h5>安装 vpn 客户端<span class="toc">展开目录</span></h5><p>把以上文件全部放到 $OPENVPN_HOME_CONFIG 里面，设置好一起开始连接<br><img alt="" title="" data-mirages-cdn-type="1" src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/20170927124743_75779.png" data-action="zoom"></p><span id="menu_index_16" name="menu_index_16"></span><h2>linux 连接 vpn<span class="toc">展开目录</span></h2><span id="menu_index_17" name="menu_index_17"></span><h3>1. 安装 vpn<span class="toc">展开目录</span></h3><pre><code class="lang-bash hljs">root@localhost:~<span class="hljs-comment">#&nbsp;apt-get&nbsp;install&nbsp;openvpn&nbsp;&nbsp;&nbsp;#debian/ubuntu</span>
+root@localhost:~<span class="hljs-comment">#&nbsp;yum&nbsp;-y&nbsp;install&nbsp;openvpn&nbsp;&nbsp;&nbsp;&nbsp;#redhat/centos</span>
+root@localhost:~/config<span class="hljs-comment">#&nbsp;openvpn&nbsp;--config&nbsp;client.ovpn&nbsp;&amp;</span>
+root@localhost:~<span class="hljs-comment">#&nbsp;ifconfig</span></code></pre><p><img alt="" title="" data-mirages-cdn-type="1" src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/20170927124743_98770.png" data-action="zoom"></p><p>注意一下，如果在 client.ovpn 配置了运行属主属组，服务器需要有相对应的用户，linux&amp;Mac 都要这样，windows 就无所谓了。</p>                    </div>
+        <div class="tags">
+			<div itemprop="keywords" class="keywords atudds"><a href="https://blog.rj-bai.com/tag/debian/">debian</a><a href="https://blog.rj-bai.com/tag/vpn/">vpn</a></div>
+                        <div class="modify-time">最后编辑于: 2018 年 12 月 12 日</div>
+                    </div>
+                <div class="post-buttons">
+            <a id="toggle-archives" class="btn btn-grey" href="https://blog.rj-bai.com/archives.html">返回文章列表</a>
+                        <a id="toggle-post-qr-code" class="btn btn-grey">文章二维码</a>
+                                    <a id="toggle-reward-qr-code" class="btn btn-grey">打赏</a>
+                    </div>
+            </article>
+</div>
+</div>
+</div>
+<div id="qr-box">
+    <div class="post-qr-code-box">
+        <img src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/aHR0cHM6Ly9ibG9nLnJqLWJhaS5jb20vcG9zdC83OC5odG1s" width="250" height="250" alt="本页链接的二维码">
+    </div>
+    <div class="reward-qr-code-box">
+        <img src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/20181213_125609.png" height="250" alt="打赏二维码">
+    </div>
+</div>
+<div id="body-bottom">
+<div class="container">
+            <div class="post-near">
+            <nav>
+                <span class="prev"><a href="https://blog.rj-bai.com/post/79.html" title="windows 同时连接多个openvpn"><span class="post-near-span"><span class="prev-t no-user-select color-main">下一篇: </span><br><span>windows 同时连接多个 openvpn</span></span></a></span>
+                <span class="next"><a href="https://blog.rj-bai.com/post/77.html" title="解决nginx反向代理监听非80端口造成的端口丢失问题"><span class="post-near-span"><span class="prev-t no-user-select color-main">上一篇: </span><br><span>解决 nginx 反向代理监听非 80 端口造成的端口丢失问题</span></span></a></span>
+            </nav>
+        </div>
+            
+    <div id="comments">
+                        <div id="respond-post-78" class="respond">
+            <div class="cancel-comment-reply">
+                <a id="cancel-comment-reply-link" href="https://blog.rj-bai.com/post/78.html#respond-post-78" rel="nofollow" style="display:none" onclick="return TypechoComment.cancelReply();">取消回复</a>            </div>
+            <span id="response" class="widget-title text-left">添加新评论</span>
+            <form method="post" action="https://blog.rj-bai.com/post/78.html/comment" id="comment-form">
+                                <p>
+                    <textarea rows="5" name="text" id="textarea" placeholder="在这里输入你的评论..." style="resize:none;" required=""></textarea>
+                </p>
+                                    <input class="comment-input" type="text" name="author" id="author" placeholder="称呼 *" value="" required="">
+                    <input class="comment-input" type="email" name="mail" id="mail" placeholder="电子邮件 *" value="" required="">
+                    <input class="comment-input" type="url" name="url" id="url" placeholder="网站" value="">
+                                <p style="margin-top: 10px">
+                    <span class="OwO">
+            <div class="OwO-logo"><span>OωO</span></div>
+            <div class="OwO-body" style="max-width: 100%;">
+                <ul class="OwO-items OwO-items-biaoqing OwO-items-show" style="max-height: 197px;">
+                    <li class="OwO-item" title="呵呵" data-input="@(呵呵)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E591B5E591B5.png" class="biaoqing newpaopao" title="呵呵"></li>
+                    <li class="OwO-item" title="哈哈" data-input="@(哈哈)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E59388E59388.png" class="biaoqing newpaopao" title="哈哈"></li>
+                    <li class="OwO-item" title="吐舌" data-input="@(吐舌)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E59090E8888C.png" class="biaoqing newpaopao" title="吐舌"></li>
+                    <li class="OwO-item" title="太开心" data-input="@(太开心)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E5A4AAE5BC80E5BF83.png" class="biaoqing newpaopao" title="太开心"></li>
+                    <li class="OwO-item" title="笑眼" data-input="@(笑眼)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E7AC91E79CBC.png" class="biaoqing newpaopao" title="笑眼"></li>
+                    <li class="OwO-item" title="花心" data-input="@(花心)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E88AB1E5BF83.png" class="biaoqing newpaopao" title="花心"></li>
+                    <li class="OwO-item" title="小乖" data-input="@(小乖)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E5B08FE4B996.png" class="biaoqing newpaopao" title="小乖"></li>
+                    <li class="OwO-item" title="乖" data-input="@(乖)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E4B996.png" class="biaoqing newpaopao" title="乖"></li>
+                    <li class="OwO-item" title="捂嘴笑" data-input="@(捂嘴笑)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E68D82E598B4E7AC91.png" class="biaoqing newpaopao" title="捂嘴笑"></li>
+                    <li class="OwO-item" title="滑稽" data-input="@(滑稽)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E6BB91E7A8BD.png" class="biaoqing newpaopao" title="滑稽"></li>
+                    <li class="OwO-item" title="你懂的" data-input="@(你懂的)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E4BDA0E68782E79A84.png" class="biaoqing newpaopao" title="你懂的"></li>
+                    <li class="OwO-item" title="不高兴" data-input="@(不高兴)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E4B88DE9AB98E585B4.png" class="biaoqing newpaopao" title="不高兴"></li>
+                    <li class="OwO-item" title="怒" data-input="@(怒)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E68092.png" class="biaoqing newpaopao" title="怒"></li>
+                    <li class="OwO-item" title="汗" data-input="@(汗)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E6B197.png" class="biaoqing newpaopao" title="汗"></li>
+                    <li class="OwO-item" title="黑线" data-input="@(黑线)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E9BB91E7BABF.png" class="biaoqing newpaopao" title="黑线"></li>
+                    <li class="OwO-item" title="泪" data-input="@(泪)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E6B3AA.png" class="biaoqing newpaopao" title="泪"></li>
+                    <li class="OwO-item" title="真棒" data-input="@(真棒)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E79C9FE6A392.png" class="biaoqing newpaopao" title="真棒"></li>
+                    <li class="OwO-item" title="喷" data-input="@(喷)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E596B7.png" class="biaoqing newpaopao" title="喷"></li>
+                    <li class="OwO-item" title="惊哭" data-input="@(惊哭)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E6838AE593AD.png" class="biaoqing newpaopao" title="惊哭"></li>
+                    <li class="OwO-item" title="阴险" data-input="@(阴险)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E998B4E999A9.png" class="biaoqing newpaopao" title="阴险"></li>
+                    <li class="OwO-item" title="鄙视" data-input="@(鄙视)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E98499E8A786.png" class="biaoqing newpaopao" title="鄙视"></li>
+                    <li class="OwO-item" title="酷" data-input="@(酷)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E985B7.png" class="biaoqing newpaopao" title="酷"></li>
+                    <li class="OwO-item" title="啊" data-input="@(啊)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E5958A.png" class="biaoqing newpaopao" title="啊"></li>
+                    <li class="OwO-item" title="狂汗" data-input="@(狂汗)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E78B82E6B197.png" class="biaoqing newpaopao" title="狂汗"></li>
+                    <li class="OwO-item" title="what" data-input="@(what)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/what.png" class="biaoqing newpaopao" title="what"></li>
+                    <li class="OwO-item" title="疑问" data-input="@(疑问)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E79691E997AE.png" class="biaoqing newpaopao" title="疑问"></li>
+                    <li class="OwO-item" title="酸爽" data-input="@(酸爽)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E985B8E788BD.png" class="biaoqing newpaopao" title="酸爽"></li>
+                    <li class="OwO-item" title="呀咩爹" data-input="@(呀咩爹)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E59180E592A9E788B9.png" class="biaoqing newpaopao" title="呀咩爹"></li>
+                    <li class="OwO-item" title="委屈" data-input="@(委屈)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E5A794E5B188.png" class="biaoqing newpaopao" title="委屈"></li>
+                    <li class="OwO-item" title="惊讶" data-input="@(惊讶)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E6838AE8AEB6.png" class="biaoqing newpaopao" title="惊讶"></li>
+                    <li class="OwO-item" title="睡觉" data-input="@(睡觉)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E79DA1E8A789.png" class="biaoqing newpaopao" title="睡觉"></li>
+                    <li class="OwO-item" title="笑尿" data-input="@(笑尿)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E7AC91E5B0BF.png" class="biaoqing newpaopao" title="笑尿"></li>
+                    <li class="OwO-item" title="挖鼻" data-input="@(挖鼻)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E68C96E9BCBB.png" class="biaoqing newpaopao" title="挖鼻"></li>
+                    <li class="OwO-item" title="吐" data-input="@(吐)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E59090.png" class="biaoqing newpaopao" title="吐"></li>
+                    <li class="OwO-item" title="犀利" data-input="@(犀利)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E78A80E588A9.png" class="biaoqing newpaopao" title="犀利"></li>
+                    <li class="OwO-item" title="小红脸" data-input="@(小红脸)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E5B08FE7BAA2E884B8.png" class="biaoqing newpaopao" title="小红脸"></li>
+                    <li class="OwO-item" title="懒得理" data-input="@(懒得理)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E68792E5BE97E79086.png" class="biaoqing newpaopao" title="懒得理"></li>
+                    <li class="OwO-item" title="勉强" data-input="@(勉强)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E58B89E5BCBA.png" class="biaoqing newpaopao" title="勉强"></li>
+                    <li class="OwO-item" title="爱心" data-input="@(爱心)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E788B1E5BF83.png" class="biaoqing newpaopao" title="爱心"></li>
+                    <li class="OwO-item" title="心碎" data-input="@(心碎)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E5BF83E7A28E.png" class="biaoqing newpaopao" title="心碎"></li>
+                    <li class="OwO-item" title="玫瑰" data-input="@(玫瑰)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E78EABE791B0.png" class="biaoqing newpaopao" title="玫瑰"></li>
+                    <li class="OwO-item" title="礼物" data-input="@(礼物)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E7A4BCE789A9.png" class="biaoqing newpaopao" title="礼物"></li>
+                    <li class="OwO-item" title="彩虹" data-input="@(彩虹)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E5BDA9E899B9.png" class="biaoqing newpaopao" title="彩虹"></li>
+                    <li class="OwO-item" title="太阳" data-input="@(太阳)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E5A4AAE998B3.png" class="biaoqing newpaopao" title="太阳"></li>
+                    <li class="OwO-item" title="星星月亮" data-input="@(星星月亮)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E6989FE6989FE69C88E4BAAE.png" class="biaoqing newpaopao" title="星星月亮"></li>
+                    <li class="OwO-item" title="钱币" data-input="@(钱币)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E992B1E5B881.png" class="biaoqing newpaopao" title="钱币"></li>
+                    <li class="OwO-item" title="茶杯" data-input="@(茶杯)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E88CB6E69DAF.png" class="biaoqing newpaopao" title="茶杯"></li>
+                    <li class="OwO-item" title="蛋糕" data-input="@(蛋糕)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E89B8BE7B395.png" class="biaoqing newpaopao" title="蛋糕"></li>
+                    <li class="OwO-item" title="大拇指" data-input="@(大拇指)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E5A4A7E68B87E68C87.png" class="biaoqing newpaopao" title="大拇指"></li>
+                    <li class="OwO-item" title="胜利" data-input="@(胜利)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E8839CE588A9.png" class="biaoqing newpaopao" title="胜利"></li>
+                    <li class="OwO-item" title="haha" data-input="@(haha)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/haha.png" class="biaoqing newpaopao" title="haha"></li>
+                    <li class="OwO-item" title="OK" data-input="@(OK)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/OK.png" class="biaoqing newpaopao" title="OK"></li>
+                    <li class="OwO-item" title="沙发" data-input="@(沙发)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E6B299E58F91.png" class="biaoqing newpaopao" title="沙发"></li>
+                    <li class="OwO-item" title="手纸" data-input="@(手纸)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E6898BE7BAB8.png" class="biaoqing newpaopao" title="手纸"></li>
+                    <li class="OwO-item" title="香蕉" data-input="@(香蕉)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E9A699E89589.png" class="biaoqing newpaopao" title="香蕉"></li>
+                    <li class="OwO-item" title="便便" data-input="@(便便)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E4BEBFE4BEBF.png" class="biaoqing newpaopao" title="便便"></li>
+                    <li class="OwO-item" title="药丸" data-input="@(药丸)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E88DAFE4B8B8.png" class="biaoqing newpaopao" title="药丸"></li>
+                    <li class="OwO-item" title="红领巾" data-input="@(红领巾)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E7BAA2E9A286E5B7BE.png" class="biaoqing newpaopao" title="红领巾"></li>
+                    <li class="OwO-item" title="蜡烛" data-input="@(蜡烛)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E89CA1E7839B.png" class="biaoqing newpaopao" title="蜡烛"></li>
+                    <li class="OwO-item" title="音乐" data-input="@(音乐)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E99FB3E4B990.png" class="biaoqing newpaopao" title="音乐"></li>
+                    <li class="OwO-item" title="灯泡" data-input="@(灯泡)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/paopao/E781AFE6B3A1.png" class="biaoqing newpaopao" title="灯泡"></li>
+                </ul>
+                <ul class="OwO-items OwO-items-biaoqing" style="max-height: 197px;">
+                    <li class="OwO-item" title="高兴" data-input="#(高兴)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E9AB98E585B4.png" class="biaoqing aru alu" title="高兴"></li>
+                    <li class="OwO-item" title="不高兴" data-input="#(不高兴)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E4B88DE9AB98E585B4.png" class="biaoqing aru alu" title="不高兴"></li>
+                    <li class="OwO-item" title="皱眉" data-input="#(皱眉)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E79AB1E79C89.png" class="biaoqing aru alu" title="皱眉"></li>
+                    <li class="OwO-item" title="邪恶" data-input="#(邪恶)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E982AAE681B6.png" class="biaoqing aru alu" title="邪恶"></li>
+                    <li class="OwO-item" title="大囧" data-input="#(大囧)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E5A4A7E59BA7.png" class="biaoqing aru alu" title="大囧"></li>
+                    <li class="OwO-item" title="惊喜" data-input="#(惊喜)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E6838AE5969C.png" class="biaoqing aru alu" title="惊喜"></li>
+                    <li class="OwO-item" title="小眼睛" data-input="#(小眼睛)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E5B08FE79CBCE79D9B.png" class="biaoqing aru alu" title="小眼睛"></li>
+                    <li class="OwO-item" title="小怒" data-input="#(小怒)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E5B08FE68092.png" class="biaoqing aru alu" title="小怒"></li>
+                    <li class="OwO-item" title="无语" data-input="#(无语)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E697A0E8AFAD.png" class="biaoqing aru alu" title="无语"></li>
+                    <li class="OwO-item" title="傻笑" data-input="#(傻笑)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E582BBE7AC91.png" class="biaoqing aru alu" title="傻笑"></li>
+                    <li class="OwO-item" title="期待" data-input="#(期待)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E69C9FE5BE85.png" class="biaoqing aru alu" title="期待"></li>
+                    <li class="OwO-item" title="呲牙" data-input="#(呲牙)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E591B2E78999.png" class="biaoqing aru alu" title="呲牙"></li>
+                    <li class="OwO-item" title="喜极而泣" data-input="#(喜极而泣)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E5969CE69E81E8808CE6B3A3.png" class="biaoqing aru alu" title="喜极而泣"></li>
+                    <li class="OwO-item" title="脸红" data-input="#(脸红)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E884B8E7BAA2.png" class="biaoqing aru alu" title="脸红"></li>
+                    <li class="OwO-item" title="亲亲" data-input="#(亲亲)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E4BAB2E4BAB2.png" class="biaoqing aru alu" title="亲亲"></li>
+                    <li class="OwO-item" title="狂汗" data-input="#(狂汗)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E78B82E6B197.png" class="biaoqing aru alu" title="狂汗"></li>
+                    <li class="OwO-item" title="得意" data-input="#(得意)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E5BE97E6848F.png" class="biaoqing aru alu" title="得意"></li>
+                    <li class="OwO-item" title="抠鼻" data-input="#(抠鼻)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E68AA0E9BCBB.png" class="biaoqing aru alu" title="抠鼻"></li>
+                    <li class="OwO-item" title="抽烟" data-input="#(抽烟)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E68ABDE7839F.png" class="biaoqing aru alu" title="抽烟"></li>
+                    <li class="OwO-item" title="内伤" data-input="#(内伤)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E58685E4BCA4.png" class="biaoqing aru alu" title="内伤"></li>
+                    <li class="OwO-item" title="口水" data-input="#(口水)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E58FA3E6B0B4.png" class="biaoqing aru alu" title="口水"></li>
+                    <li class="OwO-item" title="吐" data-input="#(吐)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E59090.png" class="biaoqing aru alu" title="吐"></li>
+                    <li class="OwO-item" title="吐舌" data-input="#(吐舌)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E59090E8888C.png" class="biaoqing aru alu" title="吐舌"></li>
+                    <li class="OwO-item" title="不说话" data-input="#(不说话)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E4B88DE8AFB4E8AF9D.png" class="biaoqing aru alu" title="不说话"></li>
+                    <li class="OwO-item" title="不出所料" data-input="#(不出所料)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E4B88DE587BAE68980E69699.png" class="biaoqing aru alu" title="不出所料"></li>
+                    <li class="OwO-item" title="装大款" data-input="#(装大款)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E8A385E5A4A7E6ACBE.png" class="biaoqing aru alu" title="装大款"></li>
+                    <li class="OwO-item" title="尴尬" data-input="#(尴尬)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E5B0B4E5B0AC.png" class="biaoqing aru alu" title="尴尬"></li>
+                    <li class="OwO-item" title="喷水" data-input="#(喷水)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E596B7E6B0B4.png" class="biaoqing aru alu" title="喷水"></li>
+                    <li class="OwO-item" title="喷血" data-input="#(喷血)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E596B7E8A180.png" class="biaoqing aru alu" title="喷血"></li>
+                    <li class="OwO-item" title="咽气" data-input="#(咽气)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E592BDE6B094.png" class="biaoqing aru alu" title="咽气"></li>
+                    <li class="OwO-item" title="愤怒" data-input="#(愤怒)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E684A4E68092.png" class="biaoqing aru alu" title="愤怒"></li>
+                    <li class="OwO-item" title="赞一个" data-input="#(赞一个)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E8B59EE4B880E4B8AA.png" class="biaoqing aru alu" title="赞一个"></li>
+                    <li class="OwO-item" title="中指" data-input="#(中指)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E4B8ADE68C87.png" class="biaoqing aru alu" title="中指"></li>
+                    <li class="OwO-item" title="看不见" data-input="#(看不见)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E79C8BE4B88DE8A781.png" class="biaoqing aru alu" title="看不见"></li>
+                    <li class="OwO-item" title="无所谓" data-input="#(无所谓)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E697A0E68980E8B093.png" class="biaoqing aru alu" title="无所谓"></li>
+                    <li class="OwO-item" title="欢呼" data-input="#(欢呼)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E6ACA2E591BC.png" class="biaoqing aru alu" title="欢呼"></li>
+                    <li class="OwO-item" title="无奈" data-input="#(无奈)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E697A0E5A588.png" class="biaoqing aru alu" title="无奈"></li>
+                    <li class="OwO-item" title="害羞" data-input="#(害羞)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E5AEB3E7BE9E.png" class="biaoqing aru alu" title="害羞"></li>
+                    <li class="OwO-item" title="想一想" data-input="#(想一想)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E683B3E4B880E683B3.png" class="biaoqing aru alu" title="想一想"></li>
+                    <li class="OwO-item" title="鼓掌" data-input="#(鼓掌)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E9BC93E68E8C.png" class="biaoqing aru alu" title="鼓掌"></li>
+                    <li class="OwO-item" title="观察" data-input="#(观察)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E8A782E5AF9F.png" class="biaoqing aru alu" title="观察"></li>
+                    <li class="OwO-item" title="锁眉" data-input="#(锁眉)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E99481E79C89.png" class="biaoqing aru alu" title="锁眉"></li>
+                    <li class="OwO-item" title="黑线" data-input="#(黑线)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E9BB91E7BABF.png" class="biaoqing aru alu" title="黑线"></li>
+                    <li class="OwO-item" title="汗" data-input="#(汗)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E6B197.png" class="biaoqing aru alu" title="汗"></li>
+                    <li class="OwO-item" title="哭泣" data-input="#(哭泣)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E593ADE6B3A3.png" class="biaoqing aru alu" title="哭泣"></li>
+                    <li class="OwO-item" title="阴暗" data-input="#(阴暗)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E998B4E69A97.png" class="biaoqing aru alu" title="阴暗"></li>
+                    <li class="OwO-item" title="暗地观察" data-input="#(暗地观察)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E69A97E59CB0E8A782E5AF9F.png" class="biaoqing aru alu" title="暗地观察"></li>
+                    <li class="OwO-item" title="蜡烛" data-input="#(蜡烛)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E89CA1E7839B.png" class="biaoqing aru alu" title="蜡烛"></li>
+                    <li class="OwO-item" title="投降" data-input="#(投降)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E68A95E9998D.png" class="biaoqing aru alu" title="投降"></li>
+                    <li class="OwO-item" title="吐血倒地" data-input="#(吐血倒地)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E59090E8A180E58092E59CB0.png" class="biaoqing aru alu" title="吐血倒地"></li>
+                    <li class="OwO-item" title="便便" data-input="#(便便)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E4BEBFE4BEBF.png" class="biaoqing aru alu" title="便便"></li>
+                    <li class="OwO-item" title="长草" data-input="#(长草)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E995BFE88D89.png" class="biaoqing aru alu" title="长草"></li>
+                    <li class="OwO-item" title="肿包" data-input="#(肿包)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E882BFE58C85.png" class="biaoqing aru alu" title="肿包"></li>
+                    <li class="OwO-item" title="坐等" data-input="#(坐等)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E59D90E7AD89.png" class="biaoqing aru alu" title="坐等"></li>
+                    <li class="OwO-item" title="看热闹" data-input="#(看热闹)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E79C8BE783ADE997B9.png" class="biaoqing aru alu" title="看热闹"></li>
+                    <li class="OwO-item" title="深思" data-input="#(深思)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E6B7B1E6809D.png" class="biaoqing aru alu" title="深思"></li>
+                    <li class="OwO-item" title="献花" data-input="#(献花)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E78CAEE88AB1.png" class="biaoqing aru alu" title="献花"></li>
+                    <li class="OwO-item" title="献黄瓜" data-input="#(献黄瓜)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E78CAEE9BB84E7939C.png" class="biaoqing aru alu" title="献黄瓜"></li>
+                    <li class="OwO-item" title="中枪" data-input="#(中枪)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E4B8ADE69EAA.png" class="biaoqing aru alu" title="中枪"></li>
+                    <li class="OwO-item" title="击掌" data-input="#(击掌)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E587BBE68E8C.png" class="biaoqing aru alu" title="击掌"></li>
+                    <li class="OwO-item" title="扇耳光" data-input="#(扇耳光)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E68987E880B3E58589.png" class="biaoqing aru alu" title="扇耳光"></li>
+                    <li class="OwO-item" title="中刀" data-input="#(中刀)"><img data-src="https://cdn.rj-bai.com/usr/plugins/Mirages/biaoqing/aru/E4B8ADE58880.png" class="biaoqing aru alu" title="中刀"></li>
+                </ul>
+                <ul class="OwO-items OwO-items-emoticon" style="max-height: 197px;">
+                    <li class="OwO-item" title="Author: DIYgod">OωO</li>
+                    <li class="OwO-item" title="Hi">|´・ω・)ノ</li>
+                    <li class="OwO-item" title="开心">ヾ(≧∇≦*)ゝ</li>
+                    <li class="OwO-item" title="星星眼">(☆ω☆)</li>
+                    <li class="OwO-item" title="掀桌">（╯‵□′）╯︵┴─┴</li>
+                    <li class="OwO-item" title="流口水">￣﹃￣</li>
+                    <li class="OwO-item" title="捂脸">(/ω＼)</li>
+                    <li class="OwO-item" title="给跪">∠( ᐛ 」∠)＿</li>
+                    <li class="OwO-item" title="Hi">(๑•̀ㅁ•́ฅ)</li>
+                    <li class="OwO-item" title="斜眼">→_→</li>
+                    <li class="OwO-item" title="加油">୧(๑•̀⌄•́๑)૭</li>
+                    <li class="OwO-item" title="有木有WiFi">٩(ˊᗜˋ*)و</li>
+                    <li class="OwO-item" title="前方高能预警">(ノ°ο°)ノ</li>
+                    <li class="OwO-item" title="我从未见过如此厚颜无耻之人">(´இ皿இ｀)</li>
+                    <li class="OwO-item" title="吓死宝宝惹">⌇●﹏●⌇</li>
+                    <li class="OwO-item" title="已阅留爪">(ฅ´ω`ฅ)</li>
+                    <li class="OwO-item" title="去吧大师球">(╯°A°)╯︵○○○</li>
+                    <li class="OwO-item" title="太萌惹">φ(￣∇￣o)</li>
+                    <li class="OwO-item" title="咦咦咦">ヾ(´･ ･｀｡)ノ"</li>
+                    <li class="OwO-item" title="气呼呼">( ง ᵒ̌皿ᵒ̌)ง⁼³₌₃</li>
+                    <li class="OwO-item" title="我受到了惊吓">(ó﹏ò｡)</li>
+                    <li class="OwO-item" title="什么鬼">Σ(っ °Д °;)っ</li>
+                    <li class="OwO-item" title="摸摸头">( ,,´･ω･)ﾉ"(´っω･｀｡)</li>
+                    <li class="OwO-item" title="无奈">╮(╯▽╰)╭ </li>
+                    <li class="OwO-item" title="脸红">o(*////▽////*)q </li>
+                    <li class="OwO-item" title="">＞﹏＜</li>
+                    <li class="OwO-item" title="">( ๑´•ω•) "(ㆆᴗㆆ)</li>
+                    <li class="OwO-item" title="">(｡•ˇ‸ˇ•｡)</li>
+                </ul>
+                <div class="OwO-bar">
+                    <ul class="OwO-packages">
+                        <li class="OwO-package-active"><span>泡泡</span></li>
+                        <li><span>阿鲁</span></li>
+                        <li><span>颜文字</span></li>
+                    </ul>
+                </div>
+            </div>
+            </span>
+                                        <span class="comment-mail-me">
+                        <input name="banmail" type="checkbox" value="stop" id="comment-ban-mail">
+                        <label for="comment-ban-mail">
+                        <strong>不接收</strong>回复邮件通知</label>
+                    </span>
+                                    </p>
+                <p><input type="submit" value="提交评论" data-now="刚刚" data-init="提交评论" data-posting="提交评论中..." data-posted="评论提交成功" data-empty-comment="必须填写评论内容" class="button" id="submit"></p>
+            </form>
+        </div>
+                    </div>
+
+
+
+    </div>
+</div>
+</div><!-- end #body -->
+</div><!-- end #wrap -->
+<footer id="footer" role="contentinfo">
+    <div class="container">
+        <p>Copyright © 2019 <a href="https://blog.rj-bai.com/">rj-bai 's Blog</a></p><p><a href="http://www.miitbeian.gov.cn/" target="_blank"> 京 ICP 备 16043000 号 - 2</a> • Powered by <a href="http://typecho.org/" target="_blank">Typecho</a> • Theme <a href="https://get233.com/archives/mirages-intro.html" target="_blank">Mirages</a></p>    </div>
+</footer>
+
+
+    <script src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/jquery.min.js.download" type="text/javascript"></script>
+<script src="./Debian系统搭建openvpn - rj-bai &#39;s Blog_files/mirages.main.min.js.download" type="text/javascript"></script>
+<script type="text/javascript">
+    (function ($) {
+                Page.prepareCodeBlock();
+        hljs.initHighlightingOnLoad();
+    })(jQuery);
+</script>
+
+
+<script type="text/javascript">pangu.spacingElementByClassName('container');</script>
+<script type="text/javascript">Waves.init();</script>
+
+<script type="text/javascript">
+    (function ($) {
+                if (typeof registCommentEvent === 'function') {
+            registCommentEvent();
+        }
+                        Page.setupLazyLoadImage();
+                        Page.setupCDNImageOptimize();
+                Page.loadDisqus();
+        Page.setupContents();
+        Page.bindQRCodeBlockEvents();
+                $('body').pjax('a[href^="https://blog.rj-bai.com"]:not(a[target="_blank"], a[no-pjax])', {
+                container: '#body',
+                fragment: '#body',
+                timeout: 8000
+            }
+        ).on('pjax:click', function() {
+            Page.doPJAXClickAction();
+                    }).on('pjax:send', function() {
+            Page.doPJAXSendAction();
+                    }).on('pjax:complete', function() {
+                        if (typeof registCommentEvent === 'function') {
+                registCommentEvent();
+            }
+                        Page.doPJAXCompleteAction();
+                    });
+            })(jQuery);
+        function ExSearchCall(item){
+        if (item && item.length) {
+            // 关闭搜索框
+            $('.ins-close').click();
+            $.pjax({
+                url: item.attr('data-url'),
+                container: '#body',
+                fragment: '#body',
+                timeout: 8000
+            });
+        }
+    }
+    </script>
+<style type="text/css">
+.post-content img {
+    margin-left: 0;
+}
+</style>
+
+
+</body></html>

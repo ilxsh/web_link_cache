@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<!-- saved from url=(0047)https://www.cnblogs.com/shawn-ji/p/6973362.html -->
+<html lang="zh-cn"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="origin">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <title>openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园</title>
+    <meta property="og:description" content="openvpn实现内网 映射到 外网">
+    <link type="text/css" rel="stylesheet" href="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/bundle-BlueSky.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/bundle-BlueSky-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/shawn-ji/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/shawn-ji/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/shawn-ji/wlwmanifest.xml">
+    <script src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/amp4ads-host-v0.js.download"></script><script src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/pubads_impl_rendering_2019052001.js.download"></script><script async="" src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/analytics.js.download"></script><script src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/jquery-2.2.0.min.js.download"></script>
+    <script>var currentBlogId=235217;var currentBlogApp='shawn-ji',cb_enable_mathjax=true;var isLogined=false;</script>
+    <script type="text/x-mathjax-config;executed=true">
+    MathJax.Hub.Config({
+        tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']], processClass: 'math', processEscapes: true },
+        TeX: { 
+            equationNumbers: { autoNumber: ['AMS'], useLabelIds: true }, 
+            extensions: ['extpfeil.js'],
+            Macros: {bm: "\\boldsymbol"}
+        },
+        'HTML-CSS': { linebreaks: { automatic: true } },
+        SVG: { linebreaks: { automatic: true } }
+        });
+    </script><script src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/MathJax.js.download"></script>
+<script src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/blog-common.js.download" type="text/javascript"></script>
+<style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Menu_Button .MathJax_Hover_Arrow {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px; font-family: 'Courier New',Courier; font-size: 9px; color: #F0F0F0}
+.MathJax_Menu_Button .MathJax_Hover_Arrow span {display: block; background-color: #AAA; border: 1px solid; border-radius: 3px; line-height: 0; padding: 4px}
+.MathJax_Hover_Arrow:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_Hover_Arrow:hover span {background-color: #CCC!important}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_About.MathJax_MousePost {outline: none}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 2px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 2px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; padding-top: .25em; color: #666666; font-size: .75em}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuArrow.RTL {left: .5em; right: auto}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuRadioCheck {position: absolute; left: 1em}
+.MathJax_MenuRadioCheck.RTL {right: 1em; left: auto}
+.MathJax_MenuLabel {padding: 2px 2em 4px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #CCCCCC; margin: 4px 1px 0px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: Highlight; color: HighlightText}
+.MathJax_MenuDisabled:focus, .MathJax_MenuLabel:focus {background-color: #E8E8E8}
+.MathJax_ContextMenu:focus {outline: none}
+.MathJax_ContextMenu .MathJax_MenuItem:focus {outline: none}
+#MathJax_AboutClose {top: .2em; right: .2em}
+.MathJax_Menu .MathJax_MenuClose {top: -10px; left: -10px}
+.MathJax_MenuClose {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; font-family: 'Courier New',Courier; font-size: 24px; color: #F0F0F0}
+.MathJax_MenuClose span {display: block; background-color: #AAA; border: 1.5px solid; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; line-height: 0; padding: 8px 0 6px}
+.MathJax_MenuClose:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_MenuClose:hover span {background-color: #CCC!important}
+.MathJax_MenuClose:hover:focus {outline: none}
+</style><style type="text/css">.MathJax_Preview .MJXf-math {color: inherit!important}
+</style><style type="text/css">.MJX_Assistive_MathML {position: absolute!important; top: 0; left: 0; clip: rect(1px, 1px, 1px, 1px); padding: 1px 0 0 0!important; border: 0!important; height: 1px!important; width: 1px!important; overflow: hidden!important; display: block!important; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none}
+.MJX_Assistive_MathML.MJX_Assistive_MathML_Block {width: 100%!important}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1em; bottom: 1.5em; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><link rel="preload" href="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/f.txt" as="script"><script type="text/javascript" src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/f.txt"></script><script src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/pubads_impl_2019052001.js.download" async=""></script><style type="text/css">.MJXp-script {font-size: .8em}
+.MJXp-right {-webkit-transform-origin: right; -moz-transform-origin: right; -ms-transform-origin: right; -o-transform-origin: right; transform-origin: right}
+.MJXp-bold {font-weight: bold}
+.MJXp-italic {font-style: italic}
+.MJXp-scr {font-family: MathJax_Script,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-frak {font-family: MathJax_Fraktur,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-sf {font-family: MathJax_SansSerif,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-cal {font-family: MathJax_Caligraphic,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-mono {font-family: MathJax_Typewriter,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-largeop {font-size: 150%}
+.MJXp-largeop.MJXp-int {vertical-align: -.2em}
+.MJXp-math {display: inline-block; line-height: 1.2; text-indent: 0; font-family: 'Times New Roman',Times,STIXGeneral,serif; white-space: nowrap; border-collapse: collapse}
+.MJXp-display {display: block; text-align: center; margin: 1em 0}
+.MJXp-math span {display: inline-block}
+.MJXp-box {display: block!important; text-align: center}
+.MJXp-box:after {content: " "}
+.MJXp-rule {display: block!important; margin-top: .1em}
+.MJXp-char {display: block!important}
+.MJXp-mo {margin: 0 .15em}
+.MJXp-mfrac {margin: 0 .125em; vertical-align: .25em}
+.MJXp-denom {display: inline-table!important; width: 100%}
+.MJXp-denom > * {display: table-row!important}
+.MJXp-surd {vertical-align: top}
+.MJXp-surd > * {display: block!important}
+.MJXp-script-box > *  {display: table!important; height: 50%}
+.MJXp-script-box > * > * {display: table-cell!important; vertical-align: top}
+.MJXp-script-box > *:last-child > * {vertical-align: bottom}
+.MJXp-script-box > * > * > * {display: block!important}
+.MJXp-mphantom {visibility: hidden}
+.MJXp-munderover {display: inline-table!important}
+.MJXp-over {display: inline-block!important; text-align: center}
+.MJXp-over > * {display: block!important}
+.MJXp-munderover > * {display: table-row!important}
+.MJXp-mtable {vertical-align: .25em; margin: 0 .125em}
+.MJXp-mtable > * {display: inline-table!important; vertical-align: middle}
+.MJXp-mtr {display: table-row!important}
+.MJXp-mtd {display: table-cell!important; text-align: center; padding: .5em 0 0 .5em}
+.MJXp-mtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-mlabeledtr {display: table-row!important}
+.MJXp-mlabeledtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mlabeledtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MJXp-scale0 {-webkit-transform: scaleX(.0); -moz-transform: scaleX(.0); -ms-transform: scaleX(.0); -o-transform: scaleX(.0); transform: scaleX(.0)}
+.MJXp-scale1 {-webkit-transform: scaleX(.1); -moz-transform: scaleX(.1); -ms-transform: scaleX(.1); -o-transform: scaleX(.1); transform: scaleX(.1)}
+.MJXp-scale2 {-webkit-transform: scaleX(.2); -moz-transform: scaleX(.2); -ms-transform: scaleX(.2); -o-transform: scaleX(.2); transform: scaleX(.2)}
+.MJXp-scale3 {-webkit-transform: scaleX(.3); -moz-transform: scaleX(.3); -ms-transform: scaleX(.3); -o-transform: scaleX(.3); transform: scaleX(.3)}
+.MJXp-scale4 {-webkit-transform: scaleX(.4); -moz-transform: scaleX(.4); -ms-transform: scaleX(.4); -o-transform: scaleX(.4); transform: scaleX(.4)}
+.MJXp-scale5 {-webkit-transform: scaleX(.5); -moz-transform: scaleX(.5); -ms-transform: scaleX(.5); -o-transform: scaleX(.5); transform: scaleX(.5)}
+.MJXp-scale6 {-webkit-transform: scaleX(.6); -moz-transform: scaleX(.6); -ms-transform: scaleX(.6); -o-transform: scaleX(.6); transform: scaleX(.6)}
+.MJXp-scale7 {-webkit-transform: scaleX(.7); -moz-transform: scaleX(.7); -ms-transform: scaleX(.7); -o-transform: scaleX(.7); transform: scaleX(.7)}
+.MJXp-scale8 {-webkit-transform: scaleX(.8); -moz-transform: scaleX(.8); -ms-transform: scaleX(.8); -o-transform: scaleX(.8); transform: scaleX(.8)}
+.MJXp-scale9 {-webkit-transform: scaleX(.9); -moz-transform: scaleX(.9); -ms-transform: scaleX(.9); -o-transform: scaleX(.9); transform: scaleX(.9)}
+.MathJax_PHTML .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style><link rel="prefetch" href="https://tpc.googlesyndication.com/safeframe/1-0-33/html/container.html"></head>
+<body><div id="MathJax_Message" style="display: none;"></div>
+<a name="top"></a>
+
+
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a id="lnkBlogLogo" href="https://www.cnblogs.com/shawn-ji/"><img id="blogLogo" src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/logo.gif" alt="返回主页"></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/shawn-ji/">Shawn_Ji</a></h1>
+<h2></h2>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+<li><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/shawn-ji/">首页</a></li>
+<li><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+<li><a id="blog_nav_contact" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/Shawn_Ji">联系</a></li>
+<li><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/shawn-ji/rss">订阅</a>
+<!--<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/shawn-ji/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a>--></li>
+<li><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+</ul>
+		<div class="blogStats">
+			
+			<div id="blog_stats">
+<span id="stats_post_count">随笔 - 79&nbsp; </span>
+<span id="stats_article_count">文章 - 0&nbsp; </span>
+<span id="stats-comment_count">评论 - 1</span>
+</div>
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/shawn-ji/p/6973362.html">openvpn实现内网 映射到 外网</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body cnblogs-markdown"><h1 id="openvpn实现内网-映射到-外网">openvpn实现内网 映射到 外网</h1>
+<h2 id="场景介绍">场景介绍:</h2>
+<h3 id="机器介绍">机器介绍</h3>
+<ul>
+<li>本地一台Ubuntu服务器A , 处于内网中 , 无外网IP</li>
+<li>外网一台Ubuntu服务器B , 外网地址139.199.4.205</li>
+<li><p>目标 : 外网能够访问部署在A上的web项目</p>
+<h2 id="原理简述">原理简述</h2>
+分2步</li>
+</ul>
+<ol>
+<li>将A与B组建成一个局域网</li>
+<li><p>将B的80端口 转发到 A的80端口<br>
+即可大公告成</p>
+<h2 id="实现步骤">实现步骤</h2>
+<h3 id="一-.-安装软件">一 . 安装软件</h3>
+<p>登录A 和 B 服务器 分别输入如下命令</p></li>
+</ol>
+<pre><code class="hljs cmake">sudo apt-get -y <span class="hljs-keyword">install</span> openvpn libssl-dev openssl</code></pre>
+<p>安装好后输入<code>openvpn --version</code> 如下所示表示安装成功<br>
+<img src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/20170605205603066" alt="step1"><br>
+接着安装easy-rsa , easy-rsa用来制作openvpn相关证书</p>
+<pre><code class="hljs cmake">sudo apt-get -y <span class="hljs-keyword">install</span> easy-rsa</code></pre>
+<h3 id="二-.-制作ca证书">二 . 制作CA证书</h3>
+<p><strong>(以下操作 直到第七步 都是在B机器上操作)</strong></p>
+<p>在<code>/etc/openvpn</code>目录下创建目录easy-rsa目录</p>
+<pre><code class="hljs groovy">sudo mkdir <span class="hljs-regexp">/etc/</span>openvpn<span class="hljs-regexp">/easy-rsa/</span></code></pre>
+<p>把<code>/usr/share/easy-rsa/</code>目录下的所有文件复制到<code>/etc/openvpn/easy-rsa/</code>下</p>
+<pre><code class="hljs groovy">sudo cp -r <span class="hljs-regexp">/usr/</span>share<span class="hljs-regexp">/easy-rsa/</span>* <span class="hljs-regexp">/etc/</span>openvpn<span class="hljs-regexp">/easy-rsa/</span></code></pre>
+<p>制作证书前需要切换到root用户下 <code>sudo su</code><br>
+输入如下命令</p>
+<pre><code class="hljs r"><span class="hljs-keyword">source</span> vars
+./clean-all
+./build-ca</code></pre>
+<p>这是在<code>/etc/openvpn/easy-rsa/keys/</code> 里有生成的证书文件<br>
+把<code>ca.crt</code> 复制到<code>/etc/openvpn/</code></p>
+<pre><code class="hljs groovy">cp keys<span class="hljs-regexp">/ca.crt /</span>etc<span class="hljs-regexp">/openvpn/</span></code></pre>
+<h3 id="三-.-制作server端证书">三 . 制作Server端证书</h3>
+<pre><code class="hljs vbscript">./build-key-<span class="hljs-built_in">server</span> ShawnJi</code></pre>
+<p>我这里写的是ShawnJi , 大家可以随意填写 , 只是一个名字的作用<br>
+一路 回车键 和 y键 就可以了<br>
+这时<code>/etc/openvpn/easy-rsa/keys/</code> 目录下又生成了一些文件 , 其中ShawnJi.crt和ShawnJi.key两个文件是我们要用的<br>
+把他们复制到<code>/etc/openvpn/</code> 目录下</p>
+<pre><code class="hljs groovy">cp keys<span class="hljs-regexp">/ShawnJi.crt keys/</span>ShawnJi.key <span class="hljs-regexp">/etc/</span>openvpn/</code></pre>
+<h3 id="四-.-生成diffie-hellman文件">四 . 生成Diffie-Hellman文件</h3>
+<pre><code class="hljs">./build-dh</code></pre>
+<p>稍等一会儿 , 运行结束后keys目录下新增的dh2048.pem就是我们要用的 , 复制到<code>/etc/openvpn/</code> 目录下</p>
+<pre><code class="hljs groovy">cp keys<span class="hljs-regexp">/dh2048.pem /</span>etc<span class="hljs-regexp">/openvpn/</span></code></pre>
+<h3 id="五-.-制作client端证书">五 . 制作Client端证书</h3>
+<p>输入</p>
+<pre><code class="hljs vbnet">./build-<span class="hljs-keyword">key</span> ShawnJiClient</code></pre>
+<p>同样一路 回车<br>
+keys目录下的ShawnJiClient.key 和 ShawnJiClient.crt 就是我们要的 , 后面放到A机器上去</p>
+<h3 id="六-.-配置server端b机器">六 . 配置Server端(B机器)</h3>
+<p>首先复制一套模板到目录下</p>
+<pre><code class="hljs groovy">cp <span class="hljs-regexp">/usr/</span>share<span class="hljs-regexp">/doc/</span>openvpn<span class="hljs-regexp">/examples/</span>sample-config-files<span class="hljs-regexp">/server.conf.gz /</span>etc<span class="hljs-regexp">/openvpn/</span>
+cd <span class="hljs-regexp">/etc/</span>openvpn/</code></pre>
+<p>解压server.conf.gz</p>
+<pre><code class="hljs css"><span class="hljs-selector-tag">gzip</span> <span class="hljs-selector-tag">-d</span> <span class="hljs-selector-tag">server</span><span class="hljs-selector-class">.conf</span><span class="hljs-selector-class">.gz</span></code></pre>
+<p>修改解压出的server.conf文件</p>
+<ol>
+<li>修改协议 proto udp -&gt; proto tcp</li>
+<li>修改证书 server.crt -&gt; ShawnJi.crt server.key -&gt; ShawnJi.key</li>
+<li><p>修改Diffie-Hellman文件 dh1024.pem -&gt; dh2048.pem</p>
+<blockquote>
+<p>以上有可能会默认就是 如果这样不做更改便是</p>
+</blockquote></li>
+</ol>
+<p>注意：上述server.conf文件中ShawnJi.crt、ShawnJi.key、dh2048.pem要与/etc/openvpn/目录下的相关文件一一对应。</p>
+<p>同时，如果上述文件如果没有存放在/etc/openvpn/目录下，在server.conf文件中，我们要填写该文件的绝对路径 .</p>
+<h3 id="七-.-启动server端openvpn">七 . 启动Server端openvpn</h3>
+<pre><code class="hljs dos">/etc/init.d/openvpn <span class="hljs-built_in">start</span>
+netstat -tunlp |grep <span class="hljs-number">1194</span></code></pre>
+<p>如图便是成功<br>
+<img src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/20170605232351644" alt="step2"></p>
+<h3 id="八-.-配置client端在a机器中操作-以上都是在b机器操作">八 . 配置Client端(在A机器中操作 , 以上都是在B机器操作)</h3>
+<p>将第五步生成的ShawnJiClient.key ShawnJiClient.crt 和 第二部的 ca.key 转移到A机器中<br>
+复制 配置文件模板client.conf</p>
+<pre><code class="hljs groovy">cp <span class="hljs-regexp">/usr/</span>share<span class="hljs-regexp">/doc/</span>openvpn<span class="hljs-regexp">/examples/</span>sample-config-files<span class="hljs-regexp">/client.conf /</span>home<span class="hljs-regexp">/ubuntu/</span></code></pre>
+<p><img src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/20170605233112803" alt="step3"><br>
+修改client.conf内容</p>
+<ul>
+<li>修改proto udp -&gt; proto tcp</li>
+<li>remote remote-server 1194 -&gt; remote 139.199.4.205 1194</li>
+<li>cert client.crt -&gt; cert ShawnJiClient.crt</li>
+<li>key client.key -&gt; ShawnJiClient.key</li>
+<li>修改dh dh1024.pem -&gt; dh dh2048.pem</li>
+<li>文件重命名为client.ovpn</li>
+</ul>
+<p>运行命令openvpn --config client.ovpn 如下图所示<br>
+<img src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/20170605234448966" alt="这里写图片描述"></p>
+<h3 id="九-.-配置端口转发b机器上操作">九 . 配置端口转发(B机器上操作)</h3>
+<ol>
+<li>编辑<code>/etc/sysctl.conf</code> 取消注释<code>net.ipv4.ip_forward=1</code></li>
+<li>输入以下命令</li>
+</ol>
+<pre><code class="hljs css"><span class="hljs-selector-tag">iptables</span> <span class="hljs-selector-tag">-t</span> <span class="hljs-selector-tag">nat</span> <span class="hljs-selector-tag">-A</span> <span class="hljs-selector-tag">PREROUTING</span> <span class="hljs-selector-tag">-p</span> <span class="hljs-selector-tag">tcp</span> <span class="hljs-selector-tag">--dport</span> 80 <span class="hljs-selector-tag">-j</span> <span class="hljs-selector-tag">DNAT</span> <span class="hljs-selector-tag">--to</span> 10<span class="hljs-selector-class">.8</span><span class="hljs-selector-class">.0</span><span class="hljs-selector-class">.6</span><span class="hljs-selector-pseudo">:80</span>
+<span class="hljs-selector-tag">iptables</span> <span class="hljs-selector-tag">-t</span> <span class="hljs-selector-tag">nat</span> <span class="hljs-selector-tag">-A</span> <span class="hljs-selector-tag">POSTROUTING</span> <span class="hljs-selector-tag">-d</span> 10<span class="hljs-selector-class">.8</span><span class="hljs-selector-class">.0</span><span class="hljs-selector-class">.6</span> <span class="hljs-selector-tag">-p</span> <span class="hljs-selector-tag">tcp</span> <span class="hljs-selector-tag">--dport</span> 80 <span class="hljs-selector-tag">-j</span> <span class="hljs-selector-tag">SNAT</span> <span class="hljs-selector-tag">--to</span> 10<span class="hljs-selector-class">.8</span><span class="hljs-selector-class">.0</span><span class="hljs-selector-class">.1</span></code></pre>
+<blockquote>
+<p>这里是将B机器(10.8.0.1)的80端口映射到A机器(10.8.0.6)的80端口上</p>
+</blockquote>
+<h2 id="可选操作">可选操作</h2>
+<p>至此全部完成<br>
+还剩下一些可选操作 , 如: 开机自启动 、 端口转发规则保存</p>
+<h3 id="开机自启动">开机自启动</h3>
+<p><strong>在A机器上如下操作</strong><br>
+这里我用的是修改<code>/etc/rc.local</code>文件的方法<br>
+在<code>/etc/rc.local</code> 里添加如下命令</p>
+<pre><code class="hljs groovy"><span class="hljs-regexp">/usr/</span>sbin<span class="hljs-regexp">/openvpn --config /</span>home<span class="hljs-regexp">/shawnji/</span>client.ovpn &gt;<span class="hljs-regexp">/var/</span>log/openvpn.log &amp;</code></pre>
+<p>此外 , 需要将client.ovpn里的证书改写成绝对路径<br>
+<img src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/20170606093019671" alt="step5"></p>
+<h3 id="端口转发规则保存并自动载入">端口转发规则保存并自动载入</h3>
+<blockquote>
+<p>规则保存和载入的命令:<br>
+<code>iptables-save &gt; /etc/iptables-config</code><br>
+`iptables-restore &lt; /etc/iptables-config</p>
+</blockquote>
+<ol>
+<li><p>保存当前规则<br>
+<code>iptables-save &gt; /etc/iptables-config</code></p></li>
+<li><p>在<code>/etc/rc.local</code> 中加入命令</p>
+<pre><code class="hljs javascript">iptables-restore &lt; <span class="hljs-regexp">/etc/i</span>ptables-config &amp; </code></pre>
+<h2 id="写在最后">写在最后</h2>
+<p>希望这篇文章能帮到你 , 如果有不清楚的地方 欢迎交流</p>
+<blockquote>
+<p>QQ : 826692353<br>
+email : Shawn_Ji@outlook.com</p>
+</blockquote></li>
+</ol>
+</div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag">标签: <a href="https://www.cnblogs.com/shawn-ji/tag/openvpn/">openvpn</a></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(6973362,cb_blogId,1);green_channel_success(this,&#39;谢谢推荐！&#39;);">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow(&#39;5cf18ddc-f928-e511-b908-9dcfd8948a71&#39;);" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/shawn-ji/" target="_blank"><img src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/sample_face.gif" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/shawn-ji/">Shawn_Ji</a><br>
+            <a href="https://home.cnblogs.com/u/shawn-ji/followees">关注 - 1</a><br>
+            <a href="https://home.cnblogs.com/u/shawn-ji/followers">粉丝 - 8</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow(&#39;5cf18ddc-f928-e511-b908-9dcfd8948a71&#39;);return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(6973362,&#39;Digg&#39;)">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(6973362,&#39;Bury&#39;)">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/shawn-ji/p/5734230.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/shawn-ji/p/5734230.html" title="发布于2016-08-03 19:53">位运算标记解题</a><br></div>
+</div>
+
+
+		</div>
+		<div class="postDesc">posted @ <span id="post-date">2017-06-09 19:03</span> <a href="https://www.cnblogs.com/shawn-ji/">Shawn_Ji</a> 阅读(<span id="post_view_count">4791</span>) 评论(<span id="post_comment_count">0</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=6973362" rel="nofollow">编辑</a> <a href="https://www.cnblogs.com/shawn-ji/p/6973362.html#" onclick="AddToWz(6973362);return false;">收藏</a></div>
+	</div>
+	<script src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/highlight.min.js.download"></script><script>markdown_highlight();</script><script type="text/javascript">var allowComments=true,cb_blogId=235217,cb_entryId=6973362,cb_blogApp=currentBlogApp,cb_blogUserGuid='5cf18ddc-f928-e511-b908-9dcfd8948a71',cb_entryCreatedDate='2017/6/9 19:03:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=true;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="https://www.cnblogs.com/shawn-ji/p/6973362.html#" onclick="return RefreshPage();">刷新页面</a><a href="https://www.cnblogs.com/shawn-ji/p/6973362.html#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login(&#39;commentform&#39;);">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-工控&#39;)">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="https://ke.qq.com/adActivity.html?name=xiangxueketang2" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-享学&#39;)">【推荐】Java工作两年，一天竟收到33份面试通知</a><br><a href="https://q.cnblogs.com/" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-博问&#39;)">【推荐】程序员问答平台，解决您开发中遇到的技术难题</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/gpt.js.download"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CMWp3seJu-ICFRYgYAodb9QFKQ"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border: 0px; vertical-align: bottom;" data-google-container-id="1" data-load-complete="true" src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/saved_resource.html"></iframe></div></div>
+</div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>相关博文：</b><br>·  <a href="https://www.cnblogs.com/luobiao320/p/7190918.html" target="_blank" onclick="clickRecomItmem(7190918)">安装openvpn</a><br>·  <a href="https://www.cnblogs.com/wudonghang/p/6b3c9ece198f4d76f17ccdb57a072b88.html" target="_blank" onclick="clickRecomItmem(5899872)">Centos6.5 Openvpn的安装与配置</a><br>·  <a href="https://www.cnblogs.com/jiange13/p/5462024.html" target="_blank" onclick="clickRecomItmem(5462024)">contos6.5安装openvpn详解</a><br>·  <a href="https://www.cnblogs.com/capable/p/6764147.html" target="_blank" onclick="clickRecomItmem(6764147)">openvpn搭建</a><br>·  <a href="https://www.cnblogs.com/hei-hei-hei/p/9476169.html" target="_blank" onclick="clickRecomItmem(9476169)">ubuntu16openvpn</a><br></div></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CMap3seJu-ICFRYgYAodb9QFKQ"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" width="468" height="60" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border: 0px; vertical-align: bottom;" data-google-container-id="2" data-load-complete="true" src="./openvpn实现内网 映射到 外网 - Shawn_Ji - 博客园_files/saved_resource(1).html"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/625942/" target="_blank">Computex 2019：PCIe 4.0进行时 AMD披露X570芯片组部分细节</a><br> ·  <a href="https://news.cnblogs.com/n/625941/" target="_blank">售价212万美元，FDA批准“史上最贵药物”</a><br> ·  <a href="https://news.cnblogs.com/n/625940/" target="_blank">AMD发布Ryzen 7 3700X/3800X：力压Intel 9700K/9900K</a><br> ·  <a href="https://news.cnblogs.com/n/625939/" target="_blank">我国首个卫星导航国际期刊创刊</a><br> ·  <a href="https://news.cnblogs.com/n/625938/" target="_blank">中国企业不再迷信纽约时代广场</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/shawn-ji/">Shawn_Ji</a><br>园龄：<a href="https://home.cnblogs.com/u/shawn-ji/" title="入园时间：2015-07-13">3年10个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/shawn-ji/followers/">8</a><br>关注：<a href="https://home.cnblogs.com/u/shawn-ji/followees/">1</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow(&#39;5cf18ddc-f928-e511-b908-9dcfd8948a71&#39;)">+加关注</a></div><script>getFollowStatus('5cf18ddc-f928-e511-b908-9dcfd8948a71')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" cellspacing="0" cellpadding="0" title="Calendar">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2019/04/01&#39;);return false;">&lt;</a></td><td align="center">2019年5月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2019/06/01&#39;);return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" align="center" abbr="日" scope="col">日</th><th class="CalDayHeader" align="center" abbr="一" scope="col">一</th><th class="CalDayHeader" align="center" abbr="二" scope="col">二</th><th class="CalDayHeader" align="center" abbr="三" scope="col">三</th><th class="CalDayHeader" align="center" abbr="四" scope="col">四</th><th class="CalDayHeader" align="center" abbr="五" scope="col">五</th><th class="CalDayHeader" align="center" abbr="六" scope="col">六</th></tr><tr><td class="CalOtherMonthDay" align="center">28</td><td class="CalOtherMonthDay" align="center">29</td><td class="CalOtherMonthDay" align="center">30</td><td align="center">1</td><td align="center">2</td><td align="center">3</td><td class="CalWeekendDay" align="center">4</td></tr><tr><td class="CalWeekendDay" align="center">5</td><td align="center">6</td><td align="center">7</td><td align="center">8</td><td align="center">9</td><td align="center">10</td><td class="CalWeekendDay" align="center">11</td></tr><tr><td class="CalWeekendDay" align="center">12</td><td align="center">13</td><td align="center">14</td><td align="center">15</td><td align="center">16</td><td align="center">17</td><td class="CalWeekendDay" align="center">18</td></tr><tr><td class="CalWeekendDay" align="center">19</td><td align="center">20</td><td align="center">21</td><td align="center">22</td><td align="center">23</td><td align="center">24</td><td class="CalWeekendDay" align="center">25</td></tr><tr><td class="CalWeekendDay" align="center">26</td><td class="CalTodayDay" align="center">27</td><td align="center">28</td><td align="center">29</td><td align="center">30</td><td align="center">31</td><td class="CalOtherMonthDay" align="center">1</td></tr><tr><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td><td class="CalOtherMonthDay" align="center">7</td><td class="CalOtherMonthDay" align="center">8</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<div class="catListLink">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/shawn-ji/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/shawn-ji/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/shawn-ji/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/shawn-ji/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/shawn-ji/tag/" title="我的博客的标签列表">我的标签</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div></div><div id="sidebar_toptags" class="sidebar-block">
+<div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/shawn-ji/tag/openvpn/">openvpn</a>(1)</li>
+</ul>
+</div></div><div id="sidebar_categories">
+<div id="sidebar_postarchive" class="catListPostArchive sidebar-block">
+<h3 class="catListTitle">随笔档案</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/shawn-ji/archive/2017/06.html">2017年6月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/shawn-ji/archive/2016/08.html">2016年8月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/shawn-ji/archive/2016/07.html">2016年7月 (16)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/shawn-ji/archive/2016/05.html">2016年5月 (10)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_4" href="https://www.cnblogs.com/shawn-ji/archive/2015/08.html">2015年8月 (34)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_5" href="https://www.cnblogs.com/shawn-ji/archive/2015/07.html">2015年7月 (17)</a> </li>
+
+</ul>
+
+</div>
+
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/shawn-ji/p/5668293.html#3470095">1. Re:codeforces 360 C - NP-Hard Problem</a></li>
+        <li class="recent_comment_body">666</li>
+        <li class="recent_comment_author">--hfcnal</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/shawn-ji/p/5674772.html">1. 关于取模运算 和 求逆元(7963)</a></li><li><a href="https://www.cnblogs.com/shawn-ji/p/6973362.html">2. openvpn实现内网 映射到 外网(4789)</a></li><li><a href="https://www.cnblogs.com/shawn-ji/p/5687016.html">3. 无向图的DFS遍历（方法之一）(1547)</a></li><li><a href="https://www.cnblogs.com/shawn-ji/p/5664809.html">4. 线段树算法学习(822)</a></li><li><a href="https://www.cnblogs.com/shawn-ji/p/4696658.html">5. hdu 1557 权利指数    ( 二进制枚举子集)   解题心得(536)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/shawn-ji/p/5668293.html">1. codeforces 360 C - NP-Hard Problem(1)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/shawn-ji/p/5668293.html">1. codeforces 360 C - NP-Hard Problem(1)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright ©2019 Shawn_Ji
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+</body></html>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<!-- saved from url=(0040)https://blog.51cto.com/slaytanic/1289914 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="https://blog.51cto.com/favicon.ico">
+        <title>Open×××的路由问题一则-实践检验真理-51CTO博客</title>
+    <meta name="keywords" content="linux,路由,操作系统,open***">
+<meta name="description" content="前两天因为集群网段问题，登录管理不便，hivefans就在集群的一台服务器上搭了一个open***的server。遇到了一些问题，记录一下。他只搭了一台open***，并没有在集群的其他服务器上安装o***，他想完成的目标是将集群的内网网段通过o***做路由，通过公司可以访问外部机房集群的内网地址。集群的内网地址是192.168.1.0 mask 255.255.0.0，o***的server地址">    <link href="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/header.css" rel="stylesheet"><link href="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/other.css" rel="stylesheet"><link href="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/right.css" rel="stylesheet"><link href="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/blog_details.css" rel="stylesheet"><link href="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/highlight.css" rel="stylesheet">
+    <script type="text/javascript" async="" src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/vds.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/push.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/hm.js.download"></script><script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/jquery.min.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/cookie.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/login.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/common.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/mbox.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/follow.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/vip.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/window.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/share.js.download"></script><link rel="stylesheet" href="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/share_style0_16.css"><style></style></head>
+<body>
+<img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201905/21/be0cf56d1367de626aa182705a55b41b.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url(&#39;https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png&#39;) 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/index" target="_blank">
+  <img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/b34787fdca7c0f79454d01324caaee07.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li><a href="https://blog.51cto.com/">首页</a></li>
+      <li><a href="https://blog.51cto.com/original">文章</a></li>
+      <li><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com/" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com/" target="_blank">WOT</a>
+            <a href="http://www.51cto.com/" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fslaytanic%2F1289914&amp;logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fslaytanic%2F1289914" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index" target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onclick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/box.js.download"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/index" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201905/27/b5dbf0b4c2b8e1d745369467b0450444.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog69',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/entrance.js.download" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box" style="min-height: 859px;">
+      <link rel="stylesheet" href="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/mdeShow.css">
+  <link rel="stylesheet" href="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/prism.css">
+  <script type="text/javascript" charset="utf-8" src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/prism.js.download"></script>
+<link rel="stylesheet" href="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/tinyscrollbar.css">
+<script type="text/javascript" src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/jquery.tinyscrollbar.js.download"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+				<a class="tab_name translation">推荐</a>			</div>
+			<h1 class="artical-title">Open×××的路由问题一则</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/slaytanic" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="2057708" src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/wKiom1LOCziArBrLAAAY3QD51sw455_middle.jpg"></a>
+				</div>
+				<a href="https://blog.51cto.com/slaytanic" class="name fl" target="_blank" style="margin-right:0;">Slaytanic</a>
+									                	                    <a id="checkFollow1_2057708" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">6024人阅读</a>
+				<a href="javascript:;" class="time fr">2013-09-06 13:15:55</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><p>前两天因为集群网段问题，登录管理不便，hivefans就在集群的一台服务器上搭了一个open***的server。遇到了一些问题，记录一下。</p><p><br></p><p>他只搭了一台open***，并没有在集群的其他服务器上安装o***，他想完成的目标是将集群的内网网段通过o***做路由，通过公司可以访问外部机房集群的内网地址。集群的内网地址是192.168.1.0 mask 255.255.0.0，o***的server地址是10.8.8.0 mask 255.255.255..0，公司的内网地址是192.168.205.0 mask 255.255.255.0。发生的问题如下。</p><p><br></p><p>机房</p><p> &nbsp; &nbsp;内网：192.168.1.73 o***： 10.8.8.1 主机A<br></p><p> &nbsp; &nbsp;内网：192.168.1.74 没有o*** 主机B<br></p><p>自己的电脑</p><p> &nbsp; &nbsp;内网：192.168.205.8 o***：10.8.8.6 主机C</p><p><br></p><p>一、主机C可以ping通10.8.8.1，但无法ping通主机A内网IP，虽然他们是一台机器。</p><p> &nbsp; &nbsp;分析如下，主机A作为o***的server，访问同网段自然没问题，但是访问192.168因为没有push路由，肯定访问不了<br></p><p> &nbsp; &nbsp;解决：在主机A的o***配置文件里增加push "route 192.168.1.0 255.255.0.0"，重启Open××× Server，问题解决。<br></p><p><br></p><p>二、主机C可以ping通主机A的内网地址，但无法ping通主机B的内网地址。</p><p> &nbsp; &nbsp;分析如下，主机A的内网地址实际已经路由好了，但是主机B因为没有回包路由，导致无法收到回应。登录到主机B上尝试ping主机A内网地址，果然是不通。注意，主机B是没有装open***的，然后问了一下他，他是看网上的教程做的，在主机B上自己增加了一条linux的路由 ip route add 192.168.1.0 255.255.255.0 ...。<br></p><p> &nbsp; &nbsp;解决，本身网卡的子网掩码是255.255.0.0，单独增加一条路由后，子网掩码被放到了255.255.255.0，这样，路由到的地址，跟网卡的地址就不匹配了，一个B类一个C类。结果自然是没有回包路由了。从linux路由表删除掉这条有问题的路由，问题解决。<br></p><p><br></p><p>然后他就可以只用一台Open××× server做路由，登录整个集群的内网地址了。</p><p><br></p><p>10分钟搞定，记得以前微博上有人说，我是搞开源和Hadoop的，可博客里写的有交换和路由，很没有开源工程师的范。对此我表示不在意，还是那句话，If you want something done, do it yourself。虽然现在互联网时代干活都是模块化，可是多了解一些东西对自己并没坏处，至少不会受制于人。去除对IOE的依赖，对公司来说很重要，举一反三，对个人的意义也同样重要。</p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者Slaytanic的原创作品，谢绝转载，否则将追究法律责任</div>
+									<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=linux" target="_blank">linux</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E8%B7%AF%E7%94%B1" target="_blank">路由</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F" target="_blank">操作系统</a>
+																										                				<a class="last" href="https://blog.51cto.com/slaytanic/category3.html" target="_blank"><i></i>路由交换</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="1289914" userid="2057708">0</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1559058417776">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina">微博</a>
+					  <a class="bds_sqq" data-cmd="sqq">QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin">微信</a>
+					  <img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/qr-url">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/slaytanic/1288641" title="Hadoop运维记录系列(十)">
+						上一篇：Hadoop运维记录系列(十)</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/slaytanic/1295222" title="Hadoop运维记录系列(十一)">
+						下一篇：Hadoop运维记录系列(十一)</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/slaytanic" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="2057708" src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/wKiom1LOCziArBrLAAAY3QD51sw455_middle.jpg">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/slaytanic" target="_blank" style="display:inline-block;">Slaytanic</a>
+										<h3>142篇文章，357W+人气，211粉丝</h3>
+									</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_2057708" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/slaytanic" class="header-img" target="_blank">
+						<img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可" maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="2057708">
+					<input type="hidden" class="reply_id" value="1289914">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList"></div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog" style="display: none;"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);" style="display: none;"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="https://blog.51cto.com/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTO夏杰</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1587人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="30" href="https://blog.51cto.com/cloumn/detail/30" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1524人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="18" href="https://blog.51cto.com/cloumn/detail/18" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>417人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="13" href="https://blog.51cto.com/cloumn/detail/13" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>502人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="6" href="https://blog.51cto.com/cloumn/detail/6" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>456人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="5" href="https://blog.51cto.com/cloumn/detail/5" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/slaytanic/2376811?source=dra" target="_blank">Hadoop运维记录系列（二十七）</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/slaytanic/2376695?source=dra" target="_blank">Hadoop运维记录系列（二十六）</a>
+															<a class="white-space" href="https://blog.51cto.com/10923272/2062175?source=drt" target="_blank">思科路由交换部分命令大全。</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/tonyguo/176104?source=drt" target="_blank">Windows路由表详解</a>
+															<a class="white-space" href="https://blog.51cto.com/12800391/1933714?source=drt" target="_blank">免费的上网行为管理系统和软路由系统推荐。</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/wanyij/139377?source=drt" target="_blank">双网卡同时上内外网的路由设置</a>
+															<a class="white-space" href="https://blog.51cto.com/363918/1341977?source=drt" target="_blank">linux命令eval的用法 </a>
+															<a class="white-space left-list" href="https://blog.51cto.com/xuanbo/465596?source=drt" target="_blank">BGP路由协议详解(完整篇)</a>
+															<a class="white-space" href="https://blog.51cto.com/13683137989/1880744?source=drt" target="_blank">ip_forward与路由转发</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/xujpxm/1961072?source=drt" target="_blank">Linux MemFree与MemAvailable的区别</a>
+															<a class="white-space" href="https://blog.51cto.com/zhaoyuqiang/1177924?source=drt" target="_blank">静态路由与默认路由（ 原理+区别+实例）</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/13555654/2063790?source=drt" target="_blank">华为路由器上的 DHCP 配置(详细步骤)</a>
+															<a class="white-space" href="https://blog.51cto.com/sery/2401094?source=drh" target="_blank">Centreon 升级到新版centreon 19.04实操</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/jerrymin/2400290?source=drh" target="_blank">java应用程序镜像制作及在kubernetes上发布</a>
+															<a class="white-space" href="https://blog.51cto.com/5033330/2399871?source=drh" target="_blank">Linux之调度器LVS</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/fsckyl/2399410?source=drh" target="_blank">Percona MongoDB 4 搭建副本集</a>
+															<a class="white-space" href="https://blog.51cto.com/ixdba/2397749?source=drh" target="_blank">Linux性能调优，从优化思路说起</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/mbb97/2397647?source=drh" target="_blank">关于django中间件使用的踩坑经历</a>
+															<a class="white-space" href="https://blog.51cto.com/11233559/2397556?source=drh" target="_blank">SVN配置</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/13760351/2397130?source=drh" target="_blank">Shell 脚本自动安装 Cobbler (知识点+踩坑点)</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/f92360e227f9d91cdff7ea95120630ef.png" style="width:70px;height:70px;"> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg" style="display: none;">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="1289914" userid="2057708"></span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>0</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1559058417776">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/qr-url"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_2057708" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a href="https://blog.51cto.com/slaytanic" class="b-name fr">Slaytanic</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/slaytanic" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="2057708" src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/wKiom1LOCziArBrLAAAY3QD51sw455_middle.jpg"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/shCores.js.download"></script>
+<script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/countDown.js.download"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '1289914'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'2057708',
+            'blog_id':'1289914'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/slaytanic';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='2057708'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/slaytanic'
+    	nickname = 'Slaytanic'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_2057708'),'2057708','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_2057708'),'2057708','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_2057708'),'2057708','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<p>\u524d\u4e24\u5929\u56e0\u4e3a\u96c6\u7fa4\u7f51\u6bb5\u95ee\u9898\uff0c\u767b\u5f55\u7ba1\u7406\u4e0d\u4fbf\uff0chivefans\u5c31\u5728\u96c6\u7fa4\u7684\u4e00\u53f0\u670d\u52a1\u5668\u4e0a\u642d\u4e86\u4e00\u4e2aopen***\u7684server\u3002\u9047\u5230\u4e86\u4e00\u4e9b\u95ee\u9898\uff0c\u8bb0\u5f55\u4e00\u4e0b\u3002<\/p><p><br \/><\/p><p>\u4ed6\u53ea\u642d\u4e86\u4e00\u53f0open***\uff0c\u5e76\u6ca1\u6709\u5728\u96c6\u7fa4\u7684\u5176\u4ed6\u670d\u52a1\u5668\u4e0a\u5b89\u88c5o***\uff0c\u4ed6\u60f3\u5b8c\u6210\u7684\u76ee\u6807\u662f\u5c06\u96c6\u7fa4\u7684\u5185\u7f51\u7f51\u6bb5\u901a\u8fc7o***\u505a\u8def\u7531\uff0c\u901a\u8fc7\u516c\u53f8\u53ef\u4ee5\u8bbf\u95ee\u5916\u90e8\u673a\u623f\u96c6\u7fa4\u7684\u5185\u7f51\u5730\u5740\u3002\u96c6\u7fa4\u7684\u5185\u7f51\u5730\u5740\u662f192.168.1.0 mask 255.255.0.0\uff0co***\u7684server\u5730\u5740\u662f10.8.8.0 mask 255.255.255..0\uff0c\u516c\u53f8\u7684\u5185\u7f51\u5730\u5740\u662f192.168.205.0 mask 255.255.255.0\u3002\u53d1\u751f\u7684\u95ee\u9898\u5982\u4e0b\u3002<\/p><p><br \/><\/p><p>\u673a\u623f<\/p><p> &nbsp; &nbsp;\u5185\u7f51\uff1a192.168.1.73 o***\uff1a 10.8.8.1 \u4e3b\u673aA<br \/><\/p><p> &nbsp; &nbsp;\u5185\u7f51\uff1a192.168.1.74 \u6ca1\u6709o*** \u4e3b\u673aB<br \/><\/p><p>\u81ea\u5df1\u7684\u7535\u8111<\/p><p> &nbsp; &nbsp;\u5185\u7f51\uff1a192.168.205.8 o***\uff1a10.8.8.6 \u4e3b\u673aC<\/p><p><br \/><\/p><p>\u4e00\u3001\u4e3b\u673aC\u53ef\u4ee5ping\u901a10.8.8.1\uff0c\u4f46\u65e0\u6cd5ping\u901a\u4e3b\u673aA\u5185\u7f51IP\uff0c\u867d\u7136\u4ed6\u4eec\u662f\u4e00\u53f0\u673a\u5668\u3002<\/p><p> &nbsp; &nbsp;\u5206\u6790\u5982\u4e0b\uff0c\u4e3b\u673aA\u4f5c\u4e3ao***\u7684server\uff0c\u8bbf\u95ee\u540c\u7f51\u6bb5\u81ea\u7136\u6ca1\u95ee\u9898\uff0c\u4f46\u662f\u8bbf\u95ee192.168\u56e0\u4e3a\u6ca1\u6709push\u8def\u7531\uff0c\u80af\u5b9a\u8bbf\u95ee\u4e0d\u4e86<br \/><\/p><p> &nbsp; &nbsp;\u89e3\u51b3\uff1a\u5728\u4e3b\u673aA\u7684o***\u914d\u7f6e\u6587\u4ef6\u91cc\u589e\u52a0push &quot;route 192.168.1.0 255.255.0.0&quot;\uff0c\u91cd\u542fOpen\u00d7\u00d7\u00d7 Server\uff0c\u95ee\u9898\u89e3\u51b3\u3002<br \/><\/p><p><br \/><\/p><p>\u4e8c\u3001\u4e3b\u673aC\u53ef\u4ee5ping\u901a\u4e3b\u673aA\u7684\u5185\u7f51\u5730\u5740\uff0c\u4f46\u65e0\u6cd5ping\u901a\u4e3b\u673aB\u7684\u5185\u7f51\u5730\u5740\u3002<\/p><p> &nbsp; &nbsp;\u5206\u6790\u5982\u4e0b\uff0c\u4e3b\u673aA\u7684\u5185\u7f51\u5730\u5740\u5b9e\u9645\u5df2\u7ecf\u8def\u7531\u597d\u4e86\uff0c\u4f46\u662f\u4e3b\u673aB\u56e0\u4e3a\u6ca1\u6709\u56de\u5305\u8def\u7531\uff0c\u5bfc\u81f4\u65e0\u6cd5\u6536\u5230\u56de\u5e94\u3002\u767b\u5f55\u5230\u4e3b\u673aB\u4e0a\u5c1d\u8bd5ping\u4e3b\u673aA\u5185\u7f51\u5730\u5740\uff0c\u679c\u7136\u662f\u4e0d\u901a\u3002\u6ce8\u610f\uff0c\u4e3b\u673aB\u662f\u6ca1\u6709\u88c5open***\u7684\uff0c\u7136\u540e\u95ee\u4e86\u4e00\u4e0b\u4ed6\uff0c\u4ed6\u662f\u770b\u7f51\u4e0a\u7684\u6559\u7a0b\u505a\u7684\uff0c\u5728\u4e3b\u673aB\u4e0a\u81ea\u5df1\u589e\u52a0\u4e86\u4e00\u6761linux\u7684\u8def\u7531 ip route add 192.168.1.0 255.255.255.0 ...\u3002<br \/><\/p><p> &nbsp; &nbsp;\u89e3\u51b3\uff0c\u672c\u8eab\u7f51\u5361\u7684\u5b50\u7f51\u63a9\u7801\u662f255.255.0.0\uff0c\u5355\u72ec\u589e\u52a0\u4e00\u6761\u8def\u7531\u540e\uff0c\u5b50\u7f51\u63a9\u7801\u88ab\u653e\u5230\u4e86255.255.255.0\uff0c\u8fd9\u6837\uff0c\u8def\u7531\u5230\u7684\u5730\u5740\uff0c\u8ddf\u7f51\u5361\u7684\u5730\u5740\u5c31\u4e0d\u5339\u914d\u4e86\uff0c\u4e00\u4e2aB\u7c7b\u4e00\u4e2aC\u7c7b\u3002\u7ed3\u679c\u81ea\u7136\u662f\u6ca1\u6709\u56de\u5305\u8def\u7531\u4e86\u3002\u4ecelinux\u8def\u7531\u8868\u5220\u9664\u6389\u8fd9\u6761\u6709\u95ee\u9898\u7684\u8def\u7531\uff0c\u95ee\u9898\u89e3\u51b3\u3002<br \/><\/p><p><br \/><\/p><p>\u7136\u540e\u4ed6\u5c31\u53ef\u4ee5\u53ea\u7528\u4e00\u53f0Open\u00d7\u00d7\u00d7 server\u505a\u8def\u7531\uff0c\u767b\u5f55\u6574\u4e2a\u96c6\u7fa4\u7684\u5185\u7f51\u5730\u5740\u4e86\u3002<\/p><p><br \/><\/p><p>10\u5206\u949f\u641e\u5b9a\uff0c\u8bb0\u5f97\u4ee5\u524d\u5fae\u535a\u4e0a\u6709\u4eba\u8bf4\uff0c\u6211\u662f\u641e\u5f00\u6e90\u548cHadoop\u7684\uff0c\u53ef\u535a\u5ba2\u91cc\u5199\u7684\u6709\u4ea4\u6362\u548c\u8def\u7531\uff0c\u5f88\u6ca1\u6709\u5f00\u6e90\u5de5\u7a0b\u5e08\u7684\u8303\u3002\u5bf9\u6b64\u6211\u8868\u793a\u4e0d\u5728\u610f\uff0c\u8fd8\u662f\u90a3\u53e5\u8bdd\uff0cIf you want something done, do it yourself\u3002\u867d\u7136\u73b0\u5728\u4e92\u8054\u7f51\u65f6\u4ee3\u5e72\u6d3b\u90fd\u662f\u6a21\u5757\u5316\uff0c\u53ef\u662f\u591a\u4e86\u89e3\u4e00\u4e9b\u4e1c\u897f\u5bf9\u81ea\u5df1\u5e76\u6ca1\u574f\u5904\uff0c\u81f3\u5c11\u4e0d\u4f1a\u53d7\u5236\u4e8e\u4eba\u3002\u53bb\u9664\u5bf9IOE\u7684\u4f9d\u8d56\uff0c\u5bf9\u516c\u53f8\u6765\u8bf4\u5f88\u91cd\u8981\uff0c\u4e3e\u4e00\u53cd\u4e09\uff0c\u5bf9\u4e2a\u4eba\u7684\u610f\u4e49\u4e5f\u540c\u6837\u91cd\u8981\u3002<\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"Open×××的路由问题一则",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1559058417; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/marked.min.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/highlight.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/detail_mp.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/detail.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/details_new.js.download"></script><script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/copy.js.download"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/pageview.html"></iframe>
+</div>
+
+<script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/pvlog.js.download"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type="text/javascript">
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/jquery.cookie.js.download"></script>
+<script src="./Open×××的路由问题一则-实践检验真理-51CTO博客_files/time-on-page.js.download" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+
+
+<div id="zhichiBtnBox" style="position: fixed; z-index: 2147483583; box-shadow: rgba(15, 66, 76, 0.25) 0px 0px 14px 0px; width: 60px; height: 60px; border-radius: 50%; background-color: rgb(66, 133, 244); background-image: url(&quot;//www.sobot.com/chat/frame/imgs/icon.png&quot;); background-repeat: no-repeat; background-position: 18px -58px; right: 40px; bottom: 90px; display: none;"><a hidefocus="" id="zhichiBtn" style="position:relative;text-decoration: none; outline: none; font-family: Microsoft Yahei, Arial, Helvetica; color: #fff; font-size: 16px; display: inline-block; margin: 0; padding: 0; border: none; line-height:43px; float:none;width:100%;height:100%;border-radius:50%;"><span class="zc-advice-icon-btn-title" style="box-shadow: rgba(107, 113, 114, 0.15) 0px 2px 4px 0px; border: 1px solid rgb(235, 239, 240); font-family: &quot;Microsoft Yahei&quot;, Arial, Helvetica; color: rgb(85, 85, 86); font-size: 13px; margin: 0px; text-align: right; background: rgb(255, 255, 255); position: absolute; top: 15px; right: 70px; text-overflow: ellipsis; white-space: nowrap; word-break: normal; display: none; border-radius: 3px; padding: 0px 5px; height: 30px; line-height: 30px;">咨询在线客服</span></a><i style="position:absolute;top:0px;right:0px;padding:1px;line-height:20px;text-align:center;color:#fff;font-weight:bold;height:18px;min-width:18px;background-color:#ed5c5c;border-radius:18px;font-size:12px;display:none;font-style:normal;" id="zhichiCount"></i></div></body></html>
