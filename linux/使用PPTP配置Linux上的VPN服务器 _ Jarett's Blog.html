@@ -1,0 +1,1110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0056)https://www.nigesb.com/setup-your-own-vpn-with-pptp.html -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN"><head profile="http://gmpg.org/xfn/11"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+	<title>使用PPTP配置Linux上的VPN服务器 | Jarett's Blog</title>
+		<link rel="stylesheet" type="text/css" media="all" href="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/style.css">
+	<link rel="pingback" href="https://www.nigesb.com/xmlrpc.php">
+	
+<!-- All in One SEO Pack 2.12 by Michael Torbert of Semper Fi Web Design[291,379] -->
+<meta name="description" content="PPTP是一个比较简单的VPN构建方式，但是很难找到比较全的说明文档。因此，记录一篇说明文档，详细记录架设VPN服务器以及总结一些其他比较容易遇到的问题。 安装PPTP 基本上安装pptp是比较简单的了，比如在我的CentOS6.4 x64上，只需要两个命令: rpm -i yum -y install pptpd 如果是Ubuntu的话，更加简单了： apt-get install pptpd 配置IP地址 基本上程序的安装是全自动完成的了，下面需要进行一些简单的配置，编辑/etc/pptpd.conf ，在最后加入IP地址配置： localip 10.0.0.1 remoteip 10.0.0.100-200 上面的IP地址是可以随便填的，ABC三类的内网地址都可以，主要兼顾其他地方的IP配置，不要出现IP冲突就可以了，后面的remoteip，默认从第一个10.0.0.100开始分配给客户，localip表示分配给服务器的内部网关地址。 配置客户端DNS 要配置客户端的dns，首先要确定配置文件，查看/etc/pptpd.conf中指定的option文件，如果没有指定，那就默认是/etc/ppp/pptpd-options，下面是我的默认配置文件，因此要修改/etc/ppp/pptpd-options.pptpd 在配置文件中加上： ms-dns 202.96.128.86 ms-dns 202.96.128.166 这里配置成客户端所在地的DNS就好了。 配置VPN账号 然后是创建VPN的账号，账号保存在/etc/ppp/chap-secrets，我们打开编辑这个文件，按下面的格式加入自己的账号以及密码，依次为：账号，协议，密码，ip地址。 这里的ip地址如果明文表示静态分配，如果填*就表示动态分配。 启动服务 配置完毕，可以启动服务并且加入启动项了 service pptpd restart chkconfig pptpd on 查看一下服务器是否在1723上面监听了 配置系统转发 现在的VPN服务可以连上，但是不能通过VPN服务器进行转发，也就是不能够上网或者访问其他服务器等，需要开启系统转发和NAT。编辑系统配置文件/etc/sysctl.conf，设置如下值为1 net.ipv4.ip_forward = 1 如果未来ipv6普及了，估计应该就是改ipv6了，修改完毕之后要马上生效，使用命令 sysctl -p 配置防火墙转发 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE 或 iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -o eth0 -j SNAT --to 115.115.115.115 其中第一种比较简单，自动伪装ip，第二种的10.0.0.0/24指的是VPN虚拟内网，而115.115.115.115代表外网地址，进行NAT。如果VPN服务器是用来代理上网的，仅有上面的配置会出现访问网站缓慢的情况，需要手动修改一下转发包的mss iptables -A FORWARD -p tcp --syn -s 10.0.0.0/24 -j TCPMSS --set-mss 1356 这样就不会出现打不开网页的问题了，最后可以保存一下防火墙。 iptables-save 常见的问题 619错误 体现在日志就是 LCP: timeout sending Config-Requests 很多人在拨VPN的时候卡在验证用户名和密码，然后会出现619的错误，这种错误90%以上是由于客户端到服务器的网络中有设备不支持GRE协议或NAT-T造成的，最常见的是由于客户端的路由器等不支持造成的，在更换以后立马能拨上VPN。而这种错误在服务端的日志也有体现。例如 下面是双方加解密不一致的: LCP terminated by peer (^O^XH-^@">
+
+<meta name="keywords" content="linux,vpn">
+
+<link rel="canonical" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html">
+<!-- /all in one seo pack -->
+<link rel="dns-prefetch" href="https://s.w.org/">
+<link rel="alternate" type="application/rss+xml" title="Jarett&#39;s Blog » Feed" href="https://www.nigesb.com/feed">
+<link rel="alternate" type="application/rss+xml" title="Jarett&#39;s Blog » 评论Feed" href="https://www.nigesb.com/comments/feed">
+<link rel="alternate" type="application/rss+xml" title="Jarett&#39;s Blog » 使用PPTP配置Linux上的VPN服务器评论Feed" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html/feed">
+		<script type="text/javascript">
+			window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/11\/72x72\/","ext":".png","svgUrl":"https:\/\/s.w.org\/images\/core\/emoji\/11\/svg\/","svgExt":".svg","source":{"concatemoji":"https:\/\/www.nigesb.com\/wp-includes\/js\/wp-emoji-release.min.js?ver=5.0.4"}};
+			!function(a,b,c){function d(a,b){var c=String.fromCharCode;l.clearRect(0,0,k.width,k.height),l.fillText(c.apply(this,a),0,0);var d=k.toDataURL();l.clearRect(0,0,k.width,k.height),l.fillText(c.apply(this,b),0,0);var e=k.toDataURL();return d===e}function e(a){var b;if(!l||!l.fillText)return!1;switch(l.textBaseline="top",l.font="600 32px Arial",a){case"flag":return!(b=d([55356,56826,55356,56819],[55356,56826,8203,55356,56819]))&&(b=d([55356,57332,56128,56423,56128,56418,56128,56421,56128,56430,56128,56423,56128,56447],[55356,57332,8203,56128,56423,8203,56128,56418,8203,56128,56421,8203,56128,56430,8203,56128,56423,8203,56128,56447]),!b);case"emoji":return b=d([55358,56760,9792,65039],[55358,56760,8203,9792,65039]),!b}return!1}function f(a){var c=b.createElement("script");c.src=a,c.defer=c.type="text/javascript",b.getElementsByTagName("head")[0].appendChild(c)}var g,h,i,j,k=b.createElement("canvas"),l=k.getContext&&k.getContext("2d");for(j=Array("flag","emoji"),c.supports={everything:!0,everythingExceptFlag:!0},i=0;i<j.length;i++)c.supports[j[i]]=e(j[i]),c.supports.everything=c.supports.everything&&c.supports[j[i]],"flag"!==j[i]&&(c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&c.supports[j[i]]);c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&!c.supports.flag,c.DOMReady=!1,c.readyCallback=function(){c.DOMReady=!0},c.supports.everything||(h=function(){c.readyCallback()},b.addEventListener?(b.addEventListener("DOMContentLoaded",h,!1),a.addEventListener("load",h,!1)):(a.attachEvent("onload",h),b.attachEvent("onreadystatechange",function(){"complete"===b.readyState&&c.readyCallback()})),g=c.source||{},g.concatemoji?f(g.concatemoji):g.wpemoji&&g.twemoji&&(f(g.twemoji),f(g.wpemoji)))}(window,document,window._wpemojiSettings);
+		</script><script src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/wp-emoji-release.min.js.download" type="text/javascript" defer=""></script>
+		<style type="text/css">
+img.wp-smiley,
+img.emoji {
+	display: inline !important;
+	border: none !important;
+	box-shadow: none !important;
+	height: 1em !important;
+	width: 1em !important;
+	margin: 0 .07em !important;
+	vertical-align: -0.1em !important;
+	background: none !important;
+	padding: 0 !important;
+}
+</style>
+<link rel="stylesheet" id="wp-recentcomments-css" href="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/wp-recentcomments.css" type="text/css" media="screen">
+<link rel="stylesheet" id="wp-block-library-css" href="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/style.min.css" type="text/css" media="all">
+<link rel="stylesheet" id="wp-pagenavi-css" href="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/pagenavi-css.css" type="text/css" media="all">
+<link rel="stylesheet" id="core3.0-css" href="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/shCore.css" type="text/css" media="all">
+<link rel="stylesheet" id="core-Default3.0-css" href="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/shCoreDefault.css" type="text/css" media="all">
+<link rel="stylesheet" id="theme-Default3.0-css" href="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/shThemeDefault.css" type="text/css" media="all">
+<link rel="https://api.w.org/" href="https://www.nigesb.com/wp-json/">
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://www.nigesb.com/xmlrpc.php?rsd">
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="https://www.nigesb.com/wp-includes/wlwmanifest.xml"> 
+<link rel="prev" title="E430c历经艰辛终于完美驱动OS10.9(Clover)" href="https://www.nigesb.com/e430c-install-mac-os-10-9.html">
+<link rel="next" title="从Discuz 7.2严重注入漏洞到GetShell" href="https://www.nigesb.com/discuz-7-2-sql-injection-and-getshell.html">
+<meta name="generator" content="WordPress 5.0.4">
+<link rel="shortlink" href="https://www.nigesb.com/?p=1637">
+<link rel="alternate" type="application/json+oembed" href="https://www.nigesb.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.nigesb.com%2Fsetup-your-own-vpn-with-pptp.html">
+<script type="text/javascript">
+	window._wp_rp_static_base_url = 'https://wprp.sovrn.com/static/';
+	window._wp_rp_wp_ajax_url = "https://www.nigesb.com/wp-admin/admin-ajax.php";
+	window._wp_rp_plugin_version = '3.6.4';
+	window._wp_rp_post_id = '1637';
+	window._wp_rp_num_rel_posts = '5';
+	window._wp_rp_thumbnails = true;
+	window._wp_rp_post_title = '%E4%BD%BF%E7%94%A8PPTP%E9%85%8D%E7%BD%AELinux%E4%B8%8A%E7%9A%84VPN%E6%9C%8D%E5%8A%A1%E5%99%A8';
+	window._wp_rp_post_tags = ['vpn', 'linux', '%E6%8A%80%E6%9C%AF%E5%88%86%E4%BA%AB', 'apr', '47', 'a', 'statu', 'instal', 'gutter', 'forward', 'bold', 'center', 'peer', 'termin', 'nat', 'send', 'input', 'shell'];
+	window._wp_rp_promoted_content = true;
+</script>
+<link rel="stylesheet" href="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/vertical-m.css">
+	
+</head>
+<body class="post-template-default single single-post postid-1637 single-format-standard">
+<div id="nav">
+<div id="menus">
+			<ul>
+				<li><a href="https://www.nigesb.com/">首页</a></li><li class="page_item page-item-2"><a href="https://www.nigesb.com/about">关于</a></li>
+			</ul>
+		</div>
+	<div id="search">
+		<form id="searchform" method="get" action="https://www.nigesb.com/">
+<input type="text" value="站内搜索" onfocus="if (this.value == &#39;站内搜索&#39;) {this.value = &#39;&#39;;}" onblur="if (this.value == &#39;&#39;) {this.value = &#39;站内搜索&#39;;}" size="35" maxlength="50" name="s" id="s">
+<input type="submit" id="searchsubmit" value="搜索">
+</form>	</div>
+</div>
+<div id="wrapper">
+	<div id="header">		<h1><a href="https://www.nigesb.com/">Jarett's Blog</a></h1>
+		<h2>追求魔鬼般的技术，天使般的内心</h2>
+		<div class="clear"></div>
+				
+	</div>
+<div id="content">
+		<div class="post-single post-1637 post type-post status-publish format-standard hentry category-share-technology tag-linux tag-vpn" id="post-1637"><!-- post div -->
+		<h2 class="title">使用PPTP配置Linux上的VPN服务器</h2>
+		<div class="post-info-top">
+			<span class="post-info-date">
+				作者: <a href="https://www.nigesb.com/author/jarett" title="查看 Jarett 的所有文章" rel="author">Jarett</a>
+				日期:				2014 年 6 月 12 日							</span>
+						<span class="addcomment"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#respond" rel="nofollow" title="发表评论？">发表评论</a> (38)</span>
+			<span class="gotocomments"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comments" rel="nofollow" title="查看评论？">查看评论</a></span>
+					</div>
+		<div class="clear"></div>
+		<div class="entry">
+			<p>PPTP是一个比较简单的VPN构建方式，但是很难找到比较全的说明文档。因此，记录一篇说明文档，详细记录架设VPN服务器以及总结一些其他比较容易遇到的问题。</p>
+<p><strong>安装PPTP<br>
+</strong>基本上安装pptp是比较简单的了，比如在我的CentOS6.4 x64上，只需要两个命令:</p>
+<div><div id="highlighter_831028" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">rpm -i http:</code><code class="shell plain">//poptop</code><code class="shell plain">.sourceforge.net</code><code class="shell plain">/yum/stable/rhel6/pptp-release-current</code><code class="shell plain">.noarch.rpm</code></div><div class="line number2 index1 alt1"><code class="shell plain">yum -y </code><code class="shell functions">install</code> <code class="shell plain">pptpd</code></div></div></td></tr></tbody></table></div></div>
+<p>如果是Ubuntu的话，更加简单了：</p>
+<div><div id="highlighter_135201" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">apt-get </code><code class="shell functions">install</code> <code class="shell plain">pptpd</code></div></div></td></tr></tbody></table></div></div>
+<p><strong>配置IP地址</strong><br>
+基本上程序的安装是全自动完成的了，下面需要进行一些简单的配置，编辑/etc/pptpd.conf ，在最后加入IP地址配置：</p>
+<div><div id="highlighter_637471" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">localip 10.0.0.1</code></div><div class="line number2 index1 alt1"><code class="shell plain">remoteip 10.0.0.100-200</code></div></div></td></tr></tbody></table></div></div>
+<p>上面的IP地址是可以随便填的，ABC三类的内网地址都可以，主要兼顾其他地方的IP配置，不要出现IP冲突就可以了，后面的remoteip，默认从第一个10.0.0.100开始分配给客户，localip表示分配给服务器的内部网关地址。</p>
+<p><strong>配置客户端DNS<br>
+</strong>要配置客户端的dns，首先要确定配置文件，查看/etc/pptpd.conf中指定的option文件，如果没有指定，那就默认是/etc/ppp/pptpd-options，下面是我的默认配置文件，因此要修改/etc/ppp/pptpd-options.pptpd<br>
+<a href="http://www.nigesb.com/wp-content/uploads/2014/06/pptp1.jpg"><img class="alignnone size-full wp-image-1639" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/pptp1.jpg" alt="options.pptpd" width="536" height="91" srcset="https://www.nigesb.com/wp-content/uploads/2014/06/pptp1.jpg 536w, https://www.nigesb.com/wp-content/uploads/2014/06/pptp1-300x51.jpg 300w" sizes="(max-width: 536px) 100vw, 536px"><br>
+</a>在配置文件中加上：</p>
+<div><div id="highlighter_190083" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">ms-dns 202.96.128.86</code></div><div class="line number2 index1 alt1"><code class="shell plain">ms-dns 202.96.128.166</code></div></div></td></tr></tbody></table></div></div>
+<p>这里配置成客户端所在地的DNS就好了。</p>
+<p><strong>配置VPN账号<br>
+</strong>然后是创建VPN的账号，账号保存在/etc/ppp/chap-secrets，我们打开编辑这个文件，按下面的格式加入自己的账号以及密码，依次为：账号，协议，密码，ip地址。</p>
+<p><a href="http://www.nigesb.com/wp-content/uploads/2014/06/pptp.jpg"><img class="size-full wp-image-1638" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/pptp.jpg" alt="chap-secret" width="429" height="143" srcset="https://www.nigesb.com/wp-content/uploads/2014/06/pptp.jpg 429w, https://www.nigesb.com/wp-content/uploads/2014/06/pptp-300x100.jpg 300w" sizes="(max-width: 429px) 100vw, 429px"></a></p>
+<p>这里的ip地址如果明文表示静态分配，如果填*就表示动态分配。</p>
+<p><strong>启动服务<br>
+</strong>配置完毕，可以启动服务并且加入启动项了</p>
+<div><div id="highlighter_340219" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">service pptpd restart</code></div><div class="line number2 index1 alt1"><code class="shell plain">chkconfig pptpd on</code></div></div></td></tr></tbody></table></div></div>
+<p>查看一下服务器是否在1723上面监听了<a style="font-weight: bold; font-size: 12px; text-align: center; line-height: 1.5em; background-color: #ffffff;" href="http://www.nigesb.com/wp-content/uploads/2014/06/pptp2.jpg"><img class="size-full wp-image-1640" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/pptp2.jpg" alt="pptp status" width="711" height="38" srcset="https://www.nigesb.com/wp-content/uploads/2014/06/pptp2.jpg 711w, https://www.nigesb.com/wp-content/uploads/2014/06/pptp2-300x16.jpg 300w" sizes="(max-width: 711px) 100vw, 711px"></a></p>
+<p><strong>&nbsp;配置系统转发<br>
+</strong>现在的VPN服务可以连上，但是不能通过VPN服务器进行转发，也就是不能够上网或者访问其他服务器等，需要开启系统转发和NAT。编辑系统配置文件/etc/sysctl.conf，设置如下值为1</p>
+<div><div id="highlighter_393760" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">net.ipv4.ip_forward = 1</code></div></div></td></tr></tbody></table></div></div>
+<p>如果未来ipv6普及了，估计应该就是改ipv6了，修改完毕之后要马上生效，使用命令</p>
+<div><div id="highlighter_790718" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">sysctl -p</code></div></div></td></tr></tbody></table></div></div>
+<p><strong>配置防火墙转发<br>
+</strong></p>
+<div><div id="highlighter_392668" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE</code></div><div class="line number2 index1 alt1"><code class="shell plain">或</code></div><div class="line number3 index2 alt2"><code class="shell plain">iptables -t nat -A POSTROUTING -s 10.0.0.0</code><code class="shell plain">/24</code> <code class="shell plain">-o eth0 -j SNAT --to 115.115.115.115</code></div></div></td></tr></tbody></table></div></div>
+<p>其中第一种比较简单，自动伪装ip，第二种的10.0.0.0/24指的是VPN虚拟内网，而115.115.115.115代表外网地址，进行NAT。如果VPN服务器是用来代理上网的，仅有上面的配置会出现访问网站缓慢的情况，需要手动修改一下转发包的mss</p>
+<div><div id="highlighter_654972" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">iptables -A FORWARD -p tcp --syn -s 10.0.0.0</code><code class="shell plain">/24</code> <code class="shell plain">-j TCPMSS --</code><code class="shell functions">set</code><code class="shell plain">-mss 1356</code></div></div></td></tr></tbody></table></div></div>
+<p>这样就不会出现打不开网页的问题了，最后可以保存一下防火墙。</p>
+<div><div id="highlighter_476650" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">iptables-save</code></div></div></td></tr></tbody></table></div></div>
+<p><strong>常见的问题<br>
+</strong><em>619错误</em><br>
+体现在日志就是</p>
+<div><div id="highlighter_197584" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">LCP: timeout sending Config-Requests</code></div></div></td></tr></tbody></table></div></div>
+<p>很多人在拨VPN的时候卡在验证用户名和密码，然后会出现619的错误，这种错误90%以上是由于客户端到服务器的网络中有设备不支持GRE协议或NAT-T造成的，最常见的是由于客户端的路由器等不支持造成的，在更换以后立马能拨上VPN。而这种错误在服务端的日志也有体现。例如</p>
+<p>下面是双方加解密不一致的:</p>
+<div><div id="highlighter_70400" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">LCP terminated by peer (^O^XH-^@&lt;M-Mt^@^@^@^@)</code></div></div></td></tr></tbody></table></div></div>
+<p>还有其他问题可去这里排查：<br>
+<a href="http://pptpclient.sourceforge.net/howto-diagnosis.phtml" target="_blank">http://pptpclient.sourceforge.net/howto-diagnosis.phtml</a></p>
+<p><em>pptp需要用到的端口</em><br>
+pptp使用到的端口只有一个，那就是1723，网上有很多误人子弟的文章还说要开47端口，真是坑爹，因为GRE协议号是47，并不代表需要开47端口，因此如果是要映射端口的话，1723就完全够了，不要信网上的某些教程,如果使用了iptable来作为防火墙，需要加入规则</p>
+<div><div id="highlighter_387573" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">iptables -A INPUT -p tcp --dport 1723 -j ACCEPT</code></div><div class="line number2 index1 alt1"><code class="shell plain">iptables -A INPUT -p 47 -j ACCEPT</code></div></div></td></tr></tbody></table></div></div>
+<p>如果是在内网中，需要网关转发，那么网关需要如下配置：</p>
+<div><div id="highlighter_461001" class="syntaxhighlighter nogutter notranslate shell"><div class="toolbar"><span><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" class="toolbar_item command_help help">?</a></span></div><table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="shell plain">iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 1723 -j DNAT --to SERVER_IP</code></div><div class="line number2 index1 alt1"><code class="shell plain">iptables -t nat -A PREROUTING -i eth0 -p 47 -j DNAT --to SERVER_IP</code></div></div></td></tr></tbody></table></div></div>
+<p>如需详细文档，可参考：<br>
+<a href="http://poptop.sourceforge.net/dox/" target="_blank">http://poptop.sourceforge.net/dox/</a></p>
+
+<div class="wp_rp_wrap  wp_rp_vertical_m" id="wp_rp_first"><div class="wp_rp_content"><h3 class="related_post_title">你可能喜欢</h3><ul class="related_post wp_rp"><li data-position="0" data-poid="in-1427" data-post-type="none"><a href="https://www.nigesb.com/install-cuda-and-optimus-on-kali-linux.html" class="wp_rp_thumbnail"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/12.jpg" alt="Install cuda and optimus on Kali Linux" width="150" height="150"></a><a href="https://www.nigesb.com/install-cuda-and-optimus-on-kali-linux.html" class="wp_rp_title">Install cuda and optimus on Kali Linux</a></li><li data-position="1" data-poid="in-1420" data-post-type="none"><a href="https://www.nigesb.com/install-cuda-and-optimus-on-kali.html" class="wp_rp_thumbnail"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/27.jpg" alt="在Kali Linux上安装cuda、pyrit-cuda以及optimus" width="150" height="150"></a><a href="https://www.nigesb.com/install-cuda-and-optimus-on-kali.html" class="wp_rp_title">在Kali Linux上安装cuda、pyrit-cuda以及optimus</a></li><li data-position="2" data-poid="in-1174" data-post-type="none"><a href="https://www.nigesb.com/vpn-install-script.html" class="wp_rp_thumbnail"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/22.jpg" alt="Centos一键安装VPN脚本" width="150" height="150"></a><a href="https://www.nigesb.com/vpn-install-script.html" class="wp_rp_title">Centos一键安装VPN脚本</a></li><li data-position="3" data-poid="in-1405" data-post-type="none"><a href="https://www.nigesb.com/defend-cc-attack-with-nginx.html" class="wp_rp_thumbnail"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/15.jpg" alt="使用Nginx防御CC攻击" width="150" height="150"></a><a href="https://www.nigesb.com/defend-cc-attack-with-nginx.html" class="wp_rp_title">使用Nginx防御CC攻击</a></li><li data-position="4" data-poid="in-549" data-post-type="none"><a href="https://www.nigesb.com/ddos-attack-defence-in-linux.html" class="wp_rp_thumbnail"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ddos_attack-150x150.gif" alt="被DDOS了怎么办，浅谈Liunx防御DDOS攻击" width="150" height="150"></a><a href="https://www.nigesb.com/ddos-attack-defence-in-linux.html" class="wp_rp_title">被DDOS了怎么办，浅谈Liunx防御DDOS攻击</a></li></ul></div></div>
+<div style="margin-top: 10px; padding-top: 5px; border-top: 1px dotted rgb(77, 77, 77);">本文标题：<a rel="bookmark" title="使用PPTP配置Linux上的VPN服务器" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html">使用PPTP配置Linux上的VPN服务器</a></div><div>本文链接：<a rel="bookmark" title="使用PPTP配置Linux上的VPN服务器" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html">https://www.nigesb.com/setup-your-own-vpn-with-pptp.html</a></div><div>订阅本站：<a href="http://www.nigesb.com/feed" target="_blank">http://www.nigesb.com/feed</a></div><div>转载请注明来源，如果喜欢本站可以Feed订阅本站。</div><p>					</p></div><!-- END entry -->
+		
+				
+		<div class="post-info-bottom">
+			<span class="post-info-category"><a href="https://www.nigesb.com/category/share-technology" rel="category tag">技术分享</a></span><span class="post-info-tags"><a href="https://www.nigesb.com/tag/linux" rel="tag">Linux</a>, <a href="https://www.nigesb.com/tag/vpn" rel="tag">vpn</a></span>
+		</div>
+		<div id="nav-below">
+			<div class="nav-previous"><a href="https://www.nigesb.com/e430c-install-mac-os-10-9.html" rel="prev"><span class="meta-nav">←</span> E430c历经艰辛终于完美驱动OS10.9(Clover)</a></div>
+			<div class="nav-next"><a href="https://www.nigesb.com/discuz-7-2-sql-injection-and-getshell.html" rel="next">从Discuz 7.2严重注入漏洞到GetShell <span class="meta-nav">→</span></a></div>
+		</div><!-- #nav-below -->					
+	</div><!-- END post -->
+	<!-- You can start editing here. -->
+
+			<div id="comments-div"><span id="comments-addcomment"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#respond" rel="nofollow" title="发表评论？">发表评论？</a></span><h2 id="comments">38 条评论。</h2></div>
+		<ol class="commentlist" id="thecomments">
+				
+<li class="comment even thread-even depth-1" id="li-comment-81210">
+	<div id="comment-81210">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/fcddb0ff47d62a70c2af89ef459da7ff" srcset="https://secure.gravatar.com/avatar/fcddb0ff47d62a70c2af89ef459da7ff?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">John</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-81210">2014 年 6 月 12 日 在 19:07</a></span>
+		</div>
+		<div class="comment-text">
+			<p>看官方手册最稳妥</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=81210#respond" onclick="return addComment.moveForm( &quot;comment-81210&quot;, &quot;81210&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给John">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+
+<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-82843">
+	<div id="comment-82843">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/253b4007557539ce0e443809f108017c.jpeg" srcset="https://secure.gravatar.com/avatar/253b4007557539ce0e443809f108017c?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">翔子</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-82843">2014 年 6 月 28 日 在 10:51</a></span>
+		</div>
+		<div class="comment-text">
+			<p>PPTP的服务端日志放在哪里啊？<br>
+公司的网络上班时间进行行为管理，只留http<br>
+好容易hack了一个无线网，信号太弱，win搜不到信号，<br>
+只能用kali系统蹭到，结果总是连不到家里的vpn，<br>
+不知道蹭到的这个是不是也没有NAT-T协议。</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=82843#respond" onclick="return addComment.moveForm( &quot;comment-82843&quot;, &quot;82843&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给翔子">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor even depth-2" id="li-comment-82904">
+	<div id="comment-82904">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-82904">2014 年 6 月 30 日 在 09:25</a></span>
+		</div>
+		<div class="comment-text">
+			<p>在/var/log/messages</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=82904#respond" onclick="return addComment.moveForm( &quot;comment-82904&quot;, &quot;82904&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment odd alt thread-even depth-1" id="li-comment-100628">
+	<div id="comment-100628">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/e42ba72d2ea3d68e224718b3d9621302.jpeg" srcset="https://secure.gravatar.com/avatar/e42ba72d2ea3d68e224718b3d9621302?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">tait</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-100628">2015 年 7 月 23 日 在 11:00</a></span>
+		</div>
+		<div class="comment-text">
+			<p>非常好，按网上其他教程设置了不是上不了网就是非常慢，原来少了：iptables -A FORWARD -p tcp –syn -s 10.0.0.0/24 -j TCPMSS –set-mss 1356<br>
+，非常感谢。</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=100628#respond" onclick="return addComment.moveForm( &quot;comment-100628&quot;, &quot;100628&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给tait">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor even depth-2" id="li-comment-100629">
+	<div id="comment-100629">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-100629">2015 年 7 月 23 日 在 11:53</a></span>
+		</div>
+		<div class="comment-text">
+			<p>有帮助就好</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=100629#respond" onclick="return addComment.moveForm( &quot;comment-100629&quot;, &quot;100629&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-102335">
+	<div id="comment-102335">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/saved_resource" srcset="https://secure.gravatar.com/avatar/?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo avatar-default" height="40" width="40">			<cite class="fn">阿奇</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102335">2015 年 10 月 6 日 在 12:01</a></span>
+		</div>
+		<div class="comment-text">
+			<p>大大，刚想问你问题，结果发现时自己打错了，确实是漏了这个导致网页上不了，只可以上QQ<br>
+iptables -A FORWARD -p tcp –syn -s 10.0.0.0/24 -j TCPMSS –set-mss 1356<br>
+果断把之前所有收藏的网页删掉，都不正确，还是大大厉害，赞一个哈</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102335#respond" onclick="return addComment.moveForm( &quot;comment-102335&quot;, &quot;102335&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给阿奇">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor even depth-2" id="li-comment-102408">
+	<div id="comment-102408">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102408">2015 年 10 月 8 日 在 09:59</a></span>
+		</div>
+		<div class="comment-text">
+			<p>过奖过奖</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102408#respond" onclick="return addComment.moveForm( &quot;comment-102408&quot;, &quot;102408&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment odd alt thread-even depth-1" id="li-comment-102677">
+	<div id="comment-102677">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/saved_resource" srcset="https://secure.gravatar.com/avatar/?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo avatar-default" height="40" width="40">			<cite class="fn">kkwd</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102677">2015 年 11 月 3 日 在 11:29</a></span>
+		</div>
+		<div class="comment-text">
+			<p>请问我配制好后老是掉线是什么问题呢。<br>
+一二个人用的时候掉线还好。超过三个人后一分钟之内就掉线了。</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102677#respond" onclick="return addComment.moveForm( &quot;comment-102677&quot;, &quot;102677&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给kkwd">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor even depth-2" id="li-comment-102678">
+	<div id="comment-102678">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102678">2015 年 11 月 3 日 在 11:39</a></span>
+		</div>
+		<div class="comment-text">
+			<p>检查是否网关路由设备支持有问题。</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102678#respond" onclick="return addComment.moveForm( &quot;comment-102678&quot;, &quot;102678&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-102694">
+	<div id="comment-102694">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/e38bc750034f713d25bc91a26814c022" srcset="https://secure.gravatar.com/avatar/e38bc750034f713d25bc91a26814c022?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Raymain1944</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102694">2015 年 11 月 11 日 在 18:33</a></span>
+		</div>
+		<div class="comment-text">
+			<p>请问我配好以后老是告诉我端口已经关闭，我看了一下服务器上的1723端口pptpd已经在监听了，EC2的防火墙设置也已经设置了，但就是死活告诉我端口关闭….求救…</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102694#respond" onclick="return addComment.moveForm( &quot;comment-102694&quot;, &quot;102694&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Raymain1944">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor even depth-2" id="li-comment-102739">
+	<div id="comment-102739">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102739">2015 年 11 月 17 日 在 14:28</a></span>
+		</div>
+		<div class="comment-text">
+			<p>gfw？</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102739#respond" onclick="return addComment.moveForm( &quot;comment-102739&quot;, &quot;102739&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment odd alt depth-3" id="li-comment-102775">
+	<div id="comment-102775">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/e38bc750034f713d25bc91a26814c022" srcset="https://secure.gravatar.com/avatar/e38bc750034f713d25bc91a26814c022?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Raymain1944</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102775">2015 年 11 月 18 日 在 17:24</a></span>
+		</div>
+		<div class="comment-text">
+			<p>排查过了，不是gfw，就是学校的出口防火墙挡了….</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102775#respond" onclick="return addComment.moveForm( &quot;comment-102775&quot;, &quot;102775&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Raymain1944">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor even depth-4" id="li-comment-102817">
+	<div id="comment-102817">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102817">2015 年 11 月 20 日 在 17:57</a></span>
+		</div>
+		<div class="comment-text">
+			<p>那估计没法</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102817#respond" onclick="return addComment.moveForm( &quot;comment-102817&quot;, &quot;102817&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment odd alt depth-2" id="li-comment-102848">
+	<div id="comment-102848">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/bd9a3be1d12f9e6809f4292aa747dd00" srcset="https://secure.gravatar.com/avatar/bd9a3be1d12f9e6809f4292aa747dd00?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">lion</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102848">2015 年 11 月 23 日 在 00:12</a></span>
+		</div>
+		<div class="comment-text">
+			<p>你试下以下两种方法之一：<br>
+1. 路由器的dmz设置，把你本机ip公开到公网；<br>
+2. 如果有设置pptp穿透的话，设置开启穿透；</p>
+<p>祝你好运！</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102848#respond" onclick="return addComment.moveForm( &quot;comment-102848&quot;, &quot;102848&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给lion">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment even thread-even depth-1" id="li-comment-102742">
+	<div id="comment-102742">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/saved_resource" srcset="https://secure.gravatar.com/avatar/?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo avatar-default" height="40" width="40">			<cite class="fn">匿名</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102742">2015 年 11 月 17 日 在 15:22</a></span>
+		</div>
+		<div class="comment-text">
+			<p>nat转发设置了，sysctl设置了但是就是上不去网，可以连接，但是转发不到外网</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102742#respond" onclick="return addComment.moveForm( &quot;comment-102742&quot;, &quot;102742&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor odd alt depth-2" id="li-comment-102743">
+	<div id="comment-102743">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102743">2015 年 11 月 17 日 在 15:44</a></span>
+		</div>
+		<div class="comment-text">
+			<p>建议清空防火墙再配置规则。</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102743#respond" onclick="return addComment.moveForm( &quot;comment-102743&quot;, &quot;102743&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment even thread-odd thread-alt depth-1" id="li-comment-102814">
+	<div id="comment-102814">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/e2f771b07b3ded988b21041d846f9a4b" srcset="https://secure.gravatar.com/avatar/e2f771b07b3ded988b21041d846f9a4b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">匿名</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102814">2015 年 11 月 20 日 在 17:17</a></span>
+		</div>
+		<div class="comment-text">
+			<p>不知道博主有没有试过docker的pptp，我这边用了遇到问题  就是连接不上</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102814#respond" onclick="return addComment.moveForm( &quot;comment-102814&quot;, &quot;102814&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor odd alt depth-2" id="li-comment-102816">
+	<div id="comment-102816">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102816">2015 年 11 月 20 日 在 17:45</a></span>
+		</div>
+		<div class="comment-text">
+			<p>docker的应该没这么麻烦，一条命令全搞定。</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102816#respond" onclick="return addComment.moveForm( &quot;comment-102816&quot;, &quot;102816&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment even thread-even depth-1" id="li-comment-102899">
+	<div id="comment-102899">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/805b15defeafdee9f4a95ca4d1a10248" srcset="https://secure.gravatar.com/avatar/805b15defeafdee9f4a95ca4d1a10248?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">thanch2n</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102899">2015 年 11 月 28 日 在 21:27</a></span>
+		</div>
+		<div class="comment-text">
+			<p>在centos6上配置了pptp vpn正常使用，然后装了Apache 和php做站点，站点能够访问，vpn连不上了，请问是哪里需要更改吗？</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102899#respond" onclick="return addComment.moveForm( &quot;comment-102899&quot;, &quot;102899&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给thanch2n">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor odd alt depth-2" id="li-comment-102925">
+	<div id="comment-102925">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102925">2015 年 12 月 1 日 在 09:56</a></span>
+		</div>
+		<div class="comment-text">
+			<p>应该是无冲突的</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102925#respond" onclick="return addComment.moveForm( &quot;comment-102925&quot;, &quot;102925&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment even depth-3" id="li-comment-102926">
+	<div id="comment-102926">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/805b15defeafdee9f4a95ca4d1a10248" srcset="https://secure.gravatar.com/avatar/805b15defeafdee9f4a95ca4d1a10248?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">thanch2n</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102926">2015 年 12 月 1 日 在 13:29</a></span>
+		</div>
+		<div class="comment-text">
+			<p>现在pptp vpn和php nginx能同时运行了，但是客户端连接vpn的时候填服务器ip可以连上，填域名连不上，域名已经能够解析到ip了，怎么样能够填域名就能连接vpn呢？</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102926#respond" onclick="return addComment.moveForm( &quot;comment-102926&quot;, &quot;102926&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给thanch2n">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor odd alt depth-4" id="li-comment-102946">
+	<div id="comment-102946">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-102946">2015 年 12 月 4 日 在 11:57</a></span>
+		</div>
+		<div class="comment-text">
+			<p>这个应该是一样的没影响，估计是你dns解析配置问题。</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=102946#respond" onclick="return addComment.moveForm( &quot;comment-102946&quot;, &quot;102946&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment even thread-odd thread-alt depth-1" id="li-comment-103206">
+	<div id="comment-103206">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/f7e52cd10f16cf75bdaa9cde7ab30275" srcset="https://secure.gravatar.com/avatar/f7e52cd10f16cf75bdaa9cde7ab30275?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">solo</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103206">2016 年 2 月 19 日 在 18:57</a></span>
+		</div>
+		<div class="comment-text">
+			<p>快被 LCP: timeout sending Config-Requests 折磨死了，用公司的、家里的、联通4G的都得到同一个日志：</p>
+<p>LCP: timeout sending Config-Requests<br>
+Feb 18 19:51:18 host-X-X-X-X pppd[2585]: Connection terminated.<br>
+Feb 18 19:51:18 host-X-X-X-X pppd[2585]: Modem hangup<br>
+Feb 18 19:51:18 host-X-X-X-X pppd[2585]: Exit.<br>
+Feb 18 19:51:18 host-X-X-X-X pptpd[2584]: GRE: read(fd=6,buffer=611860,len=8196) from PTY failed: status = -1 error = Input/output error, usually caused by unexpected termination of pppd, check option syntax and pppd logs<br>
+Feb 18 19:51:18 host–X-X-X-X pptpd[2584]: CTRL: PTY read or GRE write failed (pty,gre)=(6,7)</p>
+<p>X-X-X-X是VPS地址</p>
+<p>很难理解联通4G也会“不支持GRE协议或NAT-T”…<br>
+搜了一晚上，解除加密、long，都搞不定。<br>
+敢问VPN设置里还有什么地方可以调整的？</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103206#respond" onclick="return addComment.moveForm( &quot;comment-103206&quot;, &quot;103206&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给solo">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor odd alt depth-2" id="li-comment-103207">
+	<div id="comment-103207">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103207">2016 年 2 月 20 日 在 13:24</a></span>
+		</div>
+		<div class="comment-text">
+			<p>检查vps的控制台vpn相关支持协议是否打开<br>
+加上iptables -A INPUT -p 47 -j ACCEPT</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103207#respond" onclick="return addComment.moveForm( &quot;comment-103207&quot;, &quot;103207&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment even depth-3" id="li-comment-103208">
+	<div id="comment-103208">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/f7e52cd10f16cf75bdaa9cde7ab30275" srcset="https://secure.gravatar.com/avatar/f7e52cd10f16cf75bdaa9cde7ab30275?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">solo</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103208">2016 年 2 月 21 日 在 00:14</a></span>
+		</div>
+		<div class="comment-text">
+			<p>谢谢答复。我是外行，如何检查，可否明示？<br>
+在Conoha搭建VPN之前，已经按下面这个帖子的要求检查了搭建环境，没有问题：http://www.dabu.info/centos6-4-structures-pptp-vpn.html<br>
+此外，这个VPS，我已搭建了SS，使用起来也没问题。</p>
+<p>p.s.如不嫌弃，我可以就此事另行支付咨询费或酬金，请告知收款账号（通过邮件也行）。</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103208#respond" onclick="return addComment.moveForm( &quot;comment-103208&quot;, &quot;103208&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给solo">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor odd alt depth-4" id="li-comment-103313">
+	<div id="comment-103313">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103313">2016 年 3 月 1 日 在 10:04</a></span>
+		</div>
+		<div class="comment-text">
+			<p>你防火墙是否添加了我说的那条规则？</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103313#respond" onclick="return addComment.moveForm( &quot;comment-103313&quot;, &quot;103313&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment even thread-even depth-1" id="li-comment-103209">
+	<div id="comment-103209">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/f7e52cd10f16cf75bdaa9cde7ab30275" srcset="https://secure.gravatar.com/avatar/f7e52cd10f16cf75bdaa9cde7ab30275?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">solo</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103209">2016 年 2 月 22 日 在 10:14</a></span>
+		</div>
+		<div class="comment-text">
+			<p>刚从Conoha客服那里得知，他们不支持PPTP <img draggable="false" class="emoji" alt="😥" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/1f625.svg"></p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103209#respond" onclick="return addComment.moveForm( &quot;comment-103209&quot;, &quot;103209&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给solo">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor odd alt depth-2" id="li-comment-103314">
+	<div id="comment-103314">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103314">2016 年 3 月 1 日 在 10:04</a></span>
+		</div>
+		<div class="comment-text">
+			<p>你可以使用其他vpn协议</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103314#respond" onclick="return addComment.moveForm( &quot;comment-103314&quot;, &quot;103314&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment even thread-odd thread-alt depth-1" id="li-comment-103467">
+	<div id="comment-103467">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/saved_resource" srcset="https://secure.gravatar.com/avatar/?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo avatar-default" height="40" width="40">			<cite class="fn">飘过</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103467">2016 年 3 月 8 日 在 16:52</a></span>
+		</div>
+		<div class="comment-text">
+			<p>用博主的方法vpn搭建一次成功，给博主点赞。我的博客里也想引用博主的内容，可以不！ <img draggable="false" class="emoji" alt="😈" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/1f608.svg"></p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103467#respond" onclick="return addComment.moveForm( &quot;comment-103467&quot;, &quot;103467&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给飘过">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor odd alt depth-2" id="li-comment-103468">
+	<div id="comment-103468">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103468">2016 年 3 月 8 日 在 17:19</a></span>
+		</div>
+		<div class="comment-text">
+			<p>卧槽，身上金光一闪，可以用啊，注明出处就好</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103468#respond" onclick="return addComment.moveForm( &quot;comment-103468&quot;, &quot;103468&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment even thread-even depth-1" id="li-comment-103565">
+	<div id="comment-103565">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/8cdc1bea09b315b9e24f4119ef3c0159" srcset="https://secure.gravatar.com/avatar/8cdc1bea09b315b9e24f4119ef3c0159?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">漫天</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103565">2016 年 3 月 24 日 在 19:45</a></span>
+		</div>
+		<div class="comment-text">
+			<p>大大，请问下那些配置文件只用加那么多吗？<br>
+我看网上一些教程似乎有不少东西，但好像默认就在文件里，我打开只有:<br>
+00:00     ###############################################################################                                                                 # $Id: pptpd.conf,v 1.11 2011/05/19 00:02:50 quozl Exp $<br>
+#<br>
+# Sample Poptop configuration file /etc/pptpd.conf<br>
+#<br>
+# Changes are effective when pptpd is restarted.                        ###############################################################################                                                                 # TAG: ppp                                                              #       Path to the pppd program, default ‘/usr/sbin/pppd’ on Linux     #                                                                       #ppp /usr/sbin/pppd                                                     # TAG: option                                                           #       Specifies the location of the PPP options file.<br>
+#       By default PPP looks in ‘/etc/ppp/options’<br>
+#                                                                       option /etc/ppp/options.pptpd</p>
+<p># TAG: debug<br>
+#       Turns on (more) debugging to syslog<br>
+#<br>
+#debug</p>
+<p>这些，是不是真的只用加上配置的本地和客户端服务器？</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103565#respond" onclick="return addComment.moveForm( &quot;comment-103565&quot;, &quot;103565&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给漫天">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment odd alt depth-2" id="li-comment-103566">
+	<div id="comment-103566">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/8cdc1bea09b315b9e24f4119ef3c0159" srcset="https://secure.gravatar.com/avatar/8cdc1bea09b315b9e24f4119ef3c0159?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">漫天</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103566">2016 年 3 月 24 日 在 20:01</a></span>
+		</div>
+		<div class="comment-text">
+			<p>还有，请问下文件中＃代表什么？</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103566#respond" onclick="return addComment.moveForm( &quot;comment-103566&quot;, &quot;103566&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给漫天">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+
+<li class="comment byuser comment-author-jarett bypostauthor even depth-2" id="li-comment-103980">
+	<div id="comment-103980">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103980">2016 年 4 月 19 日 在 16:11</a></span>
+		</div>
+		<div class="comment-text">
+			<p>前面带#的都是注释</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103980#respond" onclick="return addComment.moveForm( &quot;comment-103980&quot;, &quot;103980&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-103950">
+	<div id="comment-103950">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/0c62ee758276ccc35ef6f49de55a1b46" srcset="https://secure.gravatar.com/avatar/0c62ee758276ccc35ef6f49de55a1b46?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">wonbin</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103950">2016 年 4 月 14 日 在 17:00</a></span>
+		</div>
+		<div class="comment-text">
+			<p>博主救命！！<br>
+/var/log/message:<br>
+Apr 14 16:50:48 localhost pptp[23420]: anon log[main:pptp.c:333]: The synchronous pptp option is NOT activated<br>
+Apr 14 16:50:48 localhost pptp[23427]: anon log[ctrlp_rep:pptp_ctrl.c:254]: Sent control packet type is 1 ‘Start-Control-Connection-Request’<br>
+Apr 14 16:50:48 localhost pptp[23427]: anon log[ctrlp_disp:pptp_ctrl.c:754]: Received Start Control Connection Reply<br>
+Apr 14 16:50:48 localhost pptp[23427]: anon log[ctrlp_disp:pptp_ctrl.c:788]: Client connection established.<br>
+Apr 14 16:50:49 localhost pptp[23427]: anon log[ctrlp_rep:pptp_ctrl.c:254]: Sent control packet type is 7 ‘Outgoing-Call-Request’<br>
+Apr 14 16:50:49 localhost pptp[23427]: anon log[ctrlp_disp:pptp_ctrl.c:873]: Received Outgoing Call Reply.<br>
+Apr 14 16:50:49 localhost pptp[23427]: anon log[ctrlp_disp:pptp_ctrl.c:912]: Outgoing call established (call ID 0, peer’s call ID 25088).<br>
+Apr 14 16:51:19 localhost pppd[23419]: LCP: timeout sending Config-Requests<br>
+Apr 14 16:51:19 localhost pppd[23419]: Connection terminated.<br>
+卡在这里了，不知道怎么解决 <img draggable="false" class="emoji" alt="😥" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/1f625.svg">  <img draggable="false" class="emoji" alt="😥" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/1f625.svg"><br>
+系统是centos7，小白一个  要哭了。</p>
+<p>往是路由器分出来的：<br>
+[wonbin@localhost ~]$ ifconfig<br>
+br0: flags=4099  mtu 1500<br>
+        inet 10.0.0.30  netmask 255.255.255.0  broadcast 10.0.0.255<br>
+        ether 6e:41:9b:46:c6:2c  txqueuelen 0  (Ethernet)<br>
+        RX packets 0  bytes 0 (0.0 B)<br>
+        RX errors 0  dropped 0  overruns 0  frame 0<br>
+        TX packets 0  bytes 0 (0.0 B)<br>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</p>
+<p>enp3s0: flags=4163  mtu 1500<br>
+        inet 192.168.1.104  netmask 255.255.255.0  broadcast 192.168.1.255<br>
+        inet6 fe80::325a:3aff:fe01:390c  prefixlen 64  scopeid 0x20<br>
+        ether 30:5a:3a:01:39:0c  txqueuelen 1000  (Ethernet)<br>
+        RX packets 989194  bytes 1109907518 (1.0 GiB)<br>
+        RX errors 0  dropped 0  overruns 0  frame 0<br>
+        TX packets 674890  bytes 80689225 (76.9 MiB)<br>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</p>
+<p>lo: flags=73  mtu 65536<br>
+        inet 127.0.0.1  netmask 255.0.0.0<br>
+        inet6 ::1  prefixlen 128  scopeid 0x10<br>
+        loop  txqueuelen 0  (Local Loopback)<br>
+        RX packets 1593  bytes 251926 (246.0 KiB)<br>
+        RX errors 0  dropped 0  overruns 0  frame 0<br>
+        TX packets 1593  bytes 251926 (246.0 KiB)<br>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</p>
+<p>virbr0: flags=4099  mtu 1500<br>
+        inet 192.168.122.1  netmask 255.255.255.0  broadcast 192.168.122.255<br>
+        ether 52:54:00:ff:c5:dd  txqueuelen 0  (Ethernet)<br>
+        RX packets 0  bytes 0 (0.0 B)<br>
+        RX errors 0  dropped 0  overruns 0  frame 0<br>
+        TX packets 0  bytes 0 (0.0 B)<br>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0<br>
+vpn 是云梯的vpn,前一阵因为打开网页慢，配置了dnsmasq,从那以后vpn就连不上了</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103950#respond" onclick="return addComment.moveForm( &quot;comment-103950&quot;, &quot;103950&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给wonbin">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor even depth-2" id="li-comment-103982">
+	<div id="comment-103982">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-103982">2016 年 4 月 19 日 在 16:12</a></span>
+		</div>
+		<div class="comment-text">
+			<p>你恢复设置看看</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=103982#respond" onclick="return addComment.moveForm( &quot;comment-103982&quot;, &quot;103982&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment odd alt thread-even depth-1" id="li-comment-104693">
+	<div id="comment-104693">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/081ceebabea031b571fe43b5a148bef0" srcset="https://secure.gravatar.com/avatar/081ceebabea031b571fe43b5a148bef0?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">匿名</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-104693">2017 年 4 月 28 日 在 10:55</a></span>
+		</div>
+		<div class="comment-text">
+			<p>GRE: read(fd=6,buffer=611860,len=8196) from PTY failed: status = -1 error = Input/output error, usually caused by unexpected termination of pppd, check option syntax and pppd logs</p>
+<p>这个是VPN可以连接但是用户会不定时掉线 不知道是什么问题，大神求解答</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=104693#respond" onclick="return addComment.moveForm( &quot;comment-104693&quot;, &quot;104693&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给">回复</a>		</div>
+	</div>
+
+<ul class="children">
+
+<li class="comment byuser comment-author-jarett bypostauthor even depth-2" id="li-comment-104694">
+	<div id="comment-104694">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b.jpeg" srcset="https://secure.gravatar.com/avatar/ce9a94ec6b51943277e15e62b859b81b?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo" height="40" width="40">			<cite class="fn">Jarett</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-104694">2017 年 4 月 28 日 在 12:41</a></span>
+		</div>
+		<div class="comment-text">
+			<p>可能是被墙或运营商干扰了</p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=104694#respond" onclick="return addComment.moveForm( &quot;comment-104694&quot;, &quot;104694&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给Jarett">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-104763">
+	<div id="comment-104763">
+		<div class="comment-author vcard">
+			<img alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/saved_resource" srcset="https://secure.gravatar.com/avatar/?s=80&amp;d=monsterid&amp;r=g 2x" class="avatar avatar-40 photo avatar-default" height="40" width="40">			<cite class="fn">生如夏花</cite>
+			<span class="comment-meta commentmetadata"><a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#comment-104763">2017 年 11 月 3 日 在 14:07</a></span>
+		</div>
+		<div class="comment-text">
+			<p>太厉害了，连接之后老是上不了外网，现在可以了，感谢最后一条命令，牛逼<br>
+iptables -A FORWARD -p tcp –syn -s 10.0.0.0/24 -j TCPMSS –set-mss 1356 <img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/mrgreen.png" alt=":mrgreen:" class="wp-smiley" style="height: 1em; max-height: 1em;">  <img draggable="false" class="emoji" alt="🙄" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/1f644.svg">  <img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/mrgreen.png" alt=":mrgreen:" class="wp-smiley" style="height: 1em; max-height: 1em;">  <img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/mrgreen.png" alt=":mrgreen:" class="wp-smiley" style="height: 1em; max-height: 1em;">  <img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/mrgreen.png" alt=":mrgreen:" class="wp-smiley" style="height: 1em; max-height: 1em;">  <img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/mrgreen.png" alt=":mrgreen:" class="wp-smiley" style="height: 1em; max-height: 1em;"></p>
+					</div>
+		<div class="reply">
+			<a rel="nofollow" class="comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html?replytocom=104763#respond" onclick="return addComment.moveForm( &quot;comment-104763&quot;, &quot;104763&quot;, &quot;respond&quot;, &quot;1637&quot; )" aria-label="回复给生如夏花">回复</a>		</div>
+	</div>
+
+</li><!-- #comment-## -->
+		</ol>
+		<div class="navigation"></div>
+	
+	<script type="text/javascript">
+	/* <![CDATA[ */
+		function grin(tag) {
+			var myField;
+			tag = ' ' + tag + ' ';
+			if (document.getElementById('comment') && document.getElementById('comment').type == 'textarea') {
+				myField = document.getElementById('comment');
+			} else {
+				return false;
+			}
+			if (document.selection) {
+				myField.focus();
+				sel = document.selection.createRange();
+				sel.text = tag;
+				myField.focus();
+			}
+			else if (myField.selectionStart || myField.selectionStart == '0') {
+				var startPos = myField.selectionStart;
+				var endPos = myField.selectionEnd;
+				var cursorPos = endPos;
+				myField.value = myField.value.substring(0, startPos)
+							  + tag
+							  + myField.value.substring(endPos, myField.value.length);
+				cursorPos += tag.length;
+				myField.focus();
+				myField.selectionStart = cursorPos;
+				myField.selectionEnd = cursorPos;
+			}
+			else {
+				myField.value += tag;
+				myField.focus();
+			}
+		}
+	/* ]]> */
+	</script>
+		<div id="respond" class="comment-respond">
+		<h3 id="reply-title" class="comment-reply-title">发表评论 <small><a rel="nofollow" id="cancel-comment-reply-link" href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#respond" style="display:none;"><small>取消回复</small></a></small></h3>			<form action="https://www.nigesb.com/wp-comments-post.php" method="post" id="commentform" class="comment-form">
+				<p class="smilies">
+	<a href="javascript:grin(&#39;:?:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_question.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:razz:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_razz.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:sad:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_sad.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:evil:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_evil.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:!:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_exclaim.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:smile:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_smile.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:oops:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_redface.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:grin:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_biggrin.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:eek:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_surprised.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:shock:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_eek.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:???:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_confused.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:cool:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_cool.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:lol:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_lol.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:mad:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_mad.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:twisted:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_twisted.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:roll:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_rolleyes.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:wink:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_wink.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:idea:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_idea.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:arrow:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_arrow.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:neutral:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_neutral.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:cry:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_cry.gif" alt=""></a>
+	<a href="javascript:grin(&#39;:mrgreen:&#39;)"><img src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/icon_mrgreen.gif" alt=""></a>
+	<br></p><p class="comment-form-comment"><textarea aria-required="true" rows="8" cols="45" name="comment" id="comment" onkeydown="if(event.ctrlKey){if(event.keyCode==13){document.getElementById(&#39;submit&#39;).click();return false}};"></textarea></p><p class="comment-note">注意 - 你可以用以下 <abbr title="HyperText Markup Language">HTML</abbr> tags and attributes:<br> <code>&lt;a href="" title=""&gt; &lt;abbr title=""&gt; &lt;acronym title=""&gt; &lt;b&gt; &lt;blockquote cite=""&gt; &lt;cite&gt; &lt;code&gt; &lt;del datetime=""&gt; &lt;em&gt; &lt;i&gt; &lt;q cite=""&gt; &lt;s&gt; &lt;strike&gt; &lt;strong&gt; </code></p><p class="comment-form-author"><input id="author" name="author" type="text" value="" size="20"> <label for="author"><small>昵称</small></label></p>
+<p class="comment-form-email"><input id="email" name="email" type="text" value="" size="20"> <label for="email">邮箱（对外保密，管理员回复时你将得到 Email 通知）</label></p>
+<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="提交"> <input type="hidden" name="comment_post_ID" value="1637" id="comment_post_ID">
+<input type="hidden" name="comment_parent" id="comment_parent" value="0">
+</p><p style="display: none;"><input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce" value="cf985b23e4"></p><p style="display: none;"></p>			<input type="hidden" id="ak_js" name="ak_js" value="1558192381436"></form>
+			</div><!-- #respond -->
+	</div><!--content-->
+<div id="sidebar-border">
+	<div id="rss_border">
+		<div class="rss_border">
+			<div id="rss_wrap">
+				<div class="rss_wrap">
+										<a class="rss rss_text" href="https://www.nigesb.com/feed" rel="bookmark" title="RSS 订阅">RSS 订阅</a>
+																													</div>
+			</div>
+		</div>
+	</div>
+	<div id="sidebar">
+
+<div id="views-plus-2" class="widget widget_views-plus"><h3 class="widgettitle">热门文章</h3><ul>
+<li><a href="https://www.nigesb.com/gerix-wifi-cracker-2-realease.html" title="gerix wifi cracker 2发布，支持Kali和Kali 2">gerix wifi cracker 2发布，支持Kali和Kali 2</a> - 401,074 次阅读</li>
+<li><a href="https://www.nigesb.com/the-latest-kali-iso-download.html" title="Kali每周最新版本下载地址">Kali每周最新版本下载地址</a> - 339,877 次阅读</li>
+<li><a href="https://www.nigesb.com/ie-0day-found.html" title="IE 0day来袭，附Metasploit脚本">IE 0day来袭，附Metasploit脚本</a> - 246,028 次阅读</li>
+<li><a href="https://www.nigesb.com/debug-the-mod_rewrite-in-apache.html" title="详解调试Apache的mod_rewrite模块">详解调试Apache的mod_rewrite模块</a> - 120,265 次阅读</li>
+<li><a href="https://www.nigesb.com/gsm-hacker-sheet.html" title="GSM Hacker资料汇总">GSM Hacker资料汇总</a> - 118,886 次阅读</li>
+<li><a href="https://www.nigesb.com/broadcom-bcm4325-and-bcm4329-dos-vul.html" title="Broadcom网卡芯片BCM4325、BCM4329拒绝服务漏洞">Broadcom网卡芯片BCM4325、BCM4329拒绝服务漏洞</a> - 111,027 次阅读</li>
+<li><a href="https://www.nigesb.com/strange-spider-ezooms.html" title="屏蔽一个奇怪的蜘蛛Ezooms">屏蔽一个奇怪的蜘蛛Ezooms</a> - 109,826 次阅读</li>
+<li><a href="https://www.nigesb.com/install-cuda-and-optimus-on-kali-linux.html" title="Install cuda and optimus on Kali Linux">Install cuda and optimus on Kali Linux</a> - 106,684 次阅读</li>
+<li><a href="https://www.nigesb.com/phpddos-code.html" title="PHPDDOS攻击原理以及核心代码">PHPDDOS攻击原理以及核心代码</a> - 105,573 次阅读</li>
+<li><a href="https://www.nigesb.com/an-interesting-sqli.html" title="一个有意思的某通用建站系统SQL注入漏洞">一个有意思的某通用建站系统SQL注入漏洞</a> - 100,046 次阅读</li>
+</ul>
+</div><div id="recentcomments" class="widget widget_recentcomments"><h3 class="widgettitle">最新评论</h3><ul style="cursor: auto;"><li id="rc-comment-104992" class="rc-item rc-comment rc-clearfix"><img class="rc-avatar rc-left" width="32" height="32" alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b(1).jpeg"><div class="rc-info"><span class="rc-reviewer">Jarett</span> 在 <a class="rc-post" rel="nofollow" href="https://www.nigesb.com/upgrade-form-http-to-https.html#comment-104992">全站升级HTTPS，以及SSL安全扫描</a></div><div class="rc-timestamp"></div><div class="rc-excerpt">哈哈哈哈</div></li><li id="rc-comment-104991" class="rc-item rc-comment rc-clearfix"><img class="rc-avatar rc-left" width="32" height="32" alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/1da940e9e6d0c71fd8d5eb5d7343c9a3.jpg"><div class="rc-info"><span class="rc-reviewer">11</span> 在 <a class="rc-post" rel="nofollow" href="https://www.nigesb.com/flash-modified-bios-uefi-digitally-signed-circumvent-secure-flash.html#comment-104991">修改版BIOS刷入攻略2014</a></div><div class="rc-timestamp"></div><div class="rc-excerpt">201错误的需要去https://www.win-raid.com/t596f39-Intel-Ma<span class="rc-ellipsis">...</span></div></li><li id="rc-comment-104977" class="rc-item rc-comment rc-clearfix"><img class="rc-avatar rc-left" width="32" height="32" alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/7f3a0aa00bb9edef1339fc5f84ccdccf.png"><div class="rc-info"><span class="rc-reviewer">Mrxn</span> 在 <a class="rc-post" rel="nofollow" href="https://www.nigesb.com/upgrade-form-http-to-https.html#comment-104977">全站升级HTTPS，以及SSL安全扫描</a></div><div class="rc-timestamp"></div><div class="rc-excerpt">老哥 该除草了！！</div></li><li id="rc-comment-104965" class="rc-item rc-comment rc-clearfix"><img class="rc-avatar rc-left" width="32" height="32" alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/ce9a94ec6b51943277e15e62b859b81b(1).jpeg"><div class="rc-info"><span class="rc-reviewer">Jarett</span> 在 <a class="rc-post" rel="nofollow" href="https://www.nigesb.com/e430c-install-mac-os-10-9.html#comment-104965">E430c历经艰辛终于完美驱动OS10.9(Clover)</a></div><div class="rc-timestamp"></div><div class="rc-excerpt">已经锁了BIOS的，数字签名</div></li><li id="rc-comment-104963" class="rc-item rc-comment rc-clearfix"><img class="rc-avatar rc-left" width="32" height="32" alt="" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/b0e89d357a5c55de5293c8ccd5c15a69.jpg"><div class="rc-info"><span class="rc-reviewer">ppdouble</span> 在 <a class="rc-post" rel="nofollow" href="https://www.nigesb.com/e430c-install-mac-os-10-9.html#comment-104963">E430c历经艰辛终于完美驱动OS10.9(Clover)</a></div><div class="rc-timestamp"></div><div class="rc-excerpt">E430C 不是很老的机器吗？我13年初买的。老是觉得印象中有个软件刷的教程 <img draggable="false" class="emoji" alt="😀" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/1f600.svg"></div></li><li class="rc-navi rc-clearfix"><a "rel="nofollow&quot;" class="rc-older">下一页 »</a></li></ul></div>		<div id="recent-posts-2" class="widget widget_recent_entries">		<h3 class="widgettitle">最新文章</h3>		<ul>
+											<li>
+					<a href="https://www.nigesb.com/the-latest-kali-iso-download.html">Kali每周最新版本下载地址</a>
+									</li>
+											<li>
+					<a href="https://www.nigesb.com/fix-openvas-which-scan-cant-start.html">修复OPENVAS扫描任务无法启动问题</a>
+									</li>
+											<li>
+					<a href="https://www.nigesb.com/forbid-mad-dog-spider-yisouspider.html">屏蔽疯狗爬虫YisouSpider</a>
+									</li>
+											<li>
+					<a href="https://www.nigesb.com/upgrade-form-http-to-https.html">全站升级HTTPS，以及SSL安全扫描</a>
+									</li>
+											<li>
+					<a href="https://www.nigesb.com/gerix-wifi-cracker-2-realease.html">gerix wifi cracker 2发布，支持Kali和Kali 2</a>
+									</li>
+											<li>
+					<a href="https://www.nigesb.com/an-interesting-sqli.html">一个有意思的某通用建站系统SQL注入漏洞</a>
+									</li>
+											<li>
+					<a href="https://www.nigesb.com/osomcom_sms_decode.html">一个简单SMS解码库osomcom_sms_decode</a>
+									</li>
+											<li>
+					<a href="https://www.nigesb.com/uniq-large-text-files.html">对大文本文件进行去重</a>
+									</li>
+											<li>
+					<a href="https://www.nigesb.com/advice-about-flashing-modified-bios-uefi-digitally-signed.html">ThinkPad刷BIOS无线网卡白名单的一点补充</a>
+									</li>
+											<li>
+					<a href="https://www.nigesb.com/install-parallels-tools-in-kali-1-10.html">Kali 1.10在Parallels Desktop 10上安装Parallels Tools</a>
+									</li>
+					</ul>
+		</div><div id="categories-2" class="widget widget_categories"><h3 class="widgettitle">文章分类</h3>		<ul>
+	<li class="cat-item cat-item-6"><a href="https://www.nigesb.com/category/share-technology">技术分享</a> (68)
+</li>
+	<li class="cat-item cat-item-128"><a href="https://www.nigesb.com/category/wireless-security">无线安全</a> (13)
+</li>
+	<li class="cat-item cat-item-3"><a href="https://www.nigesb.com/category/net-work-security">网络安全</a> (100)
+</li>
+	<li class="cat-item cat-item-5"><a href="https://www.nigesb.com/category/my-life">自由生活</a> (5)
+</li>
+	<li class="cat-item cat-item-123"><a href="https://www.nigesb.com/category/shared-resource">资源分享</a> (23)
+</li>
+	<li class="cat-item cat-item-139"><a href="https://www.nigesb.com/category/repost-article">转载文章</a> (8)
+</li>
+	<li class="cat-item cat-item-4"><a href="https://www.nigesb.com/category/crack">逆向破解</a> (5)
+</li>
+		</ul>
+</div><div id="text-6" class="widget widget_text"><h3 class="widgettitle">友情链接</h3>			<div class="textwidget"><ul class="xoxo blogroll">
+<li><a href="http://www.hhjack.com.cn/" rel="friend met" target="_blank">hhjack's Blog</a></li>
+<li><a href="https://www.mrxn.net/" target="_blank">Mrxn's Blog</a></li>
+<li><a href="http://www.thinkcart.net/" target="_blank">thinkphp学习博客</a></li>
+<li><a href="http://www.daokers.com/" target="_blank">金刀客博客</a></li>
+<li><a href="https://www.liaotaoo.cn/" target="_blank">龙行博客</a></li>
+	</ul></div>
+		</div>
+
+	</div><!-- end: #sidebar -->
+</div><!-- end: #sidebar-border --></div><!--wrapper-->
+<div class="clear"></div>
+<div id="footer">
+	<div id="footer-inside">
+	<p align="center">
+			Copyright © 2019 Jarett's Blog			| Powered by <a href="http://wordpress.org/">WordPress</a> 
+			| <a href="http://www.nigesb.com/sitemap.html"> Sitemap </a>
+			<br>Page Load in 0.757 Seconds,23 Queries
+			<br>Original Themes by <a href="http://zww.me/">zBench</a>
+		</p>
+		<script type="text/javascript">
+		var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+		document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F9cb140fa554f7dbb06f492e3a1eae6ec' type='text/javascript'%3E%3C/script%3E"));
+</script><script src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/h.js.download" type="text/javascript"></script>
+
+		<div style="display:none">
+		
+		<span id="back-to-top">↑ <a href="https://www.nigesb.com/setup-your-own-vpn-with-pptp.html#" rel="nofollow" title="Back to top">回到顶部</a></span>
+	</div>
+</div><!--footer-->
+<script>
+/* <![CDATA[ */
+var rcGlobal = {
+	serverUrl		:'https://www.nigesb.com',
+	infoTemp		:'%REVIEWER% 在 %POST%',
+	loadingText		:'正在加载',
+	noCommentsText	:'没有任何评论',
+	newestText		:'&laquo; 最新的',
+	newerText		:'&laquo; 上一页',
+	olderText		:'下一页 &raquo;',
+	showContent		:'1',
+	external		:'1',
+	avatarSize		:'32',
+	avatarPosition	:'left',
+	anonymous		:'匿名'
+};
+/* ]]> */
+</script>
+
+<!-- WP SyntaxHighlighter Ver.1.7.3 Begin -->
+<script type="text/javascript" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/shCore.js.download"></script>
+<script type="text/javascript" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/shAutoloader.js.download"></script>
+<script type="text/javascript" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/shBrushXml.js.download"></script>
+<script type="text/javascript">//<![CDATA[
+	SyntaxHighlighter.autoloader(
+	"applescript	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushAppleScript.js?ver=3.0"
+	,"as3 actionscript3	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushAS3.js?ver=3.0"
+	,"bash shell	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushBash.js?ver=3.0"
+	,"cf coldfusion	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushColdFusion.js?ver=3.0"
+	,"cpp c	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushCpp.js?ver=3.0"
+	,"c# c-sharp csharp	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushCSharp.js?ver=3.0"
+	,"css	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushCss.js?ver=3.0"
+	,"delphi pas pascal	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushDelphi.js?ver=3.0"
+	,"diff patch	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushDiff.js?ver=3.0"
+	,"erl erlang	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushErlang.js?ver=3.0"
+	,"groovy	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushGroovy.js?ver=3.0"
+	,"java	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushJava.js?ver=3.0"
+	,"jfx javafx	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushJavaFX.js?ver=3.0"
+	,"js jscript javascript	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushJScript.js?ver=3.0"
+	,"perl pl	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushPerl.js?ver=3.0"
+	,"php	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushPhp.js?ver=3.0"
+	,"plain text	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushPlain.js?ver=3.0"
+	,"ps powershell	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushPowerShell.js?ver=3.0"
+	,"py python	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushPython.js?ver=3.0"
+	,"rails ror ruby rb	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushRuby.js?ver=3.0"
+	,"sass scss	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushSass.js?ver=3.0"
+	,"scala	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushScala.js?ver=3.0"
+	,"sql	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushSql.js?ver=3.0"
+	,"vb vbnet	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushVb.js?ver=3.0"
+	,"xml xhtml xslt html	https://www.nigesb.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/scripts/shBrushXml.js?ver=3.0"
+	);
+	SyntaxHighlighter.defaults['auto-links'] = true;
+	SyntaxHighlighter.defaults['quick-code'] = true;
+	SyntaxHighlighter.defaults['title'] = '';
+	SyntaxHighlighter.defaults['class-name'] = 'notranslate';
+	SyntaxHighlighter.defaults['collapse'] = false;
+	SyntaxHighlighter.defaults['first-line'] = 1;
+	SyntaxHighlighter.defaults['gutter'] = true;
+	SyntaxHighlighter.defaults['pad-line-numbers'] = false;
+	SyntaxHighlighter.defaults['smart-tabs'] = true;
+	SyntaxHighlighter.defaults['tab-size'] = 4;
+	SyntaxHighlighter.defaults['toolbar'] = true;
+	SyntaxHighlighter.config.strings.expandSource = '+ expand source';
+	SyntaxHighlighter.config.strings.help = '?';
+	SyntaxHighlighter.config.strings.alert = 'SyntaxHighlighter\n\n';
+	SyntaxHighlighter.config.strings.noBrush = "Can't find brush for: ";
+	SyntaxHighlighter.config.strings.brushNotHtmlScript = "Brush wasn't configured for html-script option: ";
+	SyntaxHighlighter.all();
+	
+//]]></script>
+<!-- WP SyntaxHighlighter Ver.1.7.3 End -->
+<script type="text/javascript" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/wp-recentcomments.js.download"></script>
+<script type="text/javascript" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/comment-reply.min.js.download"></script>
+<script type="text/javascript" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/wp-embed.min.js.download"></script>
+<script async="async" type="text/javascript" src="./使用PPTP配置Linux上的VPN服务器 _ Jarett&#39;s Blog_files/form.js.download"></script>
+<!--effect-->
+ 
+</div></body></html>

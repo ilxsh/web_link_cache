@@ -1,0 +1,389 @@
+﻿//********************************************************************************
+//** 插件功能:		评论支持插件
+//** 插件应用:		Z-Blog评论支持
+//** 插件制作:		三七八蛋 (http://www.378q.com.cn)
+//** 备　　注:	    jimstory@qq.com
+//********************************************************************************
+function CreateAjax()
+ {
+    var XMLHttp;
+    try
+    {
+        XMLHttp = new ActiveXObject("Microsoft.XMLHTTP");//IE的创建方式
+    }
+    catch(e)
+    {
+        try
+        {
+            XMLHttp = new XMLHttpRequest();//FF等浏览器的创建方式
+        }
+        catch(e)
+        {
+            XMLHttp = false;//创建失败，返回false
+        }
+    }
+    return XMLHttp;//返回XMLHttp实例
+ }
+
+function showDig(ID)
+{
+	var _xmlhttp = CreateAjax();
+	var url = '/zb_users/PLUGIN/CommDig/dig.asp?action=showdig&ID='+ID+'&n='+Math.random()+'';
+	var content = document.getElementById("note"+ID);
+        var dig = document.getElementById("sdig"+ID);                    //获取页面中ID为评论Id的节点
+        _xmlhttp.open('GET',url,true);
+        _xmlhttp.onreadystatechange=function()
+        {
+            if(_xmlhttp.readyState == 4)        //客户端完成请求
+            {
+                if(_xmlhttp.status == 200)      //服务端完成处理并返回数据
+                {
+                    var ResponseText = unescape(_xmlhttp.responseText);            //获取service的显示字符
+                    var r=ResponseText.split(",");                                    
+                    if(ResponseText == "NoData")  //没有找到评论
+                    {
+                        dig.innerHTML="0";
+                    }
+                    else if(r[0] == "showDig" )   //service返回显示信息
+                    {
+                        dig.innerHTML=r[1];
+                    }
+                }
+                
+            }
+            
+        }
+        _xmlhttp.send(null);
+}
+
+function showDown(ID)
+{
+	var _xmlhttp = CreateAjax();
+	var url = '/zb_users/PLUGIN/CommDig/dig.asp?action=showdown&ID='+ID+'&n='+Math.random()+'';
+	var content = document.getElementById("note"+ID);
+        var dig = document.getElementById("sdown"+ID);                    //获取页面中ID为评论Id的节点
+        _xmlhttp.open('GET',url,true);
+        _xmlhttp.onreadystatechange=function()
+        {
+            if(_xmlhttp.readyState == 4)        //客户端完成请求
+            {
+                if(_xmlhttp.status == 200)      //服务端完成处理并返回数据
+                {
+                    var ResponseText = unescape(_xmlhttp.responseText);            //获取service的显示字符
+                    var r=ResponseText.split(",");                                    
+                    if(ResponseText == "NoData")  //没有找到评论
+                    {
+                        dig.innerHTML="0";
+                    }
+                    else if(r[0] == "showDown" )   //service返回显示信息
+                    {
+                        dig.innerHTML=r[1];
+                    }
+                }
+                
+            }
+            
+        }
+        _xmlhttp.send(null);
+}
+
+function commDig(ID)
+{
+	_xmlhttp = CreateAjax();
+	var url = '/zb_users/PLUGIN/CommDig/dig.asp?action=dig&ID='+ID+'&n='+Math.random()+'';		//这里添加了一个参数n,表示为一个随机数，以避免浏览器缓存
+	if(_xmlhttp)    //判断XmlHttp是否创建成功
+    {
+        var content = document.getElementById("note"+ID);
+        var dig = document.getElementById("sdig"+ID);					//获取页面中ID为评论Id的节点
+        _xmlhttp.open('GET',url,true);
+        _xmlhttp.onreadystatechange=function()
+        {
+            if(_xmlhttp.readyState == 4)        //客户端完成请求
+            {
+                if(_xmlhttp.status == 200)      //服务端完成处理并返回数据
+                {
+                    var ResponseText = unescape(_xmlhttp.responseText);			//获取service的显示字符
+					var r=ResponseText.split(",");								
+                    if(r[0] == "Dig" )   //service返回了错误信息
+                    {
+						content.innerHTML="您已经投过票了.";
+                        dig.innerHTML=r[1];
+                    }		
+                    else if(ResponseText == "NoData")  //没有找到评论
+					{
+						content.innerHTML="参数错误.";
+					}
+					else   //服务器返回了成功，重置投票数
+                    {
+						dig.innerHTML=ResponseText;
+						content.innerHTML="感谢您的参与.";
+                    }
+                }
+                else    //服务器出现异常
+                {
+					content.innerHTML="服务器返回异常.";
+                }
+            }
+            else    //请求未完成时的提示信息
+            {
+				content.innerHTML="正在处理...";
+            }
+        }
+        _xmlhttp.send(null);  //向服务器发送请求，因为是get请求，会直接附在URL后面，所以这里括号中的数据为null，IE中也可以不写，但FF就必须加上null，否则会发送失败。
+    }
+    else    //创建未成功
+    {
+        alert("您的浏览器不支持或未启用 XMLHttp!");
+    }
+}
+
+function commDown(ID)
+{
+	_xmlhttp = CreateAjax();
+	var url = '/zb_users/PLUGIN/CommDig/dig.asp?action=down&ID='+ID+'&n='+Math.random()+'';		//这里添加了一个参数n,表示为一个随机数，以避免浏览器缓存
+	if(_xmlhttp)    //判断XmlHttp是否创建成功
+    {
+        var content = document.getElementById("note"+ID);
+        var dig = document.getElementById("sdown"+ID);					//获取页面中ID为评论Id的节点
+        _xmlhttp.open('GET',url,true);
+        _xmlhttp.onreadystatechange=function()
+        {
+            if(_xmlhttp.readyState == 4)        //客户端完成请求
+            {
+                if(_xmlhttp.status == 200)      //服务端完成处理并返回数据
+                {
+                    var ResponseText = unescape(_xmlhttp.responseText);			//获取service的显示字符
+					var r=ResponseText.split(",");								
+                    if(r[0] == "Dig" )   //service返回了错误信息
+                    {
+						content.innerHTML="您已经投过票了.";
+                        dig.innerHTML=r[1];
+                    }		
+                    else if(ResponseText == "NoData")  //没有找到评论
+					{
+						content.innerHTML="参数错误.";
+					}
+					else   //服务器返回了成功，重置投票数
+                    {
+						dig.innerHTML=ResponseText;
+						content.innerHTML="感谢您的参与.";
+                    }
+                }
+                else    //服务器出现异常
+                {
+					content.innerHTML="服务器返回异常.";
+                }
+            }
+            else    //请求未完成时的提示信息
+            {
+				content.innerHTML="正在处理...";
+            }
+        }
+        _xmlhttp.send(null);  //向服务器发送请求，因为是get请求，会直接附在URL后面，所以这里括号中的数据为null，IE中也可以不写，但FF就必须加上null，否则会发送失败。
+    }
+    else    //创建未成功
+    {
+        alert("您的浏览器不支持或未启用 XMLHttp!");
+    }
+}
+
+function commDighot(ID)
+{
+	_xmlhttp = CreateAjax();
+	var url = '/zb_users/PLUGIN/CommDig/dig.asp?action=dig&ID='+ID+'&n='+Math.random()+'';		//这里添加了一个参数n,表示为一个随机数，以避免浏览器缓存
+	if(_xmlhttp)    //判断XmlHttp是否创建成功
+    {
+        var content = document.getElementById("notehot"+ID);
+        var dig = document.getElementById("sdighot"+ID);					//获取页面中ID为评论Id的节点
+        _xmlhttp.open('GET',url,true);
+        _xmlhttp.onreadystatechange=function()
+        {
+            if(_xmlhttp.readyState == 4)        //客户端完成请求
+            {
+                if(_xmlhttp.status == 200)      //服务端完成处理并返回数据
+                {
+                    var ResponseText = unescape(_xmlhttp.responseText);			//获取service的显示字符
+					var r=ResponseText.split(",");								
+                    if(r[0] == "Dig" )   //service返回了错误信息
+                    {
+						content.innerHTML="您已经投过票了.";
+                        dig.innerHTML=r[1];
+                    }		
+                    else if(ResponseText == "NoData")  //没有找到评论
+					{
+						content.innerHTML="参数错误.";
+					}
+					else   //服务器返回了成功，重置投票数
+                    {
+						dig.innerHTML=ResponseText;
+						content.innerHTML="感谢参与.";
+                    }
+                }
+                else    //服务器出现异常
+                {
+					content.innerHTML="服务器返回异常.";
+                }
+            }
+            else    //请求未完成时的提示信息
+            {
+				content.innerHTML="正在处理...";
+            }
+        }
+        _xmlhttp.send(null);  //向服务器发送请求，因为是get请求，会直接附在URL后面，所以这里括号中的数据为null，IE中也可以不写，但FF就必须加上null，否则会发送失败。
+    }
+    else    //创建未成功
+    {
+        alert("您的浏览器不支持或未启用 XMLHttp!");
+    }
+}
+
+function commDownhot(ID)
+{
+	_xmlhttp = CreateAjax();
+	var url = '/zb_users/PLUGIN/CommDig/dig.asp?action=down&ID='+ID+'&n='+Math.random()+'';		//这里添加了一个参数n,表示为一个随机数，以避免浏览器缓存
+	if(_xmlhttp)    //判断XmlHttp是否创建成功
+    {
+        var content = document.getElementById("notehot"+ID);
+        var dig = document.getElementById("sdownhot"+ID);					//获取页面中ID为评论Id的节点
+        _xmlhttp.open('GET',url,true);
+        _xmlhttp.onreadystatechange=function()
+        {
+            if(_xmlhttp.readyState == 4)        //客户端完成请求
+            {
+                if(_xmlhttp.status == 200)      //服务端完成处理并返回数据
+                {
+                    var ResponseText = unescape(_xmlhttp.responseText);			//获取service的显示字符
+					var r=ResponseText.split(",");								
+                    if(r[0] == "Dig" )   //service返回了错误信息
+                    {
+						content.innerHTML="您已经投过票了.";
+                        dig.innerHTML=r[1];
+                    }		
+                    else if(ResponseText == "NoData")  //没有找到评论
+					{
+						content.innerHTML="参数错误.";
+					}
+					else   //服务器返回了成功，重置投票数
+                    {
+						dig.innerHTML=ResponseText;
+						content.innerHTML="感谢参与.";
+                    }
+                }
+                else    //服务器出现异常
+                {
+					content.innerHTML="服务器返回异常.";
+                }
+            }
+            else    //请求未完成时的提示信息
+            {
+				content.innerHTML="正在处理...";
+            }
+        }
+        _xmlhttp.send(null);  //向服务器发送请求，因为是get请求，会直接附在URL后面，所以这里括号中的数据为null，IE中也可以不写，但FF就必须加上null，否则会发送失败。
+    }
+    else    //创建未成功
+    {
+        alert("您的浏览器不支持或未启用 XMLHttp!");
+    }
+}
+
+
+function commYea(ID)
+{
+	_xmlhttp = CreateAjax();
+	var url = '/zb_users/PLUGIN/CommDig/dig.asp?action=yea&ID='+ID+'&n='+Math.random()+'';		//这里添加了一个参数n,表示为一个随机数，以避免浏览器缓存
+	if(_xmlhttp)    //判断XmlHttp是否创建成功
+    {
+        var content = document.getElementById("note"+ID);
+        var dig = document.getElementById("sdig"+ID);					//获取页面中ID为评论Id的节点
+        _xmlhttp.open('GET',url,true);
+        _xmlhttp.onreadystatechange=function()
+        {
+            if(_xmlhttp.readyState == 4)        //客户端完成请求
+            {
+                if(_xmlhttp.status == 200)      //服务端完成处理并返回数据
+                {
+                    var ResponseText = unescape(_xmlhttp.responseText);			//获取service的显示字符
+					var r=ResponseText.split(",");								
+                    if(r[0] == "Dig" )   //service返回了错误信息
+                    {
+						content.innerHTML="您已经投过票了.";
+                        dig.innerHTML=r[1];
+                    }		
+                    else if(ResponseText == "NoData")  //没有找到评论
+					{
+						content.innerHTML="参数错误.";
+					}
+					else   //服务器返回了成功，重置投票数
+                    {
+						dig.innerHTML=ResponseText;
+						content.innerHTML="感谢您的参与.";
+                    }
+                }
+                else    //服务器出现异常
+                {
+					content.innerHTML="服务器返回异常.";
+                }
+            }
+            else    //请求未完成时的提示信息
+            {
+				content.innerHTML="正在处理...";
+            }
+        }
+        _xmlhttp.send(null);  //向服务器发送请求，因为是get请求，会直接附在URL后面，所以这里括号中的数据为null，IE中也可以不写，但FF就必须加上null，否则会发送失败。
+    }
+    else    //创建未成功
+    {
+        alert("您的浏览器不支持或未启用 XMLHttp!");
+    }
+}
+
+function commNay(ID)
+{
+	_xmlhttp = CreateAjax();
+	var url = '/zb_users/PLUGIN/CommDig/dig.asp?action=nay&ID='+ID+'&n='+Math.random()+'';		//这里添加了一个参数n,表示为一个随机数，以避免浏览器缓存
+	if(_xmlhttp)    //判断XmlHttp是否创建成功
+    {
+        var content = document.getElementById("note"+ID);
+        var dig = document.getElementById("sdown"+ID);					//获取页面中ID为评论Id的节点
+        _xmlhttp.open('GET',url,true);
+        _xmlhttp.onreadystatechange=function()
+        {
+            if(_xmlhttp.readyState == 4)        //客户端完成请求
+            {
+                if(_xmlhttp.status == 200)      //服务端完成处理并返回数据
+                {
+                    var ResponseText = unescape(_xmlhttp.responseText);			//获取service的显示字符
+					var r=ResponseText.split(",");								
+                    if(r[0] == "Dig" )   //service返回了错误信息
+                    {
+						content.innerHTML="您已经投过票了.";
+                        dig.innerHTML=r[1];
+                    }		
+                    else if(ResponseText == "NoData")  //没有找到评论
+					{
+						content.innerHTML="参数错误.";
+					}
+					else   //服务器返回了成功，重置投票数
+                    {
+						dig.innerHTML=ResponseText;
+						content.innerHTML="感谢您的参与.";
+                    }
+                }
+                else    //服务器出现异常
+                {
+					content.innerHTML="服务器返回异常.";
+                }
+            }
+            else    //请求未完成时的提示信息
+            {
+				content.innerHTML="正在处理...";
+            }
+        }
+        _xmlhttp.send(null);  //向服务器发送请求，因为是get请求，会直接附在URL后面，所以这里括号中的数据为null，IE中也可以不写，但FF就必须加上null，否则会发送失败。
+    }
+    else    //创建未成功
+    {
+        alert("您的浏览器不支持或未启用 XMLHttp!");
+    }
+}

@@ -1,0 +1,447 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0040)https://www.shusite.com/server/2705.html -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head profile="http://gmpg.org/xfn/11"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>完整教程 debian 下配置安装openvpn|数斯特网络</title>
+
+<meta name="description" content="前几天在VPS上建了个PPTP VPN服务器，连接是没什么问题，但总是不稳定，有时能登陆，有时又不能登陆，不知何故，iptables也配置很久，一定要把OUTPUT 全部打开才能上网，所以考虑用openvpn，稳定性更好，采用证书验证方式也更安全。按照下面的步">
+<meta name="keywords" content="VPN">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+<link rel="alternate" type="application/rss+xml" title="数斯特网络 RSS Feed" href="https://www.shusite.com/feed">
+<link rel="alternate" type="application/atom+xml" title="数斯特网络 Atom Feed" href="https://www.shusite.com/feed/atom">
+<link rel="shortcut icon" href="https://www.shusite.com/favicon.ico" type="image/x-icon">
+<link rel="dns-prefetch" href="https://www.shusite.com/">
+<link rel="dns-prefetch" href="https://s.w.org/">
+<link rel="stylesheet" id="kube-css" href="./完整教程 debian 下配置安装openvpn_数斯特网络_files/kube.css" type="text/css" media="all">
+<link rel="stylesheet" id="fresco-css" href="./完整教程 debian 下配置安装openvpn_数斯特网络_files/lightbox.css" type="text/css" media="all">
+<script type="text/javascript" src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/jquery.min.js.download"></script>
+<script type="text/javascript" src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/comments-ajax.js.download"></script>
+<script type="text/javascript" src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/realgravatar.js.download"></script>
+<link rel="prev" title="debian linux 安装dropbox同步" href="https://www.shusite.com/server/2703.html">
+<link rel="next" title="wordpress 修改rsswidget样式" href="https://www.shusite.com/server/2713.html">
+<link rel="canonical" href="https://www.shusite.com/server/2705.html">
+<link rel="stylesheet" type="text/css" href="./完整教程 debian 下配置安装openvpn_数斯特网络_files/blue.css">
+<style type="text/css" id="syntaxhighlighteranchor"></style>
+<style>
+	#post_container .fixed-hight .thumbnail{height:200px; overflow: hidden;}
+	.related,.related_box{height: 185px;}
+	.related_box .r_pic,.related_box .r_pic img {height: 95px;}	
+</style>
+</head>
+<body class="custom-background">
+		<div id="head" class="row">
+        			
+        	<div class="mainbar row">
+                <div class="container">
+                        <div id="topbar">
+                            <ul id="toolbar" class="menu"><li class="page_item page-item-1801"><a href="https://www.shusite.com/about">关于本站</a></li>
+<li class="page_item page-item-1872"><a href="https://www.shusite.com/chat">实时交流</a></li>
+<li class="page_item page-item-1898"><a href="https://www.shusite.com/videochat">艺术人生</a></li>
+</ul>
+                        </div>
+                        <div id="rss">
+                            <ul>
+                                <li><a href="https://www.shusite.com/feed" target="_blank" class="icon1" title="欢迎订阅数斯特网络" style="text-indent: 0px;"><span class="hover" style="opacity: 0;"></span></a></li>
+                                                                                                                                                                 <li><a href="https://www.shusite.com/sitemap.xml" target="_blank" class="icon6" title="站点地图" style="text-indent: 0px;"><span class="hover" style="opacity: 0;"></span></a></li>                            </ul>
+                        </div>
+                 </div>  
+             </div>
+             <div class="clear"></div>
+         				<div class="container">
+					<div id="blogname" class="third">
+                    	<a href="https://www.shusite.com/" title="数斯特网络">                        <img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/logo.gif" alt="数斯特网络"></a>
+                    </div>
+                 	                 	<div class="banner push-right">
+                 	<div style="width:180px; height:71px; margin:-20px auto 10px auto; overflow:hidden;"><object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,19,0" width="200" height="88">
+<param name="movie" value="https://img.shusite.com/shusite.com.clock.swf">
+<param name="quality" value="high">
+<param name="wmode" value="transparent">
+<embed src="https://img.shusite.com/shusite.com.clock.swf" quality="high" wmode="transparent" pluginspage="http://www.macromedia.com/go/getflashplayer" type="application/x-shockwave-flash" width="200" height="88">
+</object></div>					</div>
+                	                </div>
+				<div class="clear"></div>
+		</div>
+		<div class="mainmenus container">
+			<div class="mainmenu">
+				<div class="topnav">
+					                		<a href="https://www.shusite.com/" title="首页" class="home_none">首页</a>
+    				                    <div class="menu-button"><i class="menu-ico"></i></div>
+                    	<ul id="menu-shusite" class="menu"><li id="menu-item-73566" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-73566"><a href="https://www.shusite.com/tutorial">设计教程</a></li>
+<li id="menu-item-73570" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-73570"><a href="https://www.shusite.com/design">设计欣赏</a></li>
+<li id="menu-item-73572" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-73572"><a href="https://www.shusite.com/website">网站设计</a></li>
+<li id="menu-item-73568" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-73568"><a href="https://www.shusite.com/server">运维服务</a></li>
+<li id="menu-item-73574" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-73574"><a href="https://www.shusite.com/sharing">资源分享</a></li>
+</ul>                    
+                <ul class="menu-right">
+                    <li class="menu-search">
+                    	<a href="https://www.shusite.com/server/2705.html#" id="menu-search" title="搜索"></a>
+                    	<div class="menu-search-form ">
+							<form action="https://www.shusite.com/" method="get">
+                            	<input name="s" type="text" id="search" value="" maxlength="150" placeholder="请输入搜索内容" x-webkit-speech="" style="width:135px">
+                            	<input type="submit" value="搜索" class="button">
+                            </form>
+                        </div>
+                    </li>
+                </ul> 
+                                 <!-- menus END -->                    
+            </div>
+				</div>
+				<div class="clear"></div>
+			</div>
+		
+			<div class="container">
+					   	 	<div id="sidebar">
+<div class="widget box row"><h3>图文展示</h3><div class="siderbar-list"><ul class="imglist clear">        <li class="post" style="min-height: 130px">
+            <a href="https://www.shusite.com/design/80015.html" title="Tanya Shatseva超现实主义人物肖像插画"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/1556583171.jpeg&amp;h=80&amp;w=142&amp;zc=1" width="142" height="80" alt="Tanya Shatseva超现实主义人物肖像插画">            <h4>Tanya Shatseva超现实主义人物肖像插画</h4></a>
+        </li>
+        <li class="post" style="min-height: 130px">
+            <a href="https://www.shusite.com/server/80009.html" title="Linux VPS使用WonderShaper限制服务器上传/下载带宽"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/1556582862.png&amp;h=80&amp;w=142&amp;zc=1" width="142" height="80" alt="Linux VPS使用WonderShaper限制服务器上传/下载带宽">            <h4>Linux VPS使用WonderShaper限制服务器上传/下载带宽</h4></a>
+        </li>
+        <li class="post" style="min-height: 130px">
+            <a href="https://www.shusite.com/tutorial/79947.html" title="PS绘制立体圆形旋钮播放图标"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/1550973532.jpeg&amp;h=80&amp;w=142&amp;zc=1" width="142" height="80" alt="PS绘制立体圆形旋钮播放图标">            <h4>PS绘制立体圆形旋钮播放图标</h4></a>
+        </li>
+        <li class="post" style="min-height: 130px">
+            <a href="https://www.shusite.com/server/79933.html" title="windows 10 最新版缺少SNMP服务解决办法"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/1545180742.png&amp;h=80&amp;w=142&amp;zc=1" width="142" height="80" alt="windows 10 最新版缺少SNMP服务解决办法">            <h4>windows 10 最新版缺少SNMP服务解决办法</h4></a>
+        </li>
+        <li class="post" style="min-height: 130px">
+            <a href="https://www.shusite.com/tutorial/79927.html" title="手绘在工业设计中的重要性"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/1544705598.jpeg&amp;h=80&amp;w=142&amp;zc=1" width="142" height="80" alt="手绘在工业设计中的重要性">            <h4>手绘在工业设计中的重要性</h4></a>
+        </li>
+        <li class="post" style="min-height: 130px">
+            <a href="https://www.shusite.com/sharing/79921.html" title="USB 多重開機磁碟製作工具 – Your Universal Multiboot Installer"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/1543652546.png&amp;h=80&amp;w=142&amp;zc=1" width="142" height="80" alt="USB 多重開機磁碟製作工具 – Your Universal Multiboot Installer">            <h4>USB 多重開機磁碟製作工具 – Your Universal Multiboot Installer</h4></a>
+        </li>
+        <li class="post" style="min-height: 130px">
+            <a href="https://www.shusite.com/sharing/79909.html" title="列出電腦上已連接、連接過的 USB 裝置 – USBDeview 免安裝中文版"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/1543635185.png&amp;h=80&amp;w=142&amp;zc=1" width="142" height="80" alt="列出電腦上已連接、連接過的 USB 裝置 – USBDeview 免安裝中文版">            <h4>列出電腦上已連接、連接過的 USB 裝置 – USBDeview 免安裝中文版</h4></a>
+        </li>
+        <li class="post" style="min-height: 130px">
+            <a href="https://www.shusite.com/sharing/79905.html" title="DriverPack Solution Online 免安裝中文版 – 線上更新驅動程式、軟體"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/1543635118.png&amp;h=80&amp;w=142&amp;zc=1" width="142" height="80" alt="DriverPack Solution Online 免安裝中文版 – 線上更新驅動程式、軟體">            <h4>DriverPack Solution Online 免安裝中文版 – 線上更新驅動程式、軟體</h4></a>
+        </li>
+        <li class="post" style="min-height: 130px">
+            <a href="https://www.shusite.com/sharing/79845.html" title="高端前卫的自行车展厅设计"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/1542539168.jpeg&amp;h=80&amp;w=142&amp;zc=1" width="142" height="80" alt="高端前卫的自行车展厅设计">            <h4>高端前卫的自行车展厅设计</h4></a>
+        </li>
+        <li class="post" style="min-height: 130px">
+            <a href="https://www.shusite.com/sharing/79843.html" title="全国最好的医院都在这儿了|名单"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/1542539545.jpeg&amp;h=80&amp;w=142&amp;zc=1" width="142" height="80" alt="全国最好的医院都在这儿了|名单">            <h4>全国最好的医院都在这儿了|名单</h4></a>
+        </li>
+</ul></div></div><div class="widget box row"><h3>热门点击</h3>		
+
+	<div class="tagcloud">
+		<a href="https://www.shusite.com/tag/django" class="tag-cloud-link tag-link-69 tag-link-position-1" style="font-size: 10pt;">django</a>
+<a href="https://www.shusite.com/tag/erp" class="tag-cloud-link tag-link-50 tag-link-position-2" style="font-size: 10pt;">ERP</a>
+<a href="https://www.shusite.com/tag/linux" class="tag-cloud-link tag-link-57 tag-link-position-3" style="font-size: 10pt;">linux</a>
+<a href="https://www.shusite.com/tag/nginx" class="tag-cloud-link tag-link-56 tag-link-position-4" style="font-size: 10pt;">nginx</a>
+<a href="https://www.shusite.com/tag/openvpn" class="tag-cloud-link tag-link-77 tag-link-position-5" style="font-size: 10pt;">openvpn</a>
+<a href="https://www.shusite.com/tag/php" class="tag-cloud-link tag-link-71 tag-link-position-6" style="font-size: 10pt;">php</a>
+<a href="https://www.shusite.com/tag/python" class="tag-cloud-link tag-link-40 tag-link-position-7" style="font-size: 10pt;">python</a>
+<a href="https://www.shusite.com/tag/shell" class="tag-cloud-link tag-link-75 tag-link-position-8" style="font-size: 10pt;">shell</a>
+<a href="https://www.shusite.com/tag/vpn" class="tag-cloud-link tag-link-13 tag-link-position-9" style="font-size: 10pt;">VPN</a>
+<a href="https://www.shusite.com/tag/vps" class="tag-cloud-link tag-link-61 tag-link-position-10" style="font-size: 10pt;">VPS</a>
+<a href="https://www.shusite.com/tag/wordpress" class="tag-cloud-link tag-link-55 tag-link-position-11" style="font-size: 10pt;">wordpress</a>
+<a href="https://www.shusite.com/tag/%e5%85%8d%e8%b4%b9" class="tag-cloud-link tag-link-64 tag-link-position-12" style="font-size: 10pt;">免费</a>
+<a href="https://www.shusite.com/tag/%e5%bc%80%e6%ba%90" class="tag-cloud-link tag-link-66 tag-link-position-13" style="font-size: 10pt;">开源</a>
+<a href="https://www.shusite.com/tag/%e6%95%b0%e6%96%af%e7%89%b9%e4%b8%bb%e6%9c%ba" class="tag-cloud-link tag-link-62 tag-link-position-14" style="font-size: 10pt;">数斯特主机</a>
+<a href="https://www.shusite.com/tag/%e6%95%b0%e6%96%af%e7%89%b9%e4%bb%a3%e7%a0%81" class="tag-cloud-link tag-link-70 tag-link-position-15" style="font-size: 10pt;">数斯特代码</a>
+<a href="https://www.shusite.com/tag/%e6%95%b0%e6%96%af%e7%89%b9%e6%95%99%e7%a8%8b" class="tag-cloud-link tag-link-143 tag-link-position-16" style="font-size: 10pt;">数斯特教程</a>
+<a href="https://www.shusite.com/tag/%e6%95%b0%e6%96%af%e7%89%b9%e7%bd%91%e7%ab%99" class="tag-cloud-link tag-link-138 tag-link-position-17" style="font-size: 10pt;">数斯特网站</a>
+<a href="https://www.shusite.com/tag/%e6%95%b0%e6%96%af%e7%89%b9%e7%be%8e%e5%9b%be" class="tag-cloud-link tag-link-60 tag-link-position-18" style="font-size: 10pt;">数斯特美图</a>
+<a href="https://www.shusite.com/tag/%e6%95%b0%e6%96%af%e7%89%b9%e8%8b%b1%e8%af%ad" class="tag-cloud-link tag-link-63 tag-link-position-19" style="font-size: 10pt;">数斯特英语</a>
+<a href="https://www.shusite.com/tag/%e6%95%b0%e6%96%af%e7%89%b9%e8%ae%be%e8%ae%a1" class="tag-cloud-link tag-link-140 tag-link-position-20" style="font-size: 10pt;">数斯特设计</a>
+<a href="https://www.shusite.com/tag/%e7%94%b5%e5%bd%b1" class="tag-cloud-link tag-link-81 tag-link-position-21" style="font-size: 10pt;">电影</a>
+<a href="https://www.shusite.com/tag/%e7%9f%ad%e7%bd%91%e5%9d%80" class="tag-cloud-link tag-link-65 tag-link-position-22" style="font-size: 10pt;">短网址</a>
+<a href="https://www.shusite.com/tag/%e7%b2%be%e5%93%81%e6%ba%90%e7%a0%81" class="tag-cloud-link tag-link-38 tag-link-position-23" style="font-size: 10pt;">精品源码</a>
+<a href="https://www.shusite.com/tag/%e7%bb%9f%e8%ae%a1%e4%bb%a3%e7%a0%81" class="tag-cloud-link tag-link-67 tag-link-position-24" style="font-size: 10pt;">统计代码</a>
+<a href="https://www.shusite.com/tag/%e7%bd%91%e7%bb%9c%e5%ae%89%e5%85%a8" class="tag-cloud-link tag-link-36 tag-link-position-25" style="font-size: 10pt;">网络安全</a>	</div>
+
+</div><div class="widget box row"><h3>最新评论</h3><div class="r_comment"> <ul id="scroll_List"><li><a href="https://www.shusite.com/server/79933.html#comment-2205" title="查看该评论文章： windows 10 最新版缺少SNMP服务解决办法"><span>gzjwsh</span><br>gcm -module DISM</a></li><li><a href="https://www.shusite.com/design/75750.html#comment-2203" title="查看该评论文章： 微软慕尼黑德国总部办公空间设计"><span>test</span><br>test</a></li><li><a href="https://www.shusite.com/website/72507.html#comment-2200" title="查看该评论文章： 35个采用人像背景的网页设计欣赏"><span>uzzme</span><br>不错，赞！</a></li><li><a href="https://www.shusite.com/server/2909.html#comment-1429" title="查看该评论文章： nginx反向代理解决wordpress drupal 登陆问题。"><span>na</span><br>带反向控制的，不同服务器间的设置我成...</a></li><li><a href="https://www.shusite.com/server/2909.html#comment-1427" title="查看该评论文章： nginx反向代理解决wordpress drupal 登陆问题。"><span>na</span><br>好的，非常感谢。</a></li><li><a href="https://www.shusite.com/server/2909.html#comment-1425" title="查看该评论文章： nginx反向代理解决wordpress drupal 登陆问题。"><span>数斯特</span><br>nginx做反代和缓存要手动编辑配置文件...</a></li></ul></div></div><div class="widget box row">
+			<form id="loginform" action="https://www.shusite.com/wp-login.php" method="post"><h3>用户登录</h3>
+				<div class="loginl">
+					<p><label>用户名</label><input class="login" type="text" name="log" id="log" value="" size="12"></p>
+					<p><label>密　码</label><input class="login" type="password" name="pwd" id="pwd" value="" size="12"></p>
+				</div>
+				<div class="loginr">
+					<input class="denglu btn" type="submit" name="submit" value="登 陆">
+				</div>
+				<div class="clear"></div>
+				<p>
+					<a class="register" href="https://www.shusite.com/wp-login.php?action=register">用户注册</a>
+					<label><input id="comment_mail_notify" type="checkbox" name="rememberme" value="forever">记住我 </label>
+				</p>
+				<p>
+					<input type="hidden" name="redirect_to" value="/server/2705.html">
+				</p>
+				</form><div class="clear"></div></div>	<div id="sidebar-follow" style="top: 15px; position: static;">
+			  <div class="widget box row">
+		  	<div id="tab-title">
+				<div class="tab">
+					<ul id="tabnav">
+						<li>最新文章</li>
+						<li class="selected">热评文章</li>
+						<li>随机文章</li>
+					</ul>
+				</div>
+				<div class="clear"></div>
+			</div>
+			<div id="tab-content">
+				<ul class="hide">	<li><a href="https://www.shusite.com/mimi/80053.html">三款“减压茶”</a></li>
+	<li><a href="https://www.shusite.com/mimi/80043.html">入睡困难?先别急着吃药</a></li>
+	<li><a href="https://www.shusite.com/design/80015.html">Tanya Shatseva超现实主义人物肖像插画</a></li>
+	<li><a href="https://www.shusite.com/server/80009.html">Linux VPS使用WonderShaper限制服务器上传/下载带宽</a></li>
+	<li><a href="https://www.shusite.com/tutorial/79947.html">PS绘制立体圆形旋钮播放图标</a></li>
+	<li><a href="https://www.shusite.com/server/79933.html">windows 10 最新版缺少SNMP服务解决办法</a></li>
+	<li><a href="https://www.shusite.com/tutorial/79927.html">手绘在工业设计中的重要性</a></li>
+	<li><a href="https://www.shusite.com/sharing/79921.html">USB 多重開機磁碟製作工具 – Your Universal Multiboot Installer</a></li>
+	<li><a href="https://www.shusite.com/sharing/79909.html">列出電腦上已連接、連接過的 USB 裝置 – USBDeview 免安裝中文版</a></li>
+	<li><a href="https://www.shusite.com/sharing/79905.html">DriverPack Solution Online 免安裝中文版 – 線上更新驅動程式、軟體</a></li>
+</ul>
+				<ul>
+<li><a href="https://www.shusite.com/server/79933.html" target="_blank" rel="bookmark" title="windows 10 最新版缺少SNMP服务解决办法 (1条评论)">windows 10 最新版缺少SNMP服务解决办法</a></li>
+<li><a href="https://www.shusite.com/design/78723.html" target="_blank" rel="bookmark" title="世界美食的3D艺术表现作品 (0条评论)">世界美食的3D艺术表现作品</a></li>
+<li><a href="https://www.shusite.com/design/78785.html" target="_blank" rel="bookmark" title="小改变大方便 数据线变身手机支架 (0条评论)">小改变大方便 数据线变身手机支架</a></li>
+<li><a href="https://www.shusite.com/design/78815.html" target="_blank" rel="bookmark" title="Joachim Munter动物肖像摄影作品 (0条评论)">Joachim Munter动物肖像摄影作品</a></li>
+<li><a href="https://www.shusite.com/tutorial/78499.html" target="_blank" rel="bookmark" title="Photoshop完美抠出可爱的松鼠 (0条评论)">Photoshop完美抠出可爱的松鼠</a></li>
+<li><a href="https://www.shusite.com/design/78879.html" target="_blank" rel="bookmark" title="特拉维夫44㎡幸福两口之家 (0条评论)">特拉维夫44㎡幸福两口之家</a></li>
+<li><a href="https://www.shusite.com/design/78585.html" target="_blank" rel="bookmark" title="纽约优雅现代风格的公寓设计 (0条评论)">纽约优雅现代风格的公寓设计</a></li>
+<li><a href="https://www.shusite.com/design/78607.html" target="_blank" rel="bookmark" title="40个可爱粉色儿童房设计 (0条评论)">40个可爱粉色儿童房设计</a></li>
+<li><a href="https://www.shusite.com/design/79359.html" target="_blank" rel="bookmark" title="Richard Heisler马术和城市风景绘画作品 (0条评论)">Richard Heisler马术和城市风景绘画作品</a></li>
+<li><a href="https://www.shusite.com/design/78691.html" target="_blank" rel="bookmark" title="波兰艺术家Iza Dudzik插画作品欣赏 (0条评论)">波兰艺术家Iza Dudzik插画作品欣赏</a></li></ul>
+				<ul class="hide">
+				                	<li><a href="https://www.shusite.com/design/54891.html" title="时尚的镂空效果创意画册设计 的文章">时尚的镂空效果创意画册设计</a></li>
+				                	<li><a href="https://www.shusite.com/server/1032.html" title="使用UnixBench测试你的VPS 的文章">使用UnixBench测试你的VPS</a></li>
+				                	<li><a href="https://www.shusite.com/tutorial/64569.html" title="Photoshop制作极速动感火焰立体字 的文章">Photoshop制作极速动感火焰立体字</a></li>
+				                	<li><a href="https://www.shusite.com/design/38681.html" title="2016圣丹斯电影节主视觉设计 的文章">2016圣丹斯电影节主视觉设计</a></li>
+				                	<li><a href="https://www.shusite.com/website/69721.html" title="50个国外复古风格的网页设计 的文章">50个国外复古风格的网页设计</a></li>
+				                	<li><a href="https://www.shusite.com/design/44807.html" title="28个精致的ui图标设计作品欣赏 的文章">28个精致的ui图标设计作品欣赏</a></li>
+				                	<li><a href="https://www.shusite.com/design/47501.html" title="迈凯轮发布570 GT超级跑车 的文章">迈凯轮发布570 GT超级跑车</a></li>
+				                	<li><a href="https://www.shusite.com/design/41345.html" title="巴林Nu Asia餐厅室内空间设计 的文章">巴林Nu Asia餐厅室内空间设计</a></li>
+				                	<li><a href="https://www.shusite.com/tutorial/64619.html" title="PS结合SAI把美女自拍照转为唯美的仿手绘效果 的文章">PS结合SAI把美女自拍照转为唯美的仿手绘效果</a></li>
+				                	<li><a href="https://www.shusite.com/design/50433.html" title="Hybride时尚杂志设计分享 的文章">Hybride时尚杂志设计分享</a></li>
+				                </ul>
+             </div>
+          </div>
+	</div>
+</div>    	<div class="mainleft" id="content">
+			<div class="article_container row  box">
+				<h1>完整教程 debian 下配置安装openvpn</h1>
+                    <div class="article_info">
+                        <span class="info_author info_ico"><a href="https://shusite.com/">数斯特</a></span> 
+                        <span class="info_category info_ico"><a href="https://www.shusite.com/server" rel="category tag">运维服务</a></span> 
+                        <span class="info_date info_ico">11-27</span>
+                        <span class="info_views info_ico">474</span>
+                        <span class="info_comment info_ico"><a href="https://www.shusite.com/server/2705.html#respond">0</a></span>
+                    </div>
+            	<div class="clear"></div>
+            <div class="context">
+				<div id="post_content"><p>前几天在VPS上建了个PPTP VPN服务器，连接是没什么问题，但总是不稳定，有时能登陆，有时又不能登陆，不知何故，iptables也配置很久，一定要把OUTPUT 全部打开才能上网，所以考虑用openvpn，稳定性更好，采用证书验证方式也更安全。按照下面的步骤一次成功，堪称最完整debian下配置openvpn教程</p>
+<p>1：apt-get install openvpn 安装openvpn 如果没有iptables的话可以一起安装，方法同前。<br>
+2：配置服务端</p>
+<p>cp -R /usr/share/doc/openvpn/examples/easy-rsa /etc/openvpn<br>
+cd /etc/openvpn/easy-rsa/2.0<br>
+chmod +x vars<br>
+source ./vars<br>
+./clean-all</p>
+<p>./build-ca<br>
+这一步，您一直回车就行，不要填密码，如果要求你回答Y还是N，选Y回车</p>
+<p>./build-key-server server</p>
+<p>./build-key client1<br>
+这2步也跟上面一样，一路回车和选择Y回车</p>
+<p>./build-dh</p>
+<p>3：配置转发<br>
+vi /etc/rc.local</p>
+<p># 增加一条iptables转发规则</p>
+<p>修改 /etc/sysctl.conf &nbsp;启用&nbsp;net.ipv4.ip_forward=1</p>
+<p>iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE</p>
+<p>4：增加服务器端conf文件<br>
+vi /etc/openvpn/openvpn.conf<br>
+增加如下内容<br>
+<span id="more-2705"></span><br>
+dev tun<br>
+proto tcp<br>
+port 443</p>
+<p>ca /etc/openvpn/easy-rsa/2.0/keys/ca.crt<br>
+cert /etc/openvpn/easy-rsa/2.0/keys/server.crt<br>
+key /etc/openvpn/easy-rsa/2.0/keys/server.key<br>
+dh /etc/openvpn/easy-rsa/2.0/keys/dh1024.pem</p>
+<p>user nobody<br>
+group nogroup<br>
+server 10.8.0.0 255.255.255.0</p>
+<p>persist-key<br>
+persist-tun</p>
+<p>#status openvpn-status.log<br>
+#verb 3<br>
+client-to-client</p>
+<p>push “redirect-gateway def1″<br>
+push "dhcp-option DNS 8.8.8.8"<br>
+push "dhcp-option DNS 8.8.4.4"</p>
+<p>comp-lzo</p>
+<p>ok，启动openvpn服务<br>
+/etc/init.d/openvpn start</p>
+<p>5：客户端安装配置<br>
+到 http://openvpn.net/index.php/open-source/downloads.html 下载winodws客户端<br>
+安装后，然后从服务器把以下3个文件拷贝到windows安装路径下的config目录<br>
+这3个文件分别是<br>
+/etc/openvpn/easy-rsa/2.0/keys/ca.crt<br>
+/etc/openvpn/easy-rsa/2.0/keys/shusite.crt<br>
+/etc/openvpn/easy-rsa/2.0/keys/shusite.key</p>
+<p>6：增加客户端配置文件<br>
+在config增加一个配置文件，文件名为client.ovpn<br>
+内容如下：<br>
+client<br>
+dev tun<br>
+proto tcp</p>
+<p># 改变下面的IP为你自己的<br>
+remote 199.180.254.203 443</p>
+<p>resolv-retry infinite<br>
+nobind</p>
+<p>persist-key<br>
+persist-tun</p>
+<p>ca ca.crt<br>
+cert shusite.crt<br>
+key shusite.key</p>
+<p>comp-lzo<br>
+verb 3</p>
+</div>
+				               	<div class="clear"></div>
+                
+                <div class="article_tags">
+                	<div class="tagcloud">
+                    	标签：<a href="https://www.shusite.com/tag/vpn" rel="tag">VPN</a>                    </div>
+                </div>
+                             </div>
+		</div>
+    						
+    	<div>
+		<ul class="post-navigation row">
+			<div class="post-previous twofifth">
+				上一篇 <br> <a href="https://www.shusite.com/server/2703.html" rel="prev">debian linux 安装dropbox同步</a>            </div>
+            <div class="post-next twofifth">
+				下一篇 <br> <a href="https://www.shusite.com/server/2713.html" rel="next">wordpress 修改rsswidget样式</a>            </div>
+        </ul>
+	</div>
+        	<div class="clear"></div>
+	<div id="comments_box">
+		<!-- You can start editing here. -->
+<div class="row box">			<!-- If comments are open, but there are no comments. -->
+		<h3 id="comments">完整教程 debian 下配置安装openvpn：等您坐沙发呢！</h3>
+	 			<div id="respond_box">
+	<div id="respond">
+		<h3>发表评论</h3>	
+		<div class="cancel-comment-reply">
+			<small><a rel="nofollow" id="cancel-comment-reply-link" href="https://www.shusite.com/server/2705.html#respond" style="display:none;">点击这里取消回复。</a></small>
+		</div>
+		    <form action="https://www.shusite.com/wp-comments-post.php" method="post" id="commentform">
+      		<div id="comment-author-info">
+		<div id="real-avatar">
+															</div>	
+        <ul class="comment_input">    
+            <label for="author"><span class="input-prepend">昵称</span></label>
+            <input type="text" name="author" id="author" class="" value="" size="22" tabindex="1">
+            <label for="email"><span class="input-prepend">邮箱</span></label>
+            <input type="email" name="email" id="email" class="" value="" size="22" tabindex="2">
+            <label for="url"><span class="input-prepend">网址</span></label>
+            <input type="text" name="url" id="url" class="" value="" size="22" tabindex="3">
+        </ul>
+	</div>
+      		<!--<p><small><strong>XHTML:</strong> You can use these tags: <code>&lt;a href=&quot;&quot; title=&quot;&quot;&gt; &lt;abbr title=&quot;&quot;&gt; &lt;acronym title=&quot;&quot;&gt; &lt;b&gt; &lt;blockquote cite=&quot;&quot;&gt; &lt;cite&gt; &lt;code&gt; &lt;del datetime=&quot;&quot;&gt; &lt;em&gt; &lt;i&gt; &lt;q cite=&quot;&quot;&gt; &lt;s&gt; &lt;strike&gt; &lt;strong&gt; </code></small></p>-->
+      <div class="clear"></div>
+      <div class="comt-box">
+		<div class="QapTcha"><div class="bgSlider"><div class="Slider ui-draggable" style="position: relative;"></div></div><div class="Icons"></div><div class=" TxtStatus dropError">发表评论前，请滑动滚动条解锁</div><div class="clr"></div><a class="dis" href="http://blog.30c.org/">三十岁</a><input name="C#RcM#_R5Wv8kz528-CUsRPzQRr4U4Um" value="GpGYWjj" type="hidden"></div><textarea name="comment" id="comment" class="comt-area" tabindex="4" cols="50" rows="5" onkeydown="if(event.ctrlKey&amp;&amp;event.keyCode==13){document.getElementById(&#39;submit&#39;).click();return false};"></textarea><div id="loading" style="display: none;"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/loading.gif" style="vertical-align:middle;" alt=""> 正在提交, 请稍候...</div><div id="error" style="display: none;">#</div>
+        <div class="comt-ctrl">
+			<a class="comt-addsmilies" href="javascript:;">表情</a>
+			<div class="comt-smilies"><a title="mrgreen" href="javascript:grin(&#39;mrgreen&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_mrgreen.gif"></a><a title="razz" href="javascript:grin(&#39;razz&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_razz.gif"></a><a title="sad" href="javascript:grin(&#39;sad&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_sad.gif"></a><a title="smile" href="javascript:grin(&#39;smile&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_smile.gif"></a><a title="oops" href="javascript:grin(&#39;oops&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_redface.gif"></a><a title="grin" href="javascript:grin(&#39;grin&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_biggrin.gif"></a><a title="eek" href="javascript:grin(&#39;eek&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_surprised.gif"></a><a title="???" href="javascript:grin(&#39;???&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_confused.gif"></a><a title="cool" href="javascript:grin(&#39;cool&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_cool.gif"></a><a title="lol" href="javascript:grin(&#39;lol&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_lol.gif"></a><a title="mad" href="javascript:grin(&#39;mad&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_mad.gif"></a><a title="twisted" href="javascript:grin(&#39;twisted&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_twisted.gif"></a><a title="roll" href="javascript:grin(&#39;roll&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_rolleyes.gif"></a><a title="wink" href="javascript:grin(&#39;wink&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_wink.gif"></a><a title="idea" href="javascript:grin(&#39;idea&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_idea.gif"></a><a title="arrow" href="javascript:grin(&#39;arrow&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_arrow.gif"></a><a title="neutral" href="javascript:grin(&#39;neutral&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_neutral.gif"></a><a title="cry" href="javascript:grin(&#39;cry&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_cry.gif"></a><a title="?" href="javascript:grin(&#39;?&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_question.gif"></a><a title="evil" href="javascript:grin(&#39;evil&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_evil.gif"></a><a title="shock" href="javascript:grin(&#39;shock&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_eek.gif"></a><a title="!" href="javascript:grin(&#39;!&#39;)"><img src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/icon_exclaim.gif"></a></div>
+            <span class="comt-num">还能输入<em>240</em>个字</span>
+			<input class="comt-submit" name="submit" type="submit" id="submit" tabindex="5" value="发布评论" disabled="disabled">
+			<input type="hidden" name="comment_post_ID" value="2705" id="comment_post_ID">
+<input type="hidden" name="comment_parent" id="comment_parent" value="0">
+         </div>
+       </div>
+		<script type="text/javascript">	//Crel+Enter
+		//<![CDATA[
+			jQuery(document).keypress(function(e){
+				if(e.ctrlKey && e.which == 13 || e.which == 10) { 
+					jQuery(".submit").click();
+					document.body.focus();
+				} else if (e.shiftKey && e.which==13 || e.which == 10) {
+					jQuery(".submit").click();
+				}          
+			})
+		// ]]>
+		</script>
+		    </form>
+	<div class="clear"></div>
+      </div>
+  </div>
+    </div>  
+  <script type="text/javascript">
+  function ajacpload(){
+$('#comment_pager a').click(function(){
+    var wpurl=$(this).attr("href").split(/(\?|&)action=AjaxCommentsPage.*$/)[0];
+    var commentPage = 1;
+    if (/comment-page-/i.test(wpurl)) {
+    commentPage = wpurl.split(/comment-page-/i)[1].split(/(\/|#|&).*$/)[0];
+    } else if (/cpage=/i.test(wpurl)) {
+    commentPage = wpurl.split(/cpage=/)[1].split(/(\/|#|&).*$/)[0];
+    };
+    //alert(commentPage);//获取页数
+    var postId =$('#cp_post_id').text();
+	//alert(postId);//获取postid
+    var url = wpurl.split(/#.*$/)[0];
+    url += /\?/i.test(wpurl) ? '&' : '?';
+    url += 'action=AjaxCommentsPage&post=' + postId + '&page=' + commentPage;        
+    //alert(url);//看看传入参数是否正确
+    $.ajax({
+    url:url,
+    type: 'GET',
+    beforeSend: function() {
+    document.body.style.cursor = 'wait';
+    var C=0.7;//修改下面的选择器，评论列表div的id，分页部分的id
+    $('#thecomments,#comment_pager').css({opacity:C,MozOpacity:C,KhtmlOpacity:C,filter:'alpha(opacity=' + C * 100 + ')'});
+    var loading='Loading';
+    $('#comment_pager').html(loading);
+    },
+    error: function(request) {
+        alert(request.responseText);
+    },
+    success:function(data){
+    var responses=data.split('');
+    $('#thecomments').html(responses[0]);
+    $('#comment_pager').html(responses[1]);
+    var C=1; //修改下面的选择器，评论列表div的id，分页部分的id
+    $('#thecomments,#comment_pager').css({opacity:C,MozOpacity:C,KhtmlOpacity:C,filter:'alpha(opacity=' + C * 100 + ')'});
+    $('#cmploading').remove();
+    document.body.style.cursor = 'auto';
+    ajacpload();//自身重载一次
+	//single_js();//需要重载的js，注意
+	$body.animate( { scrollTop: $('#comment_header').offset().top - 200}, 1000);
+        }//返回评论列表顶部
+    });    
+    return false;
+    });
+}
+  </script>    </div>
+	</div>
+</div>
+<div class="clear"></div>
+<div id="footer">
+      <div class="copyright">
+  <p> Copyright © 2008-2019 <a href="https://www.shusite.com/"><strong>
+    数斯特网络    </strong></a><br>
+          </p>
+  </div>
+</div>
+
+<!--gototop-->
+<div id="tbox">
+    <a id="home" href="https://www.shusite.com/"></a>
+      <a id="pinglun" href="https://www.shusite.com/server/2705.html#comments_box"></a>
+    <a id="gotop" href="javascript:void(0)" style="display: none;"></a> </div>
+<link rel="stylesheet" href="./完整教程 debian 下配置安装openvpn_数斯特网络_files/myQaptcha.jquery.css" type="text/css">
+<script type="text/javascript">function loadJS(filename){var fileref=document.createElement("script");fileref.setAttribute("type","text/javascript");fileref.setAttribute("src", filename); document.getElementsByTagName("head")[0].appendChild(fileref);} if (typeof jQuery == "undefined") loadJS("http://libs.baidu.com/jquery/2.0.0/jquery.min.js"); </script><script type="text/javascript" src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/jquery-ui.js.download"></script>
+<script type="text/javascript" src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/jquery.ui.touch.js.download"></script>
+<script type="text/javascript">var myQaptchaJqueryPage="https://www.shusite.com/wp-content/plugins/myqaptcha/jquery/myQaptcha.jquery.php";</script>
+<script type="text/javascript" src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/myqaptcha.jquery.js.download"></script>
+<script type="text/javascript">var newQapTcha = document.createElement("div");newQapTcha.className="QapTcha";var tagIDComment=document.getElementById("comment");if(tagIDComment){tagIDComment.parentNode.insertBefore(newQapTcha,tagIDComment);}else{var allTagP = document.getElementsByTagName("p");for(var p=0;p<allTagP.length;p++){var allTagTA = allTagP[p].getElementsByTagName("textarea");if(allTagTA.length>0){allTagP[p].parentNode.insertBefore(newQapTcha,allTagP[p]);}}}jQuery(document).ready(function(){jQuery('.QapTcha').QapTcha({disabledSubmit:true,autoRevert:true});});</script>
+<script type="text/javascript" src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/lightbox.min.js.download"></script>
+<script type="text/javascript" src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/footer.js.download"></script>
+<script type="text/javascript" src="./完整教程 debian 下配置安装openvpn_数斯特网络_files/wp-embed.min.js.download"></script>
+
+<div id="lightboxOverlay" class="lightboxOverlay" style="display: none;"></div><div id="lightbox" class="lightbox" style="display: none;"><div class="lb-outerContainer"><div class="lb-container"><img class="lb-image" src="https://www.shusite.com/server/2705.html"><div class="lb-nav"><a class="lb-prev" href="https://www.shusite.com/server/2705.html"></a><a class="lb-next" href="https://www.shusite.com/server/2705.html"></a></div><div class="lb-loader"><a class="lb-cancel"></a></div></div></div><div class="lb-dataContainer"><div class="lb-data"><div class="lb-details"><span class="lb-caption"></span><span class="lb-number"></span></div><div class="lb-closeContainer"><a class="lb-close"></a></div></div></div></div></body></html>
