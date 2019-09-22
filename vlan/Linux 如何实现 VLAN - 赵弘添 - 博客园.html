@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<!-- saved from url=(0051)https://www.cnblogs.com/zhaohongtian/p/6811314.html -->
+<html lang="zh-cn"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="never">
+    <meta property="og:description" content="LAN 表示 Local Area Network，本地局域网，通常使用 Hub 和 Switch 来连接 LAN 中的计算机。一般来说，两台计算机连入同一个 Hub 或者 Switch 时，它们就在">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <title>Linux 如何实现 VLAN - 赵弘添 - 博客园</title>
+    
+    <link rel="shortcut icon" href="https://common.cnblogs.com/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/blog-common.min.css">
+    <link id="MainCss" rel="stylesheet" href="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/bundle-anothereon001.min.css">
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/bundle-anothereon001-mobile.min.css">
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/zhaohongtian/rss">
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/zhaohongtian/rsd.xml">
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/zhaohongtian/wlwmanifest.xml">
+    <script src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/amp4ads-host-v0.js.download"></script><script src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/pubads_impl_rendering_2019081901.js.download"></script><script async="" src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/analytics.js.download"></script><script src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/jquery-2.2.0.min.js.download"></script>
+    <script src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/blog-common.min.js.download"></script>
+    <script>
+        var currentBlogId = 352451;
+        var currentBlogApp = 'zhaohongtian';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+    </script>
+    
+    
+    
+<link rel="preload" href="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/f.txt" as="script"><script type="text/javascript" src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/f.txt"></script><script src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/pubads_impl_2019081901.js.download" async=""></script><link rel="prefetch" href="https://tpc.googlesyndication.com/safeframe/1-0-35/html/container.html"></head>
+<body>
+    <a name="top"></a>
+    
+    <div id="wrapper">
+<div id="header">
+
+<div id="top">
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/zhaohongtian/">赵弘添</a>
+</h1>
+<div id="subtitle">
+
+</div>
+</div>
+<div id="sub"><div class="BlogStats">随笔 - 
+194, 文章 - 
+0, 评论 - 
+4, 引用 - 
+0</div>
+
+</div>
+
+
+
+
+</div>
+<div id="main_container">
+<div id="main_content">
+<div id="content">
+	<div id="post_detail">
+    <div class="post">
+        <h2>
+            
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/zhaohongtian/p/6811314.html">Linux 如何实现 VLAN</a>
+
+        </h2>
+        <div class="postbody">
+            
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <p><img title="" src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/upload-ueditor-image-20160324-1458779560245084076.jpg" alt=""></p>
+<p>LAN 表示 Local Area Network，本地局域网，通常使用 Hub 和 Switch 来连接 LAN 中的计算机。<br>一般来说，两台计算机连入同一个 Hub 或者 Switch 时，它们就在同一个 LAN 中。</p>
+<p>一个 LAN 表示一个广播域。
+其含义是：LAN 中的所有成员都会收到任意一个成员发出的广播包。
+</p>
+<p>VLAN 表示 Virtual LAN。一个带有 VLAN 功能的switch 能够将自己的端口划分出多个 LAN。<br>计算机发出的广播包可以被同一个 LAN 中其他计算机收到，但位于其他 LAN 的计算机则无法收到。
+简单地说，VLAN 将一个交换机分成了多个交换机，限制了广播的范围，在二层将计算机隔离到不同的 VLAN 中。
+</p>
+<p>比方说，有两组机器，Group A 和 B。<br>我们想配置成 Group A 中的机器可以相互访问，Group B 中的机器也可以相互访问，但是 A 和 B 中的机器无法互相访问。<br>
+一种方法是使用两个交换机，A 和 B 分别接到一个交换机。
+另一种方法是使用一个带 VLAN 功能的交换机，将 A 和 B 的机器分别放到不同的 VLAN 中。
+</p>
+<p><strong>请注意，VLAN 的隔离是二层上的隔离，A 和 B 无法相互访问指的是二层广播包（比如 arp）无法跨越 VLAN 的边界。<br>但在三层上（比如IP）是可以通过路由器让 A 和 B 互通的。概念上一定要分清。</strong>
+</p>
+<p>现在的交换机几乎都是支持 VLAN 的。
+通常交换机的端口有两种配置模式： Access 和 Trunk。看下图
+</p>
+<p><img title="" src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/upload-ueditor-image-20160324-1458779560489063995.jpg" alt="">
+</p>
+<p><strong>Access 口<br></strong>这些端口被打上了 VLAN 的标签，表明该端口属于哪个 VLAN。
+不同 VLAN 用 VLAN ID 来区分，VLAN ID 的 范围是 1-4096。
+Access 口都是直接与计算机网卡相连的，这样从该网卡出来的数据包流入 Access 口后就被打上了所在 VLAN 的标签。
+Access 口只能属于一个 VLAN。
+</p>
+<p><strong>Trunk 口<br></strong>假设有两个交换机 A 和 B。
+A 上有 VLAN1（红）、VLAN2（黄）、VLAN3（蓝）；B 上也有 VLAN1、2、3
+那如何让 AB 上相同 VLAN 之间能够通信呢？
+</p>
+<p>办法是将 A 和 B 连起来，而且连接 A 和 B 的端口要允许 VLAN1、2、3 三个 VLAN 的数据都能够通过。<br>这样的端口就是Trunk口了。
+VLAN1、2、3 的数据包在通过 Trunk 口到达对方交换机的过程中始终带着自己的 VLAN 标签。
+</p>
+<p>了解了 VLAN 的概念之后，我们来看 KVM 虚拟化环境下是如何实现 VLAN 的。还是先看图，
+</p>
+<p><img title="" src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/upload-ueditor-image-20160324-1458779560717052345.jpg" alt="">
+</p>
+<p>eth0 是宿主机上的物理网卡，有一个命名为 eth0.10 的子设备与之相连。
+eth0.10 就是 VLAN 设备了，其 VLAN ID 就是 VLAN 10。
+eth0.10 挂在命名为 brvlan10 的 Linux Bridge 上，虚机 VM1 的虚拟网卡 vent0 也挂在 brvlan10 上。
+</p>
+<p>这样的配置其效果就是：
+宿主机用软件实现了一个交换机（当然是虚拟的），上面定义了一个 VLAN10。
+eth0.10，brvlan10 和 vnet0 都分别接到 VLAN10 的 Access口上。而 eth0 就是一个 Trunk 口。<br>VM1 通过 vnet0 发出来的数据包会被打上 VLAN10 的标签。
+</p>
+<p>eth0.10 的作用是：定义了 VLAN10
+brvlan10 的作用是：Bridge 上的其他网络设备自动加入到 VLAN10 中
+</p>
+<p>我们再增加一个 VLAN20，见下图
+</p>
+<p><img title="http://7xo6kd.com1.z0.glb.clouddn.com/upload-ueditor-image-20160324-1458779443599076319.png" src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/upload-ueditor-image-20160324-1458779560823058198.jpg" alt="image38.png">
+</p>
+<p>这样虚拟交换机就有两个 VLAN 了，VM1 和 VM2 分别属于 VLAN10 和 VLAN20。
+对于新创建的虚机，只需要将其虚拟网卡放入相应的 Bridge，就能控制其所属的 VLAN。
+</p>
+<p>VLAN 设备总是以母子关系出现，母子设备之间是一对多的关系。
+一个母设备（eth0）可以有多个子设备（eth0.10，eth0.20 ……），而一个子设备只有一个母设备。<br><br>下一节我们通过实验来实践 VLAN。
+</p>
+<p><br><img title="" src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/upload-ueditor-image-20160324-1458779560981015600.jpg" alt=""></p>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+
+
+    <div id="blog_post_info">
+<div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(6811314,cb_blogId,1);green_channel_success(this,&#39;谢谢推荐！&#39;);">好文要顶</a>
+        <a id="green_channel_follow" onclick="follow(&#39;8194391e-6d2e-e711-9fc1-ac853d9f53cc&#39;);" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/zhaohongtian/">赵弘添</a><br>
+            <a href="https://home.cnblogs.com/u/zhaohongtian/followees/">关注 - 0</a><br>
+            <a href="https://home.cnblogs.com/u/zhaohongtian/followers/">粉丝 - 6</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow(&#39;8194391e-6d2e-e711-9fc1-ac853d9f53cc&#39;);return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(6811314,&#39;Digg&#39;)">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(6811314,&#39;Bury&#39;)">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+    <div class="clear"></div>
+    <div id="post_next_prev">
+
+    <a href="https://www.cnblogs.com/zhaohongtian/p/6811308.html" class="p_n_p_prefix">« </a> 上一篇：    <a href="https://www.cnblogs.com/zhaohongtian/p/6811308.html" title="发布于 2017-05-05 09:28">云计算与 OpenStack</a>
+    <br>
+    <a href="https://www.cnblogs.com/zhaohongtian/p/6811317.html" class="p_n_p_prefix">» </a> 下一篇：    <a href="https://www.cnblogs.com/zhaohongtian/p/6811317.html" title="发布于 2017-05-05 09:30">理解 virbr0</a>
+
+</div>
+</div>
+        </div>
+        <p class="postfoot">
+            posted on 
+<span id="post-date">2017-05-05 09:29</span>&nbsp;<a href="https://www.cnblogs.com/zhaohongtian/">赵弘添</a> 阅读(<span id="post_view_count">192</span>) 评论(<span id="post_comment_count">0</span>) <a href="https://i.cnblogs.com/EditPosts.aspx?postid=6811314" rel="nofollow"> 编辑</a> <a href="javascript:void(0)" onclick="AddToWz(6811314); return false;">收藏</a>
+
+        </p>
+    </div>
+</div>
+
+<script src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/highlight.min.js.download"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 352451, cb_blogApp = 'zhaohongtian', cb_blogUserGuid = '8194391e-6d2e-e711-9fc1-ac853d9f53cc';
+    var cb_entryId = 6811314, cb_entryCreatedDate = '2017-05-05 09:29', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="https://www.cnblogs.com/zhaohongtian/p/6811314.html#" onclick="return RefreshPage();">刷新页面</a><a href="https://www.cnblogs.com/zhaohongtian/p/6811314.html#top">返回顶部</a></div>
+    <div id="comment_form_container"><div class="login_tips">
+    注册用户登录后才能发表评论，请 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login(&#39;commentform&#39;);">登录</a>
+     或 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，
+    <a href="https://www.cnblogs.com/">访问</a> 网站首页。
+</div></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-工控&#39;)">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="http://clickc.admaster.com.cn/c/a131574,b3595115,c1705,i0,m101,8a1,8b3,h" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-华为云微认证&#39;)">【推荐】零基础轻松玩转云上产品，获壕礼加返百元大礼</a><br><a href="http://clickc.admaster.com.cn/c/a131575,b3595121,c1705,i0,m101,8a1,8b3,h" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-物联网&#39;)">【推荐】华为IoT平台开发者套餐9.9元起，购买即送免费课程</a><br></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/gpt.js.download"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="COP3nPWuoOQCFQG8vQodkVIAgw"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border: 0px; vertical-align: bottom;" data-google-container-id="1" data-load-complete="true" src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/saved_resource.html"></iframe></div></div>
+    </div>
+    <div id="under_post_news"><div class="recomm-block"><b>相关博文：</b><br>·  <a title="VLAN基本配置" href="https://www.cnblogs.com/Nickzerui/p/5196432.html" target="_blank" onclick="clickRecomItmem(5196432)">VLAN基本配置</a><br>·  <a title="Linux 如何实现 VLAN - 每天5分钟玩转 OpenStack（12）" href="https://www.cnblogs.com/CloudMan6/p/5313994.html" target="_blank" onclick="clickRecomItmem(5313994)">Linux 如何实现 VLAN - 每天5分钟玩转 OpenStack（12）</a><br>·  <a title="动手实践 Linux VLAN - 每天5分钟玩转 OpenStack（13）" href="https://www.cnblogs.com/CloudMan6/p/5326737.html" target="_blank" onclick="clickRecomItmem(5326737)">动手实践 Linux VLAN - 每天5分钟玩转 OpenStack（13）</a><br>·  <a title="KVM虚拟化网络管理" href="https://www.cnblogs.com/zxy-5257/p/10108196.html" target="_blank" onclick="clickRecomItmem(10108196)">KVM虚拟化网络管理</a><br>·  <a title="NeutronVlanNetwork学习" href="https://www.cnblogs.com/lsw-blogs/p/10782250.html" target="_blank" onclick="clickRecomItmem(10782250)">NeutronVlanNetwork学习</a><br></div></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="COT3nPWuoOQCFQG8vQodkVIAgw">
+            
+        <div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" width="468" height="60" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border: 0px; vertical-align: bottom;" data-google-container-id="2" data-load-complete="true" src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/saved_resource(1).html"></iframe></div></div>
+    </div>
+    <div id="under_post_kb">
+<div class="itnews c_ad_block">
+    <b>最新 IT 新闻</b>:
+    <br>
+ ·              <a href="https://news.cnblogs.com/n/630175/" target="_blank">“微信青蛙Pro”双面屏正式发布：前屏刷脸会员，后屏互动海报</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/630174/" target="_blank">美图2019年上半年净亏损1.717亿元 同比收窄41.4%</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/630173/" target="_blank">连火化都不能烧成灰，我们的骨头到底有多硬？</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/630172/" target="_blank">美光将在台湾兴建2座晶圆厂 投资额达新台币4000亿元</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/630171/" target="_blank">饮用水含塑料微粒，但世界卫生组织说还没证明它们有害健康</a>
+            <br>
+    » <a href="https://news.cnblogs.com/" title="IT 新闻" target="_blank">更多新闻...</a>
+</div></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div>
+
+</div>
+</div>
+<div id="leftmenu">
+
+
+<h3>导航</h3>
+<ul>
+    <li>
+        <a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+
+    </li>
+    <li>
+        
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/zhaohongtian/">
+首页</a>
+
+    </li>
+    <li>
+        
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+
+    </li>
+    <li>
+        
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/%E8%B5%B5%E5%BC%98%E6%B7%BB">
+联系</a>
+    </li>
+    <li>
+        
+<a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/zhaohongtian/rss/">
+订阅</a>
+        
+<a id="blog_nav_rss_image" href="https://www.cnblogs.com/zhaohongtian/rss/">
+    <img src="./Linux 如何实现 VLAN - 赵弘添 - 博客园_files/xml.gif" alt="订阅">
+</a>
+    </li>
+    <li>
+        
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+
+    </li>
+</ul>
+
+
+<div id="blog-calendar" style="">
+
+<table id="blogCalendar" class="Cal" cellspacing="0" cellpadding="0" title="Calendar" border="0">
+    <tbody>
+        <tr>
+            <td colspan="7">
+                <table class="CalTitle" cellspacing="0" border="0">
+                    <tbody>
+                        <tr>
+                            <td class="CalNextPrev">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2019/07/26&#39;); return false;">&lt;</a>
+                            </td>
+                            <td align="center">2019年8月</td>
+                            <td align="right" class="CalNextPrev">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2019/09/26&#39;); return false;">&gt;</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+                    <th class="CalDayHeader" align="center" abbr="日" scope="col">日</th>
+                    <th class="CalDayHeader" align="center" abbr="一" scope="col">一</th>
+                    <th class="CalDayHeader" align="center" abbr="二" scope="col">二</th>
+                    <th class="CalDayHeader" align="center" abbr="三" scope="col">三</th>
+                    <th class="CalDayHeader" align="center" abbr="四" scope="col">四</th>
+                    <th class="CalDayHeader" align="center" abbr="五" scope="col">五</th>
+                    <th class="CalDayHeader" align="center" abbr="六" scope="col">六</th>
+        </tr>
+            <tr>
+                            <td class="CalOtherMonthDay" align="center">28</td>
+                            <td class="CalOtherMonthDay" align="center">29</td>
+                            <td class="CalOtherMonthDay" align="center">30</td>
+                            <td class="CalOtherMonthDay" align="center">31</td>
+                        <td class="" align="center">
+                            1
+                        </td>
+                        <td class="" align="center">
+                            2
+                        </td>
+                    <td class="CalWeekendDay" align="center">
+                        3
+                    </td>
+            </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            4
+                        </td>
+                            <td class="" align="center">
+                                5
+                            </td>
+                            <td class="" align="center">
+                                6
+                            </td>
+                            <td class="" align="center">
+                                7
+                            </td>
+                            <td class="" align="center">
+                                8
+                            </td>
+                            <td class="" align="center">
+                                9
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            10
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            11
+                        </td>
+                            <td class="" align="center">
+                                12
+                            </td>
+                            <td class="" align="center">
+                                13
+                            </td>
+                            <td class="" align="center">
+                                14
+                            </td>
+                            <td class="" align="center">
+                                15
+                            </td>
+                            <td class="" align="center">
+                                16
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            17
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            18
+                        </td>
+                            <td class="" align="center">
+                                19
+                            </td>
+                            <td class="" align="center">
+                                20
+                            </td>
+                            <td class="" align="center">
+                                21
+                            </td>
+                            <td class="" align="center">
+                                22
+                            </td>
+                            <td class="" align="center">
+                                23
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            24
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            25
+                        </td>
+                            <td class="CalTodayDay" align="center">
+                                26
+                            </td>
+                            <td class="" align="center">
+                                27
+                            </td>
+                            <td class="" align="center">
+                                28
+                            </td>
+                            <td class="" align="center">
+                                29
+                            </td>
+                            <td class="" align="center">
+                                30
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            31
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalOtherMonthDay" align="center">
+                            1
+                        </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                2
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                3
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                4
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                5
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                6
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            7
+                        </td>
+                </tr>
+    </tbody>
+</table></div><script>loadBlogDefaultCalendar();</script>
+
+<div id="sidebar_news" class="newsItem"><meta name="vs_showGrid" content="False">
+<h3>公告</h3>
+
+<div id="blog-news">
+    
+    <div id="profile_block">
+        昵称：
+        <a href="https://home.cnblogs.com/u/zhaohongtian/">
+            赵弘添
+        </a>
+        <br>
+        园龄：
+        <a href="https://home.cnblogs.com/u/zhaohongtian/" title="入园时间：2017-05-01">
+            2年3个月
+        </a>
+        <br>
+        粉丝：
+        <a href="https://home.cnblogs.com/u/zhaohongtian/followers/">
+            6
+        </a>
+        <br>
+        关注：
+        <a href="https://home.cnblogs.com/u/zhaohongtian/followees/">
+            0
+        </a>
+        <div id="p_b_follow">
+<a href="javascript:void(0)" onclick="follow(&#39;8194391e-6d2e-e711-9fc1-ac853d9f53cc&#39;)">+加关注</a></div>
+        <script>getFollowStatus('8194391e-6d2e-e711-9fc1-ac853d9f53cc');</script>
+    </div>
+</div>
+
+</div>
+
+<div id="blog-sidecolumn">
+
+<!-- 搜索 -->
+<div id="sidebar_search" class="sidebar-block">
+    <div id="sidebar_search" class="mySearch">
+        <h3 class="catListTitle">搜索</h3>
+        <div id="sidebar_search_box">
+            <div id="widget_my_zzk" class="div_my_zzk">
+                <input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk">
+            </div>
+            <div id="widget_my_google" class="div_my_zzk">
+                <input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 常用链接 -->
+<div id="sidebar_shortcut" class="sidebar-block">
+    
+<h3 class="catListTitle">
+常用链接
+</h3>
+<ul>
+        <li>
+
+<a href="https://www.cnblogs.com/zhaohongtian/p/" title="我的博客的随笔列表">我的随笔</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/zhaohongtian/MyComments.html" title="我的发表过的评论列表">我的评论</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/zhaohongtian/OtherPosts.html" title="我评论过的随笔列表">我的参与</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/zhaohongtian/RecentComments.html" title="我的博客的评论列表">最新评论</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/zhaohongtian/tag/" title="我的博客的标签列表">我的标签</a>
+</li>
+</ul>
+
+<!-- TODO: 检查是否有使用这一部分的控件，如果没有则应该删除。 -->
+<div id="itemListLin_con" style="display:none">
+    <ul>
+
+    </ul>
+</div>
+
+</div>
+
+<!-- 最新随笔 -->
+
+
+
+<!-- 我的标签 -->
+<div id="sidebar_toptags" class="sidebar-block">
+    
+</div>
+
+<!-- 积分与排名 -->
+
+
+<!-- 随笔分类、随笔档案、文章分类、新闻分类、相册、链接 -->
+<div id="sidebar_categories">
+    
+		<h3>
+
+随笔档案
+
+
+</h3>
+				<ul>
+			
+				<li>
+<a href="https://www.cnblogs.com/zhaohongtian/archive/2017/05.html" rel="">
+    2017年5月(194)
+</a>
+
+</li>
+			
+				</ul>
+
+
+</div>
+
+<!-- 最新评论 -->
+<div id="sidebar_recentcomments" class="sidebar-block">
+    <div id="recent_comments_wrap" class="RecentComment">
+    <h3 class="catListTitle">最新评论</h3>
+    <div class="RecentCommentBlock">
+        <ul>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/zhaohongtian/p/6811521.html#3973231">1. Re:部署 DevStack</a></li>
+                    <li class="recent_comment_body">老师您好，我在ubuntu16.06部署newton版时遇到 install: cannot stat '/opt/stack/keystone/etc/keystone.conf.sample': ...</li>
+                    <li class="recent_comment_author">--ljk007</li>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/zhaohongtian/p/6810265.html#3875455">2. Re:关于Http请求后返回json乱码的问题</a></li>
+                    <li class="recent_comment_body">完美解决问题，多谢</li>
+                    <li class="recent_comment_author">--迷路的猫</li>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/zhaohongtian/p/6810265.html#3775385">3. Re:关于Http请求后返回json乱码的问题</a></li>
+                    <li class="recent_comment_body">博主，能否告知你访问的天气服务是否为免费的？</li>
+                    <li class="recent_comment_author">--拔掉内存</li>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/zhaohongtian/p/6808973.html#3743325">4. Re:Android Google AdMob 广告接入示例</a></li>
+                    <li class="recent_comment_body">你好 ，请问你有没有试过接Native（原生广告），<br>我尝试接入原生广告可是在模拟器中可以显示，但是在真机中无法显示，想请教一下怎么回事</li>
+                    <li class="recent_comment_author">--白白掰掰</li>
+        </ul>
+    </div>
+</div>
+</div>
+
+
+
+<!-- 阅读排行榜 -->
+<div id="sidebar_topviewedposts" class="sidebar-block">
+    
+<div id="topview_posts_wrap">
+    <h3 class="catListTitle">阅读排行榜</h3>
+    <div id="TopViewPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/zhaohongtian/p/6810265.html">
+                            1. 关于Http请求后返回json乱码的问题(11386)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/zhaohongtian/p/6802333.html">
+                            2. 梯度下降（Gradient Descent）小结(10343)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/zhaohongtian/p/6807100.html">
+                            3. Spring MVC 处理异常的3种方式(8683)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/zhaohongtian/p/6808946.html">
+                            4. Android RatingBar 自定义样式(7318)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/zhaohongtian/p/6808962.html">
+                            5. Android Gradle manifestPlaceholders 占位符详解(7256)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<!-- 评论排行榜 -->
+<div id="sidebar_topcommentedposts" class="sidebar-block">
+    
+<div id="topfeedback_posts_wrap">
+    <h3 class="catListTitle">评论排行榜</h3>
+    <div id="TopFeedbackPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/zhaohongtian/p/6810265.html">
+                            1. 关于Http请求后返回json乱码的问题(2)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/zhaohongtian/p/6808973.html">
+                            2. Android Google AdMob 广告接入示例(1)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/zhaohongtian/p/6811521.html">
+                            3. 部署 DevStack(1)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<!-- 推荐排行榜 -->
+<div id="sidebar_topdiggedposts" class="sidebar-block">
+    
+<div id="topdigg_posts_wrap">
+    <div class="catListView">
+        <h3 class="catListTitle">推荐排行榜</h3>
+        <div id="TopDiggPostsBlock">
+            <ul style="word-break: break-all">
+                        <li>
+                            <a href="https://www.cnblogs.com/zhaohongtian/p/6801302.html">
+                                1. 浅谈JAVA中字符串常量的储存位置(2)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/zhaohongtian/p/6807134.html">
+                                2. Brackets 前端编辑器试用(2)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/zhaohongtian/p/6810265.html">
+                                3. 关于Http请求后返回json乱码的问题(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/zhaohongtian/p/6801888.html">
+                                4. 从硬件工程师转到纯软件开发，回顾那些岁月(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/zhaohongtian/p/6807234.html">
+                                5. 【译】Nodejs最好的ORM(1)
+                            </a>
+                        </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</div></div>
+                    <script>loadBlogSideColumn();</script>
+
+</div>
+</div>
+<div class="clear"></div>
+<div id="footer">
+<p id="footer">
+	Powered by: 
+	<br>
+	
+	
+<a href="https://www.cnblogs.com/" id="Footer1_Hyperlink3" style="font-size: 12px; font-family: Verdana">博客园</a>
+	<br>
+	Copyright © 2019 赵弘添
+<br><span id="poweredby">Powered by .NET Core 3.0 Preview 8 on Linux</span>
+
+</p>
+
+
+</div>
+</div>
+
+
+    <div id="page_end_html">
+        <center>友情链接：<a href="http://www.taidai-tj.com/" target="_blank">回力鞋</a> | <a href="http://www.ai200808.com/" target="_blank">中老年女装</a> | <a href="http://wh.xhd.cn/" target="_blank">武汉托福</a> | <a href="http://wh.xhd.cn/ksjq/yc/761220.html" target="_blank">英国留学一年费用</a> | <a href="http://wh.xhd.cn/m/ksjq/yc/755711.html" target="_blank">雅思是什么</a></center>
+    </div>
+
+
+</body></html>

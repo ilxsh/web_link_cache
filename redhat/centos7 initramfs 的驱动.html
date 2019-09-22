@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<!-- saved from url=(0048)http://www.mamicode.com/info-detail-1939464.html -->
+<html lang="zh-cn"><head id="Head1"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="keywords" content="码迷,mamicode.com,互联网,软件开发,开源,asp,asp.net,android,apple,jsp,php,Windows,数据库,HTML,JS,CSS,技术文章,游戏,手机相关"><meta name="description" content="centos7 的 initramfs 在生成时居然只是加载部分驱动 esxi虚拟机迁移时SCSI控制器有变化，一个是并行的，一个sas的，迁移之后居然驱动没了，磁盘找不到 lsinitrd |grep mpt 查看 initramfs 只有当前使用的镜像 在centos6 中可是全加载的 只能调用 ..."><title>
+	centos7 initramfs 的驱动
+</title><link href="./centos7 initramfs 的驱动_files/css.css" type="text/css" rel="stylesheet">
+<script src="./centos7 initramfs 的驱动_files/push.js.download"></script><script src="./centos7 initramfs 的驱动_files/osd.js.download"></script><script src="./centos7 initramfs 的驱动_files/ca-pub-8616102841876629.js.download"></script><script type="text/javascript" async="" src="./centos7 initramfs 的驱动_files/js"></script><script src="./centos7 initramfs 的驱动_files/hm.js.download"></script><script src="./centos7 initramfs 的驱动_files/mamicode_adload.js.download" type="text/javascript" charset="utf-8"></script>
+<script>
+    var _hmt = _hmt || [];
+    (function () {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?408b7cb341bcbccbc03cf31a305b01dd";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+<link rel="stylesheet" type="text/css" href="./centos7 initramfs 的驱动_files/prettify.css">
+    <script type="text/javascript" charset="utf-8" src="./centos7 initramfs 的驱动_files/prettify.js.download"></script>
+<link rel="preload" href="./centos7 initramfs 的驱动_files/f(4).txt" as="script"><script type="text/javascript" src="./centos7 initramfs 的驱动_files/f(4).txt"></script><link rel="preload" href="https://pagead2.googlesyndication.com/pagead/js/r20190617/r20190131/show_ads_impl.js" as="script"></head>
+<body>
+    <div class="width100bi height23px divbackgroundcolor overflowauto">
+    <div class="width1000px divmargin0auto">
+        <div class="divfloatleft">
+        </div>
+        <div class="divfloatright">
+            <div id="logintopdescription" class="paddingtop3"><a href="http://member.mamicode.com/login.aspx">[登录]</a>&nbsp;&nbsp;<a href="http://member.mamicode.com/reg.aspx">[注册]</a></div>
+        </div>
+    </div>
+</div>
+<div class="width1000px divmargin0auto margintop20bottom20 overflowauto">
+    <div class="width120px divfloatleft">
+        <a href="http://www.mamicode.com/" title="码迷，mamicode.com">
+            <img src="./centos7 initramfs 的驱动_files/logo.png" alt="码迷，mamicode.com" width="109" height="60" border="0">
+        </a>
+    </div>
+    <div class="width880px divfloatright">
+        <div class="menuDiv">
+            <ul>
+                <li class="bottomline width10px">&nbsp;</li>
+                <li id="default-aspx" class="title0"><a href="http://www.mamicode.com/" title="码迷，mamicode.com">首页</a></li>
+                <li id="infolist-2" class="title1"><a href="http://www.mamicode.com/info-list-2-1.html" title="Web开发">Web开发</a></li>
+                <li id="infolist-3" class="title1"><a href="http://www.mamicode.com/info-list-3-1.html" title="Windows程序">Windows程序</a></li>
+                <li id="infolist-4" class="title1"><a href="http://www.mamicode.com/info-list-4-1.html" title="编程语言">编程语言</a></li>
+                <li id="infolist-5" class="title1"><a href="http://www.mamicode.com/info-list-5-1.html" title="数据库">数据库</a></li>
+                <li id="infolist-6" class="title1"><a href="http://www.mamicode.com/info-list-6-1.html" title="移动开发">移动开发</a></li>
+                <li id="infolist-8" class="title1"><a href="http://www.mamicode.com/info-list-8-1.html" title="系统相关">系统相关</a></li>
+                <li id="infolist-9" class="title1"><a href="http://www.mamicode.com/info-list-9-1.html" title="微信">微信</a></li>
+                <li id="infolist-11" class="title1"><a href="http://www.mamicode.com/info-list-11-1.html" title="其他好文">其他好文</a></li>
+                <li id="memberhtml" class="title1"><a href="http://www.mamicode.com/member.html" title="会员">会员</a></li>
+                <li class="bottomline width10px">&nbsp;</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+    <script type="text/javascript">        mamicode_adload('top_menu');</script>
+    <div class="divdaohang">
+        <div class="divtitlefont">
+            <a href="http://www.mamicode.com/" title="码迷首页">首页</a>
+            <span id="lbltitle"> &gt; <a href="http://www.mamicode.com/infolist-11-1.html">其他好文</a> &gt; 详细</span>
+        </div>
+    </div>
+    <div class="divmain">
+        <div class="width70bi divfloatleft" style="min-height: 2000px;">
+            <div class="marginright20">
+                <script type="text/javascript">                    mamicode_adload('title_before');</script><div class="margintop10bottom10"><script async="" src="./centos7 initramfs 的驱动_files/f(5).txt"></script><!-- ma-title-before-auto --><ins class="adsbygoogle" style="display: block; height: 60px;" data-ad-client="ca-pub-8616102841876629" data-ad-slot="8076830874" data-ad-format="auto" data-full-width-responsive="true" data-adsbygoogle-status="done"><ins id="aswift_0_expand" style="display:inline-table;border:none;height:60px;margin:0;padding:0;position:relative;visibility:visible;width:691px;background-color:transparent;"><ins id="aswift_0_anchor" style="display:block;border:none;height:60px;margin:0;padding:0;position:relative;visibility:visible;width:691px;background-color:transparent;"><iframe width="691" height="60" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0px;width:691px;height:60px;" src="./centos7 initramfs 的驱动_files/saved_resource(2).html"></iframe></ins></ins></ins><script>     (adsbygoogle = window.adsbygoogle || []).push({});</script></div>
+                <div class="detailtitle divtextaligncenter divborderbottomdotted">
+                    <h1 id="Htitle" class="detailtitle">centos7 initramfs 的驱动</h1>
+                </div>
+                <div class="detail1 divtextaligncenter">
+                    时间：<span id="Label2" class="colorlv">2017-08-04 15:16:05</span>
+                    &nbsp;&nbsp;&nbsp;&nbsp; 阅读：<span id="Label1" class="colorCheng">111</span>
+                    &nbsp;&nbsp;&nbsp;&nbsp; 评论：<span id="lblcommentcount" class="colorCheng">0</span>
+                    &nbsp;&nbsp;&nbsp;&nbsp; 收藏：<span id="lblfavorite" class="colorCheng">0</span>
+                    &nbsp;&nbsp;&nbsp;&nbsp; <a id="infofavorite" class="acursorpointer" onclick="infofavorite_click();">[点我收藏+]</a>
+                </div>
+                <script type="text/javascript">                    mamicode_adload('content_before');</script><div class="margintop20bottom20"><script async="" src="./centos7 initramfs 的驱动_files/f(6).txt"></script><ins class="adsbygoogle" style="display: block; text-align: center; height: 173px;" data-ad-format="fluid" data-ad-layout="in-article" data-ad-client="ca-pub-8616102841876629" data-ad-slot="3249086282" data-adsbygoogle-status="done"><ins id="aswift_1_expand" style="display:inline-table;border:none;height:173px;margin:0;padding:0;position:relative;visibility:visible;width:691px;background-color:transparent;"><ins id="aswift_1_anchor" style="display:block;border:none;height:173px;margin:0;padding:0;position:relative;visibility:visible;width:691px;background-color:transparent;"><iframe width="691" height="173" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_1" name="aswift_1" style="left:0;position:absolute;top:0;border:0px;width:691px;height:173px;" src="./centos7 initramfs 的驱动_files/saved_resource(3).html"></iframe></ins></ins></ins><script>     (adsbygoogle = window.adsbygoogle || []).push({});</script></div>
+                <div class="detailcontennt">
+                    <span id="Label3"><p>标签：<a href="http://www.mamicode.com/so/1/gre" title="gre">gre</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/%e6%8e%a7%e5%88%b6" title="控制">控制</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/sas" title="sas">sas</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/cut" title="cut">cut</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/ram" title="ram">ram</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/%e5%8a%a0%e8%bd%bd" title="加载">加载</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/initrd" title="initrd">initrd</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/centos7" title="centos7">centos7</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/grep" title="grep">grep</a>&nbsp;&nbsp;&nbsp;</p><p>centos7 的 initramfs 在生成时居然只是加载部分驱动</p>
+<p>esxi虚拟机迁移时SCSI控制器有变化，一个是并行的，一个sas的，迁移之后居然驱动没了，磁盘找不到</p>
+<p>lsinitrd |grep mpt 查看 initramfs 只有当前使用的镜像</p>
+<p>在centos6 中可是全加载的</p>
+<p>只能调用dracut --force --add-drivers mptsas --kver=3.10.0 强制把mptsas驱动加载到initramfs的镜像</p>
+<p>新的镜像上电之后能找到磁盘</p><p><a href="http://www.mamicode.com/info-detail-1939464.html" title="centos7 initramfs 的驱动,mamicode.com" style="color:#ffffff" target="_blank">centos7 initramfs 的驱动</a></p><p>标签：<a href="http://www.mamicode.com/so/1/gre" title="gre">gre</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/%e6%8e%a7%e5%88%b6" title="控制">控制</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/sas" title="sas">sas</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/cut" title="cut">cut</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/ram" title="ram">ram</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/%e5%8a%a0%e8%bd%bd" title="加载">加载</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/initrd" title="initrd">initrd</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/centos7" title="centos7">centos7</a>&nbsp;&nbsp;&nbsp;<a href="http://www.mamicode.com/so/1/grep" title="grep">grep</a>&nbsp;&nbsp;&nbsp;</p><p>原文地址：http://www.cnblogs.com/arwen-spy/p/7285008.html</p></span>
+                </div>
+                <div id="divcomment">
+                    <div>
+                        <div class="divtextaligncenter paddingright2 overflowauto">
+                            <div class="detailcai" id="infono" onclick="infono_click();">
+                                <div class="detailcai1 colorboldlan">
+                                    踩</div>
+                                <div class="detailcai2 colorboldlan">
+                                    (<span id="spanNo">0</span>)</div>
+                            </div>
+                            <div class="detailzan" id="infoyes" onclick="infoyes_click();">
+                                <div class="detailzan1 colorboldHong">
+                                    赞</div>
+                                <div class="detailzan2 colorboldHong">
+                                    (<span id="spanYes">0</span>)</div>
+                            </div>
+                        </div>
+                        <div class="divtextalignright margintop10">
+                            <div class="width100bi paddingleft10right10">
+                                <span id="spanYesContent" class="colorboldHong"></span>&nbsp; <span id="spanNoContent" class="colorboldlan"></span>&nbsp; <span id="spanBadContent" class="colorboldHong">
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="divtextalignright margintop10">
+                        <span class="detailjubao" id="infobad" onclick="infobad_click();">举报</span>
+                    </div>
+                    <script type="text/javascript">                        mamicode_adload('content_after');</script><div class="margintop20">    <div class="divfloatleft">        <script async="" src="./centos7 initramfs 的驱动_files/f(6).txt"></script>        <!-- mamicode-infodetail-336x280-1 -->        <ins class="adsbygoogle" style="display: inline-block; width: 336px; height: 280px" data-ad-client="ca-pub-8616102841876629" data-ad-slot="6851602680" data-adsbygoogle-status="done"><ins id="aswift_2_expand" style="display:inline-table;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:336px;background-color:transparent;"><ins id="aswift_2_anchor" style="display:block;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:336px;background-color:transparent;"><iframe width="336" height="280" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_2" name="aswift_2" style="left:0;position:absolute;top:0;border:0px;width:336px;height:280px;" src="./centos7 initramfs 的驱动_files/saved_resource(4).html"></iframe></ins></ins></ins>        <script>            (adsbygoogle = window.adsbygoogle || []).push({});        </script>    </div>    <div class="divfloatright">        <script async="" src="./centos7 initramfs 的驱动_files/f(6).txt"></script>        <!-- mamicode-infodetail-336x280-2 -->        <ins class="adsbygoogle" style="display: inline-block; width: 336px; height: 280px" data-ad-client="ca-pub-8616102841876629" data-ad-slot="8328335888" data-adsbygoogle-status="done"><ins id="aswift_3_expand" style="display:inline-table;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:336px;background-color:transparent;"><ins id="aswift_3_anchor" style="display:block;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:336px;background-color:transparent;"><iframe width="336" height="280" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_3" name="aswift_3" style="left:0;position:absolute;top:0;border:0px;width:336px;height:280px;" src="./centos7 initramfs 的驱动_files/saved_resource(5).html"></iframe></ins></ins></ins>        <script>            (adsbygoogle = window.adsbygoogle || []).push({});        </script>    </div>    <div class="divfloatclear">    </div></div>
+                    <div id="comment" class="divtextalignleft margintop20">
+                        <div class="detailpinglun1">
+                            <span class="detailpinglun2 title6">评论</span> <span class="detailpinglun3">一句话评论（<span id="commentCount" class="colorboldHong">0</span>）</span>
+                        </div>
+                        <div class="paddingtop20">
+                            
+                            <div id="commentlistend" name="commentlistend" class="divtextaligncenter margintop20">
+                                <span id="lblpage">共<span class="pagecolorc">0</span>条&nbsp;&nbsp;</span>
+                            </div>
+                        </div>
+                        <div class="margintop20">
+                            <form method="post" action="http://www.mamicode.com/ajaxjs/info_detail_commentadd.aspx">
+                            <div class="divtextalignleft paddingtop20">
+                                <div id="commenthf" class="divbackgroundcolor1">
+                                </div>
+                                <div>
+                                    <textarea name="tbcommentcontent" id="tbcommentcontent" class="tb" style="width: 680px;
+                                        height: 120px;"></textarea>
+                                </div>
+                            </div>
+                            <div class="divtextalignright paddingtop10 ">
+                                <span id="addCommentTishi" class="colorboldHong">登录后才能评论！</span>
+                                <span id="loginno"><input type="button" class="mbtn1" value="登录" onclick="location.href=&#39;http://member.mamicode.com/login.aspx?returnUrl=&#39;+document.URL.replace(new RegExp(&#39;&amp;&#39;, &#39;g&#39;), &#39;(_)&#39;)"></span>
+                            </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <script type="text/javascript">                    mamicode_adload('content_bottom');</script>
+            </div>
+        </div>
+        <div class="width30bi divfloatright">
+            
+            <div class="paddingbottom20">
+    <script type="text/javascript">        (function () { document.write(unescape('%3Cdiv id="bdcs"%3E%3C/div%3E')); var bdcs = document.createElement('script'); bdcs.type = 'text/javascript'; bdcs.async = true; bdcs.src = 'http://znsv.baidu.com/customer_search/api/js?sid=7490613033886828738' + '&plate_url=' + encodeURIComponent(window.location.href) + '&t=' + Math.ceil(new Date() / 3600000); var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(bdcs, s); })();</script><div id="bdcs"></div>
+</div>
+
+            <script type="text/javascript">                mamicode_adload('right_top');</script><div class="paddingbottom10">    <script async="" src="./centos7 initramfs 的驱动_files/f(6).txt"></script>    <!-- 1-mamicode-right-300x600 -->    <ins class="adsbygoogle" style="display: inline-block; width: 300px; height: 600px" data-ad-client="ca-pub-8616102841876629" data-ad-slot="8947049888" data-adsbygoogle-status="done"><ins id="aswift_4_expand" style="display:inline-table;border:none;height:600px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><ins id="aswift_4_anchor" style="display:block;border:none;height:600px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><iframe width="300" height="600" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_4" name="aswift_4" style="left:0;position:absolute;top:0;border:0px;width:300px;height:600px;" src="./centos7 initramfs 的驱动_files/saved_resource(6).html"></iframe></ins></ins></ins>    <script>        (adsbygoogle = window.adsbygoogle || []).push({});    </script></div>
+            
+<div class="width99bi divborder">
+    <div class="divtitle">
+        <div id="infofile1_div1" class="divfloatleft divtitlefont">
+            分享档案</div>
+        <div class="divfloatright">
+            <a href="http://www.mamicode.com/infotimemore.html" title="分享档案更多" class="colorCheng">更多&gt;</a>
+        </div>
+    </div>
+    <div class="divtextalignleft paddingleft10right10 margintop10bottom10 heightline30px">
+        
+                <a class="taga" href="http://www.mamicode.com/info-time-20190624-1.html" target="_blank" title="2019年06月24日技术分享文章">
+                    2019年06月24日
+                    (404)</a><br>
+            
+                <a class="taga" href="http://www.mamicode.com/info-time-20190623-1.html" target="_blank" title="2019年06月23日技术分享文章">
+                    2019年06月23日
+                    (837)</a><br>
+            
+                <a class="taga" href="http://www.mamicode.com/info-time-20190622-1.html" target="_blank" title="2019年06月22日技术分享文章">
+                    2019年06月22日
+                    (548)</a><br>
+            
+                <a class="taga" href="http://www.mamicode.com/info-time-20190621-1.html" target="_blank" title="2019年06月21日技术分享文章">
+                    2019年06月21日
+                    (644)</a><br>
+            
+                <a class="taga" href="http://www.mamicode.com/info-time-20190620-1.html" target="_blank" title="2019年06月20日技术分享文章">
+                    2019年06月20日
+                    (649)</a><br>
+            
+                <a class="taga" href="http://www.mamicode.com/info-time-20190619-1.html" target="_blank" title="2019年06月19日技术分享文章">
+                    2019年06月19日
+                    (763)</a><br>
+            
+                <a class="taga" href="http://www.mamicode.com/info-time-20190618-1.html" target="_blank" title="2019年06月18日技术分享文章">
+                    2019年06月18日
+                    (695)</a><br>
+            
+                <a class="taga" href="http://www.mamicode.com/info-time-20190617-1.html" target="_blank" title="2019年06月17日技术分享文章">
+                    2019年06月17日
+                    (731)</a><br>
+            
+                <a class="taga" href="http://www.mamicode.com/info-time-20190616-1.html" target="_blank" title="2019年06月16日技术分享文章">
+                    2019年06月16日
+                    (809)</a><br>
+            
+                <a class="taga" href="http://www.mamicode.com/info-time-20190615-1.html" target="_blank" title="2019年06月15日技术分享文章">
+                    2019年06月15日
+                    (847)</a><br>
+            
+    </div>
+</div>
+
+            
+<div class="width99bi margintop20 divborder">
+    <div class="divtitle">
+        <div id="infotop2_divtitle" class="divfloatleft divtitlefont">周排行</div>
+        <div class="divfloatright">
+            <img src="./centos7 initramfs 的驱动_files/j01.jpg" width="14" height="14" alt="mamicode.com排行更多图片"></div>
+        <div class="divfloatright">
+            <a href="http://www.mamicode.com/info-toplist-11-2-1.html" id="infotop2_amore" title="周排行更多">更多</a></div>
+    </div>
+    <div>
+        <ul>
+            
+                    <li class="divullititle heightline25px divtextalignleft"><a href="http://www.mamicode.com/info-detail-2314419.html" title="GDPR 和个人信息保护的小知识" target="_blank">
+                        GDPR 和个人信息保护的小知识
+                        &nbsp;<span class="colorlan">2018-05-27</span> </a>
+                    </li>
+                
+                    <li class="divullititle heightline25px divtextalignleft"><a href="http://www.mamicode.com/info-detail-2500440.html" title="Typora" target="_blank">
+                        Typora
+                        &nbsp;<span class="colorlan">2018-10-29</span> </a>
+                    </li>
+                
+                    <li class="divullititle heightline25px divtextalignleft"><a href="http://www.mamicode.com/info-detail-2179823.html" title="关于vue :style 的几种使用方式" target="_blank">
+                        关于vue :style 的几种使用方式
+                        &nbsp;<span class="colorlan">2018-02-02</span> </a>
+                    </li>
+                
+                    <li class="divullititle heightline25px divtextalignleft"><a href="http://www.mamicode.com/info-detail-2319526.html" title="运行代码后出现Process finished with exit code 0是为什么？" target="_blank">
+                        运行代码后出现Process finished with exit code 0是为什么？
+                        &nbsp;<span class="colorlan">2018-06-01</span> </a>
+                    </li>
+                
+                    <li class="divullititle heightline25px divtextalignleft"><a href="http://www.mamicode.com/info-detail-2217311.html" title="PyTorch官方中文文档：torch" target="_blank">
+                        PyTorch官方中文文档：torch
+                        &nbsp;<span class="colorlan">2018-03-10</span> </a>
+                    </li>
+                
+                    <li class="divullititle heightline25px divtextalignleft"><a href="http://www.mamicode.com/info-detail-471298.html" title="转大写字母-(ASCII表)" target="_blank">
+                        转大写字母-(ASCII表)
+                        &nbsp;<span class="colorlan">2015-02-10</span> </a>
+                    </li>
+                
+                    <li class="divullititle heightline25px divtextalignleft"><a href="http://www.mamicode.com/info-detail-997853.html" title="汉字拼音对照表" target="_blank">
+                        汉字拼音对照表
+                        &nbsp;<span class="colorlan">2015-08-19</span> </a>
+                    </li>
+                
+                    <li class="divullititle heightline25px divtextalignleft"><a href="http://www.mamicode.com/info-detail-1180317.html" title="numpy数据类型dtype转换" target="_blank">
+                        numpy数据类型dtype转换
+                        &nbsp;<span class="colorlan">2016-01-14</span> </a>
+                    </li>
+                
+                    <li class="divullititle heightline25px divtextalignleft"><a href="http://www.mamicode.com/info-detail-2261988.html" title="random.nextInt()的用法" target="_blank">
+                        random.nextInt()的用法
+                        &nbsp;<span class="colorlan">2018-04-18</span> </a>
+                    </li>
+                
+                    <li class="divullititle heightline25px divtextalignleft"><a href="http://www.mamicode.com/info-detail-2594684.html" title="163、搜狐、TOM等VIP个人商务邮箱哪个好？" target="_blank">
+                        163、搜狐、TOM等VIP个人商务邮箱哪个好？
+                        &nbsp;<span class="colorlan">2019-01-22</span> </a>
+                    </li>
+                
+        </ul>
+    </div>
+</div>
+
+            <script type="text/javascript">                mamicode_adload('right_bottom');</script><div style="margin-top:20px;width:300px;">    <script async="" src="./centos7 initramfs 的驱动_files/f(6).txt"></script>    <!-- mamicode-right-xuanting-300x600 -->    <ins class="adsbygoogle" style="display: inline-block; width: 300px; height: 600px" data-ad-client="ca-pub-8616102841876629" data-ad-slot="4406515082" data-adsbygoogle-status="done"><ins id="aswift_5_expand" style="display:inline-table;border:none;height:600px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><ins id="aswift_5_anchor" style="display:block;border:none;height:600px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><iframe width="300" height="600" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_5" name="aswift_5" style="left:0;position:absolute;top:0;border:0px;width:300px;height:600px;" src="./centos7 initramfs 的驱动_files/saved_resource(7).html"></iframe></ins></ins></ins>    <script>        (adsbygoogle = window.adsbygoogle || []).push({});    </script></div>
+        </div>
+        <div class="divfloatclear">
+        </div>
+    </div>
+    <script type="text/javascript">        mamicode_adload('bottom');</script>
+    <div class="width1000px divmargin0auto paddingtop20bottom20">
+    <div class="width1000px divborder margintop20">
+        <div class="youqingtitle">
+            <a title="友情链接">友情链接</a>
+        </div>
+        <div class="youqingcontent">
+            <a href="http://www.lightinit.com/" target="_blank" title="互联网产品定制开发专家">兰亭集智</a>&nbsp;&nbsp;<a href="http://www.guozhihua.net/" target="_blank">国之画</a>&nbsp;&nbsp;<a href="http://tongji.baidu.com/" target="_blank">百度统计</a>&nbsp;&nbsp; <a href="http://www.cnzz.com/" target="_blank">
+                        站长统计</a>&nbsp;&nbsp;<a href="http://www.aliyun.com/" target="_blank">阿里云</a>&nbsp;&nbsp;<a href="http://www.cnplugins.com/" target="_blank">chrome插件</a>
+        </div>
+    </div>
+</div>
+<div class="bottomdiv">
+    <div class="width1000px divmargin0auto paddingtop20">
+        <div class="height30px divtextalignleft">
+            <a href="http://www.mamicode.com/about.html" title="mamicode.com关于我们">关于我们</a> - <a href="http://www.mamicode.com/contactus.html" title="mamicode.com联系我们">联系我们</a> - <a href="http://www.mamicode.com/guest.html" title="mamicode.com留言反馈">留言反馈</a>
+        </div>
+        <div class="height30px divtextalignleft">
+            © 2014 <a href="http://www.mamicode.com/" target="_blank" title="mamicode.com,技术分享">mamicode.com</a>
+            版权所有 京ICP备13008772号-2
+        </div>
+        <div class="divtextalignleft">
+            <span class="colorlan">迷上了代码！</span>
+        </div>
+        <div class="paddingtop20">
+            <script type="text/javascript">                var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://"); document.write(unescape("%3Cspan id='cnzz_stat_icon_1254666564'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s4.cnzz.com/z_stat.php%3Fid%3D1254666564%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script><span id="cnzz_stat_icon_1254666564"><a href="https://www.cnzz.com/stat/website.php?web_id=1254666564" target="_blank" title="站长统计"><img border="0" hspace="0" vspace="0" src="./centos7 initramfs 的驱动_files/pic1.gif"></a></span><script src="./centos7 initramfs 的驱动_files/z_stat.php" type="text/javascript"></script><script src="./centos7 initramfs 的驱动_files/core.php" charset="utf-8" type="text/javascript"></script>
+            <script>
+                (function () {
+                    var bp = document.createElement('script');
+                    var curProtocol = window.location.protocol.split(':')[0];
+                    if (curProtocol === 'https') {
+                        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                    }
+                    else {
+                        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                    }
+                    var s = document.getElementsByTagName("script")[0];
+                    s.parentNode.insertBefore(bp, s);
+                })();
+            </script>
+        </div>
+    </div>
+</div>
+
+    <script type="text/javascript">        var mid = ''; var id = '1939464'; var idm = '5bb996'; var commentitemcount = '0'; var memberhost = 'http://member.mamicode.com/'; prettyPrint(); </script>
+    <script src="./centos7 initramfs 的驱动_files/infodetail.js.download" type="text/javascript" charset="utf-8"></script>
+    <script src="./centos7 initramfs 的驱动_files/member.js.download" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" src="./centos7 initramfs 的驱动_files/mamicodejs.js.download"></script>
+<script type="text/javascript" src="./centos7 initramfs 的驱动_files/su.js.download"></script><iframe id="google_osd_static_frame_2274716618580" name="google_osd_static_frame" style="display: none; width: 0px; height: 0px;" src="./centos7 initramfs 的驱动_files/saved_resource(8).html"></iframe>
+
+
+<ins class="adsbygoogle adsbygoogle-noablate" data-adsbygoogle-status="done" style="display: none !important;"><ins id="aswift_6_expand" style="display:inline-table;border:none;height:0px;margin:0;padding:0;position:relative;visibility:visible;width:0px;background-color:transparent;"><ins id="aswift_6_anchor" style="display:block;border:none;height:0px;margin:0;padding:0;position:relative;visibility:visible;width:0px;background-color:transparent;"><iframe frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_6" name="aswift_6" style="left:0;position:absolute;top:0;border:0px;width:0px;height:0px;" src="./centos7 initramfs 的驱动_files/saved_resource(9).html"></iframe></ins></ins></ins></body><iframe id="google_shimpl" style="display: none;" src="./centos7 initramfs 的驱动_files/saved_resource(10).html"></iframe><iframe id="google_esf" name="google_esf" src="./centos7 initramfs 的驱动_files/zrt_lookup.html" data-ad-client="ca-pub-8616102841876629" style="display: none;"></iframe></html>

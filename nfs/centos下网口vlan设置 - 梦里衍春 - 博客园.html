@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)https://www.cnblogs.com/gaohong/p/4655080.html -->
+<html lang="zh-cn"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="origin">
+    <meta property="og:description" content="如果要使vlan之间进行通信，我们通常会使用三层交换机或者路由器子接口模式来做。Linux上关于VLAN与Cisco交换机中继连接，也是可以实现其互相之间的通信的。环境：RHEL 5.2 最小化安装，">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <title>centos下网口vlan设置 - 梦里衍春 - 博客园</title>
+    
+    <link rel="stylesheet" href="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/blog-common.min.css">
+    <link id="MainCss" rel="stylesheet" href="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/bundle-hover.min.css">
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/bundle-hover-mobile.min.css">
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/gaohong/rss">
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/gaohong/rsd.xml">
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/gaohong/wlwmanifest.xml">
+    <script src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/amp4ads-host-v0.js.download"></script><script src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/pubads_impl_rendering_2019091201.js.download"></script><script async="" src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/analytics.js.download"></script><script src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/jquery-2.2.0.min.js.download"></script>
+    <script src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/blog-common.min.js.download"></script>
+    <script>
+        var currentBlogId = 235777;
+        var currentBlogApp = 'gaohong';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+    </script>
+    
+    
+    
+<link rel="preload" href="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/f.txt" as="script"><script type="text/javascript" src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/f.txt"></script><script src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/pubads_impl_2019091201.js.download" async=""></script><link rel="prefetch" href="https://tpc.googlesyndication.com/safeframe/1-0-35/html/container.html"></head>
+<body>
+    <a name="top"></a>
+    
+    
+<div id="top">
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/gaohong/">梦里衍春</a>
+</h1>
+</div>
+<p id="tagline">
+
+</p>
+
+
+<div id="leftmenu">
+	
+		
+<h3>导航</h3>
+<ul>
+			<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+</li>
+			<li>
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/gaohong/">
+首页</a>
+</li>
+			<li>
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+</li>
+			<li>
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/%E6%A2%A6%E9%87%8C%E8%A1%8D%E6%98%A5">
+联系</a></li>
+			<li>
+<a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/gaohong/rss/">
+订阅</a>
+<a id="blog_nav_rss_image" href="https://www.cnblogs.com/gaohong/rss/">
+    <img src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/xml.gif" alt="订阅">
+</a></li>
+			<li>
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+</ul>
+
+
+		<div id="calendar"><div id="blog-calendar" style="">
+
+<table id="blogCalendar" class="Cal" cellspacing="0" cellpadding="0" title="Calendar" border="0">
+    <tbody>
+        <tr>
+            <td colspan="7">
+                <table class="CalTitle" cellspacing="0" border="0">
+                    <tbody>
+                        <tr>
+                            <td class="CalNextPrev">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2019/08/19&#39;); return false;">&lt;</a>
+                            </td>
+                            <td align="center">2019年9月</td>
+                            <td align="right" class="CalNextPrev">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2019/10/19&#39;); return false;">&gt;</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+                    <th class="CalDayHeader" align="center" abbr="日" scope="col">日</th>
+                    <th class="CalDayHeader" align="center" abbr="一" scope="col">一</th>
+                    <th class="CalDayHeader" align="center" abbr="二" scope="col">二</th>
+                    <th class="CalDayHeader" align="center" abbr="三" scope="col">三</th>
+                    <th class="CalDayHeader" align="center" abbr="四" scope="col">四</th>
+                    <th class="CalDayHeader" align="center" abbr="五" scope="col">五</th>
+                    <th class="CalDayHeader" align="center" abbr="六" scope="col">六</th>
+        </tr>
+            <tr>
+                        <td class="CalWeekendDay" align="center">
+                            1
+                        </td>
+                        <td class="" align="center">
+                            2
+                        </td>
+                        <td class="" align="center">
+                            3
+                        </td>
+                        <td class="" align="center">
+                            4
+                        </td>
+                        <td class="" align="center">
+                            5
+                        </td>
+                        <td class="" align="center">
+                            6
+                        </td>
+                    <td class="CalWeekendDay" align="center">
+                        7
+                    </td>
+            </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            8
+                        </td>
+                            <td class="" align="center">
+                                9
+                            </td>
+                            <td class="" align="center">
+                                10
+                            </td>
+                            <td class="" align="center">
+                                11
+                            </td>
+                            <td class="" align="center">
+                                12
+                            </td>
+                            <td class="" align="center">
+                                13
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            14
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            15
+                        </td>
+                            <td class="" align="center">
+                                16
+                            </td>
+                            <td class="" align="center">
+                                17
+                            </td>
+                            <td class="" align="center">
+                                18
+                            </td>
+                            <td class="CalTodayDay" align="center">
+                                19
+                            </td>
+                            <td class="" align="center">
+                                20
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            21
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            22
+                        </td>
+                            <td class="" align="center">
+                                23
+                            </td>
+                            <td class="" align="center">
+                                24
+                            </td>
+                            <td class="" align="center">
+                                25
+                            </td>
+                            <td class="" align="center">
+                                26
+                            </td>
+                            <td class="" align="center">
+                                27
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            28
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            29
+                        </td>
+                            <td class="" align="center">
+                                30
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                1
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                2
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                3
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                4
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            5
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalOtherMonthDay" align="center">
+                            6
+                        </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                7
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                8
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                9
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                10
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                11
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            12
+                        </td>
+                </tr>
+    </tbody>
+</table></div></div>                
+                    <script>loadBlogDefaultCalendar();</script>
+		<h3>统计</h3>
+	<ul>
+		<li>随笔 - 
+68</li>
+		<li>文章 - 
+1</li>
+		<li>评论 - 
+1</li>
+		<li>引用 - 
+0</li>
+	</ul>
+
+
+		
+<div id="sidebar_news" class="newsItem"><h3>公告</h3>
+	
+<div id="blog-news">
+    
+    <div id="profile_block">
+        昵称：
+        <a href="https://home.cnblogs.com/u/gaohong/">
+            梦里衍春
+        </a>
+        <br>
+        园龄：
+        <a href="https://home.cnblogs.com/u/gaohong/" title="入园时间：2015-07-16">
+            4年2个月
+        </a>
+        <br>
+        粉丝：
+        <a href="https://home.cnblogs.com/u/gaohong/followers/">
+            3
+        </a>
+        <br>
+        关注：
+        <a href="https://home.cnblogs.com/u/gaohong/followees/">
+            1
+        </a>
+        <div id="p_b_follow">
+<a href="javascript:void(0)" onclick="follow(&#39;efb7b415-6b2b-e511-b908-9dcfd8948a71&#39;)">+加关注</a></div>
+        <script>getFollowStatus('efb7b415-6b2b-e511-b908-9dcfd8948a71');</script>
+    </div>
+</div>
+
+</div>
+
+		<div id="blog-sidecolumn">
+
+<!-- 搜索 -->
+<div id="sidebar_search" class="sidebar-block">
+    <div id="sidebar_search" class="mySearch">
+        <h3 class="catListTitle">搜索</h3>
+        <div id="sidebar_search_box">
+            <div id="widget_my_zzk" class="div_my_zzk">
+                <input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk">
+            </div>
+            <div id="widget_my_google" class="div_my_zzk">
+                <input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 常用链接 -->
+<div id="sidebar_shortcut" class="sidebar-block">
+    
+<h3 class="catListTitle">
+常用链接
+</h3>
+<ul>
+        <li>
+
+<a href="https://www.cnblogs.com/gaohong/p/" title="我的博客的随笔列表">我的随笔</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/gaohong/MyComments.html" title="我的发表过的评论列表">我的评论</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/gaohong/OtherPosts.html" title="我评论过的随笔列表">我的参与</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/gaohong/RecentComments.html" title="我的博客的评论列表">最新评论</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/gaohong/tag/" title="我的博客的标签列表">我的标签</a>
+</li>
+</ul>
+
+<!-- TODO: 检查是否有使用这一部分的控件，如果没有则应该删除。 -->
+<div id="itemListLin_con" style="display:none">
+    <ul>
+
+    </ul>
+</div>
+
+</div>
+
+<!-- 最新随笔 -->
+
+
+
+<!-- 我的标签 -->
+<div id="sidebar_toptags" class="sidebar-block">
+    
+<h3>我的标签</h3>
+<div id="MyTag">
+    <ul>
+        
+        <li>
+            <a href="https://www.cnblogs.com/gaohong/tag/yum/">yum</a>(6)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/gaohong/tag/vnc/">vnc</a>(4)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/gaohong/tag/git/">git</a>(2)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/gaohong/tag/nfs/">nfs</a>(2)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/gaohong/tag/ntp/">ntp</a>(2)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/gaohong/tag/bond/">bond</a>(2)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/gaohong/tag/dd/">dd</a>(2)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/gaohong/tag/IPMITOOL/">IPMITOOL</a>(2)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/gaohong/tag/Linux%E4%B8%8Bwhich%E3%80%81whereis%E3%80%81locate%E3%80%81find%E5%91%BD%E4%BB%A4%E7%9A%84%E5%8C%BA%E5%88%AB/">Linux下which、whereis、locate、find命令的区别</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/gaohong/tag/lsof%20%E7%AE%80%E4%BB%8B/">lsof 简介</a>(1)
+        </li>
+            <li>
+                <a href="https://www.cnblogs.com/gaohong/tag/">更多</a>
+            </li>
+
+    </ul>
+</div>
+
+</div>
+
+<!-- 积分与排名 -->
+
+
+<!-- 随笔分类、随笔档案、文章分类、新闻分类、相册、链接 -->
+<div id="sidebar_categories">
+    
+		<h3>
+
+随笔分类
+
+
+</h3>
+				<ul>
+			
+				<li>
+<a href="https://www.cnblogs.com/gaohong/category/712273.html" rel="" target="">
+    ceph(8)
+</a>
+ 
+</li>
+				<li>
+<a href="https://www.cnblogs.com/gaohong/category/712271.html" rel="" target="">
+    linux运维(44)
+</a>
+ 
+</li>
+				<li>
+<a href="https://www.cnblogs.com/gaohong/category/712272.html" rel="" target="">
+    network
+</a>
+ 
+</li>
+				<li>
+<a href="https://www.cnblogs.com/gaohong/category/714217.html" rel="" target="">
+    security
+</a>
+ 
+</li>
+			
+				</ul>
+		<h3>
+
+随笔档案
+
+
+</h3>
+				<ul>
+			
+				<li>
+<a href="https://www.cnblogs.com/gaohong/archive/2016/08.html" rel="" target="">
+    2016年8月(2)
+</a>
+ 
+</li>
+				<li>
+<a href="https://www.cnblogs.com/gaohong/archive/2015/12.html" rel="" target="">
+    2015年12月(2)
+</a>
+ 
+</li>
+				<li>
+<a href="https://www.cnblogs.com/gaohong/archive/2015/11.html" rel="" target="">
+    2015年11月(2)
+</a>
+ 
+</li>
+				<li>
+<a href="https://www.cnblogs.com/gaohong/archive/2015/10.html" rel="" target="">
+    2015年10月(4)
+</a>
+ 
+</li>
+				<li>
+<a href="https://www.cnblogs.com/gaohong/archive/2015/09.html" rel="" target="">
+    2015年9月(22)
+</a>
+ 
+</li>
+				<li>
+<a href="https://www.cnblogs.com/gaohong/archive/2015/08.html" rel="" target="">
+    2015年8月(10)
+</a>
+ 
+</li>
+				<li>
+<a href="https://www.cnblogs.com/gaohong/archive/2015/07.html" rel="" target="">
+    2015年7月(26)
+</a>
+ 
+</li>
+			
+				</ul>
+
+
+</div>
+
+<!-- 最新评论 -->
+<div id="sidebar_recentcomments" class="sidebar-block">
+    <div id="recent_comments_wrap" class="RecentComment">
+    <h3 class="catListTitle">最新评论</h3>
+    <div class="RecentCommentBlock">
+        <ul>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/gaohong/p/5818086.html#3752960">1. Re:Ceph性能测试工具和方法。</a></li>
+                    <li class="recent_comment_body">请教大神，我测试ceph集群，rbd块存储，使用FIO工具的话，需要在集群每台机器上都跑FIO吗？</li>
+                    <li class="recent_comment_author">--lightcn</li>
+        </ul>
+    </div>
+</div>
+</div>
+
+
+
+<!-- 阅读排行榜 -->
+<div id="sidebar_topviewedposts" class="sidebar-block">
+    
+<div id="topview_posts_wrap">
+    <h3 class="catListTitle">阅读排行榜</h3>
+    <div id="TopViewPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/gaohong/p/4708384.html">
+                            1. linux查看RAID信息(7102)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/gaohong/p/5818086.html">
+                            2. Ceph性能测试工具和方法。(6250)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/gaohong/p/4900744.html">
+                            3. CentOS7 bonding配置(3548)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/gaohong/p/4655080.html">
+                            4. centos下网口vlan设置(2809)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/gaohong/p/4663850.html">
+                            5. swift能干什么，不能干什么及相关概念(1687)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<!-- 评论排行榜 -->
+<div id="sidebar_topcommentedposts" class="sidebar-block">
+    
+<div id="topfeedback_posts_wrap">
+    <h3 class="catListTitle">评论排行榜</h3>
+    <div id="TopFeedbackPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/gaohong/p/5818086.html">
+                            1. Ceph性能测试工具和方法。(1)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<!-- 推荐排行榜 -->
+<div id="sidebar_topdiggedposts" class="sidebar-block">
+    
+<div id="topdigg_posts_wrap">
+    <div class="catListView">
+        <h3 class="catListTitle">推荐排行榜</h3>
+        <div id="TopDiggPostsBlock">
+            <ul style="word-break: break-all">
+                        <li>
+                            <a href="https://www.cnblogs.com/gaohong/p/4664214.html">
+                                1. Linux查看History记录加时间戳小技巧(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/gaohong/p/4669455.html">
+                                2. ceph osd 批量删除(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/gaohong/p/5818086.html">
+                                3. Ceph性能测试工具和方法。(1)
+                            </a>
+                        </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</div></div>
+                    <script>loadBlogSideColumn();</script>
+	
+</div>
+<div id="main">
+	<div id="post_detail">
+	<div class="post">
+		<h2>
+			
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/gaohong/p/4655080.html">centos下网口vlan设置</a>
+
+		</h2>
+		
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <p><span style="font-size: medium;">如果要使vlan之间进行通信，我们通常会使用三层交换机或者路由器子接口模式来做。Linux上关于VLAN与Cisco交换机中继连接，也是可以实现其互相之间的通信的。<br><br>环境：RHEL 5.2 最小化安装，物理网卡eth1，作为VLAN交换机连接的Trunk口连接到2960的GigabitEthernet0/1。而另外一张物理网卡eth0作为上行口，连接其他网络。<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cisco 2960，启用VLAN，VLAN的网段规划入下：<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VLAN 1：fa0/1 - fa0/6 192.168.1.0/24<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VLAN 2：fa0/7 - fa0/12 192.168.2.0/24<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VLAN 3：fa0/13 - fa0/18 192.168.3.0/24<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VLAN 4：fa0/19 - fa0/24 192.168.4.0/24<br>由于2960支持的802.1q trunk协议对于本征vlan 1 的数据流是不会增加vlan标记的，以及交换机的配置过程，具体可以见本站点其他关于交换机配置介绍<br>可以用 Show interfaces trunk命令查看本征vlan 规划：对于本征vlan我们不增加子接口，直接在物理网卡eth1上绑定IP即可，其他vlan都使用vconfig创建子接口即可。<br><br>一.首先要确认Linux系统内核是否已经支持VLAN功能：<br>当前使用内核以及操作系统版本：<br>[root@happyboy ~]# # lsmod |grep 8021q&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //查看系统内核是否支持802.1q协议<br>8021q&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 18633 0&nbsp;<br>[root@happyboy ~]# lspci&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //确认网卡驱动是否已经正常加载<br><br>一般来说RH9以后的Linux发行版本，诸如RHEL4、RHEL5、CentOS4、CentOS5都已经默认支持了VLAN的功能。<br></span></p>
+<p><span style="font-size: medium;">二.物理网卡、子网卡、虚拟VLAN网卡的关系：<br>1.物理网卡：物理网卡这里指的是服务器上实际的网络接口设备，这里我服务器上双网卡，在系统中看到的2个物理网卡分别对应是eth0和eth1这两个网络接口。<br><br>2.子网卡：子网卡在这里并不是实际上的网络接口设备，但是可以作为网络接口在系统中出现，如eth0:1、eth1:2这种网络接口。它们必须要依赖于物理网卡，虽然可以与物理网卡的网络接口同时在系统中存在并使用不同的IP地址，而且也拥有它们自己的网络接口配置文件。但是当所依赖的物理网卡不启用时（Down状态）这些子网卡也将一同不能工作。<br><br>3.虚拟VLAN网卡：这些虚拟VLAN网卡也不是实际上的网络接口设备，也可以作为网络接口在系统中出现，但是与子网卡不同的是，他们没有自己的配置文件。他们只是通过将物理网加入不同的VLAN而生成的VLAN虚拟网卡。如果将一个物理网卡添加到多个VLAN当中去的话，就会有多个VLAN虚拟网卡出现，他们的信息以及相关的VLAN信息都是保存在/proc/net/vlan/config这个临时文件中的，而没有独自的配置文件。它们的网络接口名是eth0.1、eth1.2这种名字。</span></p>
+<p><span style="font-size: medium;">注意：当需要启用VLAN虚拟网卡工作的时候，关联的物理网卡网络接口上必须没有IP地址的配置信息，并且，这些主物理网卡的子网卡也必须不能被启用和必须不能有IP地址配置信息。这个在网上看到的结论根据我的实际测试结果来看是不准确的，物理网卡本身可以绑定IP，并且给本征vlan提供通信网关的功能，但必须是在802.1q下。<br></span></p>
+<p><span style="font-size: medium;">三.规划网络：<br>1.VLAN的划分：<br>Cisco交换机2960上交换机配置不在赘述。<br>RHEL 5.2默认内核支持VLAN，并且默认只支持802.1q的中继封装。我们需要对连接Cisco交换机2960的中继接口的eth1进行配置，在上面已经说明，对于vlan1本征vlan直接用物理eth1即可。另外，由于网络当中要使用3个VLAN，因此，中继网卡eth1也必须要添加虚拟网卡以及IP地址。规划如下：<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eth1：192.168.1.1/24<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eth1.2：192.168.2.1/24<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eth1.3：192.168.3.1/24<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eth1.4：192.168.4.1/24&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br><br>2.Linux网关转发部分：<br>VLAN功能网卡eth1上除其本身外，将被划分成3个VLAN虚拟网卡，通过中继网卡eth1与Cisco交换机2950的VLAN中继端口连接，另外一个物理网卡eth0作为上行网络接口。而Linux服务器将在eth1与eth0之间做流量转发，这样VLAN与VLAN之间也实现了数据流的转发，如果不希望VLAN之间转发的话，可以通过iptables来进行设定，这里就不再展开iptables了。<br></span></p>
+<p><span style="font-size: medium;">四.在Linux配置VLAN Trunk：<br>由于在Linux上eth1要被设定为Trunk与Cisco交换机2960中继连接，因此，网络中有几个VLAN的话，那么中继网卡上也必须要加入多个VLAN才能支持到(本征vlan不需要添加，属于本征vlan的端口设置IP同该物理网卡网段，并将网关指向eth1即可，关于eth0和eth1的配置，可以直接编辑配置文件 /etc/sysconfig/network-scripts/ifcfg-eth0和ifcfg-eth1，或用setup来配置等文本图形工具配置)。<br>1.将eth1添加到VLAN 2中：<br>[root@happyboy net]# vconfig add eth1 2<br>WARNING: Could not open /proc/net/vlan/config. Maybe you need to load the 8021q module, or maybe you are not using PROCFS??<br>Added VLAN with VID == 2 to IF -:eth1:-<br>第一次添加VLAN虚拟网卡的时候就一定会出现上面的那句提示，原因是因为默认下/proc/net/vlan/config这个专门用来保存VLAN信息的文件是没有的。由于第一次添加VLAN网卡，那么这个文件也会被自动建立起来。另外，在/proc/目录下面的文件都是系统的临时文件，因此重新启动后必定丢失休息，所以在配置并测试VLAN成功后，可以将一些相关命令添加到rc.local这个启动脚本当中去了。在执行该命令之前可以先到/proc/net/目录查看下，并不存在vlan文件夹，执行后会创建一个vlan文件夹，并生成config配置文件，以及对应的虚拟vlan网卡配置文件eth1.2等<br>后面的一句<br>Added VLAN with VID == 2 to IF -:eth1:-<br>这里表示已经将eth1网卡添加到了VLAN 2中，并且它在VLAN中的虚拟网卡是eth1.2。</span></p>
+<p><span style="font-size: medium;">2.同样将eth1添加到VLAN 3、4中：<br>[root@happyboy ~]# vconfig add eth1 3<br>Added VLAN with VID == 3 to IF -:eth1:-<br>[root@happyboy ~]# vconfig add eth1 4<br>Added VLAN with VID == 4 to IF -:eth1:-<br><br>4.检查添加的VLAN虚拟网卡信息：<br>[root@happyboy ~]# cat /proc/net/vlan/config&nbsp;<br>--------------------------------------------------<br>VLAN Dev name&nbsp;&nbsp;&nbsp; | VLAN ID<br>Name-Type: VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD<br>eth1.2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 2 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eth1<br>eth1.3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 3 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eth1<br>eth1.4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 4 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eth1<br>虚拟网卡&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VLANID&nbsp;&nbsp; 归属的主网卡<br>--------------------------------------------------<br>可以看到所有的VLAN虚拟网卡以及它们所归属的主物理网卡。<br></span></p>
+<p><span style="font-size: medium;">五.为VLAN虚拟网卡设定IP地址并且进行启用：<br>[root@happyboy ~]# ifconfig eth1.2 192.168.2.1 up<br>[root@happyboy ~]# ifconfig eth1.3 192.168.3.1 up<br>[root@happyboy ~]# ifconfig eth1.4 192.168.4.1 up<br></span></p>
+<p><span style="font-size: medium;">六.确认Linux系统下的所有网络接口配置：<br>1.重新启动网络服务<br>[root@happyboy ~]# service network restart<br>--------------------------------------------------<br>Shutting down interface eth0:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ OK ]<br>Shutting down interface eth1:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ OK ]<br>Shutting down loopback interface:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ OK ]<br>Bringing up loopback interface:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ OK ]<br>Bringing up interface eth0:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ OK ]<br>Bringing up interface eth1:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ OK ]<br>--------------------------------------------------<br><br>2.检查Linux系统下的所有网络接口信息：<br>[root@happyboy ~]# ifconfig |more<br>到这里已经基本上将VLAN的主要配置完成了。<br></span></p>
+<p><span style="font-size: medium;">七.简单测试：<br>测试从各个vlan 之间的连通性，可以直接在属于各个vlan的交换机端口上连接一台PC，设置其属于对应网段IP，并将网关指向到对应vlan虚拟网卡的IP，会发现与网关之间的通信正常，但是vlan之间无法通信，那时因为linux默认不会转发数据，具体介绍可以参考</span><a href="http://www.happyboy.net.cn/article.asp?id=19" target="_blank"><span style="font-size: medium;">http://www.happyboy.net.cn/article.asp?id=19</span></a><span style="font-size: medium;">,直接修改ip_forward值为1即可使vlan之间正常通信<br></span></p>
+<p><span style="font-size: medium;">后续可以：配置iptables进行NAT各个网络接口间转发；配置iptables来限制指定VLAN之间的转发以实现安全性以及优化处理。</span></p>
+<p><span style="font-size: medium;">在上面说过，这些配置信息是写到系统临时文件的，系统重启将会导致配置丢失，我们可以在/etc/rc.local中增加以下语句即可</span></p>
+<p><span style="font-size: medium;">vconfig add eth1 2<br>vconfig add eth1 3<br>vconfig add eth1 4<br>ifconfig eth1.2 192.168.2.1 up<br>ifconfig eth1.3 192.168.3.1 up<br>ifconfig eth1.4 192.168.4.1 up<br>echo '1' &gt; /proc/sys/net/ipv4/ip_forward<br></span></p>
+<p><span style="font-size: medium;">Vconfig命令的简要说明：<br>vconfig - VLAN 802.1q 配置程序。<br>说明<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Vconfig程序能够建立VLAN虚拟网卡并且与远程的VLAN设备对接，但是前提是内核首先必须支持VLAN功能。VLAN虚拟网卡是以太网卡上虚拟出来的、为了能够在一个物理网络上支持VLAN虚拟网络的虚拟网卡。</span></p>
+<p><span style="font-size: medium;">选项<br>add 物理网卡 VLAN-ID号<br>在指定的物理网卡上虚拟出指定VLAN号的VLAN虚拟网卡。VLAN虚拟网卡名将记录在/proc/net/vlan/config文件中。<br>rem VLAN虚拟网卡<br>删除指定的VLAN虚拟网卡，如果不清楚VLAN虚拟网卡名的话可以到/proc/net/vlan/config文件中查看VLAN虚拟网卡名。<br><br>相关文件<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /proc/net/vlan/config<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /proc/net/vlan/VLAN虚拟网卡</span></p>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block"><div id="BlogPostCategory">
+    分类: 
+            <a href="https://www.cnblogs.com/gaohong/category/712271.html" target="_blank">linux运维</a></div>
+
+
+    <div id="blog_post_info">
+<div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(4655080,cb_blogId,1);green_channel_success(this,&#39;谢谢推荐！&#39;);">好文要顶</a>
+        <a id="green_channel_follow" onclick="follow(&#39;efb7b415-6b2b-e511-b908-9dcfd8948a71&#39;);" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/gaohong/">梦里衍春</a><br>
+            <a href="https://home.cnblogs.com/u/gaohong/followees/">关注 - 1</a><br>
+            <a href="https://home.cnblogs.com/u/gaohong/followers/">粉丝 - 3</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow(&#39;efb7b415-6b2b-e511-b908-9dcfd8948a71&#39;);return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(4655080,&#39;Digg&#39;)">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(4655080,&#39;Bury&#39;)">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+    <div class="clear"></div>
+    <div id="post_next_prev">
+
+    <a href="https://www.cnblogs.com/gaohong/p/4654115.html" class="p_n_p_prefix">« </a> 上一篇：    <a href="https://www.cnblogs.com/gaohong/p/4654115.html" title="发布于 2015-07-17 12:41">CentOS中自动加载802.1q模块</a>
+    <br>
+    <a href="https://www.cnblogs.com/gaohong/p/4661179.html" class="p_n_p_prefix">» </a> 下一篇：    <a href="https://www.cnblogs.com/gaohong/p/4661179.html" title="发布于 2015-07-20 13:33">使用 ipmitool 实现远程管理Dell 系列服务器</a>
+
+</div>
+</div>
+		<p class="postfoot">
+			posted on 
+<span id="post-date">2015-07-17 16:57</span>&nbsp;<a href="https://www.cnblogs.com/gaohong/">梦里衍春</a> 阅读(<span id="post_view_count">2809</span>) 评论(<span id="post_comment_count">0</span>) <a href="https://i.cnblogs.com/EditPosts.aspx?postid=4655080" rel="nofollow"> 编辑</a> <a href="javascript:void(0)" onclick="AddToWz(4655080); return false;">收藏</a>
+
+		</p>
+	</div>
+
+
+<script src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/highlight.min.js.download"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 235777, cb_blogApp = 'gaohong', cb_blogUserGuid = 'efb7b415-6b2b-e511-b908-9dcfd8948a71';
+    var cb_entryId = 4655080, cb_entryCreatedDate = '2015-07-17 16:57', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="https://www.cnblogs.com/gaohong/p/4655080.html#" onclick="return RefreshPage();">刷新页面</a><a href="https://www.cnblogs.com/gaohong/p/4655080.html#top">返回顶部</a></div>
+    <div id="comment_form_container"><div class="login_tips">
+    注册用户登录后才能发表评论，请 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login(&#39;commentform&#39;);">登录</a>
+     或 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，
+    <a href="https://www.cnblogs.com/">访问</a> 网站首页。
+</div></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-工控&#39;)">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="https://www.jdcloud.com/cn/activity/newUser?utm_source=DMT_cnblogs&amp;utm_medium=CH&amp;utm_campaign=09vm&amp;utm_term=Virtual-Machines" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-京东云&#39;)">【活动】京东云限时优惠1.5折购云主机，最高返价值1000元礼品！</a><br><a href="http://clickc.admaster.com.cn/c/a131574,b3595115,c1705,i0,m101,8a1,8b3,h" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-华为云微认证&#39;)">【推荐】零基础轻松玩转华为云产品，获壕礼加返百元大礼</a><br><a href="https://www.ctyun.cn/activity/#/20190919?hmsr=%E5%8D%9A%E5%AE%A2%E5%9B%AD-0916-919%E6%B4%BB%E5%8A%A8&amp;hmpl=&amp;hmcu=&amp;hmkw=&amp;hmci=" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-天翼云&#39;)">【推荐】919 天翼云钜惠，全网低价，云主机9元轻松购</a><br><a href="http://clickc.admaster.com.cn/c/a131575,b3595121,c1705,i0,m101,8a1,8b3,h" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-华为文字&#39;)">【推荐】华为云文字识别资源包重磅上市，1元万次限时抢购</a><br><a href="https://cloud.tencent.com/act/pro/overseas?fromSource=gwzcw.2802159.2802159.2802159&amp;utm_medium=cpc&amp;utm_id=gwzcw.2802159.2802159.2802159" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-腾讯云&#39;)">【推荐】腾讯云海外云服务器1核2G19.8元/月</a><br><a href="https://www.cnblogs.com/cmt/p/11505603.html" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-华为云代金券&#39;)">【福利】git pull &amp;&amp; cherry-pick 博客园&amp;华为云百万代金券</a><br></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/gpt.js.download"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="COGuzpS43OQCFQoLvQodaOULYw"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border: 0px; vertical-align: bottom;" data-google-container-id="1" data-load-complete="true" src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/saved_resource.html"></iframe></div></div>
+    </div>
+    <div id="under_post_news"><div class="recomm-block"><b>相关博文：</b><br>·  <a title="linux下网卡配置vlan" href="https://www.cnblogs.com/sysk/p/6698707.html" target="_blank" onclick="clickRecomItmem(6698707)">linux下网卡配置vlan</a><br>·  <a title="VLAN间通信" href="https://www.cnblogs.com/Nickzerui/p/5201068.html" target="_blank" onclick="clickRecomItmem(5201068)">VLAN间通信</a><br>·  <a title="vlan  pvid  vid  access口 trunk口" href="https://www.cnblogs.com/juandx/p/3993751.html" target="_blank" onclick="clickRecomItmem(3993751)">vlan  pvid  vid  access口 trunk口</a><br>·  <a title="不同vlan之间相互通信" href="https://www.cnblogs.com/p0st/p/9450899.html" target="_blank" onclick="clickRecomItmem(9450899)">不同vlan之间相互通信</a><br>·  <a title="Centos 6 下使用VLAN+Bridge 搭建KVM基础网络环境" href="https://www.cnblogs.com/weijie0717/p/6557012.html" target="_blank" onclick="clickRecomItmem(6557012)">Centos 6 下使用VLAN+Bridge 搭建KVM基础网络环境</a><br></div></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="COKuzpS43OQCFQoLvQodaOULYw">
+            
+        <div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" width="468" height="60" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border: 0px; vertical-align: bottom;" data-google-container-id="2" data-load-complete="true" src="./centos下网口vlan设置 - 梦里衍春 - 博客园_files/saved_resource(1).html"></iframe></div></div>
+    </div>
+    <div id="under_post_kb">
+<div class="itnews c_ad_block">
+    <b>最新 IT 新闻</b>:
+    <br>
+ ·              <a href="https://news.cnblogs.com/n/639207/" target="_blank">电子烟产业“大清洗”前夜：美出现近500例神秘肺病，至少6人死亡</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/639206/" target="_blank">戏剧性的星系转变揭示一种新的黑洞活动</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/639205/" target="_blank">美国人讨厌互联网巨头？2/3调查者希望拆分它们</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/639204/" target="_blank">苹果再损失一名老将！公关负责人离职 曾效力公司16年</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/639203/" target="_blank">起底华为计算战略：十五年研发下苦功，三年连发10芯加速</a>
+            <br>
+    » <a href="https://news.cnblogs.com/" title="IT 新闻" target="_blank">更多新闻...</a>
+</div></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div></div>
+
+
+</div>
+<p id="footer">
+	Powered by: 
+	<br>
+	
+	
+<a href="https://www.cnblogs.com/" id="Footer1_Hyperlink3" style="font-size: 12px; font-family: Verdana">博客园</a>
+	<br>
+	Copyright © 2019 梦里衍春
+<br><span id="poweredby">Powered by .NET Core 3.0.0-preview9-19423-09 on Linux</span>
+
+</p>
+
+
+
+
+    
+
+
+</body></html>

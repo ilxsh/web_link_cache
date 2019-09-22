@@ -1,0 +1,584 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="origin" />
+    <meta property="og:description" content="一、 批量部署操作系统的前提 要想批量部署操作系统，得具备以下条件： 客户机支持pxe网络引导 服务器端和客户端建立网络通信(DHCP) 服务器端要有可供客户机开机引导的引导文件 服务器端的可引导文件" />
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <title>centos7使用cobbler（2.8）批量部署操作系统之一 - mfyang - 博客园</title>
+    
+    <link rel="stylesheet" href="/css/blog-common.min.css?v=HrvK75b61-WJQPXtn_liCIWUC4EcnwT_lmrRbncieJo" />
+    <link id="MainCss" rel="stylesheet" href="/skins/kjc/bundle-kjc.min.css?v=4DsYrBd2OXgwm4UqGptoiXdIR-y6xsXNjsv6HQKGlxI" />
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/kjc/bundle-kjc-mobile.min.css?v=netr1CuSsXZ0CExbtEiL-uTF8pqcWT8cR0el_b5SyJM" />
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/mfyang/rss" />
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/mfyang/rsd.xml" />
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/mfyang/wlwmanifest.xml" />
+    <script src="https://common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script src="/js/blog-common.min.js?v=W8J2DYaUeAZPX2Lx1iRh00kAY9PXrT8UdrrPQB3gEXU"></script>
+    <script>
+        var currentBlogId = 345109;
+        var currentBlogApp = 'mfyang';
+        var cb_enable_mathjax = true;
+        var isLogined = false;
+    </script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+        tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']], processClass: 'math', processEscapes: true },
+        TeX: {
+        equationNumbers: { autoNumber: ['AMS'], useLabelIds: true },
+        extensions: ['extpfeil.js', 'mediawiki-texvc.js'],
+        Macros: {bm: "\\boldsymbol"}
+        },
+        'HTML-CSS': { linebreaks: { automatic: true } },
+        SVG: { linebreaks: { automatic: true } }
+        });
+    </script>
+    <script src="https://mathjax.cnblogs.com/2_7_5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+</head>
+<body>
+    <a name="top"></a>
+    
+    <table class="Framework" cellspacing="0" cellpadding="0" width="100%">
+	<tr>
+		<td colspan="3">
+			
+<div id="top">
+<table cellpadding="10" cellspacing="0">
+	<tr>
+		<td nowrap>
+			<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/mfyang/">mfyang</a>
+</h1>
+			
+
+
+		</td>
+	</tr>
+</table>
+</div>
+<div id="sub">
+	<div id="sub-right"><div class="BlogStats">posts - 
+64, comments - 
+26, trackbacks - 
+0, articles - 
+7</div>
+
+</div>
+	
+&nbsp;
+
+
+
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/mfyang/">
+首页</a>
+&nbsp;::
+
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+&nbsp;::
+
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/mfyang">
+联系</a>&nbsp;::
+
+<a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/mfyang/rss/">
+订阅</a>
+
+<a id="blog_nav_rss_image" href="https://www.cnblogs.com/mfyang/rss/">
+    <img src="/skins/kjc/images/xml.gif" alt="订阅" />
+</a>&nbsp;::
+
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+
+
+
+</div>
+
+
+		</td>
+	</tr>
+	<tr>
+		<td class="LeftCell">
+			<div id="leftmenu">
+		            <div id="calendar"><div id="blog-calendar" style="display:none"></div></div>                
+                    <script>loadBlogDefaultCalendar();</script>
+		            
+
+
+	            <div id="blog-sidecolumn"></div>
+                    <script>loadBlogSideColumn();</script>
+			</div>
+		</td>
+		<td class="MainCell">
+			<div id="main">
+				<div id="post_detail">
+	<div class="post">
+		<div class="posthead">
+			<h2>
+				
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/mfyang/p/6808953.html">centos7使用cobbler（2.8）批量部署操作系统之一</a>
+
+			</h2>
+ 			Posted on 
+<span id="post-date">2017-05-04 18:50</span>&nbsp;<a href="https://www.cnblogs.com/mfyang/">mfyang</a> 阅读(<span id="post_view_count">...</span>) 评论(<span id="post_comment_count">...</span>) <a href="https://i.cnblogs.com/EditPosts.aspx?postid=6808953" rel="nofollow"> 编辑</a> <a href="javascript:void(0)" onclick="AddToWz(6808953); return false;">收藏</a>
+
+			
+			
+		</div>
+		<div class="postbody">
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <h2>一、&nbsp;&nbsp;&nbsp; 批量部署操作系统的前提</h2>
+<p align="left">要想批量部署操作系统，得具备以下条件：</p>
+<p align="left">客户机支持pxe网络引导</p>
+<p align="left">服务器端和客户端建立网络通信(DHCP)</p>
+<p align="left">服务器端要有可供客户机开机引导的引导文件</p>
+<p align="left">服务器端的可引导文件还必须能传递到客户机（TFTP）</p>
+<p align="left">客户机无人值守安装包括安装定制的软件或服务（KICKSTART文件）</p>
+<p align="left">&nbsp;</p>
+<h3>1.&nbsp;&nbsp;&nbsp; 认识一下PXE</h3>
+<p align="left">预启动执行环境（Preboot eXecution Environment，PXE，也被称为预执行环境)提供了一种使用网络接口（Network Interface）启动计算机的机制。这种机制让计算机的启动可以不依赖本地数据存储设备（如硬盘）或本地已安装的操作系统</p>
+<p align="left">PXE：支持工作站通过网络从远端服务器下载映像，并由此支持通过网络启动操作系统，在启动过程中，终端要求服务器分配IP地址，再用TFTP（trivial file transfer protocol）或MTFTP(multicasttrivial file transfer pro日</p>
+<p align="left">tocol)协议下载一个启动软件包到本机内存中执行，由这个启动软件包完成Client端自动化基本软件设置，从而引导预先安装在服务器中的终端操作系统。PXE可以引导多种操作系统，如：windows95/98/2000/windows2003/windows2008/winXP/win7/win8,linux等。</p>
+<p align="left">PXE是由Intel设计的协议，它可以使计算机通过网络启动。协议分为client和server两端，PXE client在网卡的ROM中，当计算机引导时，BIOS把PXE client调入内存执行，并显示出命令菜单，经用户选择后，PXE client将放置在远端的操作系统通过网络下载到本地运行，无盘工作站就是通过PXE来进行启动的。PXE协议的成功运行需要解决以下两个问题：IP地址的分配，下载Linux内核和根文件系统。</p>
+<p align="left">IP地址的分配</p>
+<p align="left">可以用DHCP server来给PXE client分配一个IP地址，DHCP Server是用来给DHCP Client动态分配IP地址的协议，不过由于这里是给PXE Client分配IP地址，所以在配置DHCP Server时，需要增加相应的PXE特有配置。</p>
+<p align="left">下载Linux内核和根文件系统</p>
+<p align="left">PXE client所在的ROM中，已经存在了TFTP Client。PXE Client使用TFTP Client，通过TFTP协议到TFTP Server上下载所需的文件。</p>
+<h3>2.&nbsp;&nbsp;&nbsp; PXE的工作原理</h3>
+<p align="left">PXE client是需要安装操作系统的计算机，TFTP Server和DHCP Server运行在另外一台Server上。Bootstrap文件、配置文件、Linux内核以及Linux根文件系统都放置在Linux Server上TFTP服务器的根目录下。PXE client在工作过程中，需要三个二进制文件：bootstrap、Linux 内核和Linux根文件系统。Bootstrap文件是可执行程序，它向用户提供简单的控制界面，并根据用户的选择，下载合适的Linux内核以及 Linux根文件系统。下图就是PXE工作的原理图：</p>
+<p align="center"><img src="https://images2015.cnblogs.com/blog/1137702/201705/1137702-20170506234539695-1577263379.png" alt="" /></p>
+<p>&nbsp;</p>
+<p align="center">&nbsp;</p>
+<p align="left">简单总结一下：</p>
+<p align="left">PXE Client发送广播包请求DHCP分配IP地址DHCP</p>
+<p align="left">Server回复请求，给出IP地址以及Boot</p>
+<p align="left">PXE Client从Server下载引导文件执行引导程序</p>
+<h3>3.&nbsp;&nbsp;&nbsp; PXE应用</h3>
+<p align="left">PXE最直接的表现是，在网络环境下工作站可以省去硬盘，但又不是通常所说的无盘站的概念，因为使用该技术的PC在网络方式下的运行速度要比有盘PC快3倍以上。当然使用PXE的PC也不是传统意义上的TERMINAL终端，因为使用了PXE的PC并不消耗服务器的CPU，RAM等资源，故服务器的硬件要求极低。</p>
+<p align="left">网络克隆 PXE 现在最为广泛的应用一个是网吧的无盘技术。在有盘领域的网络维护和安装中PXE可以是最好用的网吧系统统一安装和维护的引导技术，PXE的引导速度和稳定性都是一流的！</p>
+<h3>4.&nbsp;&nbsp;&nbsp; 什么是Kickstart</h3>
+<p align="left">官方文档：https://fedoraproject.org/wiki/Anaconda/Kickstart/zh-cn</p>
+<p align="left">KickStart是一种无人职守安装方式，是由redhat公司为了解决无人值守安装操作系统而设计的。系统管理员通过创建一个单一的kickstart配置文件就可以实现自动化安装操作系统。KickStart的工作原理是通过记录典型的安装过程中所需人工干预填写的各种参数，并生成一个名为ks.cfg的文件；在其后的安装过程中（不只局限于生成KickStart安装文件的机器）当出现要求填写参数的情况时，安装程序会首先去查找KickStart生成的文件，当找到合适的参数时，就采用找到的参数，当没有找到合适的参数时，才需要安装者手工干预。这样，如果KickStart文件涵盖了安装过程中出现的所有需要填写的参数时，安装者完全可以只告诉安装程序从何处取ks.cfg文件，然后去忙自己的事情。等安装完毕，安装程序会根据ks.cfg中设置的重启选项来重启系统，并结束安装。</p>
+<p>&nbsp;</p>
+<h2>二. Cobbler介绍</h2>
+<h3>1.&nbsp;&nbsp;&nbsp; 什么是Cobbler</h3>
+<p align="left">官方网站：<a href="https://cobbler.github.io/">https://cobbler.github.io/</a></p>
+<p align="left">GITHUB: <a href="https://github.com/cobbler/cobbler">https://github.com/cobbler/cobbler</a></p>
+<p align="left">Cobbler是一个快速网络安装linux的服务，而且在经过调整也可以支持网络安装windows。该工具使用python开发，小巧轻便（才15k行代码），使用简单的命令即可完成PXE网络安装环境的配置，同时还可以管理DHCP，DNS，以及yum包镜像。</p>
+<p align="left">Cobbler是一个应用程序，可以大批量的部署操作系统，可以同时部署多个不同的操作系统，配合kickstart文件可以定制和无人值守的方式部署操作系统。它对PXE进行二次开发和封装，同时提供二次开发接口。</p>
+<p align="left">Cobbler 的配置结构基于一组注册的对象。每个对象表示一个与另一个实体相关联的实体（该对象指向另一个对象，或者另一个对象指向该对象）。当一个对象指向另一个对象时，它就继承了被指向对象的数据，并可覆盖或添加更多特定信息。以下对象类型的定义为：</p>
+<p align="left"><img src="https://images2015.cnblogs.com/blog/1137702/201705/1137702-20170506234617882-1590648466.png" alt="" /></p>
+<p>&nbsp;</p>
+<p align="left"><strong>发行版（Distro）：</strong></p>
+<p align="left">表示一个操作系统。它承载了内核和 initrd 的信息，以及内核参数等其他数据。</p>
+<p align="left"><strong>配置文件(Profile)：</strong></p>
+<p align="left">包含一个发行版、一个 kickstart 文件以及可能的存储库，还包含更多特定的内核参数等其他数据。</p>
+<p align="left"><strong>系统(System)：</strong></p>
+<p align="left">表示要配给的机器。它包含一个配置文件或一个镜像，还包含 IP 和 MAC 地址、电源管理（地址、凭据、类型）以及更为专业的数据等信息。</p>
+<p align="left"><strong>存储库(Repo)：</strong></p>
+<p align="left">保存一个 yum 或 rsync 存储库的镜像信息。</p>
+<p align="left"><strong>镜像(Image)：</strong></p>
+<p align="left">可替换一个包含不属于此类别的文件的发行版对象（例如，无法分为内核和 initrd 的对象）。</p>
+<p align="left">基于注册的对象以及各个对象之间的关联，Cobbler 知道如何更改文件系统以反映具体配置。因为系统配置的内部是抽象的，所以您可以仅关注想要执行的操作。</p>
+<p align="center">&nbsp;</p>
+<h2>2.&nbsp;&nbsp; Cobbler原理</h2>
+<p align="left">Cobbler由Python语言开发，是对PXE和Kickstart以及DHCP的封装。融合很多特性，提供了CLI和Web的管理形式。更加方便的实行网络安装。同时，Cobbler也提供了API接口，使用其它语言也很容易做扩展。它不紧可以安装物理机，同时也支持kvm、xen虚拟化、Guest OS的安装。更多的是它还能结合Puppet等集中化管理软件，实现自动化的管理。</p>
+<p align="left">Cobbler 支持众多的发行版：Red Hat、Fedora、CentOS、Debian、Ubuntu 和 SuSE。当添加一个操作系统（通常通过使用 ISO 文件）时，Cobbler 知道如何解压缩合适的文件并调整网络服务，以正确引导机器。Cobbler 使用命令行方式管理，也提供了基于Web的图形化配置管理工具（cobbler-web）。通过配置cobbler自动部署DHCP、TFTP、HTTP，在安装过程中加载kiskstart无人值守安装应答文件实现无人值守。从客户端使用PXE引导启动安装。</p>
+<p align="left">&nbsp;<img src="https://images2015.cnblogs.com/blog/1137702/201705/1137702-20170506234640429-2026963112.png" alt="" /></p>
+<p>&nbsp;</p>
+<p align="left">Server端</p>
+<p align="left">第一步，启动Cobbler服务</p>
+<p align="left">第二步，进行Cobbler错误检查，执行cobbler check命令</p>
+<p align="left">第三步，进行配置同步，执行cobbler sync命令</p>
+<p align="left">第四步，复制相关启动文件文件到TFTP目录中</p>
+<p align="left">第五步，启动DHCP服务，提供地址分配</p>
+<p align="left">第六步，DHCP服务分配IP地址</p>
+<p align="left">第七步，TFTP传输启动文件</p>
+<p align="left">第八步，Server端接收安装信息</p>
+<p align="left">第九步，Server端发送ISO镜像与Kickstart文件</p>
+<p align="left">Client端</p>
+<p align="left">第一步，客户端以PXE模式启动</p>
+<p align="left">第二步，客户端获取IP地址</p>
+<p align="left">第三步，通过TFTP服务器获取启动文件</p>
+<p align="left">第四步，进入Cobbler安装选择界面</p>
+<p align="left">第五步，客户端确定加载信息</p>
+<p align="left">第六步，根据配置信息准备安装系统</p>
+<p align="left">第七步，加载Kickstart文件</p>
+<p align="left">第八步，传输系统安装的其它文件</p>
+<p align="left">第九步，进行安装系统</p>
+<h2>三、&nbsp;&nbsp;&nbsp; Cobbler安装与初始配置</h2>
+<h3>1.&nbsp;&nbsp;&nbsp; 添加EPEL源</h3>
+<p>Cobbler位于EPEL源中，如果系统没有EPEL源，先要安装</p>
+<p># yum -y install epel-release</p>
+<h3>2.&nbsp;&nbsp;&nbsp; Cobbler支撑服务安装</h3>
+<p>Cobbler虽然可以接管DHCP服务，但本身并不提供DHCP服务，而且yum安装 cobbler的时候也不会自动安装DHCP，但是会安装TFTP，HTTP及一些python的包。</p>
+<p># yum -y install dhcp</p>
+<h3>3.&nbsp;&nbsp;&nbsp; Yum安装cobbler</h3>
+<p># yum -y install cobbler</p>
+<p>下面是安装完后系统中一些重要的文件位置及说明：</p>
+<p>&nbsp;#rpm -ql cobbler</p>
+<table style="width: 523px;" border="0" cellspacing="0" cellpadding="0">
+<tbody>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">配置文件目录</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/settings</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">cobbler主配置文件</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/dhcp.template</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">DHCP服务的配置模板</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/tftpd.template</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">tftp服务的配置模板</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/rsync.template</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">rsync服务的配置模板</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/iso</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">iso模板配置文件目录</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/pxe</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">pxe模板文件目录</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/power</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">电源的配置文件目录</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/users.conf</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">Web服务授权配置文件</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/users.digest</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">web访问的用户名密码配置文件</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/dnsmasq.template</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">DNS服务的配置模板</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/etc/cobbler/modules.conf</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">Cobbler模块配置文件</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/lib/cobbler</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">Cobbler数据目录</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/lib/cobbler/config</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">配置文件</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/lib/cobbler/kickstarts</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">默认存放kickstart文件</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/lib/cobbler/loaders</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">存放的各种引导程序</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/www/cobbler</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">系统安装镜像目录</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/www/cobbler/ks_mirror</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">导入的系统镜像列表</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/www/cobbler/images</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">导入的系统镜像启动文件</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/www/cobbler/repo_mirror</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">yum源存储目录</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/log/cobbler</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">日志目录</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/log/cobbler/install.log</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">客户端系统安装日志</p>
+</td>
+</tr>
+<tr>
+<td width="288">
+<p align="left">/var/log/cobbler/cobbler.log</p>
+</td>
+<td nowrap="nowrap" width="235">
+<p align="left">cobbler日志</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<h3>4.&nbsp;&nbsp;&nbsp; Cobbler初始配置cobbler check</h3>
+<p>将cobbler所依赖的服务设置为开机自启动，并开启服务，主要有httpd,dhcpd,tftp及cobbler本身。</p>
+<p>#systemctl start httpd</p>
+<p>#systemctl enable httpd</p>
+<p>#systemctl start tftp</p>
+<p>#systemctl enable tftp</p>
+<p>#systemctl start dhcpd</p>
+<p>#systemctl enable dhcpd</p>
+<p># systemctl start cobbler</p>
+<p># systemctl enable cobbler</p>
+<p>Cobbler check命令主要是用来检查当前系统是否满足cobbler的运行要求，下面是第一次运行cobbler check命令的提示，按照提示一个一个修改即可。</p>
+<p># cobbler check</p>
+<p>The following are potential configuration items that you may want to fix:</p>
+<p>1 : The 'server' field in /etc/cobbler/settings must be set to something other than localhost, or kickstarting features will not work.&nbsp; This should be a resolvable hostname or IP for the boot server as reachable by all machines that will use it.</p>
+<p>2 : For PXE to be functional, the 'next_server' field in /etc/cobbler/settings must be set to something other than 127.0.0.1, and should match the IP of the boot server on the PXE network.</p>
+<p>3 : SELinux is enabled. Please review the following wiki page for details on ensuring cobbler works correctly in your SELinux environment:</p>
+<p>&nbsp;&nbsp;&nbsp; https://github.com/cobbler/cobbler/wiki/Selinux</p>
+<p>4 : change 'disable' to 'no' in /etc/xinetd.d/tftp</p>
+<p>5 : some network boot-loaders are missing from /var/lib/cobbler/loaders, you may run 'cobbler get-loaders' to download them, or, if you only want to handle x86/x86_64 netbooting, you may ensure that you have installed a *recent* version of the syslinux package installed and can ignore this message entirely.&nbsp; Files in this directory, should you want to support all architectures, should include pxelinux.0, menu.c32, elilo.efi, and yaboot. The 'cobbler get-loaders' command is the easiest way to resolve these requirements.</p>
+<p>6 : enable and start rsyncd.service with systemctl</p>
+<p>7 : debmirror package is not installed, it will be required to manage debian deployments and repositories</p>
+<p>8 : ksvalidator was not found, install pykickstart</p>
+<p>9 : The default password used by the sample templates for newly installed machines (default_password_crypted in /etc/cobbler/settings) is still set to 'cobbler' and should be changed, try:default_password_crypted "openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'" to generate new one</p>
+<p>10 : fencing tools were not found, and are required to use the (optional) power management features. install cman or fence-agents to use them</p>
+<p>Restart cobblerd and then run 'cobbler sync' to apply changes.</p>
+<p>1#这个提示是需要修改/etc/cobbler/settings 文件中server: 后面的IP地址，这个地址默认是127.0.0.1需要修改成可以通信的cobbler服务器本机真实的网卡地址。</p>
+<p>#vi /etc/cobbler/settings</p>
+<p>server: 192.168.100.10</p>
+<p>2#这个提示是说要想让PXE工作起来，需要设置/etc/cobbler/settings中next_server的ip地址，如果启用cobbler来管理DHCP就要修改，这个是dhcp服务器的地址，如果没有正确设置这个地址则会显示TFTP超时。</p>
+<p>#vi /etc/cobbler/settings</p>
+<p>next_server: 192.168.100.10</p>
+<p>3#这个提示要求关闭selinux</p>
+<p>#vi /etc/sysconfig/selinux</p>
+<p>SELINUX=disabled</p>
+<p>4#提示要求启用tftp</p>
+<p>#vi /etc/xinetd.d/tftp</p>
+<p>service tftp</p>
+<p>{</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; socket_type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = dgram</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; protocol&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = udp</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; wait&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = yes</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; user&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = root</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; server&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = /usr/sbin/in.tftpd</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; server_args&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = -s /var/lib/tftpboot</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; disable&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = no</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; per_source&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 11</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cps&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 100 2</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; flags&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = IPv4</p>
+<p>5#提示要求使用cobbler get-loaders从网上下载引导程序</p>
+<p># cobbler get-loaders</p>
+<p>6#提示要求启动 rsyncd服务</p>
+<p># systemctl start rsyncd</p>
+<p>7#提示deb的包没有被安装，如果不打算部署debian系统可以忽略</p>
+<p>8#提示要求安装pykickstart</p>
+<p>#yum &ndash;y pykickstart</p>
+<p>9#提示要求修改默认密码"openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'"并替换settings中default_password_crypted引号中的内容</p>
+<p># openssl passwd -1 -salt 'frank' 'frank'</p>
+<p>$1$frank$.XItdMFNYz07ISKS9q9Jx0</p>
+<p>#vi /etc/cobbler/settings</p>
+<p>default_password_crypted: "$1$frank$.XItdMFNYz07ISKS9q9Jx0"</p>
+<p>10#提示如果使用电源管理模块，需要安装cman 或者 fence-agents</p>
+<p># yum install fence-agents-all</p>
+<h2>以上步骤全部执行完成后，重启cobbler服务,并使用cobbler sync保存修改，也可以每修改一个提示执行一下。直到没有提示，或可以忽略某些提示为止。</h2>
+<p>#systemc restart cobblerd</p>
+<p>#cobbler sync</p>
+<p>#cobbler check</p>
+<p>The following are potential configuration items that you may want to fix:</p>
+<p>1 : debmirror package is not installed, it will be required to manage debian deployments and repositories</p>
+<p>Restart cobblerd and then run 'cobbler sync' to apply changes.</p>
+<p>OK，至此关于批量安装的基础部分及cobbler介绍就到这里，下一篇将介绍下cobbler的命令及实战。</p>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+    <div id="blog_post_info"></div>
+    <div class="clear"></div>
+    <div id="post_next_prev"></div>
+</div></div>
+	</div>
+<script src="https://common.cnblogs.com/highlight/9.12.0/highlight.min.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 345109, cb_blogApp = 'mfyang', cb_blogUserGuid = 'f1517d1f-5015-e711-845c-ac853d9f53ac';
+    var cb_entryId = 6808953, cb_entryCreatedDate = '2017-05-04 18:50', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container"></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;"></div>
+    </div>
+    <div id="under_post_news"></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;">
+            <script>
+                if (new Date() >= new Date(2018, 9, 13)) {
+                    googletag.cmd.push(function () { googletag.display("div-gpt-ad-1539008685004-0"); });
+                }
+            </script>
+        </div>
+    </div>
+    <div id="under_post_kb"></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div></div>
+
+
+			</div>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="FooterCell">
+			<p id="footer">
+	Powered by: 
+	<br />
+	
+	
+<a href="https://www.cnblogs.com/" id="Footer1_Hyperlink3" style="font-size: 12px; font-family: Verdana">博客园</a>
+	<br />
+	Copyright &copy; 2019 mfyang
+<br /><span id="poweredby">Powered by .NET Core 3.0.0-preview9-19423-09 on Linux</span>
+
+</p>
+
+
+		</td>
+	</tr>
+</table>
+
+
+    
+</body>
+</html>

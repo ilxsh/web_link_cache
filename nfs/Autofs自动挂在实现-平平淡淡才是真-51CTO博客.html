@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<!-- saved from url=(0036)https://blog.51cto.com/ucode/1953389 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="https://blog.51cto.com/favicon.ico">
+        <title>Autofs自动挂在实现-平平淡淡才是真-51CTO博客</title>
+    <meta name="keywords" content="autofs">
+<meta name="description" content="Autofs介绍：mount是用来挂载文件系统的，可以在系统启动的时候挂载也可以在系统启动后挂载。对于本地固定设
+备，如硬盘可以使用mount挂载；而光盘、软盘、NFS、SMB等文件系统具有动态性，即需要的时候才有
+必要挂载。光驱和软盘我们一般知道什么时候需要挂载，但NFS和SMB共享等就不一定知道了，即我们
+一般不能及时知道NFS共享和SMB什么时候可以挂载。而autofs服务就提供这种功能，好">    <link href="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/header.css" rel="stylesheet"><link href="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/other.css" rel="stylesheet"><link href="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/right.css" rel="stylesheet"><link href="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/blog_details.css" rel="stylesheet"><link href="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/highlight.css" rel="stylesheet">
+    <script type="text/javascript" async="" src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/vds.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/push.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/hm.js.download"></script><script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/jquery.min.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/cookie.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/login.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/common.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/mbox.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/follow.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/vip.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/window.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/share.js.download"></script><link rel="stylesheet" href="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/share_style0_16.css"><style></style></head>
+<body>
+<img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201909/16/8ff6a6be299e9213900fff6fa189aa9d.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url(&#39;https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png&#39;) 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=9" target="_blank">
+  <img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/c739e3979a9bf2990c56741d01ac6f8e.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li><a href="https://blog.51cto.com/">首页</a></li>
+      <li><a href="https://blog.51cto.com/original">文章</a></li>
+      <li><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com/" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com/" target="_blank">WOT</a>
+            <a href="http://www.51cto.com/" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fucode%2F1953389&amp;logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fucode%2F1953389" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index" target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onclick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/box.js.download"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=1" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201909/17/9fea8754e611dd778dae3ec3e3209a74.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog90',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/entrance.js.download" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box" style="min-height: 859px;">
+      <link rel="stylesheet" href="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/mdeShow.css">
+  <link rel="stylesheet" href="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/prism.css">
+  <script type="text/javascript" charset="utf-8" src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/prism.js.download"></script>
+<link rel="stylesheet" href="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/tinyscrollbar.css">
+<script type="text/javascript" src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/jquery.tinyscrollbar.js.download"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">Autofs自动挂在实现</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/ucode" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="10837891" src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/wKiom1iApm-wVvTDAAAW9ZDtnCI553_middle.jpg"></a>
+				</div>
+				<a href="https://blog.51cto.com/ucode" class="name fl" target="_blank" style="margin-right:0;">027ryan</a>
+												<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">19841人阅读</a>
+				<a href="javascript:;" class="time fr">2017-08-03 17:36:29</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><strong>Autofs介绍：</strong></span></p><div class="code-toolbar"><pre class="brush:plain;toolbar:false  language-plain"><code class="  language-plain">mount是用来挂载文件系统的，可以在系统启动的时候挂载也可以在系统启动后挂载。对于本地固定设
+备，如硬盘可以使用mount挂载；而光盘、软盘、NFS、SMB等文件系统具有动态性，即需要的时候才有
+必要挂载。光驱和软盘我们一般知道什么时候需要挂载，但NFS和SMB共享等就不一定知道了，即我们
+一般不能及时知道NFS共享和SMB什么时候可以挂载。而autofs服务就提供这种功能，好像windows中的
+光驱自动打开功能，能够及时挂载动态加载的文件系统。免去我们手动挂载的麻烦。要实现光驱，软盘
+等的动态自动挂载，需要进行相关的配置。</code></pre><div class="toolbar"></div></div><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">Autofs特点：</span></strong></p><div class="code-toolbar"><pre class="brush:plain;toolbar:false  language-plain"><code class="  language-plain">&nbsp;Autofs与Mount/Umount的不同之处在于，它是一种看守程序。如果它检测到用户正试图访问一个尚未
+&nbsp;挂接的文件系统，它就会自动检测该文件系统，如果存在，那么Autofs会自动将其挂接。另一方面，
+&nbsp;如果它检测到某个已挂接的文件系统在一段时间内没有被使用，那么Autofs会自动将其卸载。因此一
+&nbsp;旦运行了Autofs后，用户就不再需要手动完成文件系统的挂接和卸载。</code></pre><div class="toolbar"></div></div><p><strong><span style="background-color:rgb(255,255,255);font-size:14px;color:rgb(51,51,51);font-family:arial, &#39;宋体&#39;, sans-serif;text-indent:28px;">Autofs常用配置：</span></strong></p><div class="code-toolbar"><pre class="brush:plain;toolbar:false  language-plain"><code class="  language-plain">Autofs需要从/etc/auto.master文件中读取配置信息。该文件中可以同时指定多个挂接点，由Autofs
+来挂接文件系统。文件中的每个挂接点单独用一行来定义，每一行可包括3个部分，分别用于指定挂接
+点位置，挂接时需使用的配置文件及所挂接文件系统在空闲多长时间后自动被卸载。例如在文件中包括
+了如下一行：　　
+　　/auto&nbsp;/etc/auto.misc&nbsp;--timeout&nbsp;60
+　　
+　　其中第一部分指定一个安装点为/auto，第二部分指定该挂接点的配置文件为/etc/auto.misc，
+　　第三部分指定所挂接的文件系统在空闲60秒后自动被卸载。　
+　　文件/etc/auto.misc的示例如下：
+　　cd&nbsp;-fstype=iSO9660，ro&nbsp;:/dev/cdrom
+　　fd&nbsp;-fstype=msdos&nbsp;:/dev/fd0
+　　
+　　文件每一行都说明某一个文件系统如何被挂接。其中第一行指定将/dev/cdrom挂接在/auto/cd中，
+　　第二行指定将/dev/fd0挂接在/auto/fd中。每一行的第二个值-fstype是一个可选项，用来表明所
+　　挂接的文件系统的类型和挂接选项，在mount命令中能使用的挂接选项同样适用于-fstype。</code></pre><div class="toolbar"></div></div><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><strong><br></strong></span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><strong>废话不多说了，下面<span style="font-family:&#39;宋体&#39;, SimSun;text-indent:28px;">直接给出实战演示步骤</span></strong></span></p><p style="text-indent:28px;"><br></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">实验环境：</span></strong></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">NFS 服务器：</span></strong></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">IP：192.168.112.130</span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/redhat-release </span>
+CentOS release 6.6 <span class="token punctuation">(</span>Final<span class="token punctuation">)</span>
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># uname -r</span>
+2.6.32-504.el6.x86_64
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment">#</span>
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># getenforce</span>
+Disabled
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># service iptables status</span>
+iptables: Firewall is not running.
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">客户端：</span></strong></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">IP：192.168.112.129</span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/redhat-release </span>
+CentOS release 6.6 <span class="token punctuation">(</span>Final<span class="token punctuation">)</span>
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># uname -r</span>
+2.6.32-504.el6.x86_64
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment">#</span>
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># getenforce</span>
+Disabled
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># service iptables status</span>
+iptables: Firewall is not running.
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">1、NFS服务器安装nfs服务：</span></strong></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># yum install rpcbind nfs nfs-utils</span>
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># service rpcbind start</span>
+Starting rpcbind: <span class="token punctuation">[</span>  OK  <span class="token punctuation">]</span>
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment">#</span>
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># service nfs start</span>
+Starting NFS services:  <span class="token punctuation">[</span>  OK  <span class="token punctuation">]</span>
+Starting NFS quotas: <span class="token punctuation">[</span>  OK  <span class="token punctuation">]</span>
+Starting NFS mountd: <span class="token punctuation">[</span>  OK  <span class="token punctuation">]</span>
+Starting NFS daemon: <span class="token punctuation">[</span>  OK  <span class="token punctuation">]</span>
+Starting RPC idmapd: <span class="token punctuation">[</span>  OK  <span class="token punctuation">]</span>
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:12px;"><strong>创建两个共享目录：cvxtmp和cvxtmp2</strong></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p /cvxtmp</span>
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p /cvxtmp2</span>
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:12px;"><strong>将磁盘/dev/sdb和/dev/sdc分别挂在到cvxtmp和cvxtmp2</strong></span><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><br></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># df -Th</span>
+Filesystem     Type   Size  Used Avail Use% Mounted on
+/dev/sda2      ext4    97G  3.3G   89G   4% /
+tmpfs          tmpfs  236M   12K  236M   1% /dev/shm
+/dev/sda1      ext4   976M   27M  898M   3% /boot
+/dev/sdb       ext4    50G   94M   47G   1% /cvxtmp2
+/dev/sdc       ext4   4.9T  8.4G  4.6T   1% /cvxtmp
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><strong>2、修改nfs配置文件，将cvxtmp和cvxtmp2共享出去</strong></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/exports </span>
+/cvxtmp   *<span class="token punctuation">(</span>rw,no_all_squash,no_subtree_check,sync<span class="token punctuation">)</span>
+/cvxtmp2  *<span class="token punctuation">(</span>rw,no_all_squash,no_subtree_check,sync<span class="token punctuation">)</span>
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># </span>
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment"># showmount -e 192.168.112.130</span>
+Export list <span class="token keyword">for</span> 192.168.112.130:
+/cvxtmp2 *
+/cvxtmp  *
+<span class="token punctuation">[</span>root@node03 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">3、安装autofs服务</span></strong></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">[root@node02 ~]# yum install autofs -y</span></p><p><span style="font-size:12px;"><strong><span style="font-family:&#39;宋体&#39;, SimSun;">安装完成之后，在/etc/下会有几个文件，如下所示：</span></strong></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># ls -l /etc/auto.*</span>
+-rw-r--r-- 1 root root   78 Aug  3 16:49 /etc/auto.home
+-rw-r--r-- 1 root root  690 Aug  3 17:09 /etc/auto.master
+-rw-r--r-- 1 root root  524 Mar 23 05:59 /etc/auto.misc
+-rwxr-xr-x 1 root root 1260 Mar 23 05:59 /etc/auto.net
+-rwxr-xr-x 1 root root  687 Mar 23 05:59 /etc/auto.smb
+You have new mail <span class="token keyword">in</span> /var/spool/mail/root
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-size:12px;"><strong><span style="font-family:&#39;宋体&#39;, SimSun;">其中auto.master是主配置文件，之后我们要创建一个文件auto.home，然后将要挂载到本地的</span></strong><strong><span style="font-family:&#39;宋体&#39;, SimSun;"></span></strong></span></p><p><span style="font-size:12px;"><strong><span style="font-family:&#39;宋体&#39;, SimSun;">分区的目录写入其中：</span></strong><strong><span style="font-family:&#39;宋体&#39;, SimSun;"></span></strong><strong><span style="font-family:&#39;宋体&#39;, SimSun;"></span></strong></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/auto.home </span>
+/cvxtmp  -rw,soft,intr node03:/cvxtmp
+/cvxtmp2  -rw,soft,intr node03:/cvxtmp2
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-size:12px;"><strong><span style="font-family:&#39;宋体&#39;, SimSun;">此时编辑/etc/auto.master，将auto.home文件添加进去，autofs在启动时加载auto.home，"<span style="font-size:12px;font-family:&#39;宋体&#39;, SimSun;color:rgb(255,0,0);">/- &nbsp; &nbsp;/etc/auto.home</span>"</span></strong></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/auto.master </span>
+<span class="token comment">#</span>
+<span class="token comment"># Sample auto.master file</span>
+<span class="token comment"># This is a 'master' automounter map and it has the following format:</span>
+<span class="token comment"># mount-point [map-type[,format]:]map [options]</span>
+<span class="token comment"># For details of the format look at auto.master(5).</span>
+<span class="token comment">#</span>
+/misc   /etc/auto.misc
+<span class="token comment">#</span>
+<span class="token comment"># NOTE: mounts done from a hosts map will be mounted with the</span>
+<span class="token comment">#       "nosuid" and "nodev" options unless the "suid" and "dev"</span>
+<span class="token comment">#       options are explicitly given.</span>
+<span class="token comment">#</span>
+/net    -hosts
+/-      /etc/auto.home
+<span class="token comment">#</span>
+<span class="token comment"># Include central master map if it can be found using</span>
+<span class="token comment"># nsswitch sources.</span>
+<span class="token comment">#</span>
+<span class="token comment"># Note that if there are entries for /net or /misc (as</span>
+<span class="token comment"># above) in the included master map any keys that are the</span>
+<span class="token comment"># same will not be seen as the first read key seen takes</span>
+<span class="token comment"># precedence.</span>
+<span class="token comment">#</span>
++auto.master
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-size:12px;"><strong><span style="font-family:&#39;宋体&#39;, SimSun;">然后重启autofs服务：</span></strong></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># service autofs restart</span>
+Stopping automount: <span class="token punctuation">[</span>  OK  <span class="token punctuation">]</span>
+Starting automount: <span class="token punctuation">[</span>  OK  <span class="token punctuation">]</span>
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-size:12px;"><strong><span style="font-family:&#39;宋体&#39;, SimSun;">查看挂在情况，结果发现我们配置的挂在分区居然没有挂在过来，难道配置错误？</span></strong></span><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><br></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># df -Th</span>
+Filesystem     Type   Size  Used Avail Use% Mounted on
+/dev/sda2      ext4    97G  3.4G   89G   4% /
+tmpfs          tmpfs  236M   12K  236M   1% /dev/shm
+/dev/sda1      ext4   976M   27M  898M   3% /boot
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># </span>
+接下来我们进入挂在的目录cvxtmp和cvxtmp2
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># cd /cvxtmp</span>
+<span class="token punctuation">[</span>root@node02 cvxtmp<span class="token punctuation">]</span><span class="token comment"># cd ..</span>
+<span class="token punctuation">[</span>root@node02 /<span class="token punctuation">]</span><span class="token comment"># cd cvxtmp2</span>
+<span class="token punctuation">[</span>root@node02 cvxtmp2<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-size:12px;"><strong><span style="font-family:&#39;宋体&#39;, SimSun;">然后再查看挂在情况：</span></strong></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node02 cvxtmp2<span class="token punctuation">]</span><span class="token comment"># df -Th</span>
+Filesystem      Type   Size  Used Avail Use% Mounted on
+/dev/sda2       ext4    97G  3.4G   89G   4% /
+tmpfs           tmpfs  236M   12K  236M   1% /dev/shm
+/dev/sda1       ext4   976M   27M  898M   3% /boot
+node03:/cvxtmp  nfs    4.9T  8.4G  4.6T   1% /cvxtmp
+node03:/cvxtmp2 nfs     50G   94M   47G   1% /cvxtmp2
+<span class="token punctuation">[</span>root@node02 cvxtmp2<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:12px;"><strong>发现挂在居然已经生效。此时到NFS服务端向这里两个目录分别写入文件cvxtmp.txt和cvxtmp2.txt</strong></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node03 /<span class="token punctuation">]</span><span class="token comment"># echo cvxtmp &gt; /cvxtmp/cvxtmp.txt</span>
+<span class="token punctuation">[</span>root@node03 /<span class="token punctuation">]</span><span class="token comment"># echo cvxtmp2 &gt; /cvxtmp2/cvxtmp2.txt</span>
+<span class="token punctuation">[</span>root@node03 /<span class="token punctuation">]</span><span class="token comment"># cat /cvxtmp/cvxtmp.txt </span>
+cvxtmp
+<span class="token punctuation">[</span>root@node03 /<span class="token punctuation">]</span><span class="token comment"># cat /cvxtmp2/cvxtmp2.txt </span>
+cvxtmp2
+<span class="token punctuation">[</span>root@node03 /<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:12px;"><strong>然后再切换到挂载端查看。</strong></span></p><div class="code-toolbar"><pre class="brush:bash;toolbar:false  language-bash"><code class="  language-bash"><span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># cat /cvxtmp/cvxtmp.txt </span>
+cvxtmp
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment"># cat /cvxtmp2/cvxtmp2.txt </span>
+cvxtmp2
+<span class="token punctuation">[</span>root@node02 ~<span class="token punctuation">]</span><span class="token comment">#</span></code></pre><div class="toolbar"></div></div><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">&nbsp;</span><br></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">发现挂在确实生效，至此autofs自动挂在功能已经实现。</span></p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者027ryan的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+									<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=autofs" target="_blank">autofs</a>
+															                				<a class="last" href="https://blog.51cto.com/ucode/category2.html" target="_blank"><i></i>Linux运维</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="1953389" userid="10837891">2</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1568895246410">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina">微博</a>
+					  <a class="bds_sqq" data-cmd="sqq">QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin">微信</a>
+					  <img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/qr-url">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/ucode/1952710" title="用nginx的反向代理机制解决前端跨域问题">
+						上一篇：用nginx的反向代理机制解决前...</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/ucode/1956698" title="CentOS7.3下的一个iptables配置">
+						下一篇：CentOS7.3下的一个ipt...</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/ucode" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="10837891" src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/wKiom1iApm-wVvTDAAAW9ZDtnCI553_middle.jpg">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/ucode" target="_blank" style="display:inline-block;">027ryan</a>
+										<h3>279篇文章，72W+人气，0粉丝</h3>
+									</div>
+								<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/ucode" class="header-img" target="_blank">
+						<img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可" maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="10837891">
+					<input type="hidden" class="reply_id" value="1953389">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList"></div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog" style="display: none;"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);" style="display: block;"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="https://blog.51cto.com/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1764人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="18" href="https://blog.51cto.com/cloumn/detail/18" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTOsummer</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1996人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="30" href="https://blog.51cto.com/cloumn/detail/30" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>487人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="5" href="https://blog.51cto.com/cloumn/detail/5" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>468人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="13" href="https://blog.51cto.com/cloumn/detail/13" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>535人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="6" href="https://blog.51cto.com/cloumn/detail/6" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/ucode/2064078?source=dra" target="_blank">Linux下FTP虚拟账号环境部署总结</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/ucode/2063692?source=dra" target="_blank">centos7.2部署vnc服务记录</a>
+															<a class="white-space" href="https://blog.51cto.com/3241766/2438955?source=drh" target="_blank">k8s实践(八)：ConfigMap and Secret</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14449541/2438414?source=drh" target="_blank">CentOS 7系统部署PXE远程安装服务及Kickstart无人值守安装</a>
+															<a class="white-space" href="https://blog.51cto.com/13740724/2438072?source=drh" target="_blank">elasticsearch使用x-pack安全验证</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14143894/2438026?source=drh" target="_blank">Kubernetes运维之使用Prometheus全方位监控K8S</a>
+															<a class="white-space" href="https://blog.51cto.com/14227204/2437934?source=drh" target="_blank">基于DR（直接路由）模式的负载均衡配置详解</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/13447608/2437855?source=drh" target="_blank">Rabbitmq 简单介绍,安装和go客户端使用</a>
+															<a class="white-space" href="https://blog.51cto.com/flyfish225/2437775?source=drh" target="_blank">kuberenetes 的多节点集群与高可用配置</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14143894/2437186?source=drh" target="_blank">Kubernetes运维之部署主流JAVA应用</a>
+															<a class="white-space" href="https://blog.51cto.com/sery/2436946?source=drh" target="_blank">云服务器集群性能故障排查手记</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14143894/2436369?source=drh" target="_blank">Kubernetes进阶之PersistentVolumeClaim 动态供给实现NFS网络存储</a>
+															<a class="white-space" href="https://blog.51cto.com/kingda/2435923?source=drh" target="_blank">K8S有状态静态Pod经典示例</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sery/2435626?source=drh" target="_blank">Proxmox虚拟机自动备份填坑记</a>
+															<a class="white-space" href="https://blog.51cto.com/14227204/2435183?source=drh" target="_blank">firewalld防火墙配置IP伪装和端口转发</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/3241766/2435182?source=drh" target="_blank">k8s实践(七)：存储卷和数据持久化(Volumes and Persistent Storage)</a>
+															<a class="white-space" href="https://blog.51cto.com/14449536/2434825?source=drh" target="_blank">搭建DHCP中继服务</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14449541/2434621?source=drh" target="_blank">小型实验：基于GNS3与VMware用Linux CentOS7搭建DHCP中继服务（原理+实验）</a>
+															<a class="white-space" href="https://blog.51cto.com/14227204/2434539?source=drh" target="_blank">配置 firewall 防火墙的地址伪装和端口转发实例</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/lee90/2434496?source=drh" target="_blank">DBLE分库分表实战</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/f92360e227f9d91cdff7ea95120630ef.png" style="width:70px;height:70px;"> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg" style="display: block;">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="1953389" userid="10837891">2</span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>4</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1568895246410">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/qr-url"></a>
+				</div>
+			</div>
+      						<a href="https://blog.51cto.com/ucode" class="b-name fr">027ryan</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/ucode" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="10837891" src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/wKiom1iApm-wVvTDAAAW9ZDtnCI553_middle.jpg"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/shCores.js.download"></script>
+<script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/countDown.js.download"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '1953389'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'10837891',
+            'blog_id':'1953389'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/ucode';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='10837891'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/ucode'
+    	nickname = '027ryan'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\"><strong>Autofs\u4ecb\u7ecd\uff1a<\/strong><\/span><\/p><pre class=\"brush:plain;toolbar:false\">mount\u662f\u7528\u6765\u6302\u8f7d\u6587\u4ef6\u7cfb\u7edf\u7684\uff0c\u53ef\u4ee5\u5728\u7cfb\u7edf\u542f\u52a8\u7684\u65f6\u5019\u6302\u8f7d\u4e5f\u53ef\u4ee5\u5728\u7cfb\u7edf\u542f\u52a8\u540e\u6302\u8f7d\u3002\u5bf9\u4e8e\u672c\u5730\u56fa\u5b9a\u8bbe\n\u5907\uff0c\u5982\u786c\u76d8\u53ef\u4ee5\u4f7f\u7528mount\u6302\u8f7d\uff1b\u800c\u5149\u76d8\u3001\u8f6f\u76d8\u3001NFS\u3001SMB\u7b49\u6587\u4ef6\u7cfb\u7edf\u5177\u6709\u52a8\u6001\u6027\uff0c\u5373\u9700\u8981\u7684\u65f6\u5019\u624d\u6709\n\u5fc5\u8981\u6302\u8f7d\u3002\u5149\u9a71\u548c\u8f6f\u76d8\u6211\u4eec\u4e00\u822c\u77e5\u9053\u4ec0\u4e48\u65f6\u5019\u9700\u8981\u6302\u8f7d\uff0c\u4f46NFS\u548cSMB\u5171\u4eab\u7b49\u5c31\u4e0d\u4e00\u5b9a\u77e5\u9053\u4e86\uff0c\u5373\u6211\u4eec\n\u4e00\u822c\u4e0d\u80fd\u53ca\u65f6\u77e5\u9053NFS\u5171\u4eab\u548cSMB\u4ec0\u4e48\u65f6\u5019\u53ef\u4ee5\u6302\u8f7d\u3002\u800cautofs\u670d\u52a1\u5c31\u63d0\u4f9b\u8fd9\u79cd\u529f\u80fd\uff0c\u597d\u50cfwindows\u4e2d\u7684\n\u5149\u9a71\u81ea\u52a8\u6253\u5f00\u529f\u80fd\uff0c\u80fd\u591f\u53ca\u65f6\u6302\u8f7d\u52a8\u6001\u52a0\u8f7d\u7684\u6587\u4ef6\u7cfb\u7edf\u3002\u514d\u53bb\u6211\u4eec\u624b\u52a8\u6302\u8f7d\u7684\u9ebb\u70e6\u3002\u8981\u5b9e\u73b0\u5149\u9a71\uff0c\u8f6f\u76d8\n\u7b49\u7684\u52a8\u6001\u81ea\u52a8\u6302\u8f7d\uff0c\u9700\u8981\u8fdb\u884c\u76f8\u5173\u7684\u914d\u7f6e\u3002<\/pre><p><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">Autofs\u7279\u70b9\uff1a<\/span><\/strong><\/p><pre class=\"brush:plain;toolbar:false\">&nbsp;Autofs\u4e0eMount\/Umount\u7684\u4e0d\u540c\u4e4b\u5904\u5728\u4e8e\uff0c\u5b83\u662f\u4e00\u79cd\u770b\u5b88\u7a0b\u5e8f\u3002\u5982\u679c\u5b83\u68c0\u6d4b\u5230\u7528\u6237\u6b63\u8bd5\u56fe\u8bbf\u95ee\u4e00\u4e2a\u5c1a\u672a\n&nbsp;\u6302\u63a5\u7684\u6587\u4ef6\u7cfb\u7edf\uff0c\u5b83\u5c31\u4f1a\u81ea\u52a8\u68c0\u6d4b\u8be5\u6587\u4ef6\u7cfb\u7edf\uff0c\u5982\u679c\u5b58\u5728\uff0c\u90a3\u4e48Autofs\u4f1a\u81ea\u52a8\u5c06\u5176\u6302\u63a5\u3002\u53e6\u4e00\u65b9\u9762\uff0c\n&nbsp;\u5982\u679c\u5b83\u68c0\u6d4b\u5230\u67d0\u4e2a\u5df2\u6302\u63a5\u7684\u6587\u4ef6\u7cfb\u7edf\u5728\u4e00\u6bb5\u65f6\u95f4\u5185\u6ca1\u6709\u88ab\u4f7f\u7528\uff0c\u90a3\u4e48Autofs\u4f1a\u81ea\u52a8\u5c06\u5176\u5378\u8f7d\u3002\u56e0\u6b64\u4e00\n&nbsp;\u65e6\u8fd0\u884c\u4e86Autofs\u540e\uff0c\u7528\u6237\u5c31\u4e0d\u518d\u9700\u8981\u624b\u52a8\u5b8c\u6210\u6587\u4ef6\u7cfb\u7edf\u7684\u6302\u63a5\u548c\u5378\u8f7d\u3002<\/pre><p><strong><span style=\"background-color:rgb(255,255,255);font-size:14px;color:rgb(51,51,51);font-family:arial, '\u5b8b\u4f53', sans-serif;text-indent:28px;\">Autofs\u5e38\u7528\u914d\u7f6e\uff1a<\/span><\/strong><\/p><pre class=\"brush:plain;toolbar:false\">Autofs\u9700\u8981\u4ece\/etc\/auto.master\u6587\u4ef6\u4e2d\u8bfb\u53d6\u914d\u7f6e\u4fe1\u606f\u3002\u8be5\u6587\u4ef6\u4e2d\u53ef\u4ee5\u540c\u65f6\u6307\u5b9a\u591a\u4e2a\u6302\u63a5\u70b9\uff0c\u7531Autofs\n\u6765\u6302\u63a5\u6587\u4ef6\u7cfb\u7edf\u3002\u6587\u4ef6\u4e2d\u7684\u6bcf\u4e2a\u6302\u63a5\u70b9\u5355\u72ec\u7528\u4e00\u884c\u6765\u5b9a\u4e49\uff0c\u6bcf\u4e00\u884c\u53ef\u5305\u62ec3\u4e2a\u90e8\u5206\uff0c\u5206\u522b\u7528\u4e8e\u6307\u5b9a\u6302\u63a5\n\u70b9\u4f4d\u7f6e\uff0c\u6302\u63a5\u65f6\u9700\u4f7f\u7528\u7684\u914d\u7f6e\u6587\u4ef6\u53ca\u6240\u6302\u63a5\u6587\u4ef6\u7cfb\u7edf\u5728\u7a7a\u95f2\u591a\u957f\u65f6\u95f4\u540e\u81ea\u52a8\u88ab\u5378\u8f7d\u3002\u4f8b\u5982\u5728\u6587\u4ef6\u4e2d\u5305\u62ec\n\u4e86\u5982\u4e0b\u4e00\u884c\uff1a\u3000\u3000\n\u3000\u3000\/auto&nbsp;\/etc\/auto.misc&nbsp;--timeout&nbsp;60\n\u3000\u3000\n\u3000\u3000\u5176\u4e2d\u7b2c\u4e00\u90e8\u5206\u6307\u5b9a\u4e00\u4e2a\u5b89\u88c5\u70b9\u4e3a\/auto\uff0c\u7b2c\u4e8c\u90e8\u5206\u6307\u5b9a\u8be5\u6302\u63a5\u70b9\u7684\u914d\u7f6e\u6587\u4ef6\u4e3a\/etc\/auto.misc\uff0c\n\u3000\u3000\u7b2c\u4e09\u90e8\u5206\u6307\u5b9a\u6240\u6302\u63a5\u7684\u6587\u4ef6\u7cfb\u7edf\u5728\u7a7a\u95f260\u79d2\u540e\u81ea\u52a8\u88ab\u5378\u8f7d\u3002\u3000\n\u3000\u3000\u6587\u4ef6\/etc\/auto.misc\u7684\u793a\u4f8b\u5982\u4e0b\uff1a\n\u3000\u3000cd&nbsp;-fstype=iSO9660\uff0cro&nbsp;:\/dev\/cdrom\n\u3000\u3000fd&nbsp;-fstype=msdos&nbsp;:\/dev\/fd0\n\u3000\u3000\n\u3000\u3000\u6587\u4ef6\u6bcf\u4e00\u884c\u90fd\u8bf4\u660e\u67d0\u4e00\u4e2a\u6587\u4ef6\u7cfb\u7edf\u5982\u4f55\u88ab\u6302\u63a5\u3002\u5176\u4e2d\u7b2c\u4e00\u884c\u6307\u5b9a\u5c06\/dev\/cdrom\u6302\u63a5\u5728\/auto\/cd\u4e2d\uff0c\n\u3000\u3000\u7b2c\u4e8c\u884c\u6307\u5b9a\u5c06\/dev\/fd0\u6302\u63a5\u5728\/auto\/fd\u4e2d\u3002\u6bcf\u4e00\u884c\u7684\u7b2c\u4e8c\u4e2a\u503c-fstype\u662f\u4e00\u4e2a\u53ef\u9009\u9879\uff0c\u7528\u6765\u8868\u660e\u6240\n\u3000\u3000\u6302\u63a5\u7684\u6587\u4ef6\u7cfb\u7edf\u7684\u7c7b\u578b\u548c\u6302\u63a5\u9009\u9879\uff0c\u5728mount\u547d\u4ee4\u4e2d\u80fd\u4f7f\u7528\u7684\u6302\u63a5\u9009\u9879\u540c\u6837\u9002\u7528\u4e8e-fstype\u3002<\/pre><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\"><strong><br \/><\/strong><\/span><\/p><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\"><strong>\u5e9f\u8bdd\u4e0d\u591a\u8bf4\u4e86\uff0c\u4e0b\u9762<span style=\"font-family:'\u5b8b\u4f53', SimSun;text-indent:28px;\">\u76f4\u63a5\u7ed9\u51fa\u5b9e\u6218\u6f14\u793a\u6b65\u9aa4<\/span><\/strong><\/span><\/p><p style=\"text-indent:28px;\"><br \/><\/p><p><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">\u5b9e\u9a8c\u73af\u5883\uff1a<\/span><\/strong><\/p><p><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">NFS \u670d\u52a1\u5668\uff1a<\/span><\/strong><\/p><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">IP\uff1a192.168.112.130<\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node03&nbsp;~]#&nbsp;cat&nbsp;\/etc\/redhat-release&nbsp;\nCentOS&nbsp;release&nbsp;6.6&nbsp;(Final)\n[root@node03&nbsp;~]#&nbsp;uname&nbsp;-r\n2.6.32-504.el6.x86_64\n[root@node03&nbsp;~]#\n[root@node03&nbsp;~]#&nbsp;getenforce\nDisabled\n[root@node03&nbsp;~]#&nbsp;service&nbsp;iptables&nbsp;status\niptables:&nbsp;Firewall&nbsp;is&nbsp;not&nbsp;running.\n[root@node03&nbsp;~]#<\/pre><p><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">\u5ba2\u6237\u7aef\uff1a<\/span><\/strong><\/p><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">IP\uff1a192.168.112.129<\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node02&nbsp;~]#&nbsp;cat&nbsp;\/etc\/redhat-release&nbsp;\nCentOS&nbsp;release&nbsp;6.6&nbsp;(Final)\n[root@node02&nbsp;~]#&nbsp;uname&nbsp;-r\n2.6.32-504.el6.x86_64\n[root@node02&nbsp;~]#\n[root@node02&nbsp;~]#&nbsp;getenforce\nDisabled\n[root@node02&nbsp;~]#&nbsp;service&nbsp;iptables&nbsp;status\niptables:&nbsp;Firewall&nbsp;is&nbsp;not&nbsp;running.\n[root@node02&nbsp;~]#<\/pre><p><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">1\u3001NFS\u670d\u52a1\u5668\u5b89\u88c5nfs\u670d\u52a1\uff1a<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@node03&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;rpcbind&nbsp;nfs&nbsp;nfs-utils\n[root@node03&nbsp;~]#&nbsp;service&nbsp;rpcbind&nbsp;start\nStarting&nbsp;rpcbind:&nbsp;[&nbsp;&nbsp;OK&nbsp;&nbsp;]\n[root@node03&nbsp;~]#\n[root@node03&nbsp;~]#&nbsp;service&nbsp;nfs&nbsp;start\nStarting&nbsp;NFS&nbsp;services:&nbsp;&nbsp;[&nbsp;&nbsp;OK&nbsp;&nbsp;]\nStarting&nbsp;NFS&nbsp;quotas:&nbsp;[&nbsp;&nbsp;OK&nbsp;&nbsp;]\nStarting&nbsp;NFS&nbsp;mountd:&nbsp;[&nbsp;&nbsp;OK&nbsp;&nbsp;]\nStarting&nbsp;NFS&nbsp;daemon:&nbsp;[&nbsp;&nbsp;OK&nbsp;&nbsp;]\nStarting&nbsp;RPC&nbsp;idmapd:&nbsp;[&nbsp;&nbsp;OK&nbsp;&nbsp;]\n[root@node03&nbsp;~]#<\/pre><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:12px;\"><strong>\u521b\u5efa\u4e24\u4e2a\u5171\u4eab\u76ee\u5f55\uff1acvxtmp\u548ccvxtmp2<\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node03&nbsp;~]#&nbsp;mkdir&nbsp;-p&nbsp;\/cvxtmp\n[root@node03&nbsp;~]#&nbsp;mkdir&nbsp;-p&nbsp;\/cvxtmp2\n[root@node03&nbsp;~]#<\/pre><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:12px;\"><strong>\u5c06\u78c1\u76d8\/dev\/sdb\u548c\/dev\/sdc\u5206\u522b\u6302\u5728\u5230cvxtmp\u548ccvxtmp2<\/strong><\/span><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\"><br \/><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node03&nbsp;~]#&nbsp;df&nbsp;-Th\nFilesystem&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Type&nbsp;&nbsp;&nbsp;Size&nbsp;&nbsp;Used&nbsp;Avail&nbsp;Use%&nbsp;Mounted&nbsp;on\n\/dev\/sda2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ext4&nbsp;&nbsp;&nbsp;&nbsp;97G&nbsp;&nbsp;3.3G&nbsp;&nbsp;&nbsp;89G&nbsp;&nbsp;&nbsp;4%&nbsp;\/\ntmpfs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmpfs&nbsp;&nbsp;236M&nbsp;&nbsp;&nbsp;12K&nbsp;&nbsp;236M&nbsp;&nbsp;&nbsp;1%&nbsp;\/dev\/shm\n\/dev\/sda1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ext4&nbsp;&nbsp;&nbsp;976M&nbsp;&nbsp;&nbsp;27M&nbsp;&nbsp;898M&nbsp;&nbsp;&nbsp;3%&nbsp;\/boot\n\/dev\/sdb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ext4&nbsp;&nbsp;&nbsp;&nbsp;50G&nbsp;&nbsp;&nbsp;94M&nbsp;&nbsp;&nbsp;47G&nbsp;&nbsp;&nbsp;1%&nbsp;\/cvxtmp2\n\/dev\/sdc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ext4&nbsp;&nbsp;&nbsp;4.9T&nbsp;&nbsp;8.4G&nbsp;&nbsp;4.6T&nbsp;&nbsp;&nbsp;1%&nbsp;\/cvxtmp\n[root@node03&nbsp;~]#<\/pre><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\"><\/span><\/p><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\"><strong>2\u3001\u4fee\u6539nfs\u914d\u7f6e\u6587\u4ef6\uff0c\u5c06cvxtmp\u548ccvxtmp2\u5171\u4eab\u51fa\u53bb<\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node03&nbsp;~]#&nbsp;cat&nbsp;\/etc\/exports&nbsp;\n\/cvxtmp&nbsp;&nbsp;&nbsp;*(rw,no_all_squash,no_subtree_check,sync)\n\/cvxtmp2&nbsp;&nbsp;*(rw,no_all_squash,no_subtree_check,sync)\n[root@node03&nbsp;~]#&nbsp;\n[root@node03&nbsp;~]#&nbsp;showmount&nbsp;-e&nbsp;192.168.112.130\nExport&nbsp;list&nbsp;for&nbsp;192.168.112.130:\n\/cvxtmp2&nbsp;*\n\/cvxtmp&nbsp;&nbsp;*\n[root@node03&nbsp;~]#<\/pre><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\"><\/span><\/p><p><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">3\u3001\u5b89\u88c5autofs\u670d\u52a1<\/span><\/strong><\/p><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">[root@node02 ~]# yum install autofs -y<\/span><\/p><p><span style=\"font-size:12px;\"><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;\">\u5b89\u88c5\u5b8c\u6210\u4e4b\u540e\uff0c\u5728\/etc\/\u4e0b\u4f1a\u6709\u51e0\u4e2a\u6587\u4ef6\uff0c\u5982\u4e0b\u6240\u793a\uff1a<\/span><\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node02&nbsp;~]#&nbsp;ls&nbsp;-l&nbsp;\/etc\/auto.*\n-rw-r--r--&nbsp;1&nbsp;root&nbsp;root&nbsp;&nbsp;&nbsp;78&nbsp;Aug&nbsp;&nbsp;3&nbsp;16:49&nbsp;\/etc\/auto.home\n-rw-r--r--&nbsp;1&nbsp;root&nbsp;root&nbsp;&nbsp;690&nbsp;Aug&nbsp;&nbsp;3&nbsp;17:09&nbsp;\/etc\/auto.master\n-rw-r--r--&nbsp;1&nbsp;root&nbsp;root&nbsp;&nbsp;524&nbsp;Mar&nbsp;23&nbsp;05:59&nbsp;\/etc\/auto.misc\n-rwxr-xr-x&nbsp;1&nbsp;root&nbsp;root&nbsp;1260&nbsp;Mar&nbsp;23&nbsp;05:59&nbsp;\/etc\/auto.net\n-rwxr-xr-x&nbsp;1&nbsp;root&nbsp;root&nbsp;&nbsp;687&nbsp;Mar&nbsp;23&nbsp;05:59&nbsp;\/etc\/auto.smb\nYou&nbsp;have&nbsp;new&nbsp;mail&nbsp;in&nbsp;\/var\/spool\/mail\/root\n[root@node02&nbsp;~]#<\/pre><p><span style=\"font-size:12px;\"><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;\">\u5176\u4e2dauto.master\u662f\u4e3b\u914d\u7f6e\u6587\u4ef6\uff0c\u4e4b\u540e\u6211\u4eec\u8981\u521b\u5efa\u4e00\u4e2a\u6587\u4ef6auto.home\uff0c\u7136\u540e\u5c06\u8981\u6302\u8f7d\u5230\u672c\u5730\u7684<\/span><\/strong><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;\"><\/span><\/strong><\/span><\/p><p><span style=\"font-size:12px;\"><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;\">\u5206\u533a\u7684\u76ee\u5f55\u5199\u5165\u5176\u4e2d\uff1a<\/span><\/strong><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;\"><\/span><\/strong><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;\"><\/span><\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node02&nbsp;~]#&nbsp;cat&nbsp;\/etc\/auto.home&nbsp;\n\/cvxtmp&nbsp;&nbsp;-rw,soft,intr&nbsp;node03:\/cvxtmp\n\/cvxtmp2&nbsp;&nbsp;-rw,soft,intr&nbsp;node03:\/cvxtmp2\n[root@node02&nbsp;~]#<\/pre><p><span style=\"font-size:12px;\"><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;\">\u6b64\u65f6\u7f16\u8f91\/etc\/auto.master\uff0c\u5c06auto.home\u6587\u4ef6\u6dfb\u52a0\u8fdb\u53bb\uff0cautofs\u5728\u542f\u52a8\u65f6\u52a0\u8f7dauto.home\uff0c\"<span style=\"font-size:12px;font-family:'\u5b8b\u4f53', SimSun;color:rgb(255,0,0);\">\/- &nbsp; &nbsp;\/etc\/auto.home<\/span>\"<\/span><\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node02&nbsp;~]#&nbsp;cat&nbsp;\/etc\/auto.master&nbsp;\n#\n#&nbsp;Sample&nbsp;auto.master&nbsp;file\n#&nbsp;This&nbsp;is&nbsp;a&nbsp;'master'&nbsp;automounter&nbsp;map&nbsp;and&nbsp;it&nbsp;has&nbsp;the&nbsp;following&nbsp;format:\n#&nbsp;mount-point&nbsp;[map-type[,format]:]map&nbsp;[options]\n#&nbsp;For&nbsp;details&nbsp;of&nbsp;the&nbsp;format&nbsp;look&nbsp;at&nbsp;auto.master(5).\n#\n\/misc&nbsp;&nbsp;&nbsp;\/etc\/auto.misc\n#\n#&nbsp;NOTE:&nbsp;mounts&nbsp;done&nbsp;from&nbsp;a&nbsp;hosts&nbsp;map&nbsp;will&nbsp;be&nbsp;mounted&nbsp;with&nbsp;the\n#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\"nosuid\"&nbsp;and&nbsp;\"nodev\"&nbsp;options&nbsp;unless&nbsp;the&nbsp;\"suid\"&nbsp;and&nbsp;\"dev\"\n#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;options&nbsp;are&nbsp;explicitly&nbsp;given.\n#\n\/net&nbsp;&nbsp;&nbsp;&nbsp;-hosts\n\/-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\/etc\/auto.home\n#\n#&nbsp;Include&nbsp;central&nbsp;master&nbsp;map&nbsp;if&nbsp;it&nbsp;can&nbsp;be&nbsp;found&nbsp;using\n#&nbsp;nsswitch&nbsp;sources.\n#\n#&nbsp;Note&nbsp;that&nbsp;if&nbsp;there&nbsp;are&nbsp;entries&nbsp;for&nbsp;\/net&nbsp;or&nbsp;\/misc&nbsp;(as\n#&nbsp;above)&nbsp;in&nbsp;the&nbsp;included&nbsp;master&nbsp;map&nbsp;any&nbsp;keys&nbsp;that&nbsp;are&nbsp;the\n#&nbsp;same&nbsp;will&nbsp;not&nbsp;be&nbsp;seen&nbsp;as&nbsp;the&nbsp;first&nbsp;read&nbsp;key&nbsp;seen&nbsp;takes\n#&nbsp;precedence.\n#\n+auto.master\n[root@node02&nbsp;~]#<\/pre><p><span style=\"font-size:12px;\"><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;\">\u7136\u540e\u91cd\u542fautofs\u670d\u52a1\uff1a<\/span><\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node02&nbsp;~]#&nbsp;service&nbsp;autofs&nbsp;restart\nStopping&nbsp;automount:&nbsp;[&nbsp;&nbsp;OK&nbsp;&nbsp;]\nStarting&nbsp;automount:&nbsp;[&nbsp;&nbsp;OK&nbsp;&nbsp;]\n[root@node02&nbsp;~]#<\/pre><p><span style=\"font-size:12px;\"><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;\">\u67e5\u770b\u6302\u5728\u60c5\u51b5\uff0c\u7ed3\u679c\u53d1\u73b0\u6211\u4eec\u914d\u7f6e\u7684\u6302\u5728\u5206\u533a\u5c45\u7136\u6ca1\u6709\u6302\u5728\u8fc7\u6765\uff0c\u96be\u9053\u914d\u7f6e\u9519\u8bef\uff1f<\/span><\/strong><\/span><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\"><br \/><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node02&nbsp;~]#&nbsp;df&nbsp;-Th\nFilesystem&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Type&nbsp;&nbsp;&nbsp;Size&nbsp;&nbsp;Used&nbsp;Avail&nbsp;Use%&nbsp;Mounted&nbsp;on\n\/dev\/sda2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ext4&nbsp;&nbsp;&nbsp;&nbsp;97G&nbsp;&nbsp;3.4G&nbsp;&nbsp;&nbsp;89G&nbsp;&nbsp;&nbsp;4%&nbsp;\/\ntmpfs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmpfs&nbsp;&nbsp;236M&nbsp;&nbsp;&nbsp;12K&nbsp;&nbsp;236M&nbsp;&nbsp;&nbsp;1%&nbsp;\/dev\/shm\n\/dev\/sda1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ext4&nbsp;&nbsp;&nbsp;976M&nbsp;&nbsp;&nbsp;27M&nbsp;&nbsp;898M&nbsp;&nbsp;&nbsp;3%&nbsp;\/boot\n[root@node02&nbsp;~]#&nbsp;\n\u63a5\u4e0b\u6765\u6211\u4eec\u8fdb\u5165\u6302\u5728\u7684\u76ee\u5f55cvxtmp\u548ccvxtmp2\n[root@node02&nbsp;~]#&nbsp;cd&nbsp;\/cvxtmp\n[root@node02&nbsp;cvxtmp]#&nbsp;cd&nbsp;..\n[root@node02&nbsp;\/]#&nbsp;cd&nbsp;cvxtmp2\n[root@node02&nbsp;cvxtmp2]#<\/pre><p><span style=\"font-size:12px;\"><strong><span style=\"font-family:'\u5b8b\u4f53', SimSun;\">\u7136\u540e\u518d\u67e5\u770b\u6302\u5728\u60c5\u51b5\uff1a<\/span><\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node02&nbsp;cvxtmp2]#&nbsp;df&nbsp;-Th\nFilesystem&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Type&nbsp;&nbsp;&nbsp;Size&nbsp;&nbsp;Used&nbsp;Avail&nbsp;Use%&nbsp;Mounted&nbsp;on\n\/dev\/sda2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ext4&nbsp;&nbsp;&nbsp;&nbsp;97G&nbsp;&nbsp;3.4G&nbsp;&nbsp;&nbsp;89G&nbsp;&nbsp;&nbsp;4%&nbsp;\/\ntmpfs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmpfs&nbsp;&nbsp;236M&nbsp;&nbsp;&nbsp;12K&nbsp;&nbsp;236M&nbsp;&nbsp;&nbsp;1%&nbsp;\/dev\/shm\n\/dev\/sda1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ext4&nbsp;&nbsp;&nbsp;976M&nbsp;&nbsp;&nbsp;27M&nbsp;&nbsp;898M&nbsp;&nbsp;&nbsp;3%&nbsp;\/boot\nnode03:\/cvxtmp&nbsp;&nbsp;nfs&nbsp;&nbsp;&nbsp;&nbsp;4.9T&nbsp;&nbsp;8.4G&nbsp;&nbsp;4.6T&nbsp;&nbsp;&nbsp;1%&nbsp;\/cvxtmp\nnode03:\/cvxtmp2&nbsp;nfs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;50G&nbsp;&nbsp;&nbsp;94M&nbsp;&nbsp;&nbsp;47G&nbsp;&nbsp;&nbsp;1%&nbsp;\/cvxtmp2\n[root@node02&nbsp;cvxtmp2]#<\/pre><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:12px;\"><strong>\u53d1\u73b0\u6302\u5728\u5c45\u7136\u5df2\u7ecf\u751f\u6548\u3002\u6b64\u65f6\u5230NFS\u670d\u52a1\u7aef\u5411\u8fd9\u91cc\u4e24\u4e2a\u76ee\u5f55\u5206\u522b\u5199\u5165\u6587\u4ef6cvxtmp.txt\u548ccvxtmp2.txt<\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node03&nbsp;\/]#&nbsp;echo&nbsp;cvxtmp&nbsp;&gt;&nbsp;\/cvxtmp\/cvxtmp.txt\n[root@node03&nbsp;\/]#&nbsp;echo&nbsp;cvxtmp2&nbsp;&gt;&nbsp;\/cvxtmp2\/cvxtmp2.txt\n[root@node03&nbsp;\/]#&nbsp;cat&nbsp;\/cvxtmp\/cvxtmp.txt&nbsp;\ncvxtmp\n[root@node03&nbsp;\/]#&nbsp;cat&nbsp;\/cvxtmp2\/cvxtmp2.txt&nbsp;\ncvxtmp2\n[root@node03&nbsp;\/]#<\/pre><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:12px;\"><strong>\u7136\u540e\u518d\u5207\u6362\u5230\u6302\u8f7d\u7aef\u67e5\u770b\u3002<\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@node02&nbsp;~]#&nbsp;cat&nbsp;\/cvxtmp\/cvxtmp.txt&nbsp;\ncvxtmp\n[root@node02&nbsp;~]#&nbsp;cat&nbsp;\/cvxtmp2\/cvxtmp2.txt&nbsp;\ncvxtmp2\n[root@node02&nbsp;~]#<\/pre><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">&nbsp;<\/span><br \/><\/p><p><span style=\"font-family:'\u5b8b\u4f53', SimSun;font-size:14px;\">\u53d1\u73b0\u6302\u5728\u786e\u5b9e\u751f\u6548\uff0c\u81f3\u6b64autofs\u81ea\u52a8\u6302\u5728\u529f\u80fd\u5df2\u7ecf\u5b9e\u73b0\u3002<\/span><\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"Autofs自动挂在实现",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1568895249; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/marked.min.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/highlight.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/detail_mp.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/detail.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/details_new.js.download"></script><script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/copy.js.download"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/pageview.html"></iframe>
+</div>
+
+<script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/pvlog.js.download"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type="text/javascript">
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/jquery.cookie.js.download"></script>
+<script src="./Autofs自动挂在实现-平平淡淡才是真-51CTO博客_files/time-on-page.js.download" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+
+
+<div id="zhichiBtnBox" style="position: fixed; z-index: 2147483583; box-shadow: rgba(15, 66, 76, 0.25) 0px 0px 14px 0px; width: 60px; height: 60px; border-radius: 50%; background-color: rgb(66, 133, 244); background-image: url(&quot;//www.sobot.com/chat/frame/imgs/icon.png&quot;); background-repeat: no-repeat; background-position: 18px -58px; right: 40px; bottom: 90px; display: none;"><a hidefocus="" id="zhichiBtn" style="position:relative;text-decoration: none; outline: none; font-family: Microsoft Yahei, Arial, Helvetica; color: #fff; font-size: 16px; display: inline-block; margin: 0; padding: 0; border: none; line-height:43px; float:none;width:100%;height:100%;border-radius:50%;"><span class="zc-advice-icon-btn-title" style="box-shadow: rgba(107, 113, 114, 0.15) 0px 2px 4px 0px; border: 1px solid rgb(235, 239, 240); font-family: &quot;Microsoft Yahei&quot;, Arial, Helvetica; color: rgb(85, 85, 86); font-size: 13px; margin: 0px; text-align: right; background: rgb(255, 255, 255); position: absolute; top: 15px; right: 70px; text-overflow: ellipsis; white-space: nowrap; word-break: normal; display: none; border-radius: 3px; padding: 0px 5px; height: 30px; line-height: 30px;">咨询在线客服</span></a><i style="position:absolute;top:0px;right:0px;padding:1px;line-height:20px;text-align:center;color:#fff;font-weight:bold;height:18px;min-width:18px;background-color:#ed5c5c;border-radius:18px;font-size:12px;display:none;font-style:normal;" id="zhichiCount"></i></div></body></html>

@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<!-- saved from url=(0065)https://www.eefocus.com/guoke1993102/blog/15-10/320227_5b449.html -->
+<html lang="zh-cn"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script type="text/javascript" async="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/analytics.js.download"></script>
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta property="wb:webmaster" content="e3d99d90e5fcc9c4">
+
+<title>EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网</title>
+
+<meta name="author" content="与非网,eefocus.com">
+<meta name="generator" content="与非网,eefocus.com">
+<meta name="keywords" content="verilog FPGA ">
+<meta name="description" content="工程目的本工程目的是自定义一个IP，用于对OV2643摄像头的进行配置。重点有3个，一是需要在定制板上建立系统（即我们使用的不是现有的开发板，无官方的板级支持包）；二是自建IP；三是IIC总线在EDK中的使用。通过该例程，熟悉自定义IP的建立与使用（在实际应用中，其实很多都是需要自建IP的），以及了解在EDK中实现一些特殊协议的方法（这里是IIC）。（注：将省略部分步骤）建立最小系统在建立系统时，由于我们使用的是自己制作的FPGA板子，不存在什么板级支持包（bsp），因此在下图中的红框处保留空白，无需添加">
+
+<link href="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/id-7" rel="stylesheet" type="text/css">
+<link href="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/bootstrap.min.css" media="screen" rel="stylesheet" type="text/css">
+<link href="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/font-awesome.min.css" media="screen" rel="stylesheet" type="text/css">
+<link href="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/custom-front.css" media="screen" rel="stylesheet" type="text/css">
+<link href="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/toper.css" media="screen" rel="stylesheet" type="text/css">
+<link href="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/footer.css" media="screen" rel="stylesheet" type="text/css">
+<link href="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/sweetalert.css" media="screen" rel="stylesheet" type="text/css">
+<link href="https://www.eefocus.com/asset/theme-blogger/image/touch-icon-iphone.png?1566794973" rel="apple-touch-icon">
+<link href="https://www.eefocus.com/asset/theme-blogger/image/touch-icon-ipad.png?1566794973" rel="apple-touch-icon">
+<link href="https://www.eefocus.com/asset/theme-blogger/image/touch-icon-iphone-retina.png?1566794973" rel="apple-touch-icon">
+<link href="https://www.eefocus.com/asset/theme-blogger/image/touch-icon-ipad-retina.png?1566794973" rel="apple-touch-icon">
+<link href="https://www.eefocus.com/asset/custom/image/favicon.ico" rel="shortcut icon">
+
+
+<!--[if lt IE 9]><script type="text/javascript" src="https://static.semidata.info/www.eefocus.com/js/html5shiv.js"></script><![endif]-->
+<!--[if lt IE 9]><script type="text/javascript" src="https://static.semidata.info/www.eefocus.com/js/respond.min.js"></script><![endif]-->
+<script async="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/gtm.js.download"></script><script src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/push.js.download"></script><script type="text/javascript" async="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/5499aafcda37a38c5f0000b5.js.download"></script><script type="text/javascript" async="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/ga.js.download"></script><script type="text/javascript" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/jquery.min.js.download"></script>
+<script type="text/javascript" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/bootstrap.min.js.download"></script>
+<!--[if lt IE 10]><script type="text/javascript" src="https://www.eefocus.com/asset/theme-blogger/js/jPlaceholder.js?1566794973"></script><![endif]-->
+<script type="text/javascript" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/sweetalert.min.js.download"></script>
+
+
+<script src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/share.js.download"></script><style type="text/css">.api-qrcode-panel { position: fixed !important; top: 50% !important; right: 0 !important; margin-right: 0 !important; width: 130px !important; z-index: 2000 !important; font: 12px/1.5 'Microsoft yahei' !important; color: #666 !important; transition: all .3s ease-in-out !important; word-break: break-all !important; word-wrap: break-word !important; text-align: center !important; }.api-qrcode-panel.api-qrcode-panel-show { right: 0 !important; margin-right: 0 !important; }.api-qrcode-panel-inner { position: relative !important; right: -75% !important; transition: all .3s ease-in-out !important; padding: 7px 15px !important; background: #fff !important; }.api-qrcode-panel-inner.api-qrcode-panel-inner-show { right: 0 !important; }.api-qrcode-hd { text-align: left !important; padding: 0 6px !important; overflow: hidden !important; }.api-qrcode-close { float: right !important; cursor: pointer !important; font-size: 14px !important; line-height: 16px !important; font-weight: bold !important; }.api-qrcode-title {}.api-qrcode-bd {}.api-qrcode-img { display: block !important; margin: 0 !important; border: 0 !important; width: 100px !important; height: auto !important; }.api-qrcode-desc { padding: 0 6px !important; }@media (max-width: 480px) { .hidden-xxs { display: none !important; } }</style><link rel="stylesheet" href="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/share_style0_24.css"></head>
+<body id="pi-blog" class="pi-locale-zh-cn">
+
+    
+    <!-- Top bar:  -->
+    <!-- Entrance -->
+  <link rel="stylesheet" type="text/css" href="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/header.css">
+  <!--[if lt IE 9]>
+    <script src="https://cdn.bootcss.com/html5shiv/3.7/html5shiv.min.js"></script>
+  <![endif]-->
+
+  <section class="common-h-wper">
+    <div class="common-h-top">
+      <header class="common-h-outer">
+        <!--Common Nav-->
+        <nav class="common-h-nav">
+          <a href="https://www.eefocus.com/?utm_campaign=dianzixinxigang&amp;utm_medium=navi&amp;utm_source=eefocus&amp;utm_content=eefocus&amp;utm_term=eefocus" class="nav-link active" title="看行业资讯，观技术交流" target="_blank">
+            <span class="brand b-eefocus"></span>
+            <span class="web">与非网</span>
+          </a>
+          <a href="https://www.cirmall.com/?utm_campaign=dianzixinxigang&amp;utm_medium=navi&amp;utm_source=eefocus&amp;utm_content=cirmall&amp;utm_termcirmall" class="nav-link" title="看别人设计、晒自己方案" target="_blank">
+            <span class="brand b-cirmall"></span>
+            <span class="web">电路城</span>
+          </a>
+          <a href="https://www.moore8.com/?utm_campaign=dianzixinxigang&amp;utm_medium=navi&amp;utm_source=eefocus&amp;utm_content=moore8&amp;utm_term=moore8" class="nav-link" title="做行业名师、学专业技能" target="_blank">
+            <span class="brand b-moore8"></span>
+            <span class="web">摩尔吧</span>
+          </a>
+
+          <a href="https://www.bom2buy.com/?utm_campaign=dianzixinxigang&amp;utm_medium=navi&amp;utm_source=eefocus&amp;utm_content=eda&amp;utm_term=bom2buy" class="nav-link" title="比供应报价，推荐最优方案" target="_blank">
+            <span class="brand b-bom2buy"></span>
+            <span class="web">买芯片</span>
+          </a>
+          <a href="https://www.datasheet5.com/?utm_campaign=dianzixinxigang&amp;utm_medium=navi&amp;utm_source=eefocus&amp;utm_content=datasheet5&amp;utm_term=datasheet5" class="nav-link" title="查器件信息，下数据手册" target="_blank">
+            <span class="brand b-d5"></span>
+            <span class="web">元件库</span>
+          </a>
+        </nav>
+        <!--Common login-->
+        <section class="common-h-login">
+          <div class="common-logo-name">
+            <a href="https://www.eefocus.com/" target="_blank">
+              <img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/eefocus-logo-white.png">
+            </a>
+          </div>
+            <ul class="nav navbar-nav navbar-right" id="userBarAnonymous" style="">
+    <li>
+      <a href="https://www.eefocus.com/saml/index/login/?redirect=https%3A%2F%2Fwww.eefocus.com%2Fguoke1993102%2Fblog%2F15-10%2F320227_5b449.html">
+        登录      </a>
+    </li>
+    <li>
+      <a href="https://account.eefocus.com/user/register?app=pi250d&amp;redirect=https%3A%2F%2Fwww.eefocus.com%2Fguoke1993102%2Fblog%2F15-10%2F320227_5b449.html">
+        注册      </a>
+    </li>
+  </ul>
+  <div class="login-wper" id="userBarMember" style="display: none">
+
+    <!--User-->
+    <div class="member-wper">
+      <a class="member-card-item" id="memberCard" href="https://www.eefocus.com/guoke1993102/blog/15-10/320227_5b449.html#"></a>
+      <div class="member-card-wper" id="memberProfile">
+        <i class="drop-icon"></i>
+        <span class="card-item">
+            <a id="memberName" href="https://www.eefocus.com/guoke1993102/blog/15-10/320227_5b449.html#">
+                名称            </a>
+       </span>
+        <span class="card-item">
+            <a id="member-logout" href="https://www.eefocus.com/saml/index/logout/?redirect=https%3A%2F%2Fwww.eefocus.com%2Fguoke1993102%2Fblog%2F15-10%2F320227_5b449.html">
+                退出            </a>
+        </span>
+      </div>
+    </div>
+    <!--Msg-->
+    <div class="msg-wper">
+      <a id="memberMsg" class="msg-place" href="https://www.eefocus.com/guoke1993102/blog/15-10/320227_5b449.html#">
+        <span class="msg-bell"></span>
+        <span class="msg-point"></span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+        
+    $(function() {
+      $.getJSON("https://www.eefocus.com/system/index/user/?" + new Date().getTime(), function(user) {
+        var ela = $('#userBarAnonymous');
+        var elm = $('#userBarMember');
+        if (user.uid > 0) {
+          ela.hide();
+          elm.show();
+          $('#memberMsg').attr('href', user.message);
+          $('#memberCard').attr('href', user.profile).html(user.avatar);
+          $('#memberName').attr('href', user.profile).html(user.name);
+
+          /*show message number*/
+          $.ajax({
+            type: "GET",
+            url: "//www.eefocus.com/activity/m/getCount",
+            dataType: "json",
+            success: function(data) {
+              if (data.status == 1 && data.data > 0) {
+                $('#memberMsg').children('.msg-point').show();
+              } else {
+                $('#memberMsg').children('.msg-point').hide();
+              }
+            }
+          });
+        } else {
+          ela.show();
+          elm.hide();
+        }
+
+        
+      });
+
+      //PC or Mobile
+      var isMobile = false;
+      if (navigator.userAgent.match(/(iPhone|iPod|Android|ios)/i)) {
+        isMobile = true;
+      } else {
+        isMobile = false;
+      }
+
+      var cardTimer = null;
+      var $mCard = $('#memberCard');
+      var $mProfile = $('#memberProfile');
+
+      $mCard.on('mouseover', function() {
+        clearCardTime();
+      }).on('mouseout', function() {
+        cardTime();
+      });
+
+      $mProfile.on('mouseover', function() {
+        clearCardTime();
+      }).on('mouseout', function() {
+        cardTime();
+      });
+
+      if(isMobile) {
+        $mCard.click(function(e) {
+          return false;
+        });
+      }
+
+      function cardTime() {
+        cardTimer = setTimeout(function() {
+          $mCard.css('borderColor','transparent');
+          $mProfile.hide();
+        }, 400);
+      }
+
+      function clearCardTime() {
+        clearTimeout(cardTimer);
+        $mCard.css('borderColor','#d80d1f');
+        $mProfile.show();
+      }
+    })
+  </script>
+        </section>
+        <!--Common wxcode-->
+        
+<section class="common-h-wx common-h-login">
+    <a class="wx-wper-tit" id="wxWperTit" href="javascript:;"><span class="wx-l-logo"></span>技术交流群</a>
+    <div class="wx-wper-con" id="wxWperCon">
+        <img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/tmp.5b514488a67f3.jpg" alt="二维码" width="148" height="148">
+        <span class="wx-con-info">添加小编微信，我们会将你拉到相应的技术讨论群</span>
+    </div>
+</section>
+<script type="text/javascript">
+  (function() {
+    var timer,
+        wxWperTit = document.getElementById('wxWperTit'),
+        wxWperCon = document.getElementById('wxWperCon');
+    wxWperTit.onmouseover = wxWperCon.onmouseover = function() {
+        clearTimeout(timer);
+        wxWperCon.style.display = "block";
+    }
+    wxWperTit.onmouseout = wxWperCon.onmouseout = function() {
+        timer = setTimeout(function() {
+            wxWperCon.style.display = "none";
+        },500);
+    }
+  })();
+</script>      </header>
+    </div>
+    <div class="common-h-bottom">
+      <header class="common-h-outer">
+        <!--Common Search-->
+        <section class="common-h-search">
+          <form id="form1" action="https://search.eefocus.com/s" name="form1" target="_blank">
+
+            <div class="common-input-group">
+              <input type="hidden" name="app_id" value="1001">
+              <input type="text" class="common-form-control" gtbfieldid="2" autocomplete="off" name="q" value="" maxlength="100" placeholder="请输入关键词        搜资讯查资料        找开发板寻电路方案">
+              <span class="common-input-group-btn">
+                  <button class="common-btn" type="submit" name="sub" value="1">搜索</button>
+              </span>
+            </div>
+          </form>
+        </section>
+      </header>
+    </div>
+  </section>
+
+    
+    <script type="text/javascript">
+    // org.openx.SWFObject.prototype.addParam=function () {
+    //   this.params[arguments[0]]=arguments[1];
+    //   if(!this.params['wmode']){
+    //       this.params['wmode']="transparent";
+    //   }
+    // }
+    </script>
+
+    <!-- Page main content: breadcrumb, flash-messenger, blocks and module content -->
+        <div class="container pi-main-container">
+     <!-- Flash messenger -->
+                <!-- Top head zone -->
+                <div class="pi-zone-0 clearfix">
+            <div class="panel panel-default blog-blogger header">
+    <div class="panel-body"><div class="blogger-header">
+	<div class="blogger-description">
+		<h2 class="pi-ellipsis pi-ellipsis-1">0 errors,0 warnings</h2>
+		<p class="pi-ellipsis pi-ellipsis-2"></p>
+	</div>
+	<div class="blogger-qlink pull-right">
+		<a class="btn active" title="博文目录" href="https://www.eefocus.com/guoke1993102/blog">
+			博文目录		</a>
+		<a class="btn" target="_blank" title="关于作者" href="https://account.eefocus.com/user/profile/2027576">
+			关于作者		</a>
+		<a class="btn link-blog-manage hide-owner-dom hide" title="博客管理" href="https://www.eefocus.com/blog/myspace/">
+			博客管理		</a>
+		<a class="btn link-my-blog" title="我的博客" href="https://www.eefocus.com/blog/homepage/my/"><i></i></a>
+	</div>
+</div></div></div>
+        </div>
+        
+        <div class="row">
+        			
+            <div class="pi-zone-wrap pi-zone-wrap-bg">
+				<div class="col-xs-3">
+											<div class="pi-zone-1">
+							<div class="panel panel-default blog-blogger box">
+    <div class="panel-body"><div class="blogger-info">
+	<a title="0 errors,0 warnings" href="https://www.eefocus.com/guoke1993102/blog">
+		<img class="img-circle" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/e3585d95340eaf9002927bf5a7531c38.png">
+	</a>
+	<h2 class="pi-ellipsis pi-ellipsis-1">guoke1993102</h2>
+	<div class="compose-blog hide-owner-dom hide">
+		<a title="发布博客" href="https://www.eefocus.com/blog/myspace/?act=add" class="btn btn-primary">发布博客</a>
+	</div>
+	<div class="action-group blog-link-color show-owner-dom">
+		<a title="发送消息" target="_blank" href="https://account.eefocus.com/message/index/send/uid-2027576"><i class="fa fa-comment"></i>发送消息</a> |
+		<a class="add-friend" title="添加朋友" href="javascript:void(0)"><i class="fa fa-user"></i>添加朋友</a>
+	</div>
+</div></div></div>
+<div class="panel panel-default blog-category list">
+    <div class="panel-heading">
+                        <span class="pi-icon-dot-o"></span>
+                        <div class="pi-panel-heading-inner">博客分类</div>
+                    </div><div class="panel-body"><ul class="pi-blog-category-list">
+				<li>
+		<a class="pi-ellipsis pi-ellipsis-1" title="所有" href="https://www.eefocus.com/guoke1993102/blog">所有					</a>
+
+			</li>
+				<li>
+		<a class="pi-ellipsis pi-ellipsis-1" title="前言" href="https://www.eefocus.com/guoke1993102/blog/cate_17222_0.html">前言						<span class="text-muted"> ( 1 )</span>
+					</a>
+
+			</li>
+				<li>
+		<a class="pi-ellipsis pi-ellipsis-1" title="verilog语法" href="https://www.eefocus.com/guoke1993102/blog/cate_17227_0.html">verilog语法						<span class="text-muted"> ( 3 )</span>
+					</a>
+
+			</li>
+				<li>
+		<a class="pi-ellipsis pi-ellipsis-1" title="modelsim" href="https://www.eefocus.com/guoke1993102/blog/cate_463890_0.html">modelsim						<span class="text-muted"> ( 1 )</span>
+					</a>
+
+			</li>
+				<li>
+		<a class="pi-ellipsis pi-ellipsis-1" title="xilinx IP" href="https://www.eefocus.com/guoke1993102/blog/cate_467938_0.html">xilinx IP						<span class="text-muted"> ( 2 )</span>
+					</a>
+
+			</li>
+				<li>
+		<a class="pi-ellipsis pi-ellipsis-1" title="EDK" href="https://www.eefocus.com/guoke1993102/blog/cate_506146_0.html">EDK						<span class="text-muted"> ( 5 )</span>
+					</a>
+
+			</li>
+				<li>
+		<a class="pi-ellipsis pi-ellipsis-1" title="工具" href="https://www.eefocus.com/guoke1993102/blog/cate_518298_0.html">工具						<span class="text-muted"> ( 2 )</span>
+					</a>
+
+			</li>
+				<li>
+		<a class="pi-ellipsis pi-ellipsis-1" title="算法协议" href="https://www.eefocus.com/guoke1993102/blog/cate_709725_0.html">算法协议						<span class="text-muted"> ( 2 )</span>
+					</a>
+
+			</li>
+	</ul></div></div>
+						</div>
+																					<div class="pi-zone-3">
+							<div class="panel panel-default blog-newest-article">
+    <div class="panel-heading">
+                        <span class="pi-icon-dot-o"></span>
+                        <div class="pi-panel-heading-inner">最新博文</div>
+                    </div><div class="panel-body">
+<div class="blog-common-list">
+        <ul>
+                <li>
+            <a href="https://www.eefocus.com/rohmadmin/blog/19-08/437990_b8ba5.html" title="[活动]带你全面了解ROHM如何为中国提出电机高效率驱动技术解决方案" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                 [活动]带你全面了解ROHM如何为中国提出电机高效率驱动技术解决方案            </a>
+        </li>
+                <li>
+            <a href="https://www.eefocus.com/moerbaguanfang/blog/19-08/437961_0e1d3.html" title="英飞凌coolest技术应用，看完工程师圈你最靓！" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                 英飞凌coolest技术应用，看完工程师圈你最靓！            </a>
+        </li>
+                <li>
+            <a href="https://www.eefocus.com/moerbaguanfang/blog/19-08/437875_4fe58.html" title="基于FPGA的软核处理器设计实现" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                 基于FPGA的软核处理器设计实现            </a>
+        </li>
+                <li>
+            <a href="https://www.eefocus.com/moerbaguanfang/blog/19-08/437874_c0600.html" title="树莓派新手福利，手把手带你入门！" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                 树莓派新手福利，手把手带你入门！            </a>
+        </li>
+                <li>
+            <a href="https://www.eefocus.com/toradex/blog/19-08/437846_36f91.html" title="嵌入式 ARM 平台使用dm-crypt加密磁盘分区" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                 嵌入式 ARM 平台使用dm-crypt加密磁盘分区            </a>
+        </li>
+                <li>
+            <a href="https://www.eefocus.com/moerbaguanfang/blog/19-08/437742_99413.html" title="一键工程代码生成—— FPGA+STM32 基于Simulink的模型设计" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                 一键工程代码生成—— FPGA+STM32 基于Simulink的模型设计            </a>
+        </li>
+                <li>
+            <a href="https://www.eefocus.com/moerbaguanfang/blog/19-07/437586_73559.html" title="“凌”感微课堂，创新黑科技频发，打破极限认知！" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                 “凌”感微课堂，创新黑科技频发，打破极限认知！            </a>
+        </li>
+                <li>
+            <a href="https://www.eefocus.com/rohmadmin/blog/19-07/437571_6a4a2.html" title="罗姆设计大赛来了！推广转发赢好礼" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                 罗姆设计大赛来了！推广转发赢好礼            </a>
+        </li>
+                <li>
+            <a href="https://www.eefocus.com/toradex/blog/19-07/437561_8e24f.html" title="嵌入式 ARM 平台交叉编译Qt5源代码" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                 嵌入式 ARM 平台交叉编译Qt5源代码            </a>
+        </li>
+                <li>
+            <a href="https://www.eefocus.com/toradex/blog/19-07/437521_5c684.html" title="嵌入式 ARM 平台配置远程桌面" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                 嵌入式 ARM 平台配置远程桌面            </a>
+        </li>
+            </ul>
+    </div>
+</div></div>
+<div class="panel panel-default widget-blog-left-300-250">
+    <div class="panel-body"><style type="text/css">
+.widget-blog-left-300-250 {margin-top: 20px;margin-bottom:20px;}
+.widget-blog-left-300-250 img {max-width: 100%; height: auto;}</style>
+<!-- /* [id436] 与非网主站 -博客左侧（300x250） */ -->
+<!--/*
+*
+* Revive Adserver Asynchronous JS Tag
+* - Generated with Revive Adserver v3.2.4
+*
+*/-->
+<ins><a href="https://gg.eefocus.com/www/delivery/ck.php?oaparams=2__bannerid=12936__zoneid=436__cb=d95fc7ce12__oadest=%2F%2Fanalytics.supplyframe.cn%2Ftrackingservlet%2Ftrack%2F%3Faction%3DadClick_eefocus%26value2%3D12936%26value3%3D178%26zone%3D436%26extra%3Dh_crc%3D2625360942%7Csrv%3Dvm-gg-2%7Cox_v%3D2.8%7Ch_value%3D647b9451215219591566913867%7Cgeo%3DCN%26zone%3D436%26url%3Dhttps%253A%252F%252Fwww.infineon-autoeco.com%252FBBS%252FDetail%252F11826" target="_blank"><img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/ai.php" width="300" height="250" alt="" title="" border="0"></a><div id="beacon_d95fc7ce12" style="position: absolute; left: 0px; top: 0px; visibility: hidden;"><img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/lg.php" width="0" height="0" alt="" style="width: 0px; height: 0px;"></div><img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/saved_resource" width="0" height="0" alt="" style="display:none"></ins>
+<script async="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/asyncjs.php"></script>
+</div></div>
+<div class="panel panel-default widget-ST专区">
+    <div class="panel-heading">
+                        <span class="pi-icon-dot-o"></span>
+                        <div class="pi-panel-heading-inner">ST专区</div>
+                    </div><div class="panel-body"><div class="widget-list widget-list-common">
+    <ul>
+                <li>
+            <a href="https://url.eefocus.com/6di" title="意法半导体STM32研讨会最新日程及酒店曝光" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                意法半导体STM32研讨会最新日程及酒店曝光            </a>
+        </li>
+                <li>
+            <a href="https://url.eefocus.com/6dj" title="STM32Cube工具，覆盖开发全过程" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                STM32Cube工具，覆盖开发全过程            </a>
+        </li>
+                <li>
+            <a href="https://url.eefocus.com/6dk" title="STM32多个ADC模块同时采样转换的应用示例" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                STM32多个ADC模块同时采样转换的应用示例            </a>
+        </li>
+                <li>
+            <a href="https://url.eefocus.com/6dl" title="基于STM32定时器实现定制波形的示例" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                基于STM32定时器实现定制波形的示例            </a>
+        </li>
+                <li>
+            <a href="https://url.eefocus.com/6c1" title="STM32G4：硬件数学加速运算，模数混合MCU" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                STM32G4：硬件数学加速运算，模数混合MCU            </a>
+        </li>
+                <li>
+            <a href="https://url.eefocus.com/6c3" title="STM32H7系列高性能产品之双核智能架构性能解析" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                STM32H7系列高性能产品之双核智能架构性能解析            </a>
+        </li>
+                <li>
+            <a href="https://url.eefocus.com/6dm" title="STM32WB硬件架构和外设培训课件免费下载" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                STM32WB硬件架构和外设培训课件免费下载            </a>
+        </li>
+                <li>
+            <a href="https://url.eefocus.com/6dn" title="通过SWD升级STM32WB的FUS和BLE协议栈的方法" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                通过SWD升级STM32WB的FUS和BLE协议栈的方法            </a>
+        </li>
+                <li>
+            <a href="https://url.eefocus.com/6bg" title="STM32CubeIDE，基于Eclipse框架：免费、集成、优质！" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                STM32CubeIDE，基于Eclipse框架：免费、集成、优质！            </a>
+        </li>
+                <li>
+            <a href="https://url.eefocus.com/69r" title="新一代入门级STM32G0，超过93%的 I/O利用率" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                新一代入门级STM32G0，超过93%的 I/O利用率            </a>
+        </li>
+            </ul>
+</div>
+</div></div>
+<div class="panel panel-default widget-bom2buytext">
+    <div class="panel-heading">
+                        <span class="pi-icon-dot-o"></span>
+                        <div class="pi-panel-heading-inner">BOM2BUY</div>
+                    </div><div class="panel-body"><div class="widget-list widget-list-common">
+    <ul>
+                <li>
+            <a href="https://www.bom2buy.com/?utm_campaign=201711wenzilian&amp;utm_medium=txt&amp;utm_source=eefocus&amp;utm_content=ruguonilaizhelixunjiaxinpian%EF%BC%8Cnihuifaxianbuyiyangdejiage%EF%BC%81&amp;utm_term=wenzilian" title="如果你来这里询价芯片，你会发现不一样的价格！" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                如果你来这里询价芯片，你会发现不一样的价格！            </a>
+        </li>
+                <li>
+            <a href="https://www.bom2buy.com/?utm_campaign=201711wenzilian&amp;utm_medium=txt&amp;utm_source=eefocus&amp;utm_content=shimeyangdedianziyuanqijianwangzuinengmanzuni%EF%BC%9F&amp;utm_term=wenzilian" title="什么样的电子元器件网最能满足你？" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                什么样的电子元器件网最能满足你？            </a>
+        </li>
+                <li>
+            <a href="https://www.bom2buy.com/about/service?utm_campaign=201712wenzilian&amp;utm_medium=txt&amp;utm_source=eefocus&amp;utm_content=yigeshihuiqiebianjiededianziyuanqijiangoumaiwang&amp;utm_term=wenzilian" title="一个实惠且便捷的电子元器件购买网" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                一个实惠且便捷的电子元器件购买网            </a>
+        </li>
+                <li>
+            <a href="https://www.bom2buy.com/about/law?utm_campaign=201711wenzilian&amp;utm_medium=txt&amp;utm_source=eefocus&amp;utm_content=yigepingtai%EF%BC%8Cdongjiagoumai%EF%BC%8Cyizhanshixiadan%EF%BC%81&amp;utm_term=wenzilian" title="一个平台，多家购买，一站式下单！" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                一个平台，多家购买，一站式下单！            </a>
+        </li>
+                <li>
+            <a href="https://www.bom2buy.com/?utm_campaign=201711wenzilian&amp;utm_medium=txt&amp;utm_source=eefocus&amp;utm_content=tiyanzuikuaijiedebomshangchuangongneng%EF%BC%9Fjiulaibom2buymaixinpianwangba%EF%BC%81&amp;utm_term=wenzilian" title="体验最快捷的bom上传功能？就来bom2buy买芯片网吧！" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                体验最快捷的bom上传功能？就来bom2buy买芯片网吧！            </a>
+        </li>
+                <li>
+            <a href="https://www.bom2buy.com/?utm_campaign=201711wenzilian&amp;utm_medium=txt&amp;utm_source=eefocus&amp;utm_content=bangnigusuandianziyuanqijiandejiage%EF%BC%9F&amp;utm_term=wenzilian" title="帮你估算电子元器件的价格？" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                帮你估算电子元器件的价格？            </a>
+        </li>
+                <li>
+            <a href="https://www.bom2buy.com/?utm_campaign=201712wenzilian&amp;utm_medium=txt&amp;utm_source=eefocus&amp;utm_content=goumaihexuzhuyi%EF%BC%81bom2buy%EF%BC%8Cdainitiyanbomyijiangoumai~&amp;utm_term=wenzilian" title="购买何须逐一！bom2buy，带你体验bom一键购买~" class="pi-ellipsis pi-ellipsis-1" target="_blank">
+                购买何须逐一！bom2buy，带你体验bom一键购买~            </a>
+        </li>
+            </ul>
+</div>
+</div></div>
+						</div>
+									</div>
+
+				<div class="pi-zone-2-7 col-xs-9">
+						
+						
+												
+						<!-- Module content starts -->
+													<div class="pi-module-content col-md-12">
+								<div class="pi-article-module">
+	<div class="article-header">
+		<h2 class="headline">EKD之路（二）——自定义IP</h2>
+		<div class="article-meta">
+			<div class="clearfix">
+				<div class="pull-left">
+					2015-10-10 13:59:57				</div>
+				<div class="pull-right">
+					<div class="clearfix article-share">
+						 <!-- bdshare Button BEGIN -->
+                        <div class="bdsharebuttonbox pull-right bdshare-button-style0-24" data-bd-bind="1566913868407">
+                              <span style="float: left;display: inline-block;padding: 8px 0 0;margin: 0;">分享到：</span>
+                              <a href="https://www.eefocus.com/guoke1993102/blog/15-10/320227_5b449.html#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a>
+                              <a href="https://www.eefocus.com/guoke1993102/blog/15-10/320227_5b449.html#" class="bds_sqq" data-cmd="sqq" title="分享到QQ好友"></a>
+                              <a href="https://www.eefocus.com/guoke1993102/blog/15-10/320227_5b449.html#" class="bds_qzone" data-cmd="qzone" title="分享到QQ空间"></a>
+                              <a class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+                              <a href="https://www.eefocus.com/guoke1993102/blog/15-10/320227_5b449.html#" class="bds_more" data-cmd="more"></a>
+                        </div>
+                        <script>
+                          window._bd_share_config = {
+                            "common": {
+                              "bdSnsKey": {},
+                              "bdText": "",
+                              "bdMini": "2",
+                              "bdMiniList": false,
+                              "bdPic": "",
+                              "bdStyle": "0",
+                              "bdSize": "24"
+                            },
+                            "share": {}
+                          };
+                          with(document) 0[(getElementsByTagName('head')[0] || body).appendChild(createElement('script')).src =
+                            'https://www.eefcdn.com/vendor/baidu_share/api/js/share.js?v=89860593.js&cdnversion=' + ~(-new Date() / 36e5)];
+                        </script>
+                        <!-- bdshare Button END -->
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="article-tags">
+			<div class="tag-terms">
+	<span class="tag-label">标签</span>
+		<span class="fa fa-tag"></span> <a href="https://www.eefocus.com/tag/term/FPGA/m/blog" title="FPGA" target="_blank">FPGA</a>		<span class="fa fa-tag"></span> <a href="https://www.eefocus.com/tag/term/xilinx/m/blog" title="xilinx" target="_blank">xilinx</a>		<span class="fa fa-tag"></span> <a href="https://www.eefocus.com/tag/term/EDK/m/blog" title="EDK" target="_blank">EDK</a>		<span class="fa fa-tag"></span> <a href="https://www.eefocus.com/tag/term/%E8%87%AA%E5%AE%9A%E4%B9%89IP/m/blog" title="自定义IP" target="_blank">自定义IP</a>	</div>		</div>
+	</div>
+	<div class="clearfix mb10 article-content">
+		<div class="clearfix">
+			<div class="article-body">
+				<h1>
+	<strong>工程目的</strong></h1>
+<p>
+	<strong>本工程目的是自定义一个IP，用于对OV2643摄像头的进行配置。重点有3个，一是需要在<span style="color:#ff0000;">定制板</span>上建立系统<span style="color:#ff0000;">（即我们使用的不是现有的开发板，无官方的板级支持包）</span>；二是自建IP；三是IIC总线在EDK中的使用。通过该例程，熟悉自定义IP的建立与使用<span style="color:#ff0000;">（在实际应用中，其实很多都是需要自建IP的）</span>，以及了解在EDK中实现一些特殊协议的方法<span style="color:#ff0000;">（这里是IIC）</span>。（注：将省略部分步骤）</strong></p>
+<p>
+	&nbsp;</p>
+<h1>
+	<strong>建立最小系统</strong></h1>
+<p>
+	<strong>在建立系统时，由于我们使用的是自己制作的FPGA板子，不存在什么板级支持包（bsp），因此在下图中的红框处保留空白，无需添加库文件。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图00(1).png" style="width: 635px; height: 515px;"></strong></p>
+<p>
+	<strong>接着因为我们是自己制作的板子，因此选择<span style="color:#ff0000;">Creat&nbsp;a&nbsp;System&nbsp;for&nbsp;a&nbsp;Custom&nbsp;Board</span>。接着如图配置符合我们板子的信息。<span style="color:#ff0000;">1处表明的是外部晶振的频率</span>，其大小并不一定要大于后面所提到的处理器的频率的，如果处理器频率比外部晶振频率高，系统会自己倍频实现。所设置的外部晶振频率可以在ucf文件中查看。<span style="color:#ff0000;">2处表示复位电位</span>，我们的板子是低电平复位，因此这里选择Active&nbsp;Low.。这些参数都可以在后面的步骤中查看以及修改。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图01(1).png" style="width: 637px; height: 245px;"></strong></p>
+<p>
+	<strong>接下来这一步和以前使用开发板时差不多，需要注意的是这里的Processor&nbsp;Frequency是处理器频率。且可以看到下面外设框中是空白的，这是因为我们是自制板，不带有BSP库文件。点击Finish.</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图02(1).png" style="width: 636px; height: 574px;"></strong></p>
+<h1>
+	<strong>添加IP</strong></h1>
+<p>
+	<strong>最小系统建立好后，接下来就是向里面添加IP了。下图是OV2643的接口，其中，SDA，SCL接口采用的是SCCB协议，基本与IIC协议相同，因此这两个端口的操作我们可以通过添加xilinx自带的IP核<span style="color:#ff0000;">（AXI_IIC）</span>实现。而对于其他端口，我们通过自定义IP的方法实现。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图03(1).png" style="width: 602px; height: 563px;"></strong></p>
+<h1>
+	<strong>添加AXI_IIC</strong></h1>
+<p>
+	<strong>在IP&nbsp;Catalog中直接搜索IIC即可出现AXI&nbsp;IIC&nbsp;Interface的IP核。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图04(1).png" style="width: 424px; height: 419px;"></strong></p>
+<p>
+	<strong>连接好端口即可，该IP核在硬件连接上没什么好说的，重点是软件方面的应用，这个后面再说。<span style="color:#ff0000;">（这里还连接了chipscope的端口，为了更好的查看信号，至于chipscope的使用，这里暂时忽略，将在以后的文章中详细描述chipscope的使用）</span>。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图05(1).png" style="width: 637px; height: 221px;"></strong></p>
+<h1>
+	<strong>添加自定义IP核</strong></h1>
+<p>
+	<strong>点击Hardware-&gt;Create&nbsp;or&nbsp;Import&nbsp;Peripheral</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图06(1).png" style="width: 639px; height: 230px;"></strong></p>
+<p>
+	<strong>之后几步比较简单，略去。到达这一步时，1表示将该IP核创建到库中，这样方面以后我们对它的多次利用；2则表示创建到当前工程中，这里我选择的是2。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图07(1).png" style="width: 652px; height: 544px;"></strong></p>
+<p>
+	<strong>将该IP核命名为ov2643_ports，<span style="color:#ff0000;">关于命名也存在规则，不能有大写字母，不能以数字开头</span>，如果命名有误，字体颜色为红色。下面的1.00.a为其版本号。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图08(1).png" style="width: 633px; height: 548px;"></strong></p>
+<p>
+	<strong>到达这步后，需要勾选User&nbsp;logic&nbsp;software&nbsp;register。这样才能通过操作寄存器来实现我们的功能，才符合EDK中利用软件，而不是纯硬件的思想。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图09(1).png" style="width: 633px; height: 551px;"></strong></p>
+<p>
+	<strong>在这选择寄存器的数量，一个寄存器有32位，每一位可表示一个端口，也就是说一个寄存器便可以满足32个端口的使用。但为了后面更好的理解verilog程序，这里设置两个寄存器，输入使用一个寄存器，输出使用另一个寄存器。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图10(1).png" style="width: 629px; height: 550px;"></strong></p>
+<p>
+	<strong>在这步中，三个都勾选上。注意对于第一个，因为我更擅长verilog，所以勾选这个，这样在该IP核的User&nbsp;Logic部分即采用的是verilog，更喜欢VHDL的人可不勾选此项。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图11(1).png" style="width: 637px; height: 550px;"></strong></p>
+<p>
+	<strong>接下来需要修改各种文件，为自定义IP添加端口信息。</strong></p>
+<p>
+	<strong>首先是MPD文件，在Project&nbsp;Local&nbsp;PCores-&gt;USER中找到刚刚建立的IP核，右键点击View&nbsp;MPD，即可打开MPD文件。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图12(1).png"></strong></p>
+<p>
+	<strong>在#PORT部分添加端口如下：</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图13(1).png"></strong></p>
+<p>
+	<strong>接下来是VHDL文件和verilog文件。这两个文件在工程文件夹-&gt;pcores-&gt;ov2643_ports_v1_00_a-&gt;hdl中。打开两个文件，按照里面所提示的位置以及对应的格式修改即可。</strong></p>
+<p>
+	<strong>VHDL文件修改，有3个地方需要添加：</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图14(1).png"></strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图15(1).png"></strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图16(1).png" style="width: 628px; height: 486px;"></strong></p>
+<p>
+	<strong>verilog文件修改，首先添加端口：</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图17(1).png" style="width: 611px; height: 293px;"></strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图18(1).png" style="width: 600px; height: 269px;"></strong></p>
+<p>
+	<strong>接着重点介绍一下如何增加自己的所需的逻辑。</strong></p>
+<p>
+	<strong>首先找到“<span style="color:#008000;">//&nbsp;USER&nbsp;logic&nbsp;implementation&nbsp;added&nbsp;here</span>”，我们的逻辑就添加在该注释下面。</strong></p>
+<p>
+	<strong>添加的程序如下</strong></p>
+<p style="margin-left:21.0000pt;">
+	<strong><span style="color:#ff0000;">assign&nbsp;pwdn&nbsp;=&nbsp;slv_reg0[0];</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp;&nbsp;&nbsp;assign&nbsp;rstn&nbsp;=&nbsp;slv_reg0[1];</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp; always@&nbsp;(posedge&nbsp;pclk)</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp;&nbsp; cam_ports_input&nbsp;&lt;=&nbsp;{vsync,&nbsp;href,&nbsp;pclk,&nbsp;data};</span></strong></p>
+<p>
+	<strong>再找到“<span style="color:#008000;">//implement&nbsp;slave&nbsp;model&nbsp;register&nbsp;read&nbsp;mux</span>”。修改程序如下：</strong></p>
+<p>
+	<strong><span style="color:#ff0000;">always&nbsp;@(&nbsp;slv_reg_read_sel&nbsp;or&nbsp;slv_reg0&nbsp;or&nbsp;slv_reg1&nbsp;)</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp;&nbsp;&nbsp;begin&nbsp;</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;(&nbsp;slv_reg_read_sel&nbsp;)</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2'b10&nbsp;:&nbsp;slv_ip2bus_data&nbsp;&lt;=&nbsp;slv_reg0;</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2'b01&nbsp;:&nbsp;slv_ip2bus_data&nbsp;&lt;=&nbsp;{21'd0,&nbsp;cam_ports_input};//slv_reg1</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default&nbsp;:&nbsp;slv_ip2bus_data&nbsp;&lt;=&nbsp;0;</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;endcase</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp;&nbsp;&nbsp;end</span></strong></p>
+<p>
+	<strong>这两段的意思很简单，就是slv_reg0作为输出寄存器，slv_reg1作为输入寄存器（我们也可以把所有端口都放在一个寄存器里面）。我们可以通过操作这两个寄存器来获取数据，输出数据等。</strong></p>
+<p>
+	&nbsp;</p>
+<p>
+	<strong>这些修改完毕后，记得一定要点击Project-&gt;Rescan&nbsp;User&nbsp;Repositories，这样修改才能生效。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图19(1).png" style="width: 638px; height: 462px;"></strong></p>
+<p>
+	<strong>接下来和自带IP核的操作就是一样了——添加IP核-&gt;连接端口-&gt;修改ucf文件即可。</strong></p>
+<p>
+	&nbsp;</p>
+<h1>
+	<strong>SDK部分（BSP的创建）</strong></h1>
+<p>
+	<strong>由于我们存在一个自定义IP，这导致在建立BSP时，会增加一点操作。如果我们什么都不做，直接建立BSP，那么该BSP将不会包括自定义IP的驱动。其实，不用该驱动也行，我们直接通过读写相应寄存器的地址即可，如下：</strong></p>
+<p style="margin-left:21.0000pt;">
+	<strong><span style="color:#ff0000;">*((u32*)XPAR_CAM_TEST_0_BASEADDR)&nbsp;=&nbsp;0x00000001;</span></strong></p>
+<p>
+	<strong><span style="color:#ff0000;">&nbsp;&nbsp; *((u32*)XPAR_CAM_TEST_0_BASEADDR)&nbsp;=&nbsp;0x00000002;</span></strong></p>
+<p>
+	<strong>可以看到这样的缺点是阅读起来不够清晰，所以最好还是要利用API函数来进行操作，而要利用API函数，我们就必须要将自定义IP（即ov2643_ports）的驱动包含进BSP中（其实BSP中所包含的就是各个外设的驱动）。</strong></p>
+<p>
+	<strong>选择xilinx&nbsp;Tools-&gt;Repositories</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图20(1).png" style="width: 564px; height: 422px;"></strong></p>
+<p>
+	<strong>点击new，选择工程所在路径，点击OK。如果是改变了路径，还需要再点击一下Rescan&nbsp;Repositories.</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图21(1).png"></strong></p>
+<p>
+	<strong>完成上面这部后，之后就是建立bsp了，到了如下页面时，点击drivers。开始时，ov2643_ports_0那一栏的driver是generic，这时是没有相应驱动的。点击下拉，如果找到了我们自定义IP，就会有一个相应的ov2643_ports驱动，选择它，即可使用相应的API函数。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图22(1).png" style="width: 633px; height: 420px;"></strong></p>
+<p>
+	<strong>其他步骤和普通的工程建立一样，不再赘述。</strong></p>
+<p>
+	<strong>下面进入程序编写部分</strong></p>
+<h1>
+	<strong>程序编写</strong></h1>
+<p>
+	<strong>首先，ov2643_ports_0中pwdn以及rstn为输出，我们要为这两个输出赋值，既然我们添加了驱动，就直接使用相应的API函数，其用法可以查看bsp中的.mss文件。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图23(1).png" style="width: 634px; height: 57px;"></strong></p>
+<p>
+	<strong>接着就是使用AXI_IIC传输数据。其用法也通过查看.mss即可，需要提示一下的就是一定要充分理解各个API函数，之前就是用错了API函数，导致总是不能正确传输数据。</strong></p>
+<p style="text-align: center;">
+	<strong><img alt="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/截图24(1).png" style="width: 638px; height: 23px;"></strong></p>
+<h1>
+	<strong>总结</strong></h1>
+<p>
+	<strong>我们需要经常使用到自定义IP，因为不是所有接口xilinx都会有自带IP的。在自定义IP时需要注意两点，1就是修改verilog文件中的逻辑，使得我们可以通过操作寄存器来得到输入输出，2就是记得把驱动添加上，这样可以极大的方便我们的操作。</strong></p>			</div>
+		</div>
+		<div class="clearfix">
+					</div>
+				
+		<div class="blog-detail-action hide-owner-dom hide">
+			<a title="编辑" href="https://www.eefocus.com/blog/article/edit/id-320227"><i class="fa fa-pencil"></i> 编辑</a> &nbsp;|&nbsp;
+			<a title="删除" onclick="return window.confirm(&#39;您确定要删除吗？&#39;);" href="https://www.eefocus.com/blog/article/delete/id-320227"><i class="fa fa-minus"></i> 删除</a>
+		</div>
+	</div>
+
+	<div class="clearfix article-footer">
+		<div class="article-category pull-left">
+			<label>分类：</label><a title="EDK" href="https://www.eefocus.com/guoke1993102/blog/cate_506146_0.html">EDK</a>
+		</div>
+		<div class="pull-right article-320227">
+			浏览 ( <span class="visits-count">1083</span> ) |
+			评论 ( <span class="comment-count">2</span> )
+		</div>
+	</div>
+
+	<div class="relate" style="font-size:14px;margin: 20px 0;">
+		
+			<span>上一篇：</span><a title="sublime text 常用快捷键" href="https://www.eefocus.com/guoke1993102/blog/15-10/320820_eef6d.html">sublime text 常用快捷键</a>
+			&nbsp;|&nbsp;
+			<span>下一篇：</span><a title="EDK之路（一）——GPIO" href="https://www.eefocus.com/guoke1993102/blog/15-10/320167_447ab.html">EDK之路（一）——GPIO</a>
+				</div>
+
+	<div class="gg clearfix text-center" style="margin-top: 20px; margin-bottom: 20px;">
+		<!-- /* [id16] 与非网_底部矩形广告位（640×80） */ -->
+		<!--/*
+          *
+          * Revive Adserver Asynchronous JS Tag
+          * - Generated with Revive Adserver v3.2.4
+          *
+          */-->
+        <ins><a href="https://gg.eefocus.com/www/delivery/ck.php?oaparams=2__bannerid=12934__zoneid=16__cb=442bf4e9fc__oadest=%2F%2Fanalytics.supplyframe.cn%2Ftrackingservlet%2Ftrack%2F%3Faction%3DadClick_eefocus%26value2%3D12934%26value3%3D178%26zone%3D16%26extra%3Dh_crc%3D2625360942%7Csrv%3Dvm-gg-2%7Cox_v%3D2.8%7Ch_value%3Dcb963f8957d7f98e1566913867%7Cgeo%3DCN%26zone%3D16%26url%3Dhttps%253A%252F%252Fwww.infineon-autoeco.com%252FBBS%252FDetail%252F11826" target="_blank"><img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/ai(1).php" width="728" height="90" alt="" title="" border="0"></a><div id="beacon_442bf4e9fc" style="position: absolute; left: 0px; top: 0px; visibility: hidden;"><img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/lg(1).php" width="0" height="0" alt="" style="width: 0px; height: 0px;"></div><img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/saved_resource(1)" width="0" height="0" alt="" style="display:none"></ins>
+        <script async="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/asyncjs.php"></script>
+	</div>
+	<div class="clearfix">
+		<div class="comment-info text-center">
+			<span class="comment-title">以下网友评论只代表个人观点，不代表本网站的观点或立场</span>
+		</div>
+		<div id="pi-comment-lead" style=""><div class="panel panel-default" id="comments">
+    <div class="panel-heading">
+        全部评论 
+        <strong>(2)</strong>
+    </div>
+    <div class="panel-body">
+        <div class="comment-item" id="js-comment-form">
+    <textarea placeholder="请发表评论……" class="form-control js-comment-txt" rows="3"></textarea>
+    <div class="hide clearfix comment-form">
+        <form action="https://www.eefocus.com/comment-blog/post/submit/" method="POST" name="comment-post" id="comment-post">        <div class="form-group">
+            <textarea placeholder="请发表评论……" name="content" id="post-content" class="form-control control-word" data-size="0" rows="3"></textarea>
+        </div>
+        <input type="hidden" name="id" value=""><input type="hidden" name="root" value="2147493937"><input type="hidden" name="reply" value=""><input type="hidden" name="module" value=""><input type="hidden" name="type" value=""><input type="hidden" name="item" value=""><input type="hidden" name="redirect" value="https%3A%2F%2Fwww.eefocus.com%2Fguoke1993102%2Fblog%2F15-10%2F320227_5b449.html"><input name="markup" type="hidden" value="text"><img width="150" height="50" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/captcha.php" onclick="this.src=&#39;https://www.eefocus.com/script/captcha.php?id=e3c07286fc06512af9e71eadc7962556&amp;refresh=&#39;+Math.random()" style="cursor: pointer; vertical-align: middle;" alt="验证码图片" title="点击刷新验证码" id="e3c07286fc06512af9e71eadc7962556-image"><br><input name="captcha[id]" type="hidden" value="e3c07286fc06512af9e71eadc7962556"><input name="captcha[input]" type="text">        <div class="pull-right js-comment-btn">
+            <button class="btn btn-primary">
+                发表评论            </button>
+        </div>
+    </form></div>
+        <div class="hide well well-sm">
+        请<a href="https://www.eefocus.com/saml/index/login/?redirect=https%3A%2F%2Fwww.eefocus.com%2Fguoke1993102%2Fblog%2F15-10%2F320227_5b449.html">登录</a>后发表评论    </div>
+</div>
+<div class="comment-item hide" id="js-comment-form-reply" style="margin-top:8px;">
+	<div class="clearfix comment-form">
+		<form action="https://www.eefocus.com/comment-blog/post/submit/" method="POST" name="comment-post" id="comment-post">		<div class="form-group">
+			<textarea placeholder="请发表评论……" name="content" class="form-control control-word" data-size="0" rows="3"></textarea>
+		</div>
+		<input type="hidden" name="id" value=""><input type="hidden" name="root" value="2147493937"><input type="hidden" name="reply" value=""><input type="hidden" name="module" value=""><input type="hidden" name="type" value=""><input type="hidden" name="item" value=""><input type="hidden" name="redirect" value="https%3A%2F%2Fwww.eefocus.com%2Fguoke1993102%2Fblog%2F15-10%2F320227_5b449.html"><input name="markup" type="hidden" value="text"><img width="150" height="50" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/captcha(1).php" onclick="this.src=&#39;https://www.eefocus.com/script/captcha.php?id=9fd832c12ff313669cc026e60348692b&amp;refresh=&#39;+Math.random()" style="cursor: pointer; vertical-align: middle;" alt="验证码图片" title="点击刷新验证码" id="9fd832c12ff313669cc026e60348692b-image"><br><input name="captcha[id]" type="hidden" value="9fd832c12ff313669cc026e60348692b"><input name="captcha[input]" type="text">		<div class="pull-right js-comment-btn">
+			<button class="btn btn-primary">
+				回复			</button>
+		</div>
+	</form></div>
+		<div class="hide well well-sm">
+		请<a href="https://www.eefocus.com/saml/index/login/?redirect=https%3A%2F%2Fwww.eefocus.com%2Fguoke1993102%2Fblog%2F15-10%2F320227_5b449.html">登录</a>后发表评论	</div>
+</div>
+
+
+<div class="pi-status active js-video-status" data-id="">
+    <div class="pi-status-director"></div>
+</div>
+
+                        <div class="media comment-item" id="comment-54975">
+            <a class="pull-left" href="https://www.eefocus.com/" target="_blank">
+                <img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/normal.png" alt="" width="46">            </a>
+            <div class="media-body">
+                
+                    <div class="media-heading">
+                        <a href="https://www.eefocus.com/" target="_blank" style="margin-right: 20px;">访客</a>
+                        <span class="muted">2015-10-10 14:06:46</span>
+                    </div>
+                    <p>讲解的很详细
+                                    </p><div class="comment-operation">
+                                    </div>
+				<div class="media-reply"></div>
+
+															<div class="media comment-item">
+							<a class="pull-left" href="https://account.eefocus.com/user/profile/2027576" target="_blank">
+								<img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/e3585d95340eaf9002927bf5a7531c38(1).png" alt="" width="46">							</a>
+							<div class="media-body">
+								
+									<div class="media-heading">
+										<a href="https://account.eefocus.com/user/profile/2027576" target="_blank" style="margin-right: 20px;">guoke1993102</a>
+										<span class="muted">2015-10-10 20:02:58</span>
+									</div>
+									<p>谢谢支持
+																	</p><div class="comment-operation">
+																	</div>
+							</div>
+						</div>
+									            </div>
+        </div>
+                <a href="https://www.eefocus.com/comment-blog/list/2147493937" class="btn btn-default btn-block" style="margin-top: 10px;">
+            查看全部评论        </a>
+            </div>
+</div>
+</div>
+<script>
+    $.getJSON("/comment-blog/index/load/", {
+        uri: $(location).attr('href'),
+        time: new Date().getTime()
+    })
+    .done(function (data) {
+        if (data.content) {
+            var el = $('#pi-comment-lead');
+            el.show().html(data.content);
+        }
+    });
+</script>	</div>
+</div>
+
+<script>
+	var url = '/blog/homepage/stats/uid-2027576/ids-320227/do-5d653538d3dd7';
+	$.get(url, function(data) {
+		if (data.islogin == 1) {
+			$('.hide-owner-dom').removeClass('hide');
+		} else if (data.islogin == 2) {
+			//$('.link-my-blog').removeClass('hide').attr('href', data.link);
+			$('.show-owner-dom').removeClass('hide');
+		} else {
+			$('.show-owner-dom').removeClass('hide');
+		}
+		if (data.articles) {
+			$.each(data.articles, function(){
+				$(".article-" + this.id + " .visits-count").html(this.visits);
+				$(".article-" + this.id + " .comment-count").html(this.comment);
+			});
+		}
+	}, 'json');
+</script>
+							</div>
+												<!-- Module content ends -->
+
+						
+						
+																		
+						
+																							</div>
+                </div>
+            </div>
+        
+		
+        
+        <!-- Bottom foot zone -->
+            </div>
+
+    <!-- Footer: sitelink -->
+    <div class="footer pi-footer text-center">
+    	<script src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/qrcode.js.download"></script><script>eef_qrcode.init();</script>
+        <div class="container">
+            <div>
+	<a href="https://www.eefocus.com/corp/aboutEefocus.html" title="关于我们">关于我们</a> |
+	<a href="https://www.eefocus.com/corp/contact.html" title="联系我们">联系我们</a> |
+	<a href="https://www.eefocus.com/corp/EefocusHr.html" title="加入我们">加入我们</a> |
+	<a href="https://www.eefocus.com/corp/OnlineService.html" title="客户服务">客户服务</a> |
+	<a href="https://www.eefocus.com/corp/law.html" title="相关法律">相关法律</a> |
+	<a href="https://www.eefocus.com/corp/map.html" title="网站地图">网站地图</a> |
+	<a href="https://www.eefocus.com/corp/link.html=" 友情链接"="">友情链接</a> |
+	<a href="https://www.eefocus.com/feedback/" title="建议指正">建议指正</a> |
+	<a target="_blank" href="https://weibo.com/eefocus" class="fc" title="@与非网"><i class="wb-icon"></i>@与非网</a>
+</div>
+<div>
+	© 2010 - 2019 苏州灵动帧格网络科技有限公司 版权所有. <br>
+	ICP经营许可证 苏B2-20140176&nbsp;
+	<a href="http://www.miibeian.gov.cn/" target="_blank">苏ICP备14012660号-6</a><br>
+	<div style="width:300px;margin:0 auto; padding:5px 0;">
+		<a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32059002001874" style="display:inline-block;text-decoration:none;height:20px;line-height:20px;"><img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/331491.png" lazysrc="" style="float:left;"><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px;">苏公网安备 32059002001874号</p></a>
+	</div>
+</div>
+<style>
+.navbar-default .navbar-nav > li > a {padding:15px 32px;}
+</style>            <img src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/impression" style="display:none;">
+        </div>
+    </div><div id="js-api-qrcode-panel" class="api-qrcode-panel hidden-xxs api-qrcode-panel-show"><div id="js-api-qrcode-panel-inner" class="api-qrcode-panel-inner api-qrcode-panel-inner-show"><div class="api-qrcode-hd"><span id="js-api-qrcode-close" class="api-qrcode-close">×</span><div class="api-qrcode-title">官方微信</div></div><div class="api-qrcode-bd"><img class="api-qrcode-img" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/eefocus.jpg"><div class="api-qrcode-desc"></div></div></div></div>
+    <script async="" src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/asyncjs.php"></script>
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-1502657-1']);
+  _gaq.push(['_trackPageview']);
+  _gaq.push(['new._setAccount', 'UA-31944875-8']);
+  _gaq.push(['new._trackPageview']);
+  _gaq.push(['new._setAccount', 'UA-31944875-10']);
+  _gaq.push(['new._trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+<script type="text/javascript">
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F644a837956e91928688d4a74b9917d47' type='text/javascript'%3E%3C/script%3E"));
+</script><script src="./EKD之路（二）——自定义IP - 0 errors,0 warnings - 与非博客 - 与非网_files/h.js.download" type="text/javascript"></script>
+
+<!-- supplyframe tag tracking code -->
+<script type="text/javascript">
+  (function() {
+    window._pa = window._pa || {};
+    var pa = document.createElement('script'); pa.type = 'text/javascript'; pa.async = true;
+    pa.src = ('https:' == document.location.protocol ? 'https:' : 'http:') + "//tag.perfectaudience.com/serve/5499aafcda37a38c5f0000b5.js";
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(pa, s);
+  })();
+</script>
+<!-- end tracking code -->
+
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+<!-- track for url.eefocus.com for PI short links -->
+<script type="text/javascript">
+window.onload = function() {
+    var _pi = document.getElementsByClassName('widget-PI专区');
+    if(_pi) {
+        var _pi_a = _pi[0];
+        if(_pi_a) {
+            var _pageLinks = _pi[0].getElementsByTagName('a');
+            for(var i = 0; i <_pageLinks.length; i++) {
+                _pageLinks[i].onclick = function() {
+                    var url = this.toString() || '';
+                    if (url.indexOf('url.eefocus.com') != -1) {
+                        _gaq.push(['new._trackPageview',url]);
+                    }
+                }
+            }
+        }
+    }
+}
+</script>
+<!-- Google Tag Manager -->
+
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+
+})(window,document,'script','dataLayer','GTM-NNQBV37');</script>
+
+<!-- End Google Tag Manager -->
+<!-- Google Tag Manager (noscript) -->
+
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NNQBV37"
+
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<!-- End Google Tag Manager (noscript) -->
+
+
+
+</body></html>

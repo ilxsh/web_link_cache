@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>使用 apcupsd 实现 UPS 断电自动关机 &middot; LinuxTOY</title>
+        <link rel="stylesheet" href="https://linuxtoy.org/theme/css/main.css">
+        <!--[if lte IE 8]>
+        <link rel="stylesheet" href="https://linuxtoy.org/theme/css/grids-responsive-old-ie-min.css">
+        <link rel="stylesheet" href="https://linuxtoy.org/theme/css/side-menu-old-ie.css">
+        <![endif]-->
+        <!--[if gt IE 8]><!-->
+        <link rel="stylesheet" href="https://linuxtoy.org/theme/css/grids-responsive-min.css">
+        <link rel="stylesheet" href="https://linuxtoy.org/theme/css/side-menu.css">
+        <!--<![endif]-->
+        <link rel="stylesheet" href="https://linuxtoy.org/theme/css/pygments.css">
+        <link rel="shortcut icon" type="image/x-icon" href="https://linuxtoy.org/favicon.ico">
+        <link rel="alternate" type="application/atom+xml" href="https://linuxtoy.org/feeds/all.atom.xml" title="LinuxTOY Atom Feed">
+        <!--[if IE]>
+        <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+        <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+        <script>
+        (adsbygoogle = window.adsbygoogle || []).push({
+            google_ad_client: "ca-pub-9432205671574187",
+            enable_page_level_ads: true
+        });
+        </script>
+        <meta name="keywords" content="Linux, 自由软件, 新闻, 教程，提示">
+        <meta name="description" content="炎炎夏日，唯一比头顶的烈日更加恼人的便是停电了。空调没了不说，正在处理的数据或者游玩的游戏被意外中断，简直令人抓狂，这个时候一款可靠且智能的 UPS 显得尤其重要。">
+        <meta name="subject" content="Linux 新闻、应用及提示">
+
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:site" content="@linuxtoy">
+        <meta name="twitter:creator" content="@linuxtoy">
+        <meta name="twitter:url" content="https://linuxtoy.org/archives/howto-use-apcupsd-to-automatically-shutdown-system-during-outrage.html">
+        <meta name="twitter:title" content="使用 apcupsd 实现 UPS 断电自动关机">
+        <meta name="twitter:description" content="炎炎夏日，唯一比头顶的烈日更加恼人的便是停电了。空调没了不说，正在处理的数据或者游玩的游戏被意外中断，简直令人抓狂，这个时候一款可靠且智能的 UPS 显得尤其重要。">
+        <meta name="twitter:image" content="https://linuxtoy.org/logo.png">
+        <meta property="og:url" content="https://linuxtoy.org/archives/howto-use-apcupsd-to-automatically-shutdown-system-during-outrage.html">
+        <meta property="og:type" content="website">
+        <meta property="og:title" content="使用 apcupsd 实现 UPS 断电自动关机">
+        <meta property="og:image" content="https://linuxtoy.org/logo.png">
+        <meta property="og:description" content="炎炎夏日，唯一比头顶的烈日更加恼人的便是停电了。空调没了不说，正在处理的数据或者游玩的游戏被意外中断，简直令人抓狂，这个时候一款可靠且智能的 UPS 显得尤其重要。">
+        <meta property="og:site_name" content="LinuxTOY">
+        <meta property="article:author" content="lovenemesis">
+        <link rel="canonical" href="https://linuxtoy.org/archives/howto-use-apcupsd-to-automatically-shutdown-system-during-outrage.html">
+    </head>
+    <body>
+        <div id="layout" class="pure-g">
+            <div class="sidebar pure-u-1">
+                <div class="header">
+                    <a id="menuLink" class="menu-link" href="#menu"><span></span></a>
+                    <div id="menu" class="pure-menu">
+                        <a class="pure-menu-heading" href="https://linuxtoy.org/" title="LinuxTOY">LinuxTOY</a>
+                        <ul class="pure-menu-list">
+
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="https://linuxtoy.org/pages/all-archives.html" title="Archives">Archives</a>
+                            </li>
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="https://linuxtoy.org/pages/books.html" title="Books">Books</a>
+                            </li>
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="https://linuxtoy.org/pages/talks.html" title="Talks">Talks</a>
+                            </li>
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="https://linuxtoy.org/pages/download.html" title="Download">Download</a>
+                            </li>
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="https://linuxtoy.org/pages/faq.html" title="FAQs">FAQs</a>
+                            </li>
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="https://linuxtoy.org/pages/contact.html" title="Contact">Contact</a>
+                            </li>
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="https://linuxtoy.org/pages/donate.html" title="Donate">Donate</a>
+                            </li>
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="https://linuxtoy.org/pages/license.html" title="License">License</a>
+                            </li>
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="https://linuxtoy.org/pages/links.html" title="Links">Links</a>
+                            </li>
+
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="/pages/comments.html" title="Comments">Comments</a>
+                            </li>
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="/random.html" title="Random">Random</a>
+                            </li>
+                            <li class="pure-menu-item">
+                                <a class="pure-menu-link" href="/feeds/all.atom.xml" title="RSS">RSS</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+<div class="content pure-u-1 pure-u-md-3-5">
+    <div class="posts">
+        <section class="post">
+            <header class="post-header">
+                <h2 class="post-title">
+                    <a href="https://linuxtoy.org/archives/howto-use-apcupsd-to-automatically-shutdown-system-during-outrage.html" rel="bookmark" title="Permalink to 使用 apcupsd 实现 UPS 断电自动关机">使用 apcupsd 实现 UPS 断电自动关机</a>
+                </h2>
+                <p class="post-meta">
+                    2016-06-26
+                    &middot; By
+                    <a href="https://linuxtoy.org/author/lovenemesis.html">黑日白月</a>
+                    &middot; Posted in <a href="https://linuxtoy.org/category/tips.html">Tips</a>
+                    &middot; <a href="https://linuxtoy.org/archives/howto-use-apcupsd-to-automatically-shutdown-system-during-outrage.html#disqus_thread">0 Comments</a>
+                </p>
+            </header>
+            <div class="post-description">
+            <p>炎炎夏日，唯一比头顶的烈日更加恼人的便是停电了。空调没了不说，正在处理的数据或者游玩的游戏被意外中断，简直令人抓狂，这个时候一款可靠且智能的 UPS 显得尤其重要。</p>
+
+
+<p>由于所处的环境，在下的 PC 多年来配合 APC 的 <a href="https://detail.tmall.com/item.htm?id=37082783933">BK500Y UPS</a>，该款体积小巧，价格便宜，可谓是入门 APC 的首选，几次拯救了正在处(you)理(wan)的数(zhan)据(ju)。但对于长期处于无人值守状况下运行的 NAS 来说，单纯的报警声可就远远不够了，需要一款可以在断电或者其他电力异常条件下主动向操作系统发出关机指令的智能 UPS。</p>
+<p>经过浏览和比较，选定了 APC 家的 <a href="https://detail.tmall.com/item.htm?id=37079450807">BK650</a> UPS，该款 UPS 提供 400W 的输出，在断电的时候完全足够支撑 NAS 和路由器等低功耗设备的运行。</p>
+<h3>硬件安装</h3>
+<p>硬件上的安装没什么特别的，注意前端<strong>无需断路保护</strong>，也不要再连接电力猫等设备了。而将配送的串行-USB 线分别插入 UPS 和 NAS 设备的 USB 接口即可。BK650 还可以提供对于电话线路的保护，不过在下并没有用上。</p>
+<h3>软件配置</h3>
+<p>若是使用诸如 MyCloud Mirror 之类的现成 NAS 的话，可以在其 Web 管理页面找到 UPS 管理的选项，不过比较简单，也就是选定下在剩余多少电量时执行安全关机。</p>
+<p>若是使用 Raspberry Pi 等 SBC 自行组建的 NAS 的，则需要安装 <a href="http://www.apcupsd.org/">apcupsd</a> 这款软件包实现控制。</p>
+<p><code>apcupsd</code> 是个跨平台的开源 APC UPS 管理工具，其 Linux 版本被收录于各大 Linux 发行版的仓库中。它由社区爱好者维护开发，同时也收到 APC 官方的强力支持，项目还算活跃，截至目前最新版本为 3.14.14 。</p>
+<p>下面以基于 Debian Jessie 的 OSMC 版本为例说明下如何配置 <code>apcupsd</code>。</p>
+<ol>
+<li>安装： <code>sudo apt-get install apcupsd</code>，如果偏好图形化配置的话它还有 Web 和 GUI 工具可以安装</li>
+<li>用顺手的文本编辑器打开 <code>/etc/apcupsd/apcupsd.conf</code>，开始编辑</li>
+<li>在 <code>UPSNAME</code> 后面给个易懂的名字</li>
+<li>在 <code>UPSCABLE</code> 后指定为 <code>usb</code></li>
+<li>在 <code>UPSTYPE</code> 后更改为 <code>usb</code></li>
+<li>在 <code>DEVICE</code> 后为空，这样系统便会自动检测 USB 连接 UPS</li>
+<li>所必要的配置到此结束，可以保存退出了。如果感兴趣的话可以调整下面的关机触发条件，有剩余电量和剩余时间，默认为5%和3分钟。注意这里<strong>只要满足其中任一条件</strong>便会触发。</li>
+<li>用顺手的文本编辑器打开 <code>/etc/default/apcupsd</code>，将其中的 <code>ISCONFIGURED=</code> 置为 <code>yes</code>。</li>
+<li>尝试用 <code>sudo /sbin/apcaccess</code> 访问下 UPS，若能返回有效内容，代表配置正常</li>
+<li>使用 <code>systemctl</code> 开启 <code>apcupsd</code> 服务且将器设定为自动启动</li>
+</ol>
+<p>若想检测下是否有效，可以断开连接 UPS 的市电，看看 NAS 是否会自动关机。</p>
+<h3>总结</h3>
+<p>配合 apcupsd，APC BK650 除了可以实现自动关机以外，还能实现邮件通知管理员、广播给当前登录用户等各种实用的功能，相当灵活。欢迎诸位童鞋在分享下自己的使用经验和技巧。</p>
+            <p class="post-meta">
+                &num; 
+                Tagged as 
+                <a href="https://linuxtoy.org/tag/raspberrypi.html">raspberrypi</a>                &middot; 
+                Edit on <a href="https://github.com/LinuxTOY/linuxtoy.org/blob/master/content/howto-use-apcupsd-to-automatically-shutdown-system-during-outrage.md">GitHub</a>
+            </p>            <!-- <p class="post-meta">&num; <a href="http://resume.linuxtoy.org" title="若有兴趣，欢迎来电 :)">寻 GNU/Linux 相关工作，欢迎联系 :)</a></p> -->
+            </div>
+        </section>
+        <h4>Read More:</h4>
+        <div class="footer">
+        <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+        <ins class="adsbygoogle"
+            style="display:inline-block;width:336px;height:280px"
+            data-ad-client="ca-pub-9432205671574187"
+            data-ad-slot="6128171428"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+        </div>
+        <div class="pure-menu">
+            <ul class="pure-menu-list">
+                <li class="pure-menu-item">
+                    <a href="https://linuxtoy.org/archives/up-intel-x5-z8300-board-in-a-raspberry-pi2-form-fa.html">UP - 树莓派的尺寸，Atom Z8300 的芯</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="https://linuxtoy.org/archives/how-to-btsync-wdmycloud-nas.html">玩转 BTSync 与 WD MyCloud</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="https://linuxtoy.org/archives/raspberrypi-zero.html">Raspberry Pi Zero</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="https://linuxtoy.org/archives/howto-install-fedora25beta-on-termux-and-raspberrypi.html">在 Termux 与 Raspberry Pi 上安装 Fedora 25 Beta</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="https://linuxtoy.org/archives/picast-opensourced-chromecast-alternative.html">PiCast: Chromecast 开源替代品</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES * * */
+        var disqus_shortname = 'linuxtoy';
+        
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <div class="footer">
+        <p class="nav-left">
+            <a href="https://linuxtoy.org/archives/pick.html">
+                &laquo; Pick：从屏幕取色
+            </a>
+        </p>
+        <p class="nav-right">
+            <a href="https://linuxtoy.org/archives/arch-anywhere.html">
+                Arch-Anywhere：Arch Linux 自动化安装器 &raquo;
+            </a>
+        </p>
+    </div>
+</div>
+
+<div class="content pure-u-1 pure-u-md-1-5">
+    <div class="posts">
+ <a href="https://www.vultr.com/?ref=7123175">
+    <img src="https://www.vultr.com/media/banner_3.png" width="300" height="250">
+</a> 
+        <h1 class="content-subhead">Favorites</h1>
+        <div class="pure-menu">
+            <ul class="pure-menu-list">
+                <li class="pure-menu-item">
+                    <a href="https://selfhostedserver.com/">Selfhosted Server: 自动化架设服务器专家</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="https://booksea.app/">书海泛舟 &middot; 免费下载优质计算机图书</a>
+                </li>
+            </ul>
+        </div>
+
+        <h1 class="content-subhead">Popular Posts</h1>
+        <div class="pure-menu">
+            <ul class="pure-menu-list">
+                <li class="pure-menu-item">
+                    <a href="/archives/the-perfect-linux-desktop-arch-linux-2007-08-2-1.html">Archlinux 安装指南</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/unix-linux-command-cheat-sheet.html">Unix/Linux 命令速查表</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/efficient-editing-with-vim.html">高效率编辑器 Vim</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/wget-tips.html">Wget 使用技巧</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/playing-around-with-mplayer.html">玩转 MPlayer</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/awesome.html">平铺式窗口管理器 Awesome</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/3_free_antivirus_under_linux.html">Linux 下的桌面级杀毒软件</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/openbox-getting-started-guide.html">窗口管理器 Openbox 入门指南</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/minimalist-install-of-ubuntu.html">最小化安装 Ubuntu</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/5-desktop-environment-for-linux.html">你可能不知道的 Linux 桌面</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/the-7-deadly-linux-commands.html">7 个致命的 Linux 命令</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/lightweight-desktop-compare.html">轻量级桌面环境比较</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/zsh.html">终极 Shell——Zsh</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/6-of-the-best-free-linux-cad-software.html">高品质的免费 Linux CAD 程序</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/game_emulator_for_linux.html">Linux 下的几个游戏模拟器</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/history-command-usage-examples.html">History（历史）命令用法 15 例</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/the-best-tips-and-tricks-for-bash.html">bash 使用技巧</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a href="/archives/10-oreilly-books.html">10 本 O'Reilly 出版的免费好书</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+        </div>
+
+        <script src="https://linuxtoy.org/theme/js/zepto.min.js"></script>
+        <script src="https://linuxtoy.org/theme/js/ui.js"></script>
+        <script>
+            Zepto(function($){
+                $('table').addClass('pure-table pure-table-bordered');
+            });
+        </script>
+        <script id="dsq-count-scr" src="//linuxtoy.disqus.com/count.js" async></script>
+<script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-349050-2']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+</script>
+<script type="text/javascript">
+    (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+    })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+    _st('install','zWjtxRdA6ciZ7LBm4R4K','2.0.0');
+</script>
+    </body>
+</html>
