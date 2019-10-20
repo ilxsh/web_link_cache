@@ -1,0 +1,2658 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=10,IE=9,IE=8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+<title>Zynq构建SoC系统深度学习笔记-06-PL与CPU通过DDR3进行数据交互 - 奇手</title>
+<script>
+window._deel = {
+    name: '奇手',
+    url: 'https://www.veryarm.com/wp-content/themes/D9',
+    rss: 'https://www.veryarm.com/feed',
+    ajaxpager: '',
+    maillist: '',
+    maillistCode: '',
+    commenton: 0,
+    roll: [0,0],
+    tougaoContentmin: 200,
+    tougaoContentmax: 5000,
+    appkey: {
+    	tqq: '801494063',
+    	tsina: '1106777879',
+    	t163: '',
+    	tsohu: ''
+    }
+}
+</script>
+
+<link rel='dns-prefetch' href='//cdn.bootcss.com' />
+<link rel='dns-prefetch' href='//s.w.org' />
+<link rel='stylesheet' id='highlight-css'  href='https://cdn.bootcss.com/highlight.js/9.9.0/styles/github-gist.min.css?ver=4.9.10' type='text/css' media='all' />
+<link rel='stylesheet' id='highlight-custom-css'  href='https://www.veryarm.com/wp-content/themes/D9/css/github-gist.css?ver=4.9.10' type='text/css' media='all' />
+<link rel='stylesheet' id='style-css'  href='https://www.veryarm.com/wp-content/themes/D9/style.css?ver=3.0' type='text/css' media='all' />
+<link rel='stylesheet' id='wp-post-series-frontend-css'  href='https://www.veryarm.com/wp-content/plugins/wp-post-series/post-series.css?ver=4.9.10' type='text/css' media='all' />
+<link rel='https://api.w.org/' href='https://www.veryarm.com/wp-json/' />
+<link rel='prev' title='飞凌嵌入式调查问卷' href='https://www.veryarm.com/54519.html' />
+<link rel='next' title='cortex_m3_stm32嵌入式学习笔记（十七）：内部温度传感器（ADC采集）' href='https://www.veryarm.com/69844.html' />
+<link rel="canonical" href="https://www.veryarm.com/23895.html" />
+<link rel='shortlink' href='https://www.veryarm.com/?p=23895' />
+<link rel="alternate" type="application/json+oembed" href="https://www.veryarm.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.veryarm.com%2F23895.html" />
+<link rel="alternate" type="text/xml+oembed" href="https://www.veryarm.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.veryarm.com%2F23895.html&#038;format=xml" />
+<script type="text/javascript">
+(function(url){
+	if(/(?:Chrome\/26\.0\.1410\.63 Safari\/537\.31|WordfenceTestMonBot)/.test(navigator.userAgent)){ return; }
+	var addEvent = function(evt, handler) {
+		if (window.addEventListener) {
+			document.addEventListener(evt, handler, false);
+		} else if (window.attachEvent) {
+			document.attachEvent('on' + evt, handler);
+		}
+	};
+	var removeEvent = function(evt, handler) {
+		if (window.removeEventListener) {
+			document.removeEventListener(evt, handler, false);
+		} else if (window.detachEvent) {
+			document.detachEvent('on' + evt, handler);
+		}
+	};
+	var evts = 'contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop keydown keypress keyup mousedown mousemove mouseout mouseover mouseup mousewheel scroll'.split(' ');
+	var logHuman = function() {
+		if (window.wfLogHumanRan) { return; }
+		window.wfLogHumanRan = true;
+		var wfscr = document.createElement('script');
+		wfscr.type = 'text/javascript';
+		wfscr.async = true;
+		wfscr.src = url + '&r=' + Math.random();
+		(document.getElementsByTagName('head')[0]||document.getElementsByTagName('body')[0]).appendChild(wfscr);
+		for (var i = 0; i < evts.length; i++) {
+			removeEvent(evts[i], logHuman);
+		}
+	};
+	for (var i = 0; i < evts.length; i++) {
+		addEvent(evts[i], logHuman);
+	}
+})('//www.veryarm.com/?wordfence_lh=1&hid=8714C8A68E1DCCBABC245CC85C761C6E');
+</script><meta name="keywords" content="ARM, 嵌入式, ARM">
+<meta name="description" content="【声明】纯属原创，未经允许，禁止转载。  	0.引言  	通过之前的学习，CPU可以读写DDR3了，PL端的Master IP也可以读写DDR3了，那二者就可以以DDR3为纽带，实现大批量数据交互传输。  	这样的话，整个系统将会有两个master，即CPU和PL端的Master IP核，共同访问操作一个Slave端即DDR3 Controllor。  	本次实验就是构建一个这样的验证系统。当然了在真正的工程系统中，还需要设计良好的读写">
+<link rel="amphtml" href="https://www.veryarm.com/23895.html/amp"><link rel="miphtml" href="https://www.veryarm.com/23895.html/mip"><style>.article-content{font-size: 14px;}@media (max-width:640px){.article-content{font-size:16px}}</style><!--[if lt IE 9]><script src="https://www.veryarm.com/wp-content/themes/D9/js/html5.js"></script><![endif]-->
+</head>
+<body class="post-template-default single single-post postid-23895 single-format-standard">
+<div class="navbar-wrap">
+<div class="navbar">
+		<div class="logo"><a href="https://www.veryarm.com" title="奇手">奇手</a></div>
+		<ul class="nav">
+			<li id="menu-item-390" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-390"><a href="https://www.veryarm.com/news" target="_blank" rel="nofollow">信息</a></li>
+<li id="menu-item-351" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-351"><a href="https://www.veryarm.com/knowledge" target="_blank" rel="nofollow">知识经验</a></li>
+<li id="menu-item-1871" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-has-children menu-item-1871"><a href="https://www.veryarm.com/cross-tools" target="_blank" rel="nofollow">编译器下载</a>
+<ul class="sub-menu">
+	<li id="menu-item-1872" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1872"><a href="https://www.veryarm.com/arm-none-elf-gcc" target="_blank" rel="nofollow">arm-none-elf-gcc下载</a></li>
+	<li id="menu-item-1873" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1873"><a href="https://www.veryarm.com/arm-none-linux-gnueabi-gcc" target="_blank" rel="nofollow">arm-none-linux-gnueabi-gcc下载</a></li>
+	<li id="menu-item-1874" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1874"><a href="https://www.veryarm.com/arm-none-eabi-gcc" target="_blank" rel="nofollow">arm-none-eabi-gcc下载</a></li>
+	<li id="menu-item-1875" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1875"><a href="https://www.veryarm.com/arm-linux-gnueabihf-gcc" target="_blank" rel="nofollow">arm-linux-gnueabihf-gcc下载</a></li>
+</ul>
+</li>
+<li id="menu-item-439" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-439"><a href="https://www.veryarm.com/app" target="_blank" rel="nofollow">移植</a></li>
+<li id="menu-item-1295" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-has-children menu-item-1295"><a href="https://www.veryarm.com/study" target="_blank" rel="nofollow">教程</a>
+<ul class="sub-menu">
+	<li id="menu-item-1455" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1455"><a href="https://www.veryarm.com/videos" target="_blank" rel="nofollow">视频教程</a></li>
+</ul>
+</li>
+<li id="menu-item-1841" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1841"><a href="https://www.veryarm.com/about" target="_blank" rel="nofollow">关于</a></li>
+		</ul><!--
+		<div class="menu pull-right">
+			<form method="get" class="dropdown search-form" action="https://www.veryarm.com/" >
+				<input class="search-input" name="s" type="text" placeholder="输入关键字搜索" x-webkit-speech=""><input class="btn btn-success search-submit" type="submit" value="搜索">
+				<ul class="dropdown-menu search-suggest"></ul>
+			</form>
+			<div class="btn-group pull-left">
+				<button class="btn btn-primary" data-toggle="modal" data-target="#feed">订阅</button>
+							</div>
+		</div>-->
+</div>
+</div>
+
+<header class="header"><!--
+	<div class="speedbar">
+				<div class="toptip"><strong class="text-success">最新消息：</strong>站长QQ：<strong>2956311905</strong>，欢迎交流~</div>
+	</div>-->
+</header>
+<section class="container">
+	<div class="content-wrap">
+	<div class="content">
+		<div class="breadcrumbs">你的位置：<a href="https://www.veryarm.com">奇手</a> <small>></small> <a href="https://www.veryarm.com/arm">ARM</a> <small>></small> <span class="muted">Zynq构建SoC系统深度学习笔记-06-PL与CPU通过DDR3进行数据交互</span></div>
+				<header class="article-header">
+			<h1 class="article-title"><a href="https://www.veryarm.com/23895.html">Zynq构建SoC系统深度学习笔记-06-PL与CPU通过DDR3进行数据交互</a></h1>
+			<div class="meta">
+				<span class="muted"><a href="https://www.veryarm.com/arm"><i class="icon-list-alt icon12"></i> ARM</a></span>								<time class="muted"><i class="ico icon-time icon12"></i> 9个月前 (12-17)</time>
+				<span class="muted"><i class="ico icon-eye-open icon12"></i> 146浏览</span>
+											</div>
+		</header>
+
+		<div class="banner banner-post"><script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<ins class="adsbygoogle"
+     style="display:block; text-align:center;"
+     data-ad-layout="in-article"
+     data-ad-format="fluid"
+     data-ad-client="ca-pub-1963104644603965"
+     data-ad-slot="7469217754"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script></div>		
+		<article class="article-content">
+			<p><p>
+	<em style="box-sizing: border-box; color: rgb(85, 85, 85); font-family: 微软雅黑, Tahoma, 'Helvetica Neue', Helvetica, Arial; font-size: 14px; line-height: 28px; background-color: rgb(255, 255, 255);"><u style="box-sizing: border-box;"><strong style="box-sizing: border-box;">【声明】<em style="box-sizing: border-box;"><u style="box-sizing: border-box;"><strong style="box-sizing: border-box;">纯属原创，</strong></u></em>未经允许，禁止转载。</strong></u></em></p>
+<p>
+	<strong>0.</strong><strong>引言</strong></p>
+<p>
+	通过之前的学习，CPU可以读写DDR3了，PL端的Master IP也可以读写DDR3了，那二者就可以以DDR3为纽带，实现大批量数据交互传输。</p>
+<p>
+	这样的话，整个系统将会有两个master，即CPU和PL端的Master IP核，共同访问操作一个Slave端即DDR3 Controllor。</p>
+<p>
+	本次实验就是构建一个这样的验证系统。当然了在真正的工程系统中，还需要设计良好的读写同步，防止竞争冲突，这就属于系统设计层面的了，本实验依靠按钮触发有用户来进行读写同步。</p>
+<p>
+	&nbsp;</p>
+<p>
+	<strong>1.</strong><strong>工程规划</strong></p>
+<p>
+	本实验规划设计图如下所示：</p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084438q4P1v.jpeg" target="_blank" rel="nofollow"><img alt="image001.jpg" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084438q4P1v.jpeg" width="540" /></a></p>
+<p>
+	在zynq子系统中，配置UART硬核，DDR3 Controllor硬核，GP AXI Master Port和GP AXI Slave Port硬核。</p>
+<p>
+	在PL端，设计一个Master IP核，用来实现对DDR3的读写操作。</p>
+<p>
+	在PL端，设计一个Slave IP核，检测外部的触发按键，如有按键按下，与CPU进行数据交互，从而触发CPU对DDR3进行读写操作。从而实现同步，避免竞争冲突，更好的方法是Slave IP产生中断（暂时还没研究如何实现），或者Zynq子系统使用MIO管脚直接采样判决（开发板没有连接到按键上）</p>
+<p>
+	业务流程设计：</p>
+<p>
+	按下触发按键A，PL端的Master IP核向地址0x0080_0000~0x0080_0010地址空间写入一组32bits的数据。</p>
+<p>
+	按下触发按钮1，CPU去依次读取0x0080_0000~0x0080_0010地址空间的数据，然后通过UART格式化输出显示。</p>
+<p>
+	从而判断数据流&ldquo;PL端的Master IP核&rdquo;--&gt;&ldquo;DDR3&rdquo;--&gt;&ldquo;CPU&rdquo;数据是否正确。</p>
+<p>
+	按下触发按钮2，PL端向0x0090_0000地址写入一个8bits数据。</p>
+<p>
+	按下触发按键B，PL端的Master IP核从地址0x0090_0000读取32bits数据，将低8bits驱动到LED灯上显示。</p>
+<p>
+	从而判断数据流&ldquo;CPU&rdquo;--&gt;&ldquo;DDR3&rdquo;--&gt;&ldquo;PL端的Master IP核&rdquo;数据是否正确。</p>
+<p>
+	&nbsp;</p>
+<p>
+	<strong>2.</strong><strong>设计过程</strong></p>
+<p>
+	由于之前已经研究清除各种技术点，本实验只是功能实现，因此不再复述。具体可以间附件中的工程源码。</p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084439CSOx7.png" target="_blank" rel="nofollow"><img alt="image002.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084439CSOx7.png" width="540" /></a></p>
+<p>
+	Block Design系统集成时对于内存空间的划分设定。</p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/201811290844398FnWM.png" target="_blank" rel="nofollow"><img alt="image004.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/201811290844398FnWM.png" width="540" /></a></p>
+<p>
+	<strong>经过实验测试，最后得到的结论是：</strong><strong>PL</strong><strong>作为</strong><strong>Master</strong><strong>模块，通过</strong><strong>GP AXI Slave Port</strong><strong>硬核访问由</strong><strong>PS</strong><strong>控制的片外</strong><strong>DDR</strong><strong>内存空间时，访问的地址与</strong><strong>CPU</strong><strong>中访问的地址是一致的</strong><strong>，范围为</strong><strong>0x0010_0000~0x1FFF_FFFF</strong><strong>，并不存在内存变换的问题。</strong></p>
+<p>
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/201811290844390KVfW.png" style="text-align: center;" target="_blank" rel="nofollow"><img alt="image006.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/201811290844390KVfW.png" width="540" /></a></p>
+<p>
+	<strong>但是注意：在</strong><strong>DDR</strong><strong>的低位空间由于被</strong><strong>c</strong><strong>语言编译的嵌入式程序征用，一定不要用</strong><strong>PL</strong><strong>写入该端地址，否者嵌入式软件会跑飞的。</strong></p>
+<p>
+	编译后嵌入式软件的内存利用信息，可以查看MemDDR.elf文件，该文件的详细信息参见附件1。下面给出部分截图</p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/201811290844396mDOa.png" target="_blank" rel="nofollow"><img alt="image008.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/201811290844396mDOa.png" width="475" /></a></p>
+<p>
+	<strong>可以看出，在本实验的工程中，嵌入式程序的内存空间均小于</strong><strong>0x0010_0000</strong><strong>的范围以内。</strong></p>
+<p>
+	<strong>HelloWord</strong><strong>示例工程，编译程序的内存地址大于</strong><strong>0x0010_0000</strong></p>
+<p>
+	<strong>MemoryTest</strong><strong>的示例工程，编译程序的内存地址小于</strong><strong>0x0010_0000</strong></p>
+<p>
+	<strong>原因待查，可能和后面分析的</strong><strong>platform.c</strong><strong>文件的配置相关。</strong></p>
+<p>
+	<strong>这个可能会影响大工程时的使用，需要研究透了。</strong></p>
+<p>
+	&nbsp;</p>
+<p>
+	<strong>3.</strong><strong>实验结果</strong></p>
+<p>
+	最后实验结果证明，完成了设计要求。</p>
+<p>
+	<strong>（</strong><strong>1</strong><strong>）串口输出信息：</strong></p>
+<p>
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084439rz4mW.png" style="text-align: center;" target="_blank" rel="nofollow"><img alt="image010.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084439rz4mW.png" width="540" /></a></p>
+<p>
+	<strong>（</strong><strong>2</strong><strong>）</strong><strong>LED</strong><strong>灯显示</strong></p>
+<p>
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084439a1Oo3.jpeg" style="text-align: center;" target="_blank" rel="nofollow"><img alt="image012.jpg" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084439a1Oo3.jpeg" width="540" /></a></p>
+<p>
+	上图显示的就是CPU写入DDR的数据0xBB00_FFE8的底8bits。</p>
+<p>
+	&nbsp;</p>
+<p>
+	&nbsp;</p>
+<p>
+	<strong>4.</strong><strong>调试时的经验</strong></p>
+<p>
+	PL端的Slave IP的核心编码见附件1.</p>
+<p>
+	PL端的Master IP的核心编码见附件2.</p>
+<p>
+	SDK端c语言嵌入式程序的代码见附录3.</p>
+<p>
+	&nbsp;</p>
+<p>
+	为了调试这个程序，我花废了整整4天。遇到几个问题，这里记录如下：</p>
+<p>
+	<strong>（</strong><strong>1</strong><strong>）内存映射</strong></p>
+<p>
+	最开始创建Application时，选用的工程模版是HelloWord，出现的现象如下：</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; PL下载完毕后，PS再下载完毕后，</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; 此时，如果先触发按钮，让PL向DDR的内存0x0080_0000，0x0080_0004，0x0080_0008写入三组32bits的数据，此时应该能够写入成功。</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; 而后，让CPU响应PL端slave的按钮触发，读取这3个地址的数据后，能够正常读出PL写入的数据。</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; 但是，再触发按钮，让PL向DDR的内存0x0080_0000，0x0080_0004，0x0080_0008写入新的数据后，</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; 再让CPU读取这3个地址的数据，读出的数据并不发生变。</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; 但是，此时如果只是重新下载PS端的程序，由于开发板没有断电，DDR内的数据不会发生变化，</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; Main重新执行后，直接读取ddr中的数据，会发现，读出的数是后来写入的数。</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; 也就是说，PL端对DDR的写入操作是正常的，但是PS端对DDR内存地址的读取是有问题的。</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; 利用PS端向DDR的内存中的0x0080_0000，0x0080_0004，0x0080_0008三个地址写入数据后，再读取，可以发现读出的数是写入的数</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; 之后在PS端向DDR的内存中写入数据后，再此重新下载PS端的程序，由于开发板没有断电，DDR中应该保存的是前一次PS端写入的数据</p>
+<p style="margin-left:42.0pt;">
+	&Oslash;&nbsp; 但是实验发现，PS端程序重新写入后，直接读取DDR内存数据，发现并不是PS端写入的数据，而是之前PL端写入的数据。</p>
+<p style="margin-left:21.0pt;">
+	对于上述现象，分析描述如下：</p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084440X9tkb.jpeg" target="_blank" rel="nofollow"><img alt="image014.jpg" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084440X9tkb.jpeg" width="435" /></a></p>
+<p>
+	后来发现，当创建Application时，选用MemoryTest后，上述现象就解决了。</p>
+<p>
+	分析两个工程，发现main函数中均调用了platform.c文件中的init_platform()进行初始化配置，两个工程的初始化配置文件源码分别为附录5和附录6</p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084440At2m1.png" target="_blank" rel="nofollow"><img alt="image015.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084440At2m1.png" width="540" /></a></p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084440KEeCq.png" target="_blank" rel="nofollow"><img alt="image017.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084440KEeCq.png" width="540" /></a></p>
+<p>
+	<strong>从上图可以看出，这个问题就在于</strong><strong>DCache</strong><strong>！这是个什么鬼？？有空再研究吧。</strong></p>
+<p>
+	&nbsp;</p>
+<p>
+	<strong>（</strong><strong>2</strong><strong>）</strong><strong>AXI</strong><strong>总线中的</strong><strong>ARREADY</strong><strong>信号线电平</strong></p>
+<p>
+	在之前的学习笔记中，构建了PL端主机模块和从机模块直连的系统，以及二者之间加上总线控制器的系统</p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/201811290844403qJyZ.png" target="_blank" rel="nofollow"><img alt="image019.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/201811290844403qJyZ.png" width="540" /></a></p>
+<p>
+	对应的仿真结果如下：</p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084440n9cUe.png" target="_blank" rel="nofollow"><img alt="image021.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084440n9cUe.png" width="540" /></a></p>
+<p>
+	可以看出AXI_ARREADY总线上，通常为低电平，只有响应时为高电平。</p>
+<p>
+	但是PL端向DDR写入数据时，在调试的过程中发现AXI_ARREADY信号为高电平，翻看之前的学习笔记，发现下图。</p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084441gcg6K.png" target="_blank" rel="nofollow"><img alt="image023.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084441gcg6K.png" width="540" /></a></p>
+<p>
+	在标准中，为定义AXI_ARREADY信号空闲时的电平。</p>
+<p>
+	将总线信号接出，用示波器观察如下：</p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084441URi9j.png" target="_blank" rel="nofollow"><img alt="image025.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084441URi9j.png" width="540" /></a></p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084441hVxiS.png" target="_blank" rel="nofollow"><img alt="image027.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084441hVxiS.png" width="540" /></a></p>
+<p style="text-align:center;">
+	<a href="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084441o10Be.png" target="_blank" rel="nofollow"><img alt="image029.png" src="https://www.veryarm.com/wp-content/uploads/images/201811/20181129084441o10Be.png" width="540" /></a></p>
+<div>
+<p>
+		可以看出加上Zynq后，总线控制器输出的ARREADY信号始终为高电平，原因不明。编写PL端逻辑时需要注意该问题。</p>
+<p>
+		另外RVALID和RREADY信号的宽窄关系与原理图不同，原因待查。</p>
+<p>
+		&nbsp;</p>
+<p>
+		<strong>【</strong><strong>The End</strong><strong>】</strong></p>
+<p>
+		&nbsp;</p>
+<p>
+		&nbsp;</p>
+</div>
+<p style="text-align:center;">
+	&nbsp;</p>
+<div>
+<p>
+		<strong>附录</strong><strong>1</strong><strong>：</strong><strong>AzIP_Slave_Ex6_v1_0_S00_AXI.v</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		`timescale 1 ns <strong>/</strong> 1 ps</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; <strong>module</strong> AzIP_Slave_Ex6_v1_0_S00_AXI</p>
+<p align="left">
+		&nbsp; <strong>(</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // Users to add ports here</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> W_IN_KEY_1<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> W_IN_KEY_2<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // User ports ends</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // Do not modify the ports beyond this line</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Global Signal -------------------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_ACLK<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_ARESETN<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Write Address Channel -----------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> <strong>[</strong>2 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp; S_AXI_AWADDR<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> <strong>[</strong>2 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp; S_AXI_AWPROT<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_AWVALID<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_AWREADY<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Write data Channel -------------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> <strong>[</strong>31 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp; S_AXI_WDATA<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> <strong>[</strong>3 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp; S_AXI_WSTRB<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_WVALID<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_WREADY<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Write response Channel ----------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> <strong>[</strong>1 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp; S_AXI_BRESP<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_BVALID<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_BREADY<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Read address Channel ------------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> <strong>[</strong>2 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp; S_AXI_ARADDR<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> <strong>[</strong>2 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp; S_AXI_ARPROT<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_ARVALID<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_ARREADY<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Read Data Channel ---------------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> <strong>[</strong>31 <strong>:</strong> 0<strong>]</strong>&nbsp; S_AXI_RDATA<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> <strong>[</strong>1 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp; S_AXI_RRESP<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_RVALID<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S_AXI_RREADY</p>
+<p align="left">
+		&nbsp; <strong>);</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // AXI4LITE signals</p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>2 <strong>:</strong> 0<strong>]</strong> &nbsp;&nbsp;&nbsp;axi_awaddr<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_awready<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_wready<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>1 <strong>:</strong> 0<strong>]</strong> &nbsp;&nbsp;&nbsp;axi_bresp<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_bvalid<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>2 <strong>:</strong> 0<strong>]</strong> &nbsp;&nbsp;&nbsp;axi_araddr<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_arready<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>31 <strong>:</strong> 0<strong>]</strong>&nbsp; axi_rdata<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>1 <strong>:</strong> 0<strong>]</strong> &nbsp;&nbsp;&nbsp;axi_rresp<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rvalid<strong>;</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // I/O Connections assignments</p>
+<p align="left">
+		&nbsp; <strong>assign</strong> S_AXI_AWREADY&nbsp; <strong>=</strong> axi_awready<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> S_AXI_WREADY&nbsp;&nbsp; <strong>=</strong> axi_wready<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> S_AXI_BRESP&nbsp;&nbsp;&nbsp; <strong>=</strong> axi_bresp<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> S_AXI_BVALID&nbsp;&nbsp; <strong>=</strong> axi_bvalid<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> S_AXI_ARREADY&nbsp; <strong>=</strong> axi_arready<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> S_AXI_RDATA&nbsp;&nbsp;&nbsp; <strong>=</strong> axi_rdata<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> S_AXI_RRESP&nbsp;&nbsp;&nbsp; <strong>=</strong> axi_rresp<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> S_AXI_RVALID&nbsp;&nbsp; <strong>=</strong> axi_rvalid<strong>;</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //----------------------------------------------</p>
+<p align="left">
+		&nbsp; //-- Signals for user logic register space example</p>
+<p align="left">
+		&nbsp; //------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-- Number of Slave Registers 4</p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>31<strong>:</strong>0<strong>]</strong>&nbsp; slv_reg0<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>31<strong>:</strong>0<strong>]</strong>&nbsp; slv_reg1<strong>;</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; <strong>reg</strong> r_pre_in_key_1<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong> r_pre_in_key_2<strong>;</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // ------------- Write Address Channel -----------------</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong> <strong>posedge</strong> S_AXI_ACLK <strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong> S_AXI_ARESETN <strong>==</strong> 1&#39;b0 <strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awready <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong>&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(~</strong>axi_awready <strong>&amp;&amp;</strong> S_AXI_AWVALID <strong>&amp;&amp;</strong> S_AXI_WVALID<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awready <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awready <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong>&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // 采样写地址</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong> <strong>posedge</strong> S_AXI_ACLK <strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>if</strong> <strong>(</strong> S_AXI_ARESETN <strong>==</strong> 1&#39;b0 <strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awaddr <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>else</strong> <strong>begin</strong>&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(~</strong>axi_awready <strong>&amp;&amp;</strong> S_AXI_AWVALID <strong>&amp;&amp;</strong> S_AXI_WVALID<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Write Address latching</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awaddr <strong>&lt;=</strong> S_AXI_AWADDR<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // ------------- Write data Channel -------------------</p>
+<p align="left">
+		&nbsp; // 本模块逻辑上是只读模块，不接受从CPU写入的数据，根据按键状态置位寄存器</p>
+<p align="left">
+		&nbsp;&nbsp; <strong>always</strong> <strong>@(</strong> <strong>posedge</strong> S_AXI_ACLK <strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>if</strong> <strong>(</strong> S_AXI_ARESETN <strong>==</strong> 1&#39;b0 <strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_wready <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>else</strong> <strong>begin</strong>&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(~</strong>axi_wready <strong>&amp;&amp;</strong> S_AXI_WVALID <strong>&amp;&amp;</strong> S_AXI_AWVALID<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_wready <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_wready <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // ------------- Write response Channel ----------------</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong> <strong>posedge</strong> S_AXI_ACLK <strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>if</strong> <strong>(</strong> S_AXI_ARESETN <strong>==</strong> 1&#39;b0 <strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;axi_bvalid&nbsp; <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;axi_bresp&nbsp;&nbsp; <strong>&lt;=</strong> 2&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>end</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>else</strong> <strong>begin</strong>&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>axi_awready <strong>&amp;&amp;</strong> S_AXI_AWVALID <strong>&amp;&amp;</strong> <strong>~</strong>axi_bvalid <strong>&amp;&amp;</strong> axi_wready <strong>&amp;&amp;</strong> S_AXI_WVALID<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_bvalid <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_bresp&nbsp; <strong>&lt;=</strong> 2&#39;b0<strong>;</strong> // &#39;OKAY&#39; response</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// work error responses in future</p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;<strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>S_AXI_BREADY <strong>&amp;&amp;</strong> axi_bvalid<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_bvalid <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong>&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // ------------- Read address Channel ------------------</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong> <strong>posedge</strong> S_AXI_ACLK <strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>if</strong> <strong>(</strong> S_AXI_ARESETN <strong>==</strong> 1&#39;b0 <strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_arready <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_araddr&nbsp; <strong>&lt;=</strong> 32&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>else</strong> <strong>begin</strong>&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(~</strong>axi_arready <strong>&amp;&amp;</strong> S_AXI_ARVALID<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_arready <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_araddr&nbsp; <strong>&lt;=</strong> S_AXI_ARADDR<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_arready <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;<strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // ------------- Read Data Channel ---------------------</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong> <strong>posedge</strong> S_AXI_ACLK <strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>if</strong> <strong>(</strong> S_AXI_ARESETN <strong>==</strong> 1&#39;b0 <strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rvalid <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rresp&nbsp; <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>axi_arready <strong>&amp;&amp;</strong> S_AXI_ARVALID <strong>&amp;&amp;</strong> <strong>~</strong>axi_rvalid<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rvalid <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rresp&nbsp; <strong>&lt;=</strong> 2&#39;b0<strong>;</strong> // &#39;OKAY&#39; response</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>axi_rvalid <strong>&amp;&amp;</strong> S_AXI_RREADY<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rvalid <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // ------------- user logic ---------------------</p>
+<p align="left">
+		&nbsp; // ------------- user logic ---------------------</p>
+<p align="left">
+		&nbsp; // ------------- user logic ---------------------</p>
+<p align="left">
+		&nbsp; // 检测按键状态，按键操作为正脉冲</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong> <strong>posedge</strong> S_AXI_ACLK <strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong> S_AXI_ARESETN <strong>==</strong> 1&#39;b0 <strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r_pre_in_key_1 <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r_pre_in_key_2 <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r_pre_in_key_1 <strong>&lt;=</strong> W_IN_KEY_1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r_pre_in_key_2 <strong>&lt;=</strong> W_IN_KEY_2<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // 检测按键操作的下降沿，置位寄存器</p>
+<p align="left">
+		&nbsp;&nbsp;// 只有在寄存器数据被CPU读取之后，才清零</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong> <strong>posedge</strong> S_AXI_ACLK <strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong> S_AXI_ARESETN <strong>==</strong> 1&#39;b0 <strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; slv_reg0&nbsp;&nbsp; <strong>&lt;=</strong> 32&#39;h0000_0000<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; slv_reg1&nbsp;&nbsp; <strong>&lt;=</strong> 32&#39;h0000_0000<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rdata&nbsp; <strong>&lt;=</strong> 32&#39;h0000_0000<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong> axi_arready <strong>&amp;</strong> S_AXI_ARVALID <strong>&amp;</strong> <strong>~</strong>axi_rvalid <strong>)</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>axi_araddr<strong>[</strong>2<strong>]==</strong>1&#39;b0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rdata <strong>&lt;=</strong> slv_reg0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; slv_reg0&nbsp; <strong>&lt;=</strong> 32&#39;h0000_0000<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rdata <strong>&lt;=</strong> slv_reg1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; slv_reg1&nbsp; <strong>&lt;=</strong> 32&#39;h0000_0000<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>r_pre_in_key_1 <strong>&amp;&amp;</strong> <strong>~</strong>W_IN_KEY_1<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; slv_reg0 <strong>&lt;=</strong> 32&#39;h0000_1234<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>r_pre_in_key_2 <strong>&amp;&amp;</strong> <strong>~</strong>W_IN_KEY_2<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; slv_reg1 <strong>&lt;=</strong> 32&#39;h0000_ABCD<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		<strong>endmodule</strong></p>
+<p>
+		&nbsp;</p>
+<p>
+		&nbsp;</p>
+</div>
+<p style="text-align:center;">
+	&nbsp;</p>
+<div>
+<p>
+		&nbsp;</p>
+<p>
+		<strong>附录</strong><strong>2</strong><strong>：</strong><strong>AzIP_Master_Ex6_v1_0_M00_AXI.v</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		`timescale 1 ns <strong>/</strong> 1 ps</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; <strong>module</strong> AzIP_Master_Ex6_v1_0_M00_AXI <strong>#</strong></p>
+<p align="left">
+		&nbsp; <strong>(</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // The master requires a target slave base address.</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // The master will initiate read and write transactions on the slave with base address specified here as a parameter.</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>parameter</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C_WRITE_BASE_ADDR&nbsp; <strong>=</strong> 32&#39;h0080_0000<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // Transaction number is the number of write</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // and read transactions the master will perform as a part of this example memory test.</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>parameter</strong> <strong>integer</strong> C_WRITE_NUM&nbsp; <strong>=</strong> 4<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // The master will start generating data from the C_WRITE_START_DATA_VALUE value</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>parameter</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C_WRITE_START_DATA_VALUE&nbsp; <strong>=</strong> 32&#39;hAA000000<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>parameter</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C_READ_BASE_ADDR&nbsp; <strong>=</strong> 32&#39;h0090_0000<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>parameter</strong> <strong>integer</strong> C_READ_MODEL <strong>=</strong> 0<strong>,</strong>&nbsp;&nbsp; // 定义触发读取的模式，</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 0：每次读取都是相同的地址C_READ_BASE_ADDR</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 非0: 每次读取都是相同的地址为前一次地址+4个字节</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>parameter</strong> <strong>integer</strong> C_READ_NUM&nbsp; <strong>=</strong> 1&nbsp;&nbsp;&nbsp; // 一次按键触发，发起几次读操作</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp; <strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>(</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // Users to add ports here</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> W_IN_KEY_1<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> W_IN_KEY_2<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> <strong>[</strong>7<strong>:</strong>0<strong>]</strong> W_OUT_DATA<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> W_OUT_W_DONE<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> W_OUT_R_DONE<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Global Signal -----------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp; M_AXI_ACLK<strong>,</strong>&nbsp;&nbsp;&nbsp;&nbsp; // AXI clock signal</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp; M_AXI_ARESETN<strong>,</strong>&nbsp; // AXI active low reset signal</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Write Address Channel -----------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> <strong>[</strong>31 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_AWADDR<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> <strong>[</strong>2 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_AWPROT<strong>,</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>output</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_AWVALID<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_AWREADY<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Write data Channel -------------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> <strong>[</strong>31 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_WDATA<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> <strong>[</strong>3 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_WSTRB<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_WVALID<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_WREADY<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Write response Channel ----------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> <strong>[</strong>1 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_BRESP<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_BVALID<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M_AXI_BREADY<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Read address Channel ------------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> <strong>[</strong>31 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_ARADDR<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong> <strong>[</strong>2 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_ARPROT<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_ARVALID<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M_AXI_ARREADY<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; // ------------- Read Data Channel ---------------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> <strong>[</strong>31 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_RDATA<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong> <strong>[</strong>1 <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_RRESP<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>input</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_RVALID<strong>,</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>output</strong> <strong>wire</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; M_AXI_RREADY</p>
+<p align="left">
+		&nbsp; <strong>);</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; // function called clogb2 that returns an integer which has the</p>
+<p align="left">
+		&nbsp; // value of the ceiling of the log base 2</p>
+<p align="left">
+		&nbsp; <strong>function</strong> <strong>integer</strong> clogb2 <strong>(</strong><strong>input</strong> <strong>integer</strong> bit_depth<strong>);</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>for</strong><strong>(</strong>clogb2<strong>=</strong>0<strong>;</strong> bit_depth<strong>&gt;</strong>0<strong>;</strong> clogb2<strong>=</strong>clogb2<strong>+</strong>1<strong>)</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bit_depth <strong>=</strong> bit_depth <strong>&gt;&gt;</strong> 1<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>endfunction</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // TRANS_NUM_BITS is the width of the index counter for</p>
+<p align="left">
+		&nbsp; // number of write or read transaction.</p>
+<p align="left">
+		&nbsp; &nbsp;<strong>localparam</strong> <strong>integer</strong> TRANS_NUM_BITS <strong>=</strong> clogb2<strong>(</strong>C_WRITE_NUM<strong>-</strong>1<strong>);</strong></p>
+<p align="left">
+		&nbsp; &nbsp;<strong>localparam</strong> <strong>integer</strong> READ_NUM_BITS&nbsp; <strong>=</strong> clogb2<strong>(</strong>C_READ_NUM<strong>-</strong>1<strong>);</strong></p>
+<p align="left">
+		&nbsp; &nbsp;</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // Example State machine to initialize counter, initialize write transactions,</p>
+<p align="left">
+		&nbsp; // initialize read transactions and comparison of read data with the</p>
+<p align="left">
+		&nbsp; // written data words.</p>
+<p align="left">
+		&nbsp; <strong>parameter</strong> <strong>[</strong>1<strong>:</strong>0<strong>]</strong> IDLE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>=</strong> 2&#39;b00<strong>,</strong> // 等待按键触发</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INIT_WRITE&nbsp; <strong>=</strong> 2&#39;b01<strong>,</strong> // 处于向DDR写入数据的操作（多次）</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INIT_READ&nbsp;&nbsp; <strong>=</strong> 2&#39;b10<strong>;</strong> // 处于从DDR读取数据的操作（一次）</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; &nbsp;<strong>reg</strong> <strong>[</strong>1<strong>:</strong>0<strong>]</strong> mst_exec_state<strong>;</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // AXI4LITE signals</p>
+<p align="left">
+		&nbsp; // ------------- Write Address Channel -----------------</p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>31 <strong>:</strong> 0<strong>]</strong> &nbsp;&nbsp;&nbsp;axi_awaddr<strong>;</strong>&nbsp;&nbsp; //write address</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_awvalid<strong>;</strong>&nbsp; //write address valid</p>
+<p align="left">
+		&nbsp; // ------------- Write data Channel -------------------</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_wvalid<strong>;</strong>&nbsp;&nbsp; //write data valid</p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>31 <strong>:</strong> 0<strong>]</strong> &nbsp;&nbsp;&nbsp;axi_wdata<strong>;</strong>&nbsp;&nbsp;&nbsp; //write data</p>
+<p align="left">
+		&nbsp; // ------------- Write response Channel ----------------</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_bready<strong>;</strong>&nbsp;&nbsp; //write response acceptance</p>
+<p align="left">
+		&nbsp; // ------------- Read address Channel ------------------</p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>31 <strong>:</strong> 0<strong>]</strong> &nbsp;&nbsp;&nbsp;axi_araddr<strong>;</strong>&nbsp;&nbsp; //read addresss</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_arvalid<strong>;</strong>&nbsp; //read address valid</p>
+<p align="left">
+		&nbsp; // ------------- Read Data Channel ---------------------</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;axi_rready<strong>;</strong>&nbsp;&nbsp; //read data acceptance</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // I/O Connections assignments</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // ------------- Write Address Channel -----------------</p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_AWADDR&nbsp;&nbsp; <strong>=</strong> C_WRITE_BASE_ADDR <strong>+</strong> axi_awaddr<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_AWPROT&nbsp;&nbsp; <strong>=</strong> 3&#39;b000<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_AWVALID&nbsp; <strong>=</strong> axi_awvalid<strong>;</strong></p>
+<p align="left">
+		&nbsp; // ------------- Write data Channel -------------------</p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_WDATA&nbsp; &nbsp;&nbsp;<strong>=</strong> axi_wdata<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_WSTRB&nbsp;&nbsp;&nbsp; <strong>=</strong> 4&#39;b1111<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_WVALID&nbsp;&nbsp; <strong>=</strong> axi_wvalid<strong>;</strong></p>
+<p align="left">
+		&nbsp; // ------------- Write response Channel ----------------</p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_BREADY&nbsp;&nbsp; <strong>=</strong> axi_bready<strong>;</strong></p>
+<p align="left">
+		&nbsp; // ------------- Read address Channel ------------------</p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_ARADDR&nbsp;&nbsp; <strong>=</strong> C_READ_BASE_ADDR <strong>+</strong> axi_araddr<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_ARPROT&nbsp;&nbsp; <strong>=</strong> 3&#39;b001<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_ARVALID&nbsp; <strong>=</strong> axi_arvalid<strong>;</strong></p>
+<p align="left">
+		&nbsp; // ------------- Read Data Channel ---------------------</p>
+<p align="left">
+		&nbsp; <strong>assign</strong> M_AXI_RREADY&nbsp;&nbsp; <strong>=</strong> axi_rready<strong>;</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //Asserts when there is a write response error</p>
+<p align="left">
+		&nbsp; <strong>wire</strong>&nbsp; &nbsp;&nbsp;write_resp_error<strong>;</strong></p>
+<p align="left">
+		&nbsp; //Asserts when there is a read response error</p>
+<p align="left">
+		&nbsp; <strong>wire</strong>&nbsp; &nbsp;&nbsp;read_resp_error<strong>;</strong></p>
+<p align="left">
+		&nbsp; //A pulse to initiate a write transaction</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;start_single_write<strong>;</strong></p>
+<p align="left">
+		&nbsp; //A pulse to initiate a read transaction</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;start_single_read<strong>;</strong></p>
+<p align="left">
+		&nbsp; //Asserts when a single beat write transaction is issued and remains asserted till the completion of write trasaction.</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;write_issued<strong>;</strong></p>
+<p align="left">
+		&nbsp; //Asserts when a single beat read transaction is issued and remains asserted till the completion of read trasaction.</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;read_issued<strong>;</strong></p>
+<p align="left">
+		&nbsp; //flag that marks the completion of write trasactions. The number of write transaction is user selected by the parameter C_WRITE_NUM.</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;writes_done<strong>;</strong></p>
+<p align="left">
+		&nbsp; //flag that marks the completion of read trasactions. The number of read transaction is user selected by the parameter C_WRITE_NUM</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;reads_done<strong>;</strong></p>
+<p align="left">
+		&nbsp; //index counter to track the number of write transaction issued</p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>TRANS_NUM_BITS <strong>:</strong> 0<strong>]</strong> &nbsp;&nbsp;write_index<strong>;</strong></p>
+<p align="left">
+		&nbsp; //Flag is asserted when the write index reaches the last write transction number</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;last_write<strong>;</strong></p>
+<p align="left">
+		&nbsp; //Flag is asserted when the read index reaches the last read transction number</p>
+<p align="left">
+		&nbsp; <strong>reg</strong>&nbsp; &nbsp;&nbsp;last_read<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> W_OUT_W_DONE <strong>=</strong> writes_done<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> W_OUT_R_DONE <strong>=</strong> reads_done<strong>;</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>7<strong>:</strong>0<strong>]</strong> rs_out_led<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>assign</strong> W_OUT_DATA <strong>=</strong> rs_out_led<strong>;</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; <strong>reg</strong> r_pre_in_key_1<strong>;</strong></p>
+<p align="left">
+		&nbsp; <strong>reg</strong> r_pre_in_key_2<strong>;</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------&nbsp;</p>
+<p align="left">
+		&nbsp; // 读取操作次数计数器</p>
+<p align="left">
+		&nbsp; <strong>reg</strong> <strong>[</strong>READ_NUM_BITS <strong>:</strong> 0<strong>]</strong>&nbsp;&nbsp; read_index<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp; //-------------------------------------------------------------------</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp; //Generate a pulse to initiate AXI transaction.</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;// Initiates AXI transaction delay&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;<strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0 <strong>)</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r_pre_in_key_1 <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r_pre_in_key_2 <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>end</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;<strong>else</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r_pre_in_key_1 <strong>&lt;=</strong> W_IN_KEY_1<strong>;</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r_pre_in_key_2 <strong>&lt;=</strong> W_IN_KEY_2<strong>;</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>end</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //--------------------</p>
+<p align="left">
+		&nbsp; //Write Address Channel</p>
+<p align="left">
+		&nbsp; //--------------------</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awvalid <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>start_single_write<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awvalid <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>M_AXI_AWREADY <strong>&amp;&amp;</strong> axi_awvalid<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awvalid <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //--------------------</p>
+<p align="left">
+		&nbsp; //Write Data Channel</p>
+<p align="left">
+		&nbsp; //--------------------</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_wvalid <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>start_single_write<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_wvalid <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>M_AXI_WREADY <strong>&amp;&amp;</strong> axi_wvalid<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_wvalid <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //----------------------------</p>
+<p align="left">
+		&nbsp; //Write Response (B) Channel</p>
+<p align="left">
+		&nbsp; //----------------------------</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_bready <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>M_AXI_BVALID <strong>&amp;&amp;</strong> <strong>~</strong>axi_bready<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_bready <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>axi_bready<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_bready <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_bready <strong>&lt;=</strong> axi_bready<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //----------------------------</p>
+<p align="left">
+		&nbsp; //Flag write errors</p>
+<p align="left">
+		&nbsp; //----------------------------</p>
+<p align="left">
+		&nbsp; <strong>assign</strong> write_resp_error <strong>=</strong> <strong>(</strong>axi_bready <strong>&amp;</strong> M_AXI_BVALID <strong>&amp;</strong> M_AXI_BRESP<strong>[</strong>1<strong>]);</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //----------------------------</p>
+<p align="left">
+		&nbsp; //Read Address Channel</p>
+<p align="left">
+		&nbsp; //----------------------------</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; read_index <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>start_single_read<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; read_index <strong>&lt;=</strong> read_index <strong>+</strong> 1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>mst_exec_state <strong>==</strong> IDLE<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; read_index <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_arvalid <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>start_single_read<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_arvalid <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>M_AXI_ARREADY <strong>&amp;&amp;</strong> axi_arvalid<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_arvalid <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //--------------------------------</p>
+<p align="left">
+		&nbsp; //Read Data (and Response) Channel</p>
+<p align="left">
+		&nbsp; //--------------------------------</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rready <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>M_AXI_RVALID <strong>&amp;&amp;</strong> <strong>~</strong>axi_rready<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rready <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>axi_rready<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_rready <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rs_out_led <strong>&lt;=</strong> 8&#39;h00<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>M_AXI_RVALID <strong>&amp;&amp;</strong> axi_rready<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rs_out_led<strong>[</strong>7<strong>:</strong>0<strong>]</strong> <strong>&lt;=</strong> M_AXI_RDATA<strong>[</strong>7<strong>:</strong>0<strong>];</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rs_out_led <strong>&lt;=</strong> rs_out_led<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //--------------------------------</p>
+<p align="left">
+		&nbsp; //Flag write errors</p>
+<p align="left">
+		&nbsp; //--------------------------------</p>
+<p align="left">
+		&nbsp; <strong>assign</strong> read_resp_error <strong>=</strong> <strong>(</strong>axi_rready <strong>&amp;</strong> M_AXI_RVALID <strong>&amp;</strong> M_AXI_RRESP<strong>[</strong>1<strong>]);</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //--------------------------------</p>
+<p align="left">
+		&nbsp; //User Logic</p>
+<p align="left">
+		&nbsp; //--------------------------------</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //------------------</p>
+<p align="left">
+		&nbsp; // Write Logic</p>
+<p align="left">
+		&nbsp; //------------------</p>
+<p align="left">
+		&nbsp; // 写逻辑</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; write_index <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>start_single_write<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; write_index <strong>&lt;=</strong> write_index <strong>+</strong> 1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>mst_exec_state <strong>==</strong> IDLE<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; write_index <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //Write Addresses</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awaddr <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>M_AXI_AWREADY <strong>&amp;&amp;</strong> axi_awvalid<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awaddr <strong>&lt;=</strong> axi_awaddr <strong>+</strong> 32&#39;h00000004<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>W_IN_KEY_1<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_awaddr <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // Write data generation</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_wdata <strong>&lt;=</strong> C_WRITE_START_DATA_VALUE<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>M_AXI_WREADY <strong>&amp;&amp;</strong> axi_wvalid<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //axi_wdata &lt;= C_WRITE_START_DATA_VALUE + write_index;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_wdata <strong>&lt;=</strong> axi_wdata <strong>+</strong> 1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //Terminal write count</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; last_write <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>((</strong>write_index <strong>==</strong> C_WRITE_NUM<strong>)</strong> <strong>&amp;&amp;</strong> M_AXI_AWREADY<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; last_write <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>mst_exec_state <strong>==</strong> IDLE<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; last_write <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; last_write <strong>&lt;=</strong> last_write<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //Check for last write completion</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; writes_done <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>last_write <strong>&amp;&amp;</strong> M_AXI_BVALID <strong>&amp;&amp;</strong> axi_bready<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;writes_done <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; //else if (mst_exec_state == IDLE) begin</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>W_IN_KEY_1 <strong>==</strong> 1&#39;b1<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; writes_done <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; writes_done <strong>&lt;=</strong> writes_done<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //------------------</p>
+<p align="left">
+		&nbsp; //Read Logic</p>
+<p align="left">
+		&nbsp; //------------------</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //Read Addresses</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_araddr <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>C_READ_MODEL <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_araddr <strong>&lt;=</strong> 0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>M_AXI_ARREADY <strong>&amp;&amp;</strong> axi_arvalid<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; axi_araddr <strong>&lt;=</strong> axi_araddr <strong>+</strong> 32&#39;h00000004<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //Terminal Read Count</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;<strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;last_read <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;<strong>end</strong> <strong>if</strong> <strong>((</strong>read_index <strong>==</strong> C_READ_NUM<strong>)</strong> <strong>&amp;&amp;</strong> <strong>(</strong>M_AXI_ARREADY<strong>))</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; last_read <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>mst_exec_state <strong>==</strong> IDLE<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; last_read <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; last_read <strong>&lt;=</strong> last_read<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;<strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; //Check for last read completion.</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>always</strong> <strong>@(</strong><strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; reads_done <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>last_read <strong>&amp;&amp;</strong> M_AXI_RVALID <strong>&amp;&amp;</strong> axi_rready<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; reads_done <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>mst_exec_state <strong>==</strong> IDLE<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;reads_done <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; reads_done <strong>&lt;=</strong> reads_done<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; //------------------</p>
+<p align="left">
+		&nbsp; // 逻辑状态机</p>
+<p align="left">
+		&nbsp; //------------------</p>
+<p align="left">
+		&nbsp; <strong>always</strong> <strong>@</strong> <strong>(</strong> <strong>posedge</strong> M_AXI_ACLK<strong>)</strong></p>
+<p align="left">
+		&nbsp; <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>M_AXI_ARESETN <strong>==</strong> 1&#39;b0<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mst_exec_state&nbsp;&nbsp;&nbsp;&nbsp; <strong>&lt;=</strong> IDLE<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; start_single_write <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; write_issued&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; start_single_read&nbsp; <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; read_issued&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // state transition</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>case</strong> <strong>(</strong>mst_exec_state<strong>)</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IDLE<strong>:</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong> r_pre_in_key_1 <strong>&amp;&amp;</strong> <strong>~</strong>W_IN_KEY_1 <strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mst_exec_state&nbsp; <strong>&lt;=</strong> INIT_WRITE<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong> r_pre_in_key_2 <strong>&amp;&amp;</strong> <strong>~</strong>W_IN_KEY_2 <strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mst_exec_state&nbsp; <strong>&lt;=</strong> INIT_READ<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mst_exec_state&nbsp; <strong>&lt;=</strong> IDLE<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INIT_WRITE<strong>:</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>writes_done<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mst_exec_state <strong>&lt;=</strong> IDLE<strong>;</strong>//</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mst_exec_state&nbsp; <strong>&lt;=</strong> INIT_WRITE<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(~</strong>axi_awvalid <strong>&amp;&amp;</strong> <strong>~</strong>axi_wvalid <strong>&amp;&amp;</strong> <strong>~</strong>M_AXI_BVALID <strong>&amp;&amp;</strong> <strong>~</strong>last_write <strong>&amp;&amp;</strong> <strong>~</strong>start_single_write <strong>&amp;&amp;</strong> <strong>~</strong>write_issued<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; start_single_write&nbsp; <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; write_issued&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>axi_bready<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; write_issued&nbsp; <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; start_single_write <strong>&lt;=</strong> 1&#39;b0<strong>;</strong> //Negate to generate a pulse</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INIT_READ<strong>:</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(</strong>reads_done<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mst_exec_state <strong>&lt;=</strong> IDLE<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mst_exec_state&nbsp; <strong>&lt;=</strong> INIT_READ<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>if</strong> <strong>(~</strong>axi_arvalid <strong>&amp;&amp;</strong> <strong>~</strong>M_AXI_RVALID <strong>&amp;&amp;</strong> <strong>~</strong>last_read <strong>&amp;&amp;</strong> <strong>~</strong>start_single_read <strong>&amp;&amp;</strong> <strong>~</strong>read_issued<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; start_single_read <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; read_issued&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>&lt;=</strong> 1&#39;b1<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>if</strong> <strong>(</strong>axi_rready<strong>)</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; read_issued&nbsp; <strong>&lt;=</strong> 1&#39;b0<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>else</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; start_single_read <strong>&lt;=</strong> 1&#39;b0<strong>;</strong> //Negate to generate a pulse</p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>default</strong><strong>:</strong> <strong>begin</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mst_exec_state&nbsp; <strong>&lt;=</strong> IDLE<strong>;</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>endcase</strong></p>
+<p align="left">
+		&nbsp;&nbsp;&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp; <strong>end</strong></p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // Add user logic here</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		&nbsp; // User logic ends</p>
+<p align="left">
+		&nbsp;</p>
+<p align="left">
+		<strong>endmodule</strong></p>
+<p>
+		&nbsp;</p>
+</div>
+<p style="text-align:center;">
+	&nbsp;</p>
+<div>
+<p>
+		&nbsp;</p>
+<p>
+		<strong>附录</strong><strong>3</strong><strong>：</strong><strong>C</strong><strong>语言嵌入式程序</strong></p>
+<p>
+		&nbsp;</p>
+<p>
+		对应的SDK中Application的主程序如下：</p>
+<table border="1" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td style="width:568px;">
+<p align="left">
+						/******************************************************************************</p>
+<p align="left">
+						*</p>
+<p align="left">
+						* Copyright (C) 2009 - 2014 Xilinx, Inc.&nbsp; All rights reserved.</p>
+<p align="left">
+						*</p>
+<p align="left">
+						* Permission is hereby granted, free of charge, to any person obtaining a copy</p>
+<p align="left">
+						* of this software and associated documentation files (the &quot;Software&quot;), to deal</p>
+<p align="left">
+						* in the Software without restriction, including without limitation the rights</p>
+<p align="left">
+						* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</p>
+<p align="left">
+						* copies of the Software, and to permit persons to whom the Software is</p>
+<p align="left">
+						* furnished to do so, subject to the following conditions:</p>
+<p align="left">
+						*</p>
+<p align="left">
+						* The above copyright notice and this permission notice shall be included in</p>
+<p align="left">
+						* all copies or substantial portions of the Software.</p>
+<p align="left">
+						*</p>
+<p align="left">
+						* Use of the Software is limited solely to applications:</p>
+<p align="left">
+						* (a) running on a Xilinx device, or</p>
+<p align="left">
+						* (b) that interact with a Xilinx device through a bus or interconnect.</p>
+<p align="left">
+						*</p>
+<p align="left">
+						* THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</p>
+<p align="left">
+						* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</p>
+<p align="left">
+						* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</p>
+<p align="left">
+						* XILINX CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,</p>
+<p align="left">
+						* WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF</p>
+<p align="left">
+						* OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</p>
+<p align="left">
+						* SOFTWARE.</p>
+<p align="left">
+						*</p>
+<p align="left">
+						* Except as contained in this notice, the name of the Xilinx shall not be used</p>
+<p align="left">
+						* in advertising or otherwise to promote the sale, use or other dealings in</p>
+<p align="left">
+						* this Software without prior written authorization from Xilinx.</p>
+<p align="left">
+						*</p>
+<p align="left">
+						******************************************************************************/</p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						#include &lt;stdio.h&gt;</p>
+<p align="left">
+						#include &quot;xil_types.h&quot;</p>
+<p align="left">
+						#include &lt;xil_printf.h&gt;</p>
+<p align="left">
+						#include &quot;xil_io.h&quot;</p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						#include &quot;platform.h&quot;</p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						// --------------------------------------------------------- PREPROCESSORS ----</p>
+<p align="left">
+						// Macros</p>
+<p align="left">
+						#define REG_READ(addr) </p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; ({int val;int a=addr; asm volatile (&quot;ldr&nbsp;&nbsp; %0,[%1]n&quot; : &quot;=r&quot;(val) : &quot;r&quot;(a)); val;})</p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						#define REG_WRITE(addr,val) </p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; ({int v = val; int a = addr; __asm volatile (&quot;str&nbsp; %1,[%0]n&quot; :: &quot;r&quot;(a),&quot;r&quot;(v)); v;})</p>
+<p align="left">
+						// ---------------------------------------------------------------------------</p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						void delay<strong>(</strong>int ims<strong>)</strong></p>
+<p align="left">
+						<strong>{</strong></p>
+<p align="left">
+						&nbsp; int i<strong>;</strong></p>
+<p align="left">
+						&nbsp; int j<strong>;</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp; <strong>for</strong> <strong>(</strong>i<strong>=</strong>0<strong>;</strong> i<strong>&lt;</strong>ims<strong>;</strong> i<strong>++)</strong> <strong>{</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; <strong>for</strong> <strong>(</strong>j<strong>=</strong>0<strong>;</strong> j<strong>&lt;</strong>8000<strong>;</strong> j<strong>++)</strong> <strong>{</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; <strong>}</strong></p>
+<p align="left">
+						&nbsp; <strong>}</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp; <strong>return</strong><strong>;</strong></p>
+<p align="left">
+						<strong>}</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						int main<strong>()</strong></p>
+<p align="left">
+						<strong>{</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp; u32 ReadMemBaseAddr&nbsp; <strong>=</strong> 0x00800000<strong>;</strong>&nbsp;&nbsp;&nbsp; // 基地址</p>
+<p align="left">
+						&nbsp; u32 Rv32 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>=</strong> 0<strong>;</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 数值寄存器</p>
+<p align="left">
+						&nbsp; u32 nReadAddr&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>=</strong> ReadMemBaseAddr<strong>;</strong>&nbsp; // 读取地址</p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp; u32 WriteMemBaseAddr <strong>=</strong> 0x00900000<strong>;</strong></p>
+<p align="left">
+						&nbsp; u32 Wv32 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>=</strong> 0xBB00FFFF<strong>;</strong></p>
+<p align="left">
+						&nbsp; u32 nWriteAddr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>=</strong> WriteMemBaseAddr<strong>;</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp; u32 SlaveReg1Addr&nbsp; <strong>=</strong> 0x43C00000<strong>;</strong></p>
+<p align="left">
+						&nbsp; u32 SlaveReg2Addr&nbsp; <strong>=</strong> 0x43C00004<strong>;</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp; u32 iLoop&nbsp; <strong>=</strong> 0<strong>;</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; init_platform<strong>();</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; print<strong>(</strong>&quot;Hello World 2rn&quot;<strong>);</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; <strong>while</strong> <strong>(</strong>1<strong>)</strong> <strong>{</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;delay<strong>(</strong>1000<strong>);</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;// 三种根据内存地址读取数据的方式，选择任意一种均可实现</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;// Rv32 = *(volatile u32 *)(SlaveReg1Addr);</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;// Rv32 = REG_READ(SlaveReg1Addr);</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;Rv32 <strong>=</strong> Xil_In32<strong>(</strong>SlaveReg1Addr<strong>);</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<strong>if</strong> <strong>(</strong>Rv32 <strong>!=</strong> 0x00000000<strong>)</strong> <strong>{</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;xil_printf<strong>(</strong>&quot;rn Slave Reg1 [0x%x] Read Value: 0x%x&nbsp; rn&quot;<strong>,</strong> SlaveReg1Addr<strong>,</strong> Rv32<strong>);</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;print<strong>(</strong>&quot;----------------------------------------------rn&quot;<strong>);</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;nReadAddr&nbsp; <strong>=</strong> ReadMemBaseAddr<strong>;</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>for</strong> <strong>(</strong>iLoop <strong>=</strong> 0<strong>;</strong> iLoop <strong>&lt;</strong> 8<strong>;</strong> iLoop<strong>++)</strong> <strong>{</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 三种根据内存地址读取数据的方式，选择任意一种均可实现</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Rv32 = *(volatile u32 *) nReadAddr;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Rv32 = REG_READ(nReadAddr);</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Rv32 <strong>=</strong> Xil_In32<strong>(</strong>nReadAddr<strong>);</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xil_printf<strong>(</strong>&quot;DDR Reg[0x%x] Read Value: 0x%x&nbsp; rn&quot;<strong>,</strong> nReadAddr<strong>,</strong> Rv32<strong>);</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 读取的数据宽度是32bits，对应于4Bytes</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nReadAddr <strong>=</strong> nReadAddr<strong>+</strong>4<strong>;</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>}</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; print<strong>(</strong>&quot;----------------------------------------------rnrn&quot;<strong>);</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<strong>}</strong> <strong>else</strong> <strong>{</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;print<strong>(</strong>&quot;.&quot;<strong>);</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<strong>}</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;// 三种根据内存地址读取数据的方式，选择任意一种均可实现</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;// Rv32 = *(volatile u32 *)(SlaveReg2Addr);</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;// Rv32 = REG_READ(SlaveReg2Addr);</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;Rv32 <strong>=</strong> Xil_In32<strong>(</strong>SlaveReg2Addr<strong>);</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<strong>if</strong> <strong>(</strong>Rv32 <strong>!=</strong> 0x00000000<strong>)</strong> <strong>{</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;xil_printf<strong>(</strong>&quot;rn Slave Reg2 [0x%x] Read Value: 0x%x&nbsp; rn&quot;<strong>,</strong> SlaveReg2Addr<strong>,</strong> Rv32<strong>);</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;print<strong>(</strong>&quot;##############################################rn&quot;<strong>);</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;nWriteAddr&nbsp; <strong>=</strong> WriteMemBaseAddr<strong>;</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;// 三种根据内存地址写入数据的方式，选择任意一种均可实现</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;// *(volatile u32 *) nWriteAddr = Wv32;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;// REG_WRITE(nWriteAddr, Wv32);</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;Xil_Out32<strong>(</strong>nWriteAddr<strong>,</strong>Wv32<strong>);</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;xil_printf<strong>(</strong>&quot;DDR Reg[0x%x] Write Value: 0x%x&nbsp; rn&quot;<strong>,</strong> nWriteAddr<strong>,</strong> Wv32<strong>);</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;print<strong>(</strong>&quot;##############################################rnrn&quot;<strong>);</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;// 每次触发CPU向DDR写入的数据均不同，便于PL端通过LED灯观察变化</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;Wv32 <strong>=</strong> Wv32 <strong>-</strong> 1<strong>;</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<strong>}</strong> <strong>else</strong> <strong>{</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;print<strong>(</strong>&quot;#&quot;<strong>);</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<strong>}</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; <strong>}</strong></p>
+<p align="left">
+						&nbsp;</p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; cleanup_platform<strong>();</strong></p>
+<p align="left">
+						&nbsp;&nbsp;&nbsp; <strong>return</strong> 0<strong>;</strong></p>
+<p align="left">
+						<strong>}</strong></p>
+<p>
+						&nbsp;</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>
+		&nbsp;</p>
+<p>
+		&nbsp;</p>
+<p>
+		&nbsp;</p>
+</div>
+<p style="text-align:center;">
+	&nbsp;</p>
+<div>
+<p>
+		<strong>附录</strong><strong>4</strong><strong>：</strong><strong> MemDDR.elf</strong><strong>文件</strong></p>
+<p>
+		&nbsp;</p>
+<p>
+		<strong>由于文件太大了，包含了编译完的完整汇编指令集，就不在本件中显示了，有兴趣在</strong><strong>SDK</strong><strong>中自行查找。</strong></p>
+<p>
+		&nbsp;</p>
+<p>
+		&nbsp;</p>
+<p>
+		&nbsp;</p>
+</div>
+<p style="text-align:center;">
+	&nbsp;</p>
+<p>
+	&nbsp;</p>
+<p>
+	<strong>附录</strong><strong>5</strong><strong>：</strong><strong>MemoryTest</strong><strong>工程中的</strong><strong>Platform.c</strong><strong>文件</strong></p>
+<p>
+	&nbsp;</p>
+<p align="left">
+	/******************************************************************************</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* Copyright (C) 2010 - 2014 Xilinx, Inc.&nbsp; All rights reserved.</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* Permission is hereby granted, free of charge, to any person obtaining a copy</p>
+<p align="left">
+	* of this software and associated documentation files (the &quot;Software&quot;), to deal</p>
+<p align="left">
+	* in the Software without restriction, including without limitation the rights</p>
+<p align="left">
+	* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</p>
+<p align="left">
+	* copies of the Software, and to permit persons to whom the Software is</p>
+<p align="left">
+	* furnished to do so, subject to the following conditions:</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* The above copyright notice and this permission notice shall be included in</p>
+<p align="left">
+	* all copies or substantial portions of the Software.</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* Use of the Software is limited solely to applications:</p>
+<p align="left">
+	* (a) running on a Xilinx device, or</p>
+<p align="left">
+	* (b) that interact with a Xilinx device through a bus or interconnect.</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</p>
+<p align="left">
+	* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</p>
+<p align="left">
+	* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</p>
+<p align="left">
+	* XILINX CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,</p>
+<p align="left">
+	* WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF</p>
+<p align="left">
+	* OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</p>
+<p align="left">
+	* SOFTWARE.</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* Except as contained in this notice, the name of the Xilinx shall not be used</p>
+<p align="left">
+	* in advertising or otherwise to promote the sale, use or other dealings in</p>
+<p align="left">
+	* this Software without prior written authorization from Xilinx.</p>
+<p align="left">
+	*</p>
+<p align="left">
+	******************************************************************************/</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	#include &quot;xparameters.h&quot;</p>
+<p align="left">
+	#include &quot;xil_cache.h&quot;</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	#include &quot;platform_config.h&quot;</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	#ifdef STDOUT_IS_16550</p>
+<p align="left">
+	#include &quot;xuartns550_l.h&quot;</p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	void</p>
+<p align="left">
+	enable_caches<strong>()</strong></p>
+<p align="left">
+	<strong>{</strong></p>
+<p align="left">
+	#ifdef __PPC__</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_ICacheEnableRegion<strong>(</strong>XPAR_CACHEABLE_REGION_MASK<strong>);</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; // Do not enable caches for memory tests, this has pros and cons</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; // Pros - If caches are enabled, under certain configurations, there will be very few</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; transactions to external memory</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; // Con&nbsp; - This might not generate a burst cacheline request</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; // Xil_DCacheEnableRegion(CACHEABLE_REGION_MASK);</p>
+<p align="left">
+	#elif __MICROBLAZE__</p>
+<p align="left">
+	#ifdef XPAR_MICROBLAZE_USE_ICACHE</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_ICacheEnable<strong>();</strong></p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	#ifdef XPAR_MICROBLAZE_USE_DCACHE</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; // See reason above for not enabling D Cache</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; // Xil_DCacheEnable();</p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	#elif __arm__</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; // For ARM, BSP enables caches by default.</p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	<strong>}</strong></p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	void</p>
+<p align="left">
+	disable_caches<strong>()</strong></p>
+<p align="left">
+	<strong>{</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_DCacheDisable<strong>();</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_ICacheDisable<strong>();</strong></p>
+<p align="left">
+	<strong>}</strong></p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	void</p>
+<p align="left">
+	init_platform<strong>()</strong></p>
+<p align="left">
+	<strong>{</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; enable_caches<strong>();</strong></p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	#ifdef __arm__</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; // For ARM, BSP enables caches by default. Disable them here.</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; // See reason above for disabling D Cache</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_DCacheDisable<strong>();</strong></p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; /* if we have a uart 16550, then that needs to be initialized */</p>
+<p align="left">
+	#ifdef STDOUT_IS_16550</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; XUartNs550_SetBaud<strong>(</strong>STDOUT_BASEADDR<strong>,</strong> XPAR_XUARTNS550_CLOCK_HZ<strong>,</strong> 9600<strong>);</strong></p>
+<p align="left">
+	&nbsp;&nbsp; &nbsp;XUartNs550_SetLineControlReg<strong>(</strong>STDOUT_BASEADDR<strong>,</strong> XUN_LCR_8_DATA_BITS<strong>);</strong></p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	<strong>}</strong></p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	void</p>
+<p align="left">
+	cleanup_platform<strong>()</strong></p>
+<p align="left">
+	<strong>{</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; disable_caches<strong>();</strong></p>
+<p align="left">
+	<strong>}</strong></p>
+<p>
+	&nbsp;</p>
+<p>
+	&nbsp;</p>
+<p style="text-align:center;">
+	&nbsp;</p>
+<p>
+	&nbsp;</p>
+<p>
+	<strong>附录</strong><strong>6</strong><strong>：</strong><strong>HelloWord</strong><strong>工程中的</strong><strong>Platform.c</strong><strong>文件</strong></p>
+<p>
+	&nbsp;</p>
+<p align="left">
+	/******************************************************************************</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* Copyright (C) 2010 - 2014 Xilinx, Inc.&nbsp; All rights reserved.</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* Permission is hereby granted, free of charge, to any person obtaining a copy</p>
+<p align="left">
+	* of this software and associated documentation files (the &quot;Software&quot;), to deal</p>
+<p align="left">
+	* in the Software without restriction, including without limitation the rights</p>
+<p align="left">
+	* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</p>
+<p align="left">
+	* copies of the Software, and to permit persons to whom the Software is</p>
+<p align="left">
+	* furnished to do so, subject to the following conditions:</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* The above copyright notice and this permission notice shall be included in</p>
+<p align="left">
+	* all copies or substantial portions of the Software.</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* Use of the Software is limited solely to applications:</p>
+<p align="left">
+	* (a) running on a Xilinx device, or</p>
+<p align="left">
+	* (b) that interact with a Xilinx device through a bus or interconnect.</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</p>
+<p align="left">
+	* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</p>
+<p align="left">
+	* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</p>
+<p align="left">
+	* XILINX CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,</p>
+<p align="left">
+	* WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF</p>
+<p align="left">
+	* OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</p>
+<p align="left">
+	* SOFTWARE.</p>
+<p align="left">
+	*</p>
+<p align="left">
+	* Except as contained in this notice, the name of the Xilinx shall not be used</p>
+<p align="left">
+	* in advertising or otherwise to promote the sale, use or other dealings in</p>
+<p align="left">
+	* this Software without prior written authorization from Xilinx.</p>
+<p align="left">
+	*</p>
+<p align="left">
+	******************************************************************************/</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	#include &quot;xparameters.h&quot;</p>
+<p align="left">
+	#include &quot;xil_cache.h&quot;</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	#include &quot;platform_config.h&quot;</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	/*</p>
+<p align="left">
+	&nbsp;* Uncomment the following line if ps7 init source files are added in the</p>
+<p align="left">
+	&nbsp;* source directory for compiling example outside of SDK.</p>
+<p align="left">
+	&nbsp;*/</p>
+<p align="left">
+	/*#include &quot;ps7_init.h&quot;*/</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	#ifdef STDOUT_IS_16550</p>
+<p align="left">
+	&nbsp;#include &quot;xuartns550_l.h&quot;</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	&nbsp;#define UART_BAUD 9600</p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	void</p>
+<p align="left">
+	enable_caches<strong>()</strong></p>
+<p align="left">
+	<strong>{</strong></p>
+<p align="left">
+	#ifdef __PPC__</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_ICacheEnableRegion<strong>(</strong>CACHEABLE_REGION_MASK<strong>);</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_DCacheEnableRegion<strong>(</strong>CACHEABLE_REGION_MASK<strong>);</strong></p>
+<p align="left">
+	#elif __MICROBLAZE__</p>
+<p align="left">
+	#ifdef XPAR_MICROBLAZE_USE_ICACHE</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_ICacheEnable<strong>();</strong></p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	#ifdef XPAR_MICROBLAZE_USE_DCACHE</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_DCacheEnable<strong>();</strong></p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	<strong>}</strong></p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	void</p>
+<p align="left">
+	disable_caches<strong>()</strong></p>
+<p align="left">
+	<strong>{</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_DCacheDisable<strong>();</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; Xil_ICacheDisable<strong>();</strong></p>
+<p align="left">
+	<strong>}</strong></p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	void</p>
+<p align="left">
+	init_uart<strong>()</strong></p>
+<p align="left">
+	<strong>{</strong></p>
+<p align="left">
+	#ifdef STDOUT_IS_16550</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; XUartNs550_SetBaud<strong>(</strong>STDOUT_BASEADDR<strong>,</strong> XPAR_XUARTNS550_CLOCK_HZ<strong>,</strong> UART_BAUD<strong>);</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; XUartNs550_SetLineControlReg<strong>(</strong>STDOUT_BASEADDR<strong>,</strong> XUN_LCR_8_DATA_BITS<strong>);</strong></p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	#ifdef STDOUT_IS_PS7_UART</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; /* Bootrom/BSP configures PS7 UART to 115200 bps */</p>
+<p align="left">
+	#endif</p>
+<p align="left">
+	<strong>}</strong></p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	void</p>
+<p align="left">
+	init_platform<strong>()</strong></p>
+<p align="left">
+	<strong>{</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; /*</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp;&nbsp; * If you want to run this example outside of SDK,</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp;&nbsp; * uncomment the following line and also #include &quot;ps7_init.h&quot; at the top.</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp;&nbsp; * Make sure that the ps7_init.c and ps7_init.h files are included</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp;&nbsp; * along with this example source files for compilation.</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp;&nbsp; */</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; /* ps7_init();*/</p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; enable_caches<strong>();</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; init_uart<strong>();</strong></p>
+<p align="left">
+	<strong>}</strong></p>
+<p align="left">
+	&nbsp;</p>
+<p align="left">
+	void</p>
+<p align="left">
+	cleanup_platform<strong>()</strong></p>
+<p align="left">
+	<strong>{</strong></p>
+<p align="left">
+	&nbsp;&nbsp;&nbsp; disable_caches<strong>();</strong></p>
+<p align="left">
+	<strong>}</strong></p>
+<p>
+	&nbsp;</p></p>
+		</article>
+
+		
+		<footer class="article-footer">
+			<div class="article-tags">继续浏览有关 <a href="https://www.veryarm.com/tag/arm" rel="tag">ARM</a><a href="https://www.veryarm.com/tag/%e5%b5%8c%e5%85%a5%e5%bc%8f" rel="tag">嵌入式</a> 的文章</div>					</footer>
+
+		<nav class="article-nav">
+			<span class="article-nav-prev">上一篇 <a href="https://www.veryarm.com/54519.html" rel="prev">飞凌嵌入式调查问卷</a></span>
+			<span class="article-nav-next"><a href="https://www.veryarm.com/69844.html" rel="next">cortex_m3_stm32嵌入式学习笔记（十七）：内部温度传感器（ADC采集）</a> 下一篇</span>
+		</nav>
+
+        	
+
+		
+		
+		
+	</div>
+</div>
+<aside class="sidebar">	
+<div class="widget d_tag"><h3 class="widget_tit">标签云</h3><div class="d_tags"><a href="https://www.veryarm.com/tag/arm">ARM (108542)</a><a href="https://www.veryarm.com/tag/%e5%b5%8c%e5%85%a5%e5%bc%8f">嵌入式 (98568)</a><a href="https://www.veryarm.com/tag/cortex">Cortex (1139)</a><a href="https://www.veryarm.com/tag/stm32">STM32 (584)</a><a href="https://www.veryarm.com/tag/linux">Linux (36)</a><a href="https://www.veryarm.com/tag/arm-linux">ARM Linux (12)</a><a href="https://www.veryarm.com/tag/%e7%a7%bb%e6%a4%8d">移植 (12)</a><a href="https://www.veryarm.com/tag/cortex-m3">Cortex-M3 (10)</a><a href="https://www.veryarm.com/tag/%e7%89%a9%e8%81%94%e7%bd%91">物联网 (9)</a><a href="https://www.veryarm.com/tag/64%e4%bd%8d">64位 (8)</a><a href="https://www.veryarm.com/tag/armv8">ARMv8 (7)</a><a href="https://www.veryarm.com/tag/ubuntu">Ubuntu (7)</a><a href="https://www.veryarm.com/tag/nandflash">NandFlash (7)</a><a href="https://www.veryarm.com/tag/amd">AMD (6)</a><a href="https://www.veryarm.com/tag/%e9%ab%98%e9%80%9a">高通 (6)</a><a href="https://www.veryarm.com/tag/%e6%9c%8d%e5%8a%a1%e5%99%a8">服务器 (6)</a><a href="https://www.veryarm.com/tag/mbed-os">mbed os (6)</a><a href="https://www.veryarm.com/tag/%e6%b1%87%e7%bc%96">汇编 (6)</a><a href="https://www.veryarm.com/tag/x86">X86 (5)</a><a href="https://www.veryarm.com/tag/windows">Windows (5)</a><a href="https://www.veryarm.com/tag/flash">Flash (5)</a><a href="https://www.veryarm.com/tag/nand">nand (5)</a><a href="https://www.veryarm.com/tag/%e8%8b%b1%e7%89%b9%e5%b0%94">英特尔 (4)</a><a href="https://www.veryarm.com/tag/ucos">uC/OS (4)</a><a href="https://www.veryarm.com/tag/vxworks">VxWorks (4)</a><a href="https://www.veryarm.com/tag/arm%e6%9c%8d%e5%8a%a1%e5%99%a8">ARM服务器 (4)</a><a href="https://www.veryarm.com/tag/atmel">Atmel (4)</a><a href="https://www.veryarm.com/tag/s3c6410">s3c6410 (4)</a><a href="https://www.veryarm.com/tag/%e4%b8%89%e6%98%9f">三星 (3)</a><a href="https://www.veryarm.com/tag/%e5%be%ae%e8%bd%af">微软 (3)</a></div></div><div class="widget d_comment"><h3 class="widget_tit">评论</h3><ul><li><a href="https://www.veryarm.com/about#comments" title="关于上的评论"><img alt='' src='http://1.gravatar.com/avatar/d89ca6abc3bbfe7c81c56bee176de57e?s=36&#038;r=g' srcset='http://1.gravatar.com/avatar/d89ca6abc3bbfe7c81c56bee176de57e?s=72&#038;r=g 2x' class='avatar avatar-36 photo' height='36' width='36' />元亮学长 <span class="muted">21小时前说：<br>www.hardkr.com 求换友链</span></a></li><li><a href="https://www.veryarm.com/1114.html#comments" title="JTAG JLink ULINK ST-LINK仿真器区别上的评论"><img alt='' src='http://1.gravatar.com/avatar/17642039e139b3eee3f046e6122c80dd?s=36&#038;r=g' srcset='http://1.gravatar.com/avatar/17642039e139b3eee3f046e6122c80dd?s=72&#038;r=g 2x' class='avatar avatar-36 photo' height='36' width='36' />Алёна <span class="muted">2周前 (09-14)说：<br>Обратный звонок</span></a></li><li><a href="https://www.veryarm.com/1114.html#comments" title="JTAG JLink ULINK ST-LINK仿真器区别上的评论"><img alt='' src='http://2.gravatar.com/avatar/8bdcbf237b6efb9d1b3f534b52318af9?s=36&#038;r=g' srcset='http://2.gravatar.com/avatar/8bdcbf237b6efb9d1b3f534b52318af9?s=72&#038;r=g 2x' class='avatar avatar-36 photo' height='36' width='36' />Жанна <span class="muted">2周前 (09-11)说：<br>Прошу перезвонить</span></a></li><li><a href="https://www.veryarm.com/1114.html#comments" title="JTAG JLink ULINK ST-LINK仿真器区别上的评论"><img alt='' src='http://1.gravatar.com/avatar/777822bb669a510f0a96a8e334e1fb89?s=36&#038;r=g' srcset='http://1.gravatar.com/avatar/777822bb669a510f0a96a8e334e1fb89?s=72&#038;r=g 2x' class='avatar avatar-36 photo' height='36' width='36' />Frithjofnousy <span class="muted">3周前 (09-04)说：<br>Kemppainen TA, Heikkinen MT, Ristikankar</span></a></li><li><a href="https://www.veryarm.com/1114.html#comments" title="JTAG JLink ULINK ST-LINK仿真器区别上的评论"><img alt='' src='http://1.gravatar.com/avatar/ab4aad6f3882b405f68378af461af2e1?s=36&#038;r=g' srcset='http://1.gravatar.com/avatar/ab4aad6f3882b405f68378af461af2e1?s=72&#038;r=g 2x' class='avatar avatar-36 photo' height='36' width='36' />FelipeEnsuexy <span class="muted">3周前 (09-02)说：<br>Immunohistochemistry can extemporize vit</span></a></li><li><a href="https://www.veryarm.com/about#comments" title="关于上的评论"><img alt='' src='http://0.gravatar.com/avatar/337630f52fd4d707419cc1c063757e8f?s=36&#038;r=g' srcset='http://0.gravatar.com/avatar/337630f52fd4d707419cc1c063757e8f?s=72&#038;r=g 2x' class='avatar avatar-36 photo' height='36' width='36' />RonaldAffon <span class="muted">3周前 (09-01)说：<br>Look at winsomeoffers someone is concern</span></a></li></ul></div><div class="widget d_banner"><div class="d_banner_inner"><div style="width: 100%; height: 250px;">
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- 边栏 -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-1963104644603965"
+     data-ad-slot="5681886579"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div></div></div></aside></section>
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="copyright pull-left">
+		&copy; 2019<!--
+		<a href="https://www.veryarm.com">奇手</a>-->
+
+		<a href="sitemap.xml" target="_blank">Sitemap</a>
+        </div>
+        <div class="trackcode pull-right">
+            <a href="http://www.miitbeian.gov.cn/" rel="external nofollow" target="_blank">粤ICP备17138695号-2</a>
+            <script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?52f9612a139997a9f839be9c91b38556";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+        </div>
+    </div>
+</footer>
+
+<script type='text/javascript' src='https://cdn.bootcss.com/jquery/3.1.1/jquery.min.js?ver=20170417'></script>
+<script type='text/javascript' src='https://cdn.bootcss.com/highlight.js/9.9.0/highlight.min.js?ver=20170417'></script>
+<script type='text/javascript' src='https://www.veryarm.com/wp-content/themes/D9/js/d9.min.js?ver=20170417'></script>
+<script type='text/javascript' src='https://www.veryarm.com/wp-includes/js/wp-embed.min.js?ver=4.9.10'></script>
+
+<script type="text/javascript">$(document).ready(function(){$('pre,code').each(function(i,block){hljs.highlightBlock(block);});});</script>
+</body>
+</html>
+<!-- Dynamic page generated in 0.405 seconds. -->
+<!-- Cached page generated by WP-Super-Cache on 2019-09-25 11:31:27 -->
+
+<!-- super cache -->

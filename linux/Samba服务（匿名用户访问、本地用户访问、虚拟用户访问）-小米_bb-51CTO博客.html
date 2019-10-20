@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="/favicon.ico" />
+        <title>Samba服务（匿名用户访问、本地用户访问、虚拟用户访问）-小米~bb-51CTO博客</title>
+    <meta name="keywords" content="samba,smb,匿名,用户访问 ">
+<meta name="description" content="Samba是一个实现不同操作系统（Windows、Linux、UNIX）之间文件共享和打印机共享的一种SMB协议的免费软件。SMB协议是客户机/服务器协议，客户机通过该协议可以访问服务器上的共享文件及打印机共享资源。它主要应用于局域网上，也可以通过设置“NetBIOSoverTCP/IP”同互联网中的电脑分享资源。SMB协议：TCP139端口CIFS协议：TCP445端口重要配置文件：/etc/s">    <link href="https://static1.51cto.com/edu/blog/css/header.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/other.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/right.css?v=3.1.7" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/blog_details.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/highlight.css" rel="stylesheet">
+    <script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="https://static1.51cto.com/edu/center/js/jquery.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/cookie.js"></script><script src="https://static1.51cto.com/edu/blog/js/login.js"></script><script src="https://static1.51cto.com/edu/blog/js/common.js"></script><script src="https://static1.51cto.com/edu/blog/js/mbox.js"></script><script src="https://static1.51cto.com/edu/blog/js/follow.js"></script><script src="https://static1.51cto.com/edu/blog/js/vip.js"></script><script src="https://static1.51cto.com/edu/blog/js/window.js"></script></head>
+<body>
+<img src="https://static1.51cto.com/edu/blog/mobile/images/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201909/25/791430f3b4f013c2fd5b1323f20b0d3a.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url('https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png') 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=10" target="_blank">
+  <img src="https://s1.51cto.com/images/blog/201909/25/d719de91a7fb563b57d8206dbd3ded7b.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li ><a href="https://blog.51cto.com/">首页</a></li>
+      <li ><a href="https://blog.51cto.com/original">文章</a></li>
+      <li ><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com" target="_blank">WOT</a>
+            <a href="http://www.51cto.com" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2F10316297%2F2118395&logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2F10316297%2F2118395" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="https://static1.51cto.com/edu/blog/images/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index"  target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onClick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="https://static1.51cto.com/edu/blog/mobile/js/lib/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=4" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201910/18/55ec263f27cb990cd38933a3d65714ef.png"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog96',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="//www.sobot.com/chat/frame/js/entrance.js?sysNum=a8d9379eaf884b4f81a48348979e3b1a" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br/>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box">
+    	<link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/mdeShow.css">
+<link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/tinyscrollbar.css"/>
+<script type="text/javascript" src="https://static1.51cto.com/edu/blog/js/jquery.tinyscrollbar.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">Samba服务（匿名用户访问、本地用户访问、虚拟用户访问）</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/10316297" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="10306297" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+				</div>
+				<a href="https://blog.51cto.com/10316297" class="name fl" target="_blank" style="margin-right:0;">MaAiQiang</a>
+									                	                    <a id="checkFollow1_10306297" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">43768人阅读</a>
+				<a href="javascript:;" class="time fr">2018-05-20 13:25:12</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content">
+					<div class="con artical-content editor-preview-side"><p>Samba是一个实现不同操作系统（Windows、Linux、UNIX）之间文件共享和打印机共享的一种SMB协议的免费软件。SMB协议是客户机/服务器协议，客户机通过该协议可以访问服务器上的共享文件及打印机共享资源。它主要应用于局域网上，也可以通过设置“NetBIOS over TCP/IP”同互联网中的电脑分享资源。</p>
+<p><strong>SMB协议：TCP    139端口         CIFS协议：TCP   445端口</strong></p>
+<h2>重要配置文件：</h2>
+<h4><strong>/etc/samba/smb.conf：</strong></h4>
+<p>SAMBA的主配置文件，内有丰富的说明，也可以通过man smb.conf查看它的详细说明。文档内部主要设定了两个部分，分别是[global]全局设置参数与共享文件设置参数；</p>
+<blockquote>
+<p><strong>security=share</strong>              //设置用户范文samba服务器的验证方式，一共四种验证方式：</p>
+<ol>
+<li>share：用户访问samba server不需要提供用户名和密码，安全性较低；</li>
+<li>user：samba server共享目录只能被授权的用户访问，由samba server负责检查账号和密码的正确性，账号与密码要在本samba server中建立；</li>
+<li>server：依靠其他windows NT/2000或samba server来验证用户的账号和密码，是一种代理验证方式。该安全模式下，系统管理员可以把所有的windows用户和密码集中到一个NT系统上，使用windows NT进行samba认证，远程服务器可以自动认证全部用户和口令，如果认证失败，samba将使用用户级安全模式作为替代的方式；</li>
+<li>
+<p>domain：域安全级别，，使用主域控制器（PDC）来完成认证。</p>
+<p><strong>passdb backend=tdbsam</strong>           //定义用户后台类型<br/><strong>smbpasswd:</strong> 使用SMB服务的smbpasswd命令给系统用户设置SMB密码<br/><strong>tdbsam：</strong> 创建数据库文件并使用pdbedit建立SMB独立用户，smbpasswd -a username 建立samba用户并设置密码，不过需要先建立系统用户，也可以使用pdbedit命令来建立samba用户<br/>pdbedit -a username：新建samba账号<br/>pdbedit -x username：删除samba账号<br/>pdbedit -L：列出samba账号列表，读取passdb.tdb数据库文件<br/>pdbedit -c “[D]” -u username:暂停该samba用户的账号<br/>pdbedit -c “[]&quot; -u username:恢复该samba用户的账号<br/><strong>ldapsam：基于LDAP服务进行账户验证</strong><br/>username map=/etc/samba/smbusers            //配合/etc/samba/smbusers文件设置虚拟账号</p>
+</li>
+</ol>
+</blockquote>
+<h4><strong>/etc/samba/lmhosts:</strong></h4>
+<p>主要目的在对应NetBIOS name与该主机名称的IP，有点类似/etc/hosts功能；</p>
+<h4><strong>/etc/samba/smbpasswd:</strong></h4>
+<p>默认并不存在，它是SAMBA预设的使用者密码对应表，文件也可自行在smb.conf里面设定文件名及相应位置。不过需要注意该文件的权限(拥有者为root，权限为600);</p>
+<h4><strong>/var/log/samba：</strong>samba服务日志文件</h4>
+<h2>系统环境</h2>
+<p>服务器：RHEL 6.5<br/>服务器IP：192.168.100.3   </p>
+<p>客户机：windows 7<br/>客户机IP：192.168.100.20<br/>客户机与服务器在用一个网段，网络可以互联互通</p>
+<h2>Samba服务部署（匿名用户访问、本地用户访问、虚拟用户访问）</h2>
+<p>#安装samba服务</p>
+<pre><code>rpm -ivh samba-3.6.9-164.el6.x86_64.rpm</code></pre>
+<h3>匿名用户访问</h3>
+<ol>
+<li>编辑cmb.conf配置文件</li>
+</ol>
+<pre><code>vim /etc/samba/smb.conf</code></pre>
+<blockquote>
+<p>security=share          //第101行，以share验证方式访问</p>
+<p>#在原内容末尾新增内容<br/>[share]             //自定义共享名称<br/>comment=this is share directory!             //共享描述<br/>path=/opt/share             //共享目录路径<br/>public=yes             //设置共享是否允许guest账户访问<br/>browseable=yes             //yes/no，设置共享是否可浏览，如果no则表示隐藏，需要通过“//ip/共享目录&quot;进行访问<br/>writable=yes             //设置共享是否具有可写权限<br/>create mask=0644             //创建的文件权限为644<br/>directory mask=0755             //创建的文件目录为755</p>
+</blockquote>
+<p>2.创建共享目录及设置权限 </p>
+<blockquote>
+<p>mkdir /opt/share<br/>chmod 777 /opt/share</p>
+</blockquote>
+<ol start="3">
+<li>添加并重启smb服务</li>
+</ol>
+<blockquote>
+<p>chkconfig smb on<br/>service smb restart</p>
+</blockquote>
+<ol start="3">
+<li>关闭selinux与防火墙</li>
+</ol>
+<blockquote>
+<p>setenforce 0<br/>service iptables stop</p>
+</blockquote>
+<h3>测试</h3>
+<p>Windows 7 系统操作：</p>
+<p>打开运行输入 \192.168.100.3 直接访问</p>
+<p><img src="https://s1.51cto.com/images/blog/201805/20/7988006ac5d5d7f1ffac6358ce43b17e.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="Samba服务（匿名用户访问、本地用户访问、虚拟用户访问）" /></p>
+<hr />
+<h3>本地用户访问</h3>
+<ol>
+<li>编辑cmb.conf配置文件</li>
+</ol>
+<pre><code>#vim /etc/samba/smb.conf</code></pre>
+<blockquote>
+<p>security=user          //第101行，以user验证方式访问</p>
+<p>[students]                  //自定义共享名称<br/>comment=this is student directory!             //共享描述<br/>path=/opt/students             //共享目录路径<br/>browseable=yes             //yes/no，设置共享是否可浏览，如果no则表示隐藏，需要通过“//ip/共享目录&quot;进行访问<br/>create mask=0644             //创建的文件权限为644<br/>directory mask=0755             //创建的文件目录为755<br/>valid users=zhangsan,lisi             //设置允许访问共享的用户，zhangsan、lisi<br/>write list=zhangsan             //设置该共享具有写入权限的用户，（可以为用户和用户组 @group）</p>
+</blockquote>
+<ol start="2">
+<li>创建students共享目录及设置目录权限</li>
+</ol>
+<blockquote>
+<p>mkdir /opt/students<br/>chmod 777 /opt/students</p>
+</blockquote>
+<ol start="3">
+<li>新增用户zhangsan、lisi并设置密码</li>
+</ol>
+<blockquote>
+<p>useradd -s /sbin/nologin zhangsan<br/>passwd zhangsan        //121212</p>
+<p>useradd -s /sbin/nologin lisi<br/>passwd lisi        //121212</p>
+</blockquote>
+<ol start="4">
+<li>将系统用户zhangsan、lisi添加为samba用户并设置samba用户登录密码</li>
+</ol>
+<blockquote>
+<p>smbpasswd -a zhangsan<br/>smbpasswd -a lisi</p>
+</blockquote>
+<ol start="5">
+<li>查看samba用户</li>
+</ol>
+<blockquote>
+<p>pdbedit -L</p>
+</blockquote>
+<p><img src="https://s1.51cto.com/images/blog/201805/20/bda679ee0c921941cdcecf8451429175.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="Samba服务（匿名用户访问、本地用户访问、虚拟用户访问）" /></p>
+<ol start="6">
+<li>重启smb服务</li>
+</ol>
+<pre><code>service smb restart</code></pre>
+<h3>测试</h3>
+<p>Windows 7 系统操作：</p>
+<p>打开运行输入 \192.168.100.3 直接访问，显示登录界面输入用户名：zhangsan，密码：121212</p>
+<p><img src="https://s1.51cto.com/images/blog/201805/20/f0d6331b197ff63eb635a751fe8f03d1.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="Samba服务（匿名用户访问、本地用户访问、虚拟用户访问）" /><br/><img src="https://s1.51cto.com/images/blog/201805/20/d7768318e4458a4c6388bd1eb1f70ef2.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="Samba服务（匿名用户访问、本地用户访问、虚拟用户访问）" /><br/><img src="https://s1.51cto.com/images/blog/201805/20/3c9bfea26beddcf7dd3526b38c74830e.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="Samba服务（匿名用户访问、本地用户访问、虚拟用户访问）" /></p>
+<hr />
+<h3>虚拟用户访问</h3>
+<ol>
+<li>编辑smbusers配置文件</li>
+</ol>
+<pre><code>vim /etc/samba/smbusers</code></pre>
+<blockquote>
+<p>//新增以下信息<br/>zhangsan =stu01 stu02 stu03</p>
+</blockquote>
+<ol start="2">
+<li>在smb.conf配置文件中添加以下记录</li>
+</ol>
+<pre><code>vim /etc/samba/smb.conf</code></pre>
+<blockquote>
+<p>security=user           <br/>username map=/etc/samba/smbusers        //虚拟用户文件的映射</p>
+</blockquote>
+<ol start="3">
+<li>重启smb服务</li>
+</ol>
+<pre><code>service smb restart</code></pre>
+<h3>测试</h3>
+<p>Windows 7 系统操作：</p>
+<p>打开运行输入 \192.168.100.3 直接访问，显示登录界面输入用户名：stu01，密码：121212<br/><img src="https://s1.51cto.com/images/blog/201805/20/f1f9be61871a5d92502467067d6b5c56.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="Samba服务（匿名用户访问、本地用户访问、虚拟用户访问）" /><br/><img src="https://s1.51cto.com/images/blog/201805/20/9acf32748c34419e3683e6d5b425035b.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="Samba服务（匿名用户访问、本地用户访问、虚拟用户访问）" /></p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者MaAiQiang的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+									<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=samba" target="_blank">samba</a>
+																								<a href="https://blog.51cto.com/search/result?q=smb" target="_blank">smb</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E5%8C%BF%E5%90%8D" target="_blank">匿名</a>
+																										                				<a class="last" href="https://blog.51cto.com/10316297/category2.html" target="_blank"><i></i>Linux高级服务</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="2118395" userid='10306297'>6</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina" >微博</a>
+					  <a class="bds_sqq" data-cmd="sqq" >QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin" >微信</a>
+					  <img src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2F10316297%2F2118395">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/10316297/2117219" title="【亲测可用】Cobbler自动批量部署Linux系统">
+						上一篇：【亲测可用】Cobbler自动批...</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/10316297/2118475" title="NFS网络文件系统">
+						下一篇：NFS网络文件系统</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/10316297" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="10306297" src="https://ucenter.51cto.com/images/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/10316297" target="_blank" style="display:inline-block;">MaAiQiang</a>
+										<h3>83篇文章，88W+人气，115粉丝</h3>
+					<h4>只有不断进步，才不会被淘汰。</h4>				</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_10306297" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/10316297" class="header-img" target="_blank">
+						<img  src="https://ucenter.51cto.com/images/noavatar_middle.gif"/>
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可"  maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="10306297">
+					<input type="hidden" class="reply_id" value="2118395">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList">
+			</div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/20/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1799人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="18" href="/cloumn/detail/18" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/06/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTOsummer</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>2034人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="30" href="/cloumn/detail/30" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201804/27/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>488人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="5" href="/cloumn/detail/5" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/03/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>474人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="13" href="/cloumn/detail/13" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/28/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>537人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="6" href="/cloumn/detail/6" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/10316297/2372011?source=dra" target="_blank">Nginx之配置HTTPS站点</a>
+															<a class="white-space" href="https://blog.51cto.com/10316297/2372003?source=dra" target="_blank">Nginx之负载均衡算法</a>
+															<a class="white-space" href="https://blog.51cto.com/yuanbin/115761?source=drt" target="_blank">Samba配置文件常用参数详解</a>
+															<a class="white-space" href="https://blog.51cto.com/yuanbin/108262?source=drt" target="_blank">vsftpd配置文件详解</a>
+															<a class="white-space" href="https://blog.51cto.com/storysky/486338?source=drt" target="_blank">nginx 域名跳转一例~~~(rewrite、proxy)</a>
+															<a class="white-space" href="https://blog.51cto.com/xiaofw/88475?source=drt" target="_blank">北京地铁10号线地图（7月最新线路图、站名） </a>
+															<a class="white-space" href="https://blog.51cto.com/xiaofw/134054?source=drt" target="_blank">北京地铁4号线地图（清晰大图、站名） 9月试运行</a>
+															<a class="white-space" href="https://blog.51cto.com/yangxuejun/180224?source=drt" target="_blank">Samba服务器的配置</a>
+															<a class="white-space" href="https://blog.51cto.com/gshao/1893867?source=drt" target="_blank">Windows Server之浅谈SMB以及SMB小案例分享</a>
+															<a class="white-space" href="https://blog.51cto.com/11821908/2057726?source=drt" target="_blank">椭圆曲线加解密及签名算法的技术原理及其Go语言实现</a>
+															<a class="white-space" href="https://blog.51cto.com/xiaofw/45425?source=drt" target="_blank">北京地铁5号线地图（线路图、站名、实拍pp）</a>
+															<a class="white-space" href="https://blog.51cto.com/yuanbin/129071?source=drt" target="_blank">两种方式建立Vsftpd虚拟用户</a>
+															<a class="white-space" href="https://blog.51cto.com/breaklinux/2442979?source=drh" target="_blank">k8s 之 应用实践-Service,Ingress</a>
+															<a class="white-space" href="https://blog.51cto.com/jdonghong/2442843?source=drh" target="_blank">当sudo用户偶遇上VI/VIM发生了什么?(sudo+vi/vim=root)藏在你身后的ROOT</a>
+															<a class="white-space" href="https://blog.51cto.com/14227204/2442832?source=drh" target="_blank">Ansible自动化运维的安装及常用模块详解</a>
+															<a class="white-space" href="https://blog.51cto.com/biying/2442375?source=drh" target="_blank">Nginx大并发优化实战</a>
+															<a class="white-space" href="https://blog.51cto.com/breaklinux/2442123?source=drh" target="_blank">K8S 运维技巧--DNS 部分;</a>
+															<a class="white-space" href="https://blog.51cto.com/13641616/2442005?source=drh" target="_blank">【K8S排错】在集群的POD内不能访问clusterIP和service</a>
+															<a class="white-space" href="https://blog.51cto.com/zhongxiaofei/2441908?source=drh" target="_blank">linux7下虚拟主机的三种实现方式</a>
+															<a class="white-space" href="https://blog.51cto.com/14449521/2441187?source=drh" target="_blank">Shell脚本之Expect免交互</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="https://s1.51cto.com/images/blog/201905/05/f92360e227f9d91cdff7ea95120630ef.png" style="width:70px;height:70px;"/> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="https://static1.51cto.com/edu/blog/mobile/images/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="2118395" userid='10306297'>6</span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>6</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2F10316297%2F2118395"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_10306297" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a href="https://blog.51cto.com/10316297" class="b-name fr">MaAiQiang</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/10316297" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="10306297" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+<script src="https://static1.51cto.com/edu/blog/js/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '2118395'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'10306297',
+            'blog_id':'2118395'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/10316297';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='10306297'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '0'
+    	nicknameurl = 'https://blog.51cto.com/10316297'
+    	nickname = 'MaAiQiang'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_10306297'),'10306297','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_10306297'),'10306297','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_10306297'),'10306297','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("Samba\u662f\u4e00\u4e2a\u5b9e\u73b0\u4e0d\u540c\u64cd\u4f5c\u7cfb\u7edf\uff08Windows\u3001Linux\u3001UNIX\uff09\u4e4b\u95f4\u6587\u4ef6\u5171\u4eab\u548c\u6253\u5370\u673a\u5171\u4eab\u7684\u4e00\u79cdSMB\u534f\u8bae\u7684\u514d\u8d39\u8f6f\u4ef6\u3002SMB\u534f\u8bae\u662f\u5ba2\u6237\u673a\/\u670d\u52a1\u5668\u534f\u8bae\uff0c\u5ba2\u6237\u673a\u901a\u8fc7\u8be5\u534f\u8bae\u53ef\u4ee5\u8bbf\u95ee\u670d\u52a1\u5668\u4e0a\u7684\u5171\u4eab\u6587\u4ef6\u53ca\u6253\u5370\u673a\u5171\u4eab\u8d44\u6e90\u3002\u5b83\u4e3b\u8981\u5e94\u7528\u4e8e\u5c40\u57df\u7f51\u4e0a\uff0c\u4e5f\u53ef\u4ee5\u901a\u8fc7\u8bbe\u7f6e\u201cNetBIOS over TCP\/IP\u201d\u540c\u4e92\u8054\u7f51\u4e2d\u7684\u7535\u8111\u5206\u4eab\u8d44\u6e90\u3002\n\n**SMB\u534f\u8bae\uff1aTCP    139\u7aef\u53e3         CIFS\u534f\u8bae\uff1aTCP   445\u7aef\u53e3**\n\n## \u91cd\u8981\u914d\u7f6e\u6587\u4ef6\uff1a\n\n#### **\/etc\/samba\/smb.conf\uff1a**\nSAMBA\u7684\u4e3b\u914d\u7f6e\u6587\u4ef6\uff0c\u5185\u6709\u4e30\u5bcc\u7684\u8bf4\u660e\uff0c\u4e5f\u53ef\u4ee5\u901a\u8fc7man smb.conf\u67e5\u770b\u5b83\u7684\u8be6\u7ec6\u8bf4\u660e\u3002\u6587\u6863\u5185\u90e8\u4e3b\u8981\u8bbe\u5b9a\u4e86\u4e24\u4e2a\u90e8\u5206\uff0c\u5206\u522b\u662f[global]\u5168\u5c40\u8bbe\u7f6e\u53c2\u6570\u4e0e\u5171\u4eab\u6587\u4ef6\u8bbe\u7f6e\u53c2\u6570\uff1b\n\n>   **security=share**              \/\/\u8bbe\u7f6e\u7528\u6237\u8303\u6587samba\u670d\u52a1\u5668\u7684\u9a8c\u8bc1\u65b9\u5f0f\uff0c\u4e00\u5171\u56db\u79cd\u9a8c\u8bc1\u65b9\u5f0f\uff1a\n    1.  share\uff1a\u7528\u6237\u8bbf\u95eesamba server\u4e0d\u9700\u8981\u63d0\u4f9b\u7528\u6237\u540d\u548c\u5bc6\u7801\uff0c\u5b89\u5168\u6027\u8f83\u4f4e\uff1b\n    2.  user\uff1asamba server\u5171\u4eab\u76ee\u5f55\u53ea\u80fd\u88ab\u6388\u6743\u7684\u7528\u6237\u8bbf\u95ee\uff0c\u7531samba server\u8d1f\u8d23\u68c0\u67e5\u8d26\u53f7\u548c\u5bc6\u7801\u7684\u6b63\u786e\u6027\uff0c\u8d26\u53f7\u4e0e\u5bc6\u7801\u8981\u5728\u672csamba server\u4e2d\u5efa\u7acb\uff1b\n    3.  server\uff1a\u4f9d\u9760\u5176\u4ed6windows NT\/2000\u6216samba server\u6765\u9a8c\u8bc1\u7528\u6237\u7684\u8d26\u53f7\u548c\u5bc6\u7801\uff0c\u662f\u4e00\u79cd\u4ee3\u7406\u9a8c\u8bc1\u65b9\u5f0f\u3002\u8be5\u5b89\u5168\u6a21\u5f0f\u4e0b\uff0c\u7cfb\u7edf\u7ba1\u7406\u5458\u53ef\u4ee5\u628a\u6240\u6709\u7684windows\u7528\u6237\u548c\u5bc6\u7801\u96c6\u4e2d\u5230\u4e00\u4e2aNT\u7cfb\u7edf\u4e0a\uff0c\u4f7f\u7528windows NT\u8fdb\u884csamba\u8ba4\u8bc1\uff0c\u8fdc\u7a0b\u670d\u52a1\u5668\u53ef\u4ee5\u81ea\u52a8\u8ba4\u8bc1\u5168\u90e8\u7528\u6237\u548c\u53e3\u4ee4\uff0c\u5982\u679c\u8ba4\u8bc1\u5931\u8d25\uff0csamba\u5c06\u4f7f\u7528\u7528\u6237\u7ea7\u5b89\u5168\u6a21\u5f0f\u4f5c\u4e3a\u66ff\u4ee3\u7684\u65b9\u5f0f\uff1b\n    4.  domain\uff1a\u57df\u5b89\u5168\u7ea7\u522b\uff0c\uff0c\u4f7f\u7528\u4e3b\u57df\u63a7\u5236\u5668\uff08PDC\uff09\u6765\u5b8c\u6210\u8ba4\u8bc1\u3002\n\n>   **passdb backend=tdbsam**           \/\/\u5b9a\u4e49\u7528\u6237\u540e\u53f0\u7c7b\u578b\n    **smbpasswd:** \u4f7f\u7528SMB\u670d\u52a1\u7684smbpasswd\u547d\u4ee4\u7ed9\u7cfb\u7edf\u7528\u6237\u8bbe\u7f6eSMB\u5bc6\u7801\n    **tdbsam\uff1a** \u521b\u5efa\u6570\u636e\u5e93\u6587\u4ef6\u5e76\u4f7f\u7528pdbedit\u5efa\u7acbSMB\u72ec\u7acb\u7528\u6237\uff0csmbpasswd -a username \u5efa\u7acbsamba\u7528\u6237\u5e76\u8bbe\u7f6e\u5bc6\u7801\uff0c\u4e0d\u8fc7\u9700\u8981\u5148\u5efa\u7acb\u7cfb\u7edf\u7528\u6237\uff0c\u4e5f\u53ef\u4ee5\u4f7f\u7528pdbedit\u547d\u4ee4\u6765\u5efa\u7acbsamba\u7528\u6237\n        pdbedit -a username\uff1a\u65b0\u5efasamba\u8d26\u53f7\n        pdbedit -x username\uff1a\u5220\u9664samba\u8d26\u53f7\n        pdbedit -L\uff1a\u5217\u51fasamba\u8d26\u53f7\u5217\u8868\uff0c\u8bfb\u53d6passdb.tdb\u6570\u636e\u5e93\u6587\u4ef6\n        pdbedit -c \u201c[D]\u201d -u username:\u6682\u505c\u8be5samba\u7528\u6237\u7684\u8d26\u53f7\n\t\tpdbedit -c \u201c[]\" -u username:\u6062\u590d\u8be5samba\u7528\u6237\u7684\u8d26\u53f7\n**ldapsam\uff1a\u57fa\u4e8eLDAP\u670d\u52a1\u8fdb\u884c\u8d26\u6237\u9a8c\u8bc1**\n>   username map=\/etc\/samba\/smbusers            \/\/\u914d\u5408\/etc\/samba\/smbusers\u6587\u4ef6\u8bbe\u7f6e\u865a\u62df\u8d26\u53f7\n\n\n#### **\/etc\/samba\/lmhosts:**\n\u4e3b\u8981\u76ee\u7684\u5728\u5bf9\u5e94NetBIOS name\u4e0e\u8be5\u4e3b\u673a\u540d\u79f0\u7684IP\uff0c\u6709\u70b9\u7c7b\u4f3c\/etc\/hosts\u529f\u80fd\uff1b\n\n#### **\/etc\/samba\/smbpasswd:**\n\u9ed8\u8ba4\u5e76\u4e0d\u5b58\u5728\uff0c\u5b83\u662fSAMBA\u9884\u8bbe\u7684\u4f7f\u7528\u8005\u5bc6\u7801\u5bf9\u5e94\u8868\uff0c\u6587\u4ef6\u4e5f\u53ef\u81ea\u884c\u5728smb.conf\u91cc\u9762\u8bbe\u5b9a\u6587\u4ef6\u540d\u53ca\u76f8\u5e94\u4f4d\u7f6e\u3002\u4e0d\u8fc7\u9700\u8981\u6ce8\u610f\u8be5\u6587\u4ef6\u7684\u6743\u9650(\u62e5\u6709\u8005\u4e3aroot\uff0c\u6743\u9650\u4e3a600);\n\n#### **\/var\/log\/samba\uff1a**samba\u670d\u52a1\u65e5\u5fd7\u6587\u4ef6\n\n\n## \u7cfb\u7edf\u73af\u5883\n\u670d\u52a1\u5668\uff1aRHEL 6.5\n\u670d\u52a1\u5668IP\uff1a192.168.100.3   \n\n\u5ba2\u6237\u673a\uff1awindows 7\n\u5ba2\u6237\u673aIP\uff1a192.168.100.20\n\u5ba2\u6237\u673a\u4e0e\u670d\u52a1\u5668\u5728\u7528\u4e00\u4e2a\u7f51\u6bb5\uff0c\u7f51\u7edc\u53ef\u4ee5\u4e92\u8054\u4e92\u901a\n\n\n## Samba\u670d\u52a1\u90e8\u7f72\uff08\u533f\u540d\u7528\u6237\u8bbf\u95ee\u3001\u672c\u5730\u7528\u6237\u8bbf\u95ee\u3001\u865a\u62df\u7528\u6237\u8bbf\u95ee\uff09\n\n#\u5b89\u88c5samba\u670d\u52a1\n\n```\nrpm -ivh samba-3.6.9-164.el6.x86_64.rpm\n```\n\n### \u533f\u540d\u7528\u6237\u8bbf\u95ee\n\n1. \u7f16\u8f91cmb.conf\u914d\u7f6e\u6587\u4ef6\n\n```\nvim \/etc\/samba\/smb.conf\n```\n\n>   security=share          \/\/\u7b2c101\u884c\uff0c\u4ee5share\u9a8c\u8bc1\u65b9\u5f0f\u8bbf\u95ee\n>\n>   #\u5728\u539f\u5185\u5bb9\u672b\u5c3e\u65b0\u589e\u5185\u5bb9\n>   [share]             \/\/\u81ea\u5b9a\u4e49\u5171\u4eab\u540d\u79f0\n>       comment=this is share directory!             \/\/\u5171\u4eab\u63cf\u8ff0\n>       path=\/opt\/share             \/\/\u5171\u4eab\u76ee\u5f55\u8def\u5f84\n>       public=yes             \/\/\u8bbe\u7f6e\u5171\u4eab\u662f\u5426\u5141\u8bb8guest\u8d26\u6237\u8bbf\u95ee\n>       browseable=yes             \/\/yes\/no\uff0c\u8bbe\u7f6e\u5171\u4eab\u662f\u5426\u53ef\u6d4f\u89c8\uff0c\u5982\u679cno\u5219\u8868\u793a\u9690\u85cf\uff0c\u9700\u8981\u901a\u8fc7\u201c\/\/ip\/\u5171\u4eab\u76ee\u5f55\"\u8fdb\u884c\u8bbf\u95ee\n>       writable=yes             \/\/\u8bbe\u7f6e\u5171\u4eab\u662f\u5426\u5177\u6709\u53ef\u5199\u6743\u9650\n>       create mask=0644             \/\/\u521b\u5efa\u7684\u6587\u4ef6\u6743\u9650\u4e3a644\n>       directory mask=0755             \/\/\u521b\u5efa\u7684\u6587\u4ef6\u76ee\u5f55\u4e3a755\n\n2.\u521b\u5efa\u5171\u4eab\u76ee\u5f55\u53ca\u8bbe\u7f6e\u6743\u9650 \n\n>   mkdir \/opt\/share\n>   chmod 777 \/opt\/share\n\n3. \u6dfb\u52a0\u5e76\u91cd\u542fsmb\u670d\u52a1\n\n>   chkconfig smb on\n>   service smb restart\n\n3. \u5173\u95edselinux\u4e0e\u9632\u706b\u5899\n\n>   setenforce 0\n>   service iptables stop\n\n### \u6d4b\u8bd5\nWindows 7 \u7cfb\u7edf\u64cd\u4f5c\uff1a\n\n\u6253\u5f00\u8fd0\u884c\u8f93\u5165 \\\\192.168.100.3 \u76f4\u63a5\u8bbf\u95ee\n\n![](https:\/\/s1.51cto.com\/images\/blog\/201805\/20\/7988006ac5d5d7f1ffac6358ce43b17e.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\n\n\n-----\n\n\n\n### \u672c\u5730\u7528\u6237\u8bbf\u95ee\n1. \u7f16\u8f91cmb.conf\u914d\u7f6e\u6587\u4ef6\n\n```\n#vim \/etc\/samba\/smb.conf\n```\n\n>   security=user          \/\/\u7b2c101\u884c\uff0c\u4ee5user\u9a8c\u8bc1\u65b9\u5f0f\u8bbf\u95ee\n>   \n>   [students]                  \/\/\u81ea\u5b9a\u4e49\u5171\u4eab\u540d\u79f0\n>           comment=this is student directory!             \/\/\u5171\u4eab\u63cf\u8ff0\n>           path=\/opt\/students             \/\/\u5171\u4eab\u76ee\u5f55\u8def\u5f84\n>           browseable=yes             \/\/yes\/no\uff0c\u8bbe\u7f6e\u5171\u4eab\u662f\u5426\u53ef\u6d4f\u89c8\uff0c\u5982\u679cno\u5219\u8868\u793a\u9690\u85cf\uff0c\u9700\u8981\u901a\u8fc7\u201c\/\/ip\/\u5171\u4eab\u76ee\u5f55\"\u8fdb\u884c\u8bbf\u95ee\n>           create mask=0644             \/\/\u521b\u5efa\u7684\u6587\u4ef6\u6743\u9650\u4e3a644\n>           directory mask=0755             \/\/\u521b\u5efa\u7684\u6587\u4ef6\u76ee\u5f55\u4e3a755\n>           valid users=zhangsan,lisi             \/\/\u8bbe\u7f6e\u5141\u8bb8\u8bbf\u95ee\u5171\u4eab\u7684\u7528\u6237\uff0czhangsan\u3001lisi\n>           write list=zhangsan             \/\/\u8bbe\u7f6e\u8be5\u5171\u4eab\u5177\u6709\u5199\u5165\u6743\u9650\u7684\u7528\u6237\uff0c\uff08\u53ef\u4ee5\u4e3a\u7528\u6237\u548c\u7528\u6237\u7ec4 @group\uff09\n\n\n2. \u521b\u5efastudents\u5171\u4eab\u76ee\u5f55\u53ca\u8bbe\u7f6e\u76ee\u5f55\u6743\u9650\n\n>   mkdir \/opt\/students\n>   chmod 777 \/opt\/students\n\n3. \u65b0\u589e\u7528\u6237zhangsan\u3001lisi\u5e76\u8bbe\u7f6e\u5bc6\u7801\n\n>   useradd -s \/sbin\/nologin zhangsan\n>   passwd zhangsan        \/\/121212\n>   \n>   useradd -s \/sbin\/nologin lisi\n>   passwd lisi        \/\/121212\n\n4. \u5c06\u7cfb\u7edf\u7528\u6237zhangsan\u3001lisi\u6dfb\u52a0\u4e3asamba\u7528\u6237\u5e76\u8bbe\u7f6esamba\u7528\u6237\u767b\u5f55\u5bc6\u7801\n\n>   smbpasswd -a zhangsan\n>   smbpasswd -a lisi\n\n5. \u67e5\u770bsamba\u7528\u6237\n\n>   pdbedit -L\n\n![](https:\/\/s1.51cto.com\/images\/blog\/201805\/20\/bda679ee0c921941cdcecf8451429175.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\n6. \u91cd\u542fsmb\u670d\u52a1\n\n```\nservice smb restart\n```\n\n### \u6d4b\u8bd5\nWindows 7 \u7cfb\u7edf\u64cd\u4f5c\uff1a\n\n\u6253\u5f00\u8fd0\u884c\u8f93\u5165 \\\\192.168.100.3 \u76f4\u63a5\u8bbf\u95ee\uff0c\u663e\u793a\u767b\u5f55\u754c\u9762\u8f93\u5165\u7528\u6237\u540d\uff1azhangsan\uff0c\u5bc6\u7801\uff1a121212\n\n![](https:\/\/s1.51cto.com\/images\/blog\/201805\/20\/f0d6331b197ff63eb635a751fe8f03d1.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n![](https:\/\/s1.51cto.com\/images\/blog\/201805\/20\/d7768318e4458a4c6388bd1eb1f70ef2.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n![](https:\/\/s1.51cto.com\/images\/blog\/201805\/20\/3c9bfea26beddcf7dd3526b38c74830e.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\n\n\n-----\n\n\n\n### \u865a\u62df\u7528\u6237\u8bbf\u95ee\n\n1. \u7f16\u8f91smbusers\u914d\u7f6e\u6587\u4ef6\n\n```\nvim \/etc\/samba\/smbusers\n```\n\n>   \/\/\u65b0\u589e\u4ee5\u4e0b\u4fe1\u606f\n>   zhangsan =stu01 stu02 stu03\n\n2. \u5728smb.conf\u914d\u7f6e\u6587\u4ef6\u4e2d\u6dfb\u52a0\u4ee5\u4e0b\u8bb0\u5f55\n\n```\nvim \/etc\/samba\/smb.conf\n``` \n\n>   security=user           \n>   username map=\/etc\/samba\/smbusers        \/\/\u865a\u62df\u7528\u6237\u6587\u4ef6\u7684\u6620\u5c04\n\n3. \u91cd\u542fsmb\u670d\u52a1\n\n```\nservice smb restart\n```\n\n### \u6d4b\u8bd5\nWindows 7 \u7cfb\u7edf\u64cd\u4f5c\uff1a\n\n\u6253\u5f00\u8fd0\u884c\u8f93\u5165 \\\\192.168.100.3 \u76f4\u63a5\u8bbf\u95ee\uff0c\u663e\u793a\u767b\u5f55\u754c\u9762\u8f93\u5165\u7528\u6237\u540d\uff1astu01\uff0c\u5bc6\u7801\uff1a121212\n![](https:\/\/s1.51cto.com\/images\/blog\/201805\/20\/f1f9be61871a5d92502467067d6b5c56.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n![](https:\/\/s1.51cto.com\/images\/blog\/201805\/20\/9acf32748c34419e3683e6d5b425035b.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"Samba服务（匿名用户访问、本地用户访问、虚拟用户访问）",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1571493206; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="https://static1.51cto.com/edu/blog/js/marked.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/highlight.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail_mp.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail.js"></script><script src="https://static1.51cto.com/edu/blog/js/details_new.js"></script><script src="https://static1.51cto.com/edu/blog/js/copy.js"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="http://log.51cto.com/pageview.php?frompos=blog_art"></iframe>
+</div>
+
+<script src="https://static1.51cto.com/edu/blog/js/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type='text/javascript'>
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="https://static1.51cto.com/edu//blog/js/jquery.cookie.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+</body>
+</html>

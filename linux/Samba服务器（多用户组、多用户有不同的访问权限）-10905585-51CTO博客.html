@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="/favicon.ico" />
+        <title>Samba服务器（多用户组、多用户有不同的访问权限）-10905585-51CTO博客</title>
+    <meta name="keywords" content="network,服务器,exchange,用户组,public">
+<meta name="description" content="1。首先服务器采用用户验证的方式，每个用户可以访问自己的宿主目录，并且只有该用户能访问宿主目录，并具有完全的权限，而其他人不能看到你的宿主目录。2。建立一个caiwu的文件夹，希望caiwu组和lingdao组的人能看到，network02也可以访问，但只有caiwu01有写的权限。3。建立一个lindao的目录，只有领导组的人可以访问并读写，还有network02也可以访问，但外人看不到那个目录">    <link href="https://static1.51cto.com/edu/blog/css/header.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/other.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/right.css?v=3.1.7" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/blog_details.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/highlight.css" rel="stylesheet">
+    <script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="https://static1.51cto.com/edu/center/js/jquery.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/cookie.js"></script><script src="https://static1.51cto.com/edu/blog/js/login.js"></script><script src="https://static1.51cto.com/edu/blog/js/common.js"></script><script src="https://static1.51cto.com/edu/blog/js/mbox.js"></script><script src="https://static1.51cto.com/edu/blog/js/follow.js"></script><script src="https://static1.51cto.com/edu/blog/js/vip.js"></script><script src="https://static1.51cto.com/edu/blog/js/window.js"></script></head>
+<body>
+<img src="https://static1.51cto.com/edu/blog/mobile/images/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201909/25/791430f3b4f013c2fd5b1323f20b0d3a.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url('https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png') 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=10" target="_blank">
+  <img src="https://s1.51cto.com/images/blog/201909/25/d719de91a7fb563b57d8206dbd3ded7b.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li ><a href="https://blog.51cto.com/">首页</a></li>
+      <li ><a href="https://blog.51cto.com/original">文章</a></li>
+      <li ><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com" target="_blank">WOT</a>
+            <a href="http://www.51cto.com" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2F10915585%2F1731174&logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2F10915585%2F1731174" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="https://static1.51cto.com/edu/blog/images/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index"  target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onClick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="https://static1.51cto.com/edu/blog/mobile/js/lib/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=4" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201910/18/55ec263f27cb990cd38933a3d65714ef.png"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog96',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="//www.sobot.com/chat/frame/js/entrance.js?sysNum=a8d9379eaf884b4f81a48348979e3b1a" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br/>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box">
+      <link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/mdeShow.css">
+  <link rel="stylesheet" href="https://blog.51cto.com/static/js/ueditor1.4.3/prism.css">
+  <script type="text/javascript" charset="utf-8" src="https://blog.51cto.com/static/js/ueditor1.4.3/prism.js"></script>
+<link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/tinyscrollbar.css"/>
+<script type="text/javascript" src="https://static1.51cto.com/edu/blog/js/jquery.tinyscrollbar.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name reprint">转载</a>
+							</div>
+			<h1 class="artical-title">Samba服务器（多用户组、多用户有不同的访问权限）</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/10915585" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="10905585" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+				</div>
+				<a href="https://blog.51cto.com/10915585" class="name fl" target="_blank" style="margin-right:0;">Linux小璇</a>
+												<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">957人阅读</a>
+				<a href="javascript:;" class="time fr">2016-01-03 21:42:18</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><p><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">1。首先服务器采用用户验证的方式，每个用户可以访问自己的宿主目录，并且只有该用户能访问宿主目录，并具有完全的权限，而其他人不能看到你的宿主目录。</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">2。建立一个caiwu的文件夹，希望caiwu组和lingdao组的人能看到，network02也可以访问，但只有caiwu01有写的权限。</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">3。建立一个lindao的目录，只有领导组的人可以访问并读写，还有network02也可以访问，但外人看不到那个目录</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">4。建立一个文件交换目录exchange，所有人都能读写，包括guest用户，但每个人不能删除别人的文件。</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">5。建立一个公共的只读文件夹public，所有人只读这个文件夹的内容。</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">好，我们先来前期的工作</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">建立3个组：</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#groupadd caiwu</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#groupadd network</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#groupadd lingdao</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">添加用户并加入相关的组当中：</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#useradd caiwu01 -g caiwu</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#useradd caiwu02 -g caiwu</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#useradd network01 -g network</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#useradd network02 -g network</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#useradd lingdao01 -g lingdao</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#useradd lingdao02 -g lingdao</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">然后我们使用smbpasswd -a caiwu01的命令为6个帐户分别添加到samba用户中</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#mkdir /home/samba</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#mkdir /home/samba/caiwu</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#mkdir /home/samba/lingdao</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#mkdir /home/samba/exchange</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#mkdir /home/samba/public</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">我们为了避免麻烦可以在这里把上面所有的文件夹的权限都设置成777，我们通过samba灵活的权限管理来设置上面的5点要求。</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">以下是我的smb.conf的配置文件</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">[global]</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">workgroup = bmit&nbsp;</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#我的网络工作组</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">server string = Frank's Samba File Server</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#我的服务器名描述</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">security = user</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#使用用户验证机制</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">encrypt passwords = yes</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">smb passwd file = /etc/samba/smbpasswd</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#使用加密密码机制，在win95和winnt使用的是明文</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">其他的基本上可以按照默认的来。</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">[homes]</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">comment = Home Directories</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">browseable = no</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">writable = yes</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">valid users = %S</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">create mode = 0664</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">directory mode = 0775</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#homes段满足第1条件</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">[caiwu]</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">comment = caiwu</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">path = /home/samba/caiwu</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">public = no</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">valid users = @caiwu,@lingdao,network02</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">write list = caiwu01</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">printable = no</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#caiwu段满足我们的第2要求</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">[lingdao]</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">comment = lingdao</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">path = /home/samba/lingdao</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">public = no</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">browseable = no</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">valid users = @lingdao,network02</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">printable = no</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#lingdao段能满足我们的第3要求</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">[exchage]</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">comment = Exchange File Directory</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">path = /home/samba/exchange</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">public = yes</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">writable = yes</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#exchange段基本能满足我们的第4要求，但不能满足每个人不能删除别人的文件这个条件，即使里设置了mask也是没用，其实这个条件只要unix设置一个粘着位就行</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">chmod -R 1777 /home/samba/exchange&nbsp;</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">注意这里权限是1777，类似的系统目录/tmp也具有相同的权限，这个权限能实现每个人能自由写文件，但不能删除别人的文件这个要求</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">[public]</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">comment = Read Only Public</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">path = /home/samba/public</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">public = yes</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">read only = yes</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#这个public段能满足我们的第5要求。</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">到此为止我们的设置已经能实现我们的共享文件要求，记得重启服务哦</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#/etc/rc.d/init.d/smb restart</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">如果大家没有winodws，不妨先用samba的cilent端命令来测试一下</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">命令的用法我在这里只举几个例子，具体的大家去试验</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">smbclient -L 服务器ip -N&nbsp;</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">guest帐户查询你的服务器的samba共享情况，你可以检验一下是否lingdao目录时候能被guest帐户看到，应该是看不到的，当然你也可以以某个用户的名义查看</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">smbclient -L 服务器ip -U caiwu01</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">系统会提示密码，只要输入smb密码就行。</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">smbclient //服务器ip/caiwu -U caiwu01</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">#以caiwu01用户的名义登录caiwu目录</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);">smbmount //服务器ip/caiwu /mnt/caiwu -o username=caiwu01</span><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /><br style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);" /></p><p style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);">#把服务器的财务目录映射到本地的/mnt/caiwu目录。</p><p style="color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);"><br /></p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;"><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"></span></span><strong><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';"><span style="font-size:12px;">测试</span></span></span></span></strong></p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:.17in;"><span style="color:rgb(0,0,0);"><span style="font-family:Arial, serif;">smbclient&nbsp;-L&nbsp;</span></span><span style="font-family:Arial, serif;">//localhost/share</span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">　或者　</span></span></span><span style="font-family:Arial, serif;"><br /></span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">　　</span></span></span><span style="font-family:Arial, serif;">smbclient-L \\127.0.0.1 -U</span><span style="color:rgb(0,0,0);"><span style="font-family:'宋体', serif;"><strong>myname</strong></span></span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">　</span></span></span><span style="font-family:Arial, serif;">//</span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">这时输入的密码就是你刚才设置的</span></span></span><span style="font-family:Arial, serif;">samba</span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">密码</span></span></span></p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;"><strong><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';"><span style="font-size:12px;">使用</span></span></span></span></strong><span style="font-family:Arial, serif;"><br /></span></p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;"><span style="font-family:Arial, serif;">1</span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">、</span></span></span><span style="font-family:Arial, serif;">windows</span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">用户</span></span></span><span style="font-family:Arial, serif;"><br /></span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">在我的电脑地址栏里输入</span></span></span><span style="font-family:Arial, serif;">\\192.168.1.1</span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">访问；也可</span></span></span><span style="font-family:Arial, serif;">windows+R</span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">输入</span></span></span><span style="font-family:Arial, serif;">\\192.168.1.1</span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">；</span></span></span></p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);"><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn">登录后可以右击<strong>映射到本地驱动器。</strong></span></span></p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);"><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><strong>net use * /delete</strong></span></span><br />2<span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn">、</span></span>linux</p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);margin-bottom:0in;"><span style="font-size:10px;">(1)</span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn">使用</span></span>smbclient</p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);margin-bottom:0in;">#smbclient//<span style="font-family:Arial, serif;">192.168.1.1</span>/Normal -U user%passwd<br /><span style="font-size:10px;">(2)</span><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn">挂载到某个目录使用</span></span><br />#mkdir/mnt/share<br />#mount -o username=youruser,password=passwd //<span style="font-family:Arial, serif;">192.168.1.1</span>/Normal&nbsp; /mnt/share</p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;"><span style="font-family:'DejaVu Sans';"><span lang="zh-cn" xml:lang="zh-cn"><span style="font-family:'宋体';">设置开机挂载将如下命令写入</span></span></span><span style="font-family:Arial, serif;">/etc/fstab</span></p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;"><span style="font-family:Arial, serif;">//192.168.1.1/share&nbsp;&nbsp;/mnt/ml45&nbsp;&nbsp;cifs&nbsp;&nbsp;defaults,auto,username=youruser,password=passwd 0 0</span></p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;"><br /></p><p class="western" style="text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;">然后#mount -a</p><p><br /></p></div>
+				</div>
+															<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=network" target="_blank">network</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E6%9C%8D%E5%8A%A1%E5%99%A8" target="_blank">服务器</a>
+																								<a href="https://blog.51cto.com/search/result?q=exchange" target="_blank">exchange</a>
+																																					                				<a class="last" href="https://blog.51cto.com/10915585/category1.html" target="_blank"><i></i>Linux文章</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="1731174" userid='10905585'>0</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina" >微博</a>
+					  <a class="bds_sqq" data-cmd="sqq" >QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin" >微信</a>
+					  <img src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2F10915585%2F1731174">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/10915585/1731173" title="终于搞定samba中文乱码的问题">
+						上一篇：终于搞定samba中文乱码的问题</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/10915585/1731175" title="samba服务器用户验证与匿名访问共存">
+						下一篇：samba服务器用户验证与匿名访...</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/10915585" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="10905585" src="https://ucenter.51cto.com/images/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/10915585" target="_blank" style="display:inline-block;">Linux小璇</a>
+										<h3>60篇文章，5W+人气，0粉丝</h3>
+									</div>
+								<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/10915585" class="header-img" target="_blank">
+						<img  src="https://ucenter.51cto.com/images/noavatar_middle.gif"/>
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可"  maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="10905585">
+					<input type="hidden" class="reply_id" value="1731174">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList">
+			</div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/20/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1799人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="18" href="/cloumn/detail/18" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201804/27/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>488人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="5" href="/cloumn/detail/5" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/8" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201807/19/5366d1f50328a62facbf5db1d91c319a.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/8" target="_blank"> VMware vSAN中小企业应用案例</a>
+									<h3 class="white-space">掌握VMware超融合技术</h3>
+									<h4 class="white-space">共41章&nbsp;|&nbsp;<a href="https://blog.51cto.com/wangchunhai" target="_blank">王春海</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>372人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="8" href="/cloumn/detail/8" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/10" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201807/19/9d82eccb4e3c371eaeac41193bbef757.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/10" target="_blank"> 基于Kubernetes企业级容器云平台落地与实践</a>
+									<h3 class="white-space">容器私有云平台实践之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/lizhenliang" target="_blank">李振良OK</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>641人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="10" href="/cloumn/detail/10" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/28/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>537人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="6" href="/cloumn/detail/6" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/10915585/2042345?source=dra" target="_blank">我的友情链接</a>
+															<a class="white-space" href="https://blog.51cto.com/10915585/1764055?source=dra" target="_blank">让linux的history命令显示操作时间</a>
+															<a class="white-space" href="https://blog.51cto.com/wangchunhai/837529?source=drt" target="_blank">使用iLO远程管理HP系列服务器</a>
+															<a class="white-space" href="https://blog.51cto.com/zero01/2082794?source=drt" target="_blank">搭建ELK日志分析平台（下）—— 搭建kibana和logstash服务器</a>
+															<a class="white-space" href="https://blog.51cto.com/yucanghai/1713803?source=drt" target="_blank">服务器排障 之 nginx 499 错误的解决</a>
+															<a class="white-space" href="https://blog.51cto.com/freeloda/1245492?source=drt" target="_blank">CentOS6.4+LAMP+Postfix+Dovecot+Postfixadmin+Roundcubemail 打造企业级邮件服务器 (1)</a>
+															<a class="white-space" href="https://blog.51cto.com/wangchunhai/287653?source=drt" target="_blank">用Windows Storage Server 2008做iSCSI存储服务器</a>
+															<a class="white-space" href="https://blog.51cto.com/yahoon/162922?source=drt" target="_blank">apache做反向代理服务器</a>
+															<a class="white-space" href="https://blog.51cto.com/ycrsjxy/1047742?source=drt" target="_blank">Windows Server 2012图形用户界面（GUI）和服务器核心(Server Core)之间的切换</a>
+															<a class="white-space" href="https://blog.51cto.com/12227558/2074095?source=drt" target="_blank">Linux运维高级篇—CentOS 7下Postfix邮件服务器搭建</a>
+															<a class="white-space" href="https://blog.51cto.com/13525470/2073657?source=drt" target="_blank">CentOS 7 Tomcat服务的安装与配置</a>
+															<a class="white-space" href="https://blog.51cto.com/983836259/1664225?source=drt" target="_blank">JavaMail实现收发邮件——（四）各大主流邮件服务器地址</a>
+															<a class="white-space" href="https://blog.51cto.com/14156658/2442756?source=drh" target="_blank">虚拟机备份</a>
+															<a class="white-space" href="https://blog.51cto.com/14156658/2442451?source=drh" target="_blank">存储与虚拟主机管理</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2428768?source=drh" target="_blank">IBM_V7000底层结构及服务器数据恢复案例详解</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2420279?source=drh" target="_blank">遇到RAID5阵列硬盘出现问题的情况该如何解决？</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2410889?source=drh" target="_blank">详解NetAppFAS3220数据恢复操作方法</a>
+															<a class="white-space" href="https://blog.51cto.com/14156658/2406142?source=drh" target="_blank">简述centOS 7系统用户和组的管理及配置</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2354375?source=drh" target="_blank">解析DELL R710服务器迁移操作内容</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2166076?source=drh" target="_blank">开学季出大事：某教育局丢失3台虚拟机</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="https://s1.51cto.com/images/blog/201905/05/f92360e227f9d91cdff7ea95120630ef.png" style="width:70px;height:70px;"/> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="https://static1.51cto.com/edu/blog/mobile/images/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="1731174" userid='10905585'></span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>0</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2F10915585%2F1731174"></a>
+				</div>
+			</div>
+      						<a href="https://blog.51cto.com/10915585" class="b-name fr">Linux小璇</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/10915585" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="10905585" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="https://static1.51cto.com/edu/blog/js/shCores.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '1731174'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'10905585',
+            'blog_id':'1731174'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/10915585';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='10905585'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/10915585'
+    	nickname = 'Linux小璇'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<p><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">1\u3002\u9996\u5148\u670d\u52a1\u5668\u91c7\u7528\u7528\u6237\u9a8c\u8bc1\u7684\u65b9\u5f0f\uff0c\u6bcf\u4e2a\u7528\u6237\u53ef\u4ee5\u8bbf\u95ee\u81ea\u5df1\u7684\u5bbf\u4e3b\u76ee\u5f55\uff0c\u5e76\u4e14\u53ea\u6709\u8be5\u7528\u6237\u80fd\u8bbf\u95ee\u5bbf\u4e3b\u76ee\u5f55\uff0c\u5e76\u5177\u6709\u5b8c\u5168\u7684\u6743\u9650\uff0c\u800c\u5176\u4ed6\u4eba\u4e0d\u80fd\u770b\u5230\u4f60\u7684\u5bbf\u4e3b\u76ee\u5f55\u3002<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">2\u3002\u5efa\u7acb\u4e00\u4e2acaiwu\u7684\u6587\u4ef6\u5939\uff0c\u5e0c\u671bcaiwu\u7ec4\u548clingdao\u7ec4\u7684\u4eba\u80fd\u770b\u5230\uff0cnetwork02\u4e5f\u53ef\u4ee5\u8bbf\u95ee\uff0c\u4f46\u53ea\u6709caiwu01\u6709\u5199\u7684\u6743\u9650\u3002<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">3\u3002\u5efa\u7acb\u4e00\u4e2alindao\u7684\u76ee\u5f55\uff0c\u53ea\u6709\u9886\u5bfc\u7ec4\u7684\u4eba\u53ef\u4ee5\u8bbf\u95ee\u5e76\u8bfb\u5199\uff0c\u8fd8\u6709network02\u4e5f\u53ef\u4ee5\u8bbf\u95ee\uff0c\u4f46\u5916\u4eba\u770b\u4e0d\u5230\u90a3\u4e2a\u76ee\u5f55<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">4\u3002\u5efa\u7acb\u4e00\u4e2a\u6587\u4ef6\u4ea4\u6362\u76ee\u5f55exchange\uff0c\u6240\u6709\u4eba\u90fd\u80fd\u8bfb\u5199\uff0c\u5305\u62ecguest\u7528\u6237\uff0c\u4f46\u6bcf\u4e2a\u4eba\u4e0d\u80fd\u5220\u9664\u522b\u4eba\u7684\u6587\u4ef6\u3002<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">5\u3002\u5efa\u7acb\u4e00\u4e2a\u516c\u5171\u7684\u53ea\u8bfb\u6587\u4ef6\u5939public\uff0c\u6240\u6709\u4eba\u53ea\u8bfb\u8fd9\u4e2a\u6587\u4ef6\u5939\u7684\u5185\u5bb9\u3002<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u597d\uff0c\u6211\u4eec\u5148\u6765\u524d\u671f\u7684\u5de5\u4f5c<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u5efa\u7acb3\u4e2a\u7ec4\uff1a<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#groupadd caiwu<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#groupadd network<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#groupadd lingdao<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u6dfb\u52a0\u7528\u6237\u5e76\u52a0\u5165\u76f8\u5173\u7684\u7ec4\u5f53\u4e2d\uff1a<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#useradd caiwu01 -g caiwu<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#useradd caiwu02 -g caiwu<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#useradd network01 -g network<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#useradd network02 -g network<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#useradd lingdao01 -g lingdao<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#useradd lingdao02 -g lingdao<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u7136\u540e\u6211\u4eec\u4f7f\u7528smbpasswd -a caiwu01\u7684\u547d\u4ee4\u4e3a6\u4e2a\u5e10\u6237\u5206\u522b\u6dfb\u52a0\u5230samba\u7528\u6237\u4e2d<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#mkdir \/home\/samba<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#mkdir \/home\/samba\/caiwu<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#mkdir \/home\/samba\/lingdao<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#mkdir \/home\/samba\/exchange<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#mkdir \/home\/samba\/public<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u6211\u4eec\u4e3a\u4e86\u907f\u514d\u9ebb\u70e6\u53ef\u4ee5\u5728\u8fd9\u91cc\u628a\u4e0a\u9762\u6240\u6709\u7684\u6587\u4ef6\u5939\u7684\u6743\u9650\u90fd\u8bbe\u7f6e\u6210777\uff0c\u6211\u4eec\u901a\u8fc7samba\u7075\u6d3b\u7684\u6743\u9650\u7ba1\u7406\u6765\u8bbe\u7f6e\u4e0a\u9762\u76845\u70b9\u8981\u6c42\u3002<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u4ee5\u4e0b\u662f\u6211\u7684smb.conf\u7684\u914d\u7f6e\u6587\u4ef6<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">[global]<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">workgroup = bmit&nbsp;<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#\u6211\u7684\u7f51\u7edc\u5de5\u4f5c\u7ec4<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">server string = Frank's Samba File Server<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#\u6211\u7684\u670d\u52a1\u5668\u540d\u63cf\u8ff0<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">security = user<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#\u4f7f\u7528\u7528\u6237\u9a8c\u8bc1\u673a\u5236<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">encrypt passwords = yes<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">smb passwd file = \/etc\/samba\/smbpasswd<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#\u4f7f\u7528\u52a0\u5bc6\u5bc6\u7801\u673a\u5236\uff0c\u5728win95\u548cwinnt\u4f7f\u7528\u7684\u662f\u660e\u6587<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u5176\u4ed6\u7684\u57fa\u672c\u4e0a\u53ef\u4ee5\u6309\u7167\u9ed8\u8ba4\u7684\u6765\u3002<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">[homes]<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">comment = Home Directories<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">browseable = no<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">writable = yes<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">valid users = %S<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">create mode = 0664<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">directory mode = 0775<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#homes\u6bb5\u6ee1\u8db3\u7b2c1\u6761\u4ef6<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">[caiwu]<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">comment = caiwu<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">path = \/home\/samba\/caiwu<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">public = no<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">valid users = @caiwu,@lingdao,network02<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">write list = caiwu01<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">printable = no<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#caiwu\u6bb5\u6ee1\u8db3\u6211\u4eec\u7684\u7b2c2\u8981\u6c42<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">[lingdao]<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">comment = lingdao<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">path = \/home\/samba\/lingdao<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">public = no<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">browseable = no<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">valid users = @lingdao,network02<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">printable = no<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#lingdao\u6bb5\u80fd\u6ee1\u8db3\u6211\u4eec\u7684\u7b2c3\u8981\u6c42<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">[exchage]<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">comment = Exchange File Directory<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">path = \/home\/samba\/exchange<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">public = yes<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">writable = yes<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#exchange\u6bb5\u57fa\u672c\u80fd\u6ee1\u8db3\u6211\u4eec\u7684\u7b2c4\u8981\u6c42\uff0c\u4f46\u4e0d\u80fd\u6ee1\u8db3\u6bcf\u4e2a\u4eba\u4e0d\u80fd\u5220\u9664\u522b\u4eba\u7684\u6587\u4ef6\u8fd9\u4e2a\u6761\u4ef6\uff0c\u5373\u4f7f\u91cc\u8bbe\u7f6e\u4e86mask\u4e5f\u662f\u6ca1\u7528\uff0c\u5176\u5b9e\u8fd9\u4e2a\u6761\u4ef6\u53ea\u8981unix\u8bbe\u7f6e\u4e00\u4e2a\u7c98\u7740\u4f4d\u5c31\u884c<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">chmod -R 1777 \/home\/samba\/exchange&nbsp;<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u6ce8\u610f\u8fd9\u91cc\u6743\u9650\u662f1777\uff0c\u7c7b\u4f3c\u7684\u7cfb\u7edf\u76ee\u5f55\/tmp\u4e5f\u5177\u6709\u76f8\u540c\u7684\u6743\u9650\uff0c\u8fd9\u4e2a\u6743\u9650\u80fd\u5b9e\u73b0\u6bcf\u4e2a\u4eba\u80fd\u81ea\u7531\u5199\u6587\u4ef6\uff0c\u4f46\u4e0d\u80fd\u5220\u9664\u522b\u4eba\u7684\u6587\u4ef6\u8fd9\u4e2a\u8981\u6c42<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">[public]<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">comment = Read Only Public<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">path = \/home\/samba\/public<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">public = yes<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">read only = yes<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#\u8fd9\u4e2apublic\u6bb5\u80fd\u6ee1\u8db3\u6211\u4eec\u7684\u7b2c5\u8981\u6c42\u3002<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u5230\u6b64\u4e3a\u6b62\u6211\u4eec\u7684\u8bbe\u7f6e\u5df2\u7ecf\u80fd\u5b9e\u73b0\u6211\u4eec\u7684\u5171\u4eab\u6587\u4ef6\u8981\u6c42\uff0c\u8bb0\u5f97\u91cd\u542f\u670d\u52a1\u54e6<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#\/etc\/rc.d\/init.d\/smb restart<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u5982\u679c\u5927\u5bb6\u6ca1\u6709winodws\uff0c\u4e0d\u59a8\u5148\u7528samba\u7684cilent\u7aef\u547d\u4ee4\u6765\u6d4b\u8bd5\u4e00\u4e0b<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u547d\u4ee4\u7684\u7528\u6cd5\u6211\u5728\u8fd9\u91cc\u53ea\u4e3e\u51e0\u4e2a\u4f8b\u5b50\uff0c\u5177\u4f53\u7684\u5927\u5bb6\u53bb\u8bd5\u9a8c<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">smbclient -L \u670d\u52a1\u5668ip -N&nbsp;<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">guest\u5e10\u6237\u67e5\u8be2\u4f60\u7684\u670d\u52a1\u5668\u7684samba\u5171\u4eab\u60c5\u51b5\uff0c\u4f60\u53ef\u4ee5\u68c0\u9a8c\u4e00\u4e0b\u662f\u5426lingdao\u76ee\u5f55\u65f6\u5019\u80fd\u88abguest\u5e10\u6237\u770b\u5230\uff0c\u5e94\u8be5\u662f\u770b\u4e0d\u5230\u7684\uff0c\u5f53\u7136\u4f60\u4e5f\u53ef\u4ee5\u4ee5\u67d0\u4e2a\u7528\u6237\u7684\u540d\u4e49\u67e5\u770b<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">smbclient -L \u670d\u52a1\u5668ip -U caiwu01<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">\u7cfb\u7edf\u4f1a\u63d0\u793a\u5bc6\u7801\uff0c\u53ea\u8981\u8f93\u5165smb\u5bc6\u7801\u5c31\u884c\u3002<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">smbclient \/\/\u670d\u52a1\u5668ip\/caiwu -U caiwu01<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">#\u4ee5caiwu01\u7528\u6237\u7684\u540d\u4e49\u767b\u5f55caiwu\u76ee\u5f55<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><span style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;background-color:rgb(255,255,255);\">smbmount \/\/\u670d\u52a1\u5668ip\/caiwu \/mnt\/caiwu -o username=caiwu01<\/span><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><br style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\" \/><\/p><p style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\">#\u628a\u670d\u52a1\u5668\u7684\u8d22\u52a1\u76ee\u5f55\u6620\u5c04\u5230\u672c\u5730\u7684\/mnt\/caiwu\u76ee\u5f55\u3002<\/p><p style=\"color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\"><br \/><\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;\"><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><\/span><\/span><strong><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\"><span style=\"font-size:12px;\">\u6d4b\u8bd5<\/span><\/span><\/span><\/span><\/strong><\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:.17in;\"><span style=\"color:rgb(0,0,0);\"><span style=\"font-family:Arial, serif;\">smbclient&nbsp;-L&nbsp;<\/span><\/span><span style=\"font-family:Arial, serif;\">\/\/localhost\/share<\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u3000\u6216\u8005\u3000<\/span><\/span><\/span><span style=\"font-family:Arial, serif;\"><br \/><\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u3000\u3000<\/span><\/span><\/span><span style=\"font-family:Arial, serif;\">smbclient-L \\\\127.0.0.1 -U<\/span><span style=\"color:rgb(0,0,0);\"><span style=\"font-family:'\u5b8b\u4f53', serif;\"><strong>myname<\/strong><\/span><\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u3000<\/span><\/span><\/span><span style=\"font-family:Arial, serif;\">\/\/<\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u8fd9\u65f6\u8f93\u5165\u7684\u5bc6\u7801\u5c31\u662f\u4f60\u521a\u624d\u8bbe\u7f6e\u7684<\/span><\/span><\/span><span style=\"font-family:Arial, serif;\">samba<\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u5bc6\u7801<\/span><\/span><\/span><\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;\"><strong><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\"><span style=\"font-size:12px;\">\u4f7f\u7528<\/span><\/span><\/span><\/span><\/strong><span style=\"font-family:Arial, serif;\"><br \/><\/span><\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;\"><span style=\"font-family:Arial, serif;\">1<\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u3001<\/span><\/span><\/span><span style=\"font-family:Arial, serif;\">windows<\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u7528\u6237<\/span><\/span><\/span><span style=\"font-family:Arial, serif;\"><br \/><\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u5728\u6211\u7684\u7535\u8111\u5730\u5740\u680f\u91cc\u8f93\u5165<\/span><\/span><\/span><span style=\"font-family:Arial, serif;\">\\\\192.168.1.1<\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u8bbf\u95ee\uff1b\u4e5f\u53ef<\/span><\/span><\/span><span style=\"font-family:Arial, serif;\">windows+R<\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u8f93\u5165<\/span><\/span><\/span><span style=\"font-family:Arial, serif;\">\\\\192.168.1.1<\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\uff1b<\/span><\/span><\/span><\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\"><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\">\u767b\u5f55\u540e\u53ef\u4ee5\u53f3\u51fb<strong>\u6620\u5c04\u5230\u672c\u5730\u9a71\u52a8\u5668\u3002<\/strong><\/span><\/span><\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);\"><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><strong>net use * \/delete<\/strong><\/span><\/span><br \/>2<span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\">\u3001<\/span><\/span>linux<\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);margin-bottom:0in;\"><span style=\"font-size:10px;\">(1)<\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\">\u4f7f\u7528<\/span><\/span>smbclient<\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;line-height:26px;white-space:normal;background-color:rgb(255,255,255);margin-bottom:0in;\">#smbclient\/\/<span style=\"font-family:Arial, serif;\">192.168.1.1<\/span>\/Normal -U user%passwd<br \/><span style=\"font-size:10px;\">(2)<\/span><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\">\u6302\u8f7d\u5230\u67d0\u4e2a\u76ee\u5f55\u4f7f\u7528<\/span><\/span><br \/>#mkdir\/mnt\/share<br \/>#mount -o username=youruser,password=passwd \/\/<span style=\"font-family:Arial, serif;\">192.168.1.1<\/span>\/Normal&nbsp; \/mnt\/share<\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;\"><span style=\"font-family:'DejaVu Sans';\"><span lang=\"zh-cn\" xml:lang=\"zh-cn\"><span style=\"font-family:'\u5b8b\u4f53';\">\u8bbe\u7f6e\u5f00\u673a\u6302\u8f7d\u5c06\u5982\u4e0b\u547d\u4ee4\u5199\u5165<\/span><\/span><\/span><span style=\"font-family:Arial, serif;\">\/etc\/fstab<\/span><\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;\"><span style=\"font-family:Arial, serif;\">\/\/192.168.1.1\/share&nbsp;&nbsp;\/mnt\/ml45&nbsp;&nbsp;cifs&nbsp;&nbsp;defaults,auto,username=youruser,password=passwd 0 0<\/span><\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;\"><br \/><\/p><p class=\"western\" style=\"text-align:left;color:rgb(51,51,51);font-family:Arial;font-size:14px;white-space:normal;background-color:rgb(255,255,255);line-height:.27in;margin-bottom:0in;\">\u7136\u540e#mount -a<\/p><p><br \/><\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"Samba服务器（多用户组、多用户有不同的访问权限）",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1571493229; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="https://static1.51cto.com/edu/blog/js/marked.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/highlight.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail_mp.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail.js"></script><script src="https://static1.51cto.com/edu/blog/js/details_new.js"></script><script src="https://static1.51cto.com/edu/blog/js/copy.js"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="http://log.51cto.com/pageview.php?frompos=blog_art"></iframe>
+</div>
+
+<script src="https://static1.51cto.com/edu/blog/js/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type='text/javascript'>
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="https://static1.51cto.com/edu//blog/js/jquery.cookie.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+</body>
+</html>

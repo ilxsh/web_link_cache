@@ -1,0 +1,386 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="origin" />
+    <meta property="og:description" content="简介 原理 配置ntp服务器 进行同步 一、简介 在计算时间的时候，最准确的计算应该是使用『原子震荡周期』所计算的物理时钟了( Atomic Clock, 也被称为原子钟 )，这也被定义为标准时间(I" />
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <title>Linux下NTP服务器配置 - 风住 - 博客园</title>
+    
+    <link rel="stylesheet" href="/css/blog-common.min.css?v=sqi5FxOybx6gjGoG6Zfy1wD-0AwznLNLYOVx7Y9tIN0" />
+    <link id="MainCss" rel="stylesheet" href="/skins/coffee/bundle-coffee.min.css?v=pdMIVgsH8kXt-vOWnlL0N20TlHt3UyP9HzGgocfsP4s" />
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/coffee/bundle-coffee-mobile.min.css?v=MGucLWekW6t3A88Ks-YfEzrx4X_hEIpMacbOAC9lJUs" />
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/whych/rss" />
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/whych/rsd.xml" />
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/whych/wlwmanifest.xml" />
+    <script src="https://common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script src="/js/blog-common.min.js?v=W8J2DYaUeAZPX2Lx1iRh00kAY9PXrT8UdrrPQB3gEXU"></script>
+    <script>
+        var currentBlogId = 428885;
+        var currentBlogApp = 'whych';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+    </script>
+    
+    
+    
+</head>
+<body>
+    <a name="top"></a>
+    <div id="page_begin_html">
+        <!-- 背景动画 -->
+<canvas id="c_n9" width="1920" height="990" style="position: fixed; top: 0px; left: 0px; z-index: -1; opacity: 0.5;"></canvas>
+<script src="https://files.cnblogs.com/files/jingmoxukong/canvas-nest.min.js"></script>
+
+<!--PageEndHtml Block Begin-->
+<script type="text/javascript">
+/* 鼠标特效 */
+var a_idx = 0;
+jQuery(document).ready(function($) {
+    $("body").click(function(e) {
+        var a = new Array("❤富强❤","❤民主❤","❤文明❤","❤和谐❤","❤自由❤","❤平等❤","❤公正❤","❤法治❤","❤爱国❤","❤敬业❤","❤诚信❤","❤友善❤");
+        var $i = $("<span></span>").text(a[a_idx]);
+        a_idx = (a_idx + 1) % a.length;
+        var x = e.pageX,
+        y = e.pageY;
+        $i.css({
+            "z-index": 999999999999999999999999999999999999999999999999999999999999999999999,
+            "top": y - 20,
+            "left": x,
+            "position": "absolute",
+            "font-weight": "bold",
+            "color": "rgb("+~~(255*Math.random())+","+~~(255*Math.random())+","+~~(255*Math.random())+")"
+        });
+        $("body").append($i);
+        $i.animate({
+            "top": y - 180,
+            "opacity": 0
+        },
+        1500,
+        function() {
+            $i.remove();
+        });
+    });
+});
+</script>
+<!--PageEndHtml Block End-->
+
+<!--PageEndHtml Block Begin-->
+<script>
+(function($){$.fn.snow=function(options){var $flake=$('<div id="flake" />').css({'position':'absolute','top':'-50px'}).html('&#10052;'),documentHeight=$(document).height(),documentWidth=$(document).width(),defaults={minSize:10,maxSize:20,newOn:500,flakeColor:"#FFFFFF"},options=$.extend({},defaults,options);var interval=setInterval(function(){var startPositionLeft=Math.random()*documentWidth-100,startOpacity=0.5+Math.random(),sizeFlake=options.minSize+Math.random()*options.maxSize,endPositionTop=documentHeight-40,endPositionLeft=startPositionLeft-100+Math.random()*200,durationFall=documentHeight*10+Math.random()*5000;$flake.clone().appendTo('body').css({left:startPositionLeft,opacity:startOpacity,'font-size':sizeFlake,color:options.flakeColor}).animate({top:endPositionTop,left:endPositionLeft,opacity:0.2},durationFall,'linear',function(){$(this).remove()});},options.newOn);};})(jQuery);
+$.fn.snow({ minSize: 5, maxSize: 50, newOn: 500, flakeColor: '#FFF' });
+</script>
+<!--PageEndHtml Block End-->
+    </div>
+    
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a href="https://www.cnblogs.com/whych/"><img id="blogLogo" src="/skins/custom/images/logo.gif" alt="返回主页" /></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/whych/">心之所动，就随风去吧</a>
+</h1>
+<h2>
+
+</h2>
+
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		<div id="navigator">
+			
+<ul id="navList">
+	<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+</li>
+	<li>
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/whych/">
+首页</a>
+</li>
+	<li>
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+</li>
+	<li>
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/%E9%A3%8E%E4%BD%8F">
+联系</a></li>
+	<li>
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+	<li>
+<a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/whych/rss/">
+订阅</a>
+	
+<a id="blog_nav_rss_image" href="https://www.cnblogs.com/whych/rss/">
+    <img src="/skins/coffee/images/xml.gif" alt="订阅" />
+</a></li>
+</ul>
+
+
+
+			<div class="blogStats">
+				
+				<!--done-->
+随笔- 
+48&nbsp;
+文章- 
+0&nbsp;
+评论- 
+6&nbsp;
+
+
+
+				
+			</div><!--end: blogStats -->
+		</div><!--end: navigator 博客导航栏 -->
+		<div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class = "postTitle">
+			
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/whych/p/9140712.html">Linux下NTP服务器配置</a>
+
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <ol>
+<li>
+<div style="text-align: justify;"><span style="font-size: 16px;">简介 </span></div>
+</li>
+<li>
+<div style="text-align: justify;"><span style="font-size: 16px;">原理 </span></div>
+</li>
+<li>
+<div style="text-align: justify;"><span style="font-size: 16px;">配置ntp服务器 </span></div>
+</li>
+<li>
+<div style="text-align: justify;"><span style="font-size: 16px;">进行同步 </span></div>
+</li>
+</ol>
+<p><span style="font-size: 16px;">&nbsp;</span></p>
+<h2>一、简介</h2>
+<p><span style="font-size: 16px;">&nbsp;&nbsp;&nbsp;&nbsp;在计算时间的时候，最准确的计算应该是使用『原子震荡周期』所计算的物理时钟了( Atomic Clock, 也被称为原子钟 )，这也被定义为标准时间(International Atomic Time)。而我们常常看见的 UTC 也就是Coordinated Universal Time (协和标准时间)就是利用这种 Atomic Clock 为基准所定义出来的正确时间。这个 UTC 标准时间是以 GMT 这个时区为主的喔！所以本地时间与 UTC 时间的时差就是本地时间与 GMT 时间的时差。</span></p>
+<p><span style="font-size: 16px;">&nbsp;&nbsp;&nbsp;&nbsp;计算机主机上面的 BIOS 内部就含有一个原子钟，由于原子钟主要是利用计算芯片 (crystal) 的原子震荡周期去计时的，每种芯片都有自己的独特的震荡周期。而计算机主要又是以 BIOS 内部的时间为主要的时间依据，而偏偏这个时间可能因为 BIOS 内部芯片本身的问题，而导致 BIOS 时间与标准时间 (UTC) 有差异存在，所以，为了避免主机时间因为长期运作下所导致的时间偏差，这时候就需要<span style="color: #3366ff;">网络校时（Network Time Protocol）NTP</span>的功能来进行时间同步了。</span></p>
+<p><span style="font-size: 16px;">&nbsp;</span></p>
+<h2>二、原理</h2>
+<p><span style="color: #3366ff; font-size: 16px;">1. 主机当然需要启动 daemon </span></p>
+<p><span style="color: #3366ff; font-size: 16px;">2. Client 会向 NTP Server 发送出调校时间的 message </span></p>
+<p><span style="color: #3366ff; font-size: 16px;">3. NTP Server 会送出目前的标准时间给 Client </span></p>
+<p><span style="color: #3366ff; font-size: 16px;">4. Client 接收了来自 Server 的时间后，会据以调整自己的时间。 </span></p>
+<p><br /><span style="font-size: 16px;">但是存在client端与server端同步的时间差、延迟问题，在 daemon 的部分，以 server/client 及 master/slave 的架构来提供使用者进行网络校时的动作来保证校准时间更为准确。
+</span></p>
+<h2><br />三、安装配置
+</h2>
+<div style="text-align: justify;"><span style="font-size: 16px;">1.安装ntp服务
+</span></div>
+<p style="text-align: justify;"><span style="font-size: 16px;">#yum install -y ntp ntpdate
+</span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;">
+&nbsp;</span></p>
+<div style="text-align: justify;"><span style="font-size: 16px;">2.配置ntp服务
+</span></div>
+<p style="text-align: justify;"><span style="font-size: 16px;">编辑配置文件/etc/ntp.conf
+</span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;"><img src="https://images2018.cnblogs.com/blog/1387124/201806/1387124-20180605170247194-1273568070.png" alt="" /></span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;">ignore：关闭所有ntp联机服务
+</span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;">nomodify:表示client端不能更改server端的时间参数，不过client端仍然可以通过server端同步时间
+</span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;">notrap：拒绝特殊的ntpdq捕获消息
+</span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;">noquery：拒绝btodq/ntpdc查询
+</span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;">server：添加上层主机的设定或者说添加为互联网上的ntp服务器的设定
+</span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;">以上图配置文件当中的注释也很清楚。
+</span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;"><img src="https://images2018.cnblogs.com/blog/1387124/201806/1387124-20180605170247492-663932120.png" alt="" /></span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;"><img src="https://images2018.cnblogs.com/blog/1387124/201806/1387124-20180605170247724-416031715.png" alt="" /></span></p>
+<p style="text-align: justify;"><span style="font-size: 16px;">（此图只是为另一个例子）</span></p>
+<p style="text-align: justify;">&nbsp;</p>
+<div style="text-align: justify;">
+<p><span style="font-family: 宋体; font-size: 16px;">3.添加防火墙规则及启动NTP服务 </span></p>
+
+</div>
+<p style="text-align: justify;"><span style="font-family: 宋体; font-size: 16px;">#iptables &ndash;A INPUT &ndash;p udp &ndash;i eth0 &ndash;s 10.0.7.0/24 &ndash;dport 123 &ndash;j ACCEPT </span></p>
+<p style="text-align: justify;"><span style="font-family: 宋体; font-size: 16px;">#systemctl start ntpd</span></p>
+<p style="text-align: justify;">&nbsp;</p>
+<h2>四、同步</h2>
+<p>&nbsp;</p>
+<div><span style="font-size: 16px;">在客户端操作：
+</span></div>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div style="text-align: justify;"><span style="font-family: 宋体; font-size: 12pt;">1.下载安装ntp
+</span></div>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div style="text-align: justify;"><span style="font-family: 宋体; font-size: 12pt;">2.使用ntpdate同步
+</span></div>
+<p style="text-align: justify;"><span style="font-family: 宋体; font-size: 12pt;">#ntpdate NTP服务端IP
+</span></p>
+<p style="text-align: justify;"><img src="https://images2018.cnblogs.com/blog/1387124/201806/1387124-20180605170247936-263462441.png" alt="" /></p>
+<p style="text-align: justify;"><span style="color: #3366ff; font-family: 宋体; font-size: 12pt;">若出现同步成功的提示，但时间没有同步过来，可能为时区问题，修改时区可用简单的方法：
+</span></p>
+<p style="text-align: justify;"><span style="color: #3366ff; font-family: 宋体; font-size: 12pt;">cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+</span></p>
+<p style="text-align: justify;"><img src="https://images2018.cnblogs.com/blog/1387124/201806/1387124-20180605170248183-427537431.png" alt="" /></p>
+<p>&nbsp;</p>
+<p><span style="color: #3366ff; font-size: 16px;">若出现&ldquo;no server suitable for synchronization found&rdquo;，检查ntp服务器端配置正确以及防火墙设置正确等；若还是不行，则试着同步网络上的ntp服务器，比如ntpdate time.nist.gov（前提客户端要能通网络）</span></p>
+<p><span style="color: #5b9bd5; font-family: 宋体; font-size: 16px;">　　<span style="color: #3366ff;">#date
+</span></span></p>
+<p style="margin-left: 21pt;"><span style="color: #3366ff; font-family: 宋体; font-size: 16px;">显示系统时间
+</span></p>
+<p style="margin-left: 21pt;"><span style="color: #3366ff; font-family: 宋体; font-size: 16px;">#hwclock
+</span></p>
+<p style="margin-left: 21pt;"><span style="color: #3366ff; font-family: 宋体; font-size: 16px;">显示系统硬件时间
+</span></p>
+<p style="margin-left: 21pt;"><span style="color: #3366ff; font-family: 宋体; font-size: 16px;">#hwclock -w
+</span></p>
+<p style="margin-left: 21pt;"><span style="color: #3366ff; font-family: 宋体; font-size: 16px;">将系统时间写入到系统硬件当中
+</span></p>
+<p style="margin-left: 21pt;"><span style="font-size: 16px;">
+&nbsp;</span></p>
+<p style="margin-left: 21pt;"><span style="font-family: 宋体; font-size: 16px;">定时执行时间同步任务，所以我们利用crontab -e 来添加定时任务
+</span></p>
+<p style="margin-left: 21pt;"><span style="font-family: 宋体; font-size: 16px;">* 1/ * * * root /usr/sbin/ntpdate 10.0.7.149;hwclock -w 
+</span></p>
+<p style="margin-left: 21pt;"><span style="font-size: 16px;"><img src="https://images2018.cnblogs.com/blog/1387124/201806/1387124-20180605170248460-1675931018.png" alt="" /></span></p>
+<p style="margin-left: 21pt;">&nbsp;</p>
+<p style="margin-left: 21pt;">以上。</p>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+    <div id="blog_post_info"></div>
+    <div class="clear"></div>
+    <div id="post_next_prev"></div>
+</div>
+		</div>
+		<div class="postDesc">posted @ 
+<span id="post-date">2018-06-05 17:21</span>&nbsp;<a href="https://www.cnblogs.com/whych/">风住</a> 阅读(<span id="post_view_count">...</span>) 评论(<span id="post_comment_count">...</span>) <a href="https://i.cnblogs.com/EditPosts.aspx?postid=9140712" rel="nofollow"> 编辑</a> <a href="javascript:void(0)" onclick="AddToWz(9140712); return false;">收藏</a>
+</div>
+	</div>
+	
+	
+</div><!--end: topics 文章、评论容器-->
+<script src="https://common.cnblogs.com/highlight/9.12.0/highlight.min.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 428885, cb_blogApp = 'whych', cb_blogUserGuid = '613b93ca-00c1-466b-f8d0-08d5a823ae5e';
+    var cb_entryId = 9140712, cb_entryCreatedDate = '2018-06-05 17:21', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container"></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;"></div>
+    </div>
+    <div id="under_post_news"></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;">
+            <script>
+                if (new Date() >= new Date(2018, 9, 13)) {
+                    googletag.cmd.push(function () { googletag.display("div-gpt-ad-1539008685004-0"); });
+                }
+            </script>
+        </div>
+    </div>
+    <div id="under_post_kb"></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div></div>
+
+
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<div id="sidebar_news" class="newsItem">
+            <script>loadBlogNews();</script>
+</div>
+
+			<div id="calendar"><div id="blog-calendar" style="display:none"></div><script>loadBlogDefaultCalendar();</script></div>
+			
+			<DIV id="leftcontentcontainer">
+				<div id="blog-sidecolumn"></div>
+                    <script>loadBlogSideColumn();</script>
+			</DIV>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		<!--done-->
+Copyright &copy; 2019 风住
+<br /><span id="poweredby">Powered by .NET Core 3.0.0-preview9-19423-09 on Linux</span>
+
+
+
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+    
+</body>
+</html>

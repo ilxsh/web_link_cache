@@ -1,0 +1,2408 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:wb="http://open.weibo.com/wb">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>设置标准Linux文件系统和配置NFSv4服务器 - 第2部分</title>
+    <meta name="description" content="我将向您展示如何配置NFSv4服务器（无认证安全），以便您可以设置网络共享在Linux客户端中使用，就像这些文件">
+    <meta id="token" name="token" value="1FL0nNnRAh3OihoH7F1mc3U1hcFck5ng4PtmUBqA">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        <!--     <link rel="stylesheet" type="text/css" href="http://www.ui3g.com/demos/show/1619/bootstrap-3.3.5/css/bootstrap.min.css"> -->
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <link rel="stylesheet" href="/css/w3.css">
+        <link rel="stylesheet" href="/css/style.css?v=1.0" media="screen" title="app" charset="utf-8">
+    <link rel="stylesheet" href="/css/prettify.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Audiowide" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://tjs.sjs.sinajs.cn/open/api/js/wb.js" type="text/javascript" charset="utf-8"></script>
+</head>
+
+<body>
+    <!--header -->
+            <div class="w3-white w3-common-bj">
+  <!-- nav responesive -->
+  <div class="row w3-common-nav w3-display-container">
+   <!-- search modal -->
+     <div id="id01" style="display:none;">
+                <div class="w3-modal-content" style="width:100%;">
+                     <form action="/search" method="get" accept-charset="utf-8">
+                        <div class="w3-display-container w3-bar w3-white w3-search-input" style="position:relative;z-index:999;background-color:red;">
+                            <input id="search" style="min-width:80%;line-height:60px;" type="text" name="query" class="w3-bar-item w3-input w3-left w3-medium post-m-search-input" placeholder="搜索一下，你就知道了！">
+                            <a class="w3-bar-item w3-button w3-white w3-hover-none w3-right w3-xlarge w3-display-right" onclick="document.getElementById('id01').style.display='none'">&times;</a>
+                            <button  type="submit" class="w3-bar-item w3-button w3-hover-none w3-right w3-medium w3-display-right" style="right:45px;"><i class="fa fa-search"></i></button>
+                        </div>
+                      </form>
+                </div>
+          </div>
+
+         <div class="w3-display-left">
+          <a href="/" class="index-logo-words w3-bar-item w3-white w3-hover-none w3-button w3-xlarge">Howtoing运维教程</a>
+         <!--  <a href="/" class="w3-bar-item w3-white w3-hover-none w3-button w3-display-left w3-logo-word" style="left:160px;"> Images &amp; Videos on Instagram</a> -->
+         </div>
+        <div class="w3-display-right">
+            <a id="query" onclick="document.getElementById('id01').style.display='block';
+              document.getElementById('search').focus();" href="javascript:void(0)" class="w3-bar-item w3-button w3-hover-none w3-right w3-xlarge w3-display-right"><i class="fa fa-search"></i></a>
+        </div>
+    </div>
+</div>
+<!-- Slideshow -->
+<div class="w3-content w3-display-container" style="max-width:1048px;min-height:160px;    margin-top: 10px;">
+  <!-- Slideshow -->
+      <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">云计算&amp;大数据</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/cloud" title="Cloud">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Cloud</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/clustering" title="Clustering">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Clustering</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/hadoop" title="Hadoop">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Hadoop</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/storage" title="Storage">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Storage</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/big-data" title="大数据">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              大数据</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/chrome" title="Chrome浏览器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Chrome浏览器</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">运维</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/recovery-tools" title="恢复工具">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              恢复工具</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/errors" title="errors">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              errors</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/editors" title="Editors">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Editors</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/awk-command" title="Awk命令">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Awk命令</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/postfix" title="Postfix">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Postfix</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/sed-command" title="Sed 命令">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Sed 命令</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ci-cd" title="CI/CD">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              CI/CD</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/configuration-management" title="配置管理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              配置管理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/monitoring" title="Monitoring">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Monitoring</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/file-managers" title="文件管理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              文件管理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ansible" title="Ansible">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ansible</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ssh" title="SSH">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              SSH</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/backups" title="备份">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              备份</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/desktop" title="desktop">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              desktop</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ghost" title="Ghost">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ghost</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/dkim" title="DKIM">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              DKIM</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/joomla" title="Joomla">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Joomla</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/commercial" title="commercial">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              commercial</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/dokku" title="Dokku">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Dokku</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/backup" title="backup">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              backup</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/other" title="other">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              other</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">架构</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/docker" title="Docker">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Docker</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/django" title="Django">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Django</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/drupal" title="Drupal">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Drupal</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/sinatra" title="Sinatra">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Sinatra</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">操作系统</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/kali-linux" title="Kali Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Kali Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mandriva" title="mandriva">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              mandriva</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/rhcsa" title="RHCSA认证">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              RHCSA认证</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/kernel" title="kernel">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              kernel</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/pclinuxos" title="pclinuxos">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              pclinuxos</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/raspbian" title="raspbian">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              raspbian</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/tails-os" title="Tails OS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Tails OS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ubuntu" title="Ubuntu">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ubuntu</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/centos" title="CentOS系统">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              CentOS系统</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/fedora" title="Fedora">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Fedora</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-tutorials" title="Linux 教程">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux 教程</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/rhel" title="RHEL">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              RHEL</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linuxmint" title="LinuxMint">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LinuxMint</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/elementary-os" title="Elementary OS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Elementary OS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/opensuse" title="OpenSuse">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              OpenSuse</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/windows-tutorials" title="Windows 教程">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Windows 教程</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-players" title="Linux 播放器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux 播放器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/devuan-linux" title="Devuan Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Devuan Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/pc-bsd" title="PC-BSD">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              PC-BSD</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/suse" title="Suse">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Suse</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-apps" title="Linux系统应用">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux系统应用</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-products" title="Linux 产品">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux 产品</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/bodhi-linux" title="Bodhi Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Bodhi Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/parrot-os" title="Parrot OS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Parrot OS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lfce" title="LFCE">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LFCE</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/pear-linux" title="Pear Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Pear Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-mint" title="Linux Mint">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux Mint</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-commands" title="Linux命令">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux命令</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/gentoo" title="Gentoo">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Gentoo</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/zentyal" title="Zentyal">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Zentyal</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/uberstudent" title="Uberstudent">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Uberstudent</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-desktop" title="Linux桌面">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux桌面</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-lite" title="Linux Lite">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux Lite</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/fuduntu" title="Fuduntu">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Fuduntu</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/xubuntu" title="Xubuntu">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Xubuntu</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/scientific-linux" title="Scientific Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Scientific Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/clear-os" title="Clear OS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Clear OS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux" title="Linux介绍">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux介绍</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lfcs" title="LFCS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LFCS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-certifications" title="Linux认证">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux认证</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ubuntu-16-04" title="Ubuntu 16.04">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ubuntu 16.04</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-fixes" title="Linux修复">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux修复</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/poll" title="POLL字符设备驱动函数">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              POLL字符设备驱动函数</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/debian-9" title="Debian 9">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Debian 9</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/zorin-os" title="Zorin OS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Zorin OS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lxc" title="LXC内核虚拟化技术">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LXC内核虚拟化技术</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-talks" title="Linux Talks">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux Talks</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/rhce" title="RHCE">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              RHCE</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/new-linux-distros" title="最新的Linux发行">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              最新的Linux发行</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/coreos" title="CoreOS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              CoreOS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-basics" title="Linux基础">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux基础</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/redhat" title="RedHat">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              RedHat</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/freebsd" title="FreeBSD">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              FreeBSD</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/netrunner" title="Netrunner">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Netrunner</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-distributions" title="Linux版本">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux版本</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-quiz" title="Linux 测试">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux 测试</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/manjaro" title="Manjaro">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Manjaro</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/arch-linux" title="Arch Linux">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Arch Linux</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/windows" title="Windows">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Windows</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/debian" title="Debian">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Debian</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-training" title="Linux 培训">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux 培训</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/arch" title="Arch">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Arch</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/linux-distros" title="Linux发行版">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Linux发行版</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">开发工具</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/sdk" title="SDK">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              SDK</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/monitoring-tools" title="监控工具">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              监控工具</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/opera" title="Opera">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Opera</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/xen" title="xen">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              xen</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ajenti" title="Ajenti">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ajenti</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/amazon-tools" title="Amazon 工具包">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Amazon 工具包</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/svn" title="SVN">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              SVN</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/yum" title="Yum">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Yum</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/pentoo" title="Pentoo测试工具">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Pentoo测试工具</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/package-managers" title="Package Managers">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Package Managers</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vim-editor" title="Vim Editor">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Vim Editor</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/gtk" title="GTK">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              GTK</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/terminals" title="Terminals终端">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Terminals终端</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/git" title="GIT">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              GIT</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/kwheezy" title="KWheezy">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              KWheezy</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/samba" title="Samba">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Samba</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ftp-servers" title="FTP Servers">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              FTP Servers</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/package-management" title="软件包管理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              软件包管理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/system-tools" title="系统工具">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              系统工具</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/deployment" title="Deployment">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Deployment</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/control-panel" title="控制面板">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              控制面板</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/monit" title="Monit">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Monit</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nagios" title="Nagios">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Nagios</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nrpe" title="NRPE监控">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              NRPE监控</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/firefox" title="Firefox浏览器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Firefox浏览器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/api" title="API">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              API</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">编程语言</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/c-c" title="c/c++">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              c/c++</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/programming" title="Programming">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Programming</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ruby" title="Ruby">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ruby</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/data-analysis" title="Data Analysis">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Data Analysis</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/php" title="PHP">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              PHP</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/php-frameworks" title="PHP框架">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              PHP框架</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/virtualization" title="虚拟化">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              虚拟化</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/c-programming" title="C编程">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              C编程</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/python" title="python">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              python</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/perl" title="Perl">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Perl</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/python-scripts" title="Python 脚本">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Python 脚本</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/miscellaneous" title="Miscellaneous">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Miscellaneous</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/go" title="Go">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Go</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/c-language" title="C语言">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              C语言</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ruby-on-rails" title="Ruby 软件工程师">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ruby 软件工程师</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/python-frameworks" title="Python 框架">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Python 框架</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/java" title="JAVA">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              JAVA</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/shell" title="shell">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              shell</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/bash-shell" title="Bash Shell">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Bash Shell</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">WEB开发设计</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-scanner" title="Web 扫描">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 扫描</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/wordpress" title="WordPress">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              WordPress</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/themes-icons" title="主题和icon图标">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              主题和icon图标</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/javascript" title="JavaScript">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              JavaScript</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-apps" title="Web 应用">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 应用</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/android" title="android">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              android</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-hosting" title="Web 托管">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 托管</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-browsers" title="Web 浏览器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 浏览器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mean" title="MEAN">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              MEAN</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/openlitespeed" title="OpenLiteSpeed">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              OpenLiteSpeed</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/blueprint" title="Blueprint">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Blueprint</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-design" title="Web 设计">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 设计</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">服务器</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/virtualbox" title="virtualbox">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              virtualbox</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/tomcat" title="Tomcat">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Tomcat</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/dovecot" title="dovecot">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              dovecot</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/iis" title="IIS服务器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              IIS服务器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/suse-apache" title="suse.apache">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              suse.apache</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vmware" title="vmware">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              vmware</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/openvz" title="openvz">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              openvz</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/xmpp" title="XMPP">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              XMPP</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-servers" title="Web 服务器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Web 服务器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/powerdns" title="powerdns">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              powerdns</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mydns" title="mydns">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              mydns</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/djbdns" title="djbdns">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              djbdns</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/apache" title="Apache">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Apache</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mail-servers" title="Mail Servers">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Mail Servers</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/xenserver" title="XenServer">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              XenServer</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/freenas" title="FreeNAS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              FreeNAS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/amazon-web-services" title="Amazon 网站服务">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Amazon 网站服务</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mail-server" title="邮件服务器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              邮件服务器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/caching-server" title="缓存服务器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              缓存服务器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/parse" title="Parse">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Parse</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lighttpd" title="Lighttpd">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Lighttpd</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mail-services" title="Mail服务">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Mail服务</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/openstack" title="开源栈">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              开源栈</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/digitalocean" title="DigitalOcean">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              DigitalOcean</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/logging" title="日志">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              日志</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/elasticsearch" title="弹性搜索">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              弹性搜索</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vsftpd" title="VsFTPd">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              VsFTPd</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/high-availability" title="高可用">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              高可用</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nginx" title="Nginx">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Nginx</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/block-storage" title="块存储">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              块存储</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/digitalocean-articles" title="DigitalOcean 文章">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              DigitalOcean 文章</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/node-js" title="Node.js">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Node.js</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/wildfly" title="WildFly">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              WildFly</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lamp-stack" title="LAMP 栈">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LAMP 栈</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/server-optimization" title="服务器优化">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              服务器优化</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/load-balancing" title="Load Balancing">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Load Balancing</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nodejs" title="Nodejs">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Nodejs</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/lemp" title="LEMP">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              LEMP</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/bind" title="bind">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              bind</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/squid" title="Squid">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Squid</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ispconfig" title="ispconfig">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              ispconfig</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/web-server" title="web server">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              web server</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/caching" title="缓存">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              缓存</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/citrix-xenserver" title="Citrix XenServer">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Citrix XenServer</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/anti-spam-virus" title="anti-spam/virus">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              anti-spam/virus</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">数据库</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mariadb" title="MariaDB">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              MariaDB</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mysql" title="MySQL">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              MySQL</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/databases" title="数据库管理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              数据库管理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/sql-server" title="SQL Server">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              SQL Server</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/oracle" title="Oracle">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Oracle</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mssql" title="MSSQL">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              MSSQL</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/postgresql" title="PostgreSQL">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              PostgreSQL</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/mongodb" title="MongoDB">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              MongoDB</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/redis-server" title="Redis Server">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Redis Server</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/redis" title="Redis">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Redis</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nosql" title="NoSQL">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              NoSQL</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/couchdb" title="CouchDB">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              CouchDB</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">网络安全</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/kvm" title="KVM">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              KVM</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/network-services" title="网络服务">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              网络服务</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/nfs" title="NFS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              NFS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/networking" title="Networking">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Networking</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/dhcp" title="DHCP">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              DHCP</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/security" title="安全">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              安全</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/filesystem" title="Filesystem">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Filesystem</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ftp" title="FTP">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              FTP</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/telnet" title="Telnet">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Telnet</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/openldap" title="OpenLDAP轻型目录访问协议">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              OpenLDAP轻型目录访问协议</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/pxe" title="PXE预启动执行环境">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              PXE预启动执行环境</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vnc" title="VNC虚拟网络控制台">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              VNC虚拟网络控制台</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vpn" title="VPN">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              VPN</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/torrent-clients" title="Torrent Clients">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Torrent Clients</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/raid-array" title="RAID-ARRAY冗余磁盘阵列">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              RAID-ARRAY冗余磁盘阵列</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/firewalls" title="Firewalls">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Firewalls</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/vps" title="VPS虚拟专用服务器">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              VPS虚拟专用服务器</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/network" title="网络知识">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              网络知识</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/raid" title="Raid">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Raid</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/firewall" title="Firewall">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Firewall</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ipv6" title="IPv6">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              IPv6</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/proxy" title="代理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              代理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/dns" title="DNS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              DNS</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">其他</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/interview-questions" title="Interview Questions">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Interview Questions</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/uncategorized" title="更多分类">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              更多分类</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/opensource" title="opensource">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              opensource</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/deals" title="Deals">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Deals</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ide" title="IDE">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              IDE</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/top-tools" title="Top Tools">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Top Tools</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/desktops" title="Desktops">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Desktops</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/career" title="Career">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Career</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/general-talks" title="General Talks">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              General Talks</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/content-management-system" title="Content Management System">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Content Management System</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/celebrate" title="Celebrate">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Celebrate</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/product-reviews" title="Product Reviews">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Product Reviews</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/download-managers" title="下载管理">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              下载管理</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/cherokee" title="Cherokee">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Cherokee</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ecommerce" title="Ecommerce">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Ecommerce</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/samba4-active-directory" title="Samba4 Active Directory">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Samba4 Active Directory</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/install" title="Install">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Install</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/google-apps" title="谷歌应用">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              谷歌应用</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/applications" title="Applications">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Applications</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/one-click-install-apps" title="单击安装APPS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              单击安装APPS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/scaling" title="Scaling">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Scaling</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/development" title="Development">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Development</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/let-s-encrypt" title="Let&#039;s Encrypt">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Let&#039;s Encrypt</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/games" title="Games">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Games</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/glusterfs" title="GlusterFS">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              GlusterFS</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/chef" title="Chef">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Chef</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/general-articles" title="General Articles">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              General Articles</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/getting-started" title="Getting Started">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Getting Started</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/social-media" title="Social Media">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Social Media</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/email" title="Email">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Email</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/quickstart" title="Quickstart">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Quickstart</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/sendmail" title="Sendmail">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Sendmail</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/media-players" title="媒体播放">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              媒体播放</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/whm-cpanel" title="WHM/cPanel">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              WHM/cPanel</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/faq" title="FAQ">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              FAQ</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/control-panels" title="Control Panels">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Control Panels</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/messaging" title="Messaging">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Messaging</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/issues" title="Issues">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Issues</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/cheat-sheets" title="Cheat Sheets">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              Cheat Sheets</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/cms" title="内容管理系统">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              内容管理系统</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/open-source" title="开源">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              开源</div></a>
+          </div>
+                    <div class="w3-tag w3-round w3-green index-class">
+          <a href="https://www.howtoing.com/category/ebooks" title="eBooks">
+              <div class="w3-tag w3-round w3-green w3-border w3-border-white">
+              eBooks</div></a>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Object Storage</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Conceptual</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Product Documentation</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">ZoneMinder</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Kubernetes</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Text Editors</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">DigitalOcean Cloud Firewalls</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Billing</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Programming Project</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Ubuntu 18.04</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Initial Server Setup</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">R</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Networking Commands</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">CDN</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Microservices</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Terraform</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Solutions</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Machine Learning</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Custom Images</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Development Tools</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Linux Auditing</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Media Streaming</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Encryption Tools</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Raspberry Pi</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Debian 10</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Angular</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Automated Setups</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">NTP</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Zabbix</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    <div class="w3-display-container mySlides w3-animate-opacity" style="display: none;">
+      <img src="/images/workbench.jpg" style="width:100%;max-height:160px;">
+      <div class="w3-display-topmiddle w3-text-white w3-container w3-padding-32 w3-hide-small index-banner-name">
+        <span class="w3-white w3-padding-large w3-xlarge w3-round w3-opacity">Data Recovery Tools</span>
+      </div>
+
+      <!-- class -->
+      <div class="w3-container index-tag">
+
+          <div class="w3-tag w3-round index-class w3-dark-grey ">
+              <div class="w3-tag w3-round w3-dark-grey w3-border w3-border-white">
+                热门分类
+              </div>
+          </div>
+          
+      </div>
+
+
+  </div>
+    
+  <button class="w3-button w3-light-grey noselection w3-display-topleft w3-index-banner-pre w3-opacity" onclick="plusDivs(-1)">❮</button>
+
+  <button class="w3-button w3-light-grey noselection w3-display-topright w3-index-banner-next w3-opacity" onclick="plusDivs(+1)">❯</button>
+</div>        <!-- main -->
+    <div class="container" style="padding:0;margin:0 auto;width:1048px;">
+        <div class="w3-row">
+                <div class="w3-row" id="jiathis_main">
+        <div class="w3-col index-left">
+            <div class="w3-container w3-center delete-common-m-p">
+    <h2>设置标准Linux文件系统和配置NFSv4服务器 - 第2部分</h2>
+
+    <div class="w3-panel w3-leftbar w3-light-grey post-title-bottom-tag">
+                <p>我将向您展示如何配置NFSv4服务器（无认证安全），以便您可以设置网络共享在Linux客户端中使用，就像这些文件</p>
+            </div>
+
+    <div class="w3-row post-title-bottom-tag">
+        <div class="w3-col" style="width:70%">
+                        <p>
+                <span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">分类:</span>
+                                    <a href="https://www.howtoing.com/category/linux-certifications"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">Linux认证</span></a>
+                                    <a href="https://www.howtoing.com/category/lfce"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">LFCE</span></a>
+                                    <a href="https://www.howtoing.com/category/operating-system"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">操作系统</span></a>
+                            </p>
+                    </div>
+        <div class="w3-col" style="width:30%;">
+            <p style="text-align:right;">
+                 <span class="post-tag-line-height index-post-bottom-line-word w3-right"> <i class="fa fa-clock-o" aria-hidden="true">&nbsp;2016-03-09 00:00:00</i></span>
+               <!-- <span class="post-tag-line-height index-post-bottom-line-word w3-right"> <i class="fa fa-heart" aria-hidden="true">&nbsp;146</i> </span>
+                <span class="post-tag-line-height index-post-bottom-line-word w3-right" ><i class="fa fa-comments" aria-hidden="true">&nbsp;</i>87</span>-->
+            </p>
+        </div>
+    </div>
+
+    <!-- content start -->
+    <div class="w3-panel post-title-bottom-tag" style="text-align:left;">
+	<!--      
+	<div style="float: left;padding-right: 20px;padding-top: 5px;">
+            <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+            <ins class="adsbygoogle"
+                 style="display:inline-block;width:336px;height:280px"
+                 data-ad-client="ca-pub-7163569408396951"
+                 data-ad-slot="7352319254"></ins>
+            <script>
+            $(document).ready(function(){(adsbygoogle = window.adsbygoogle || []).push({})});
+            </script>
+
+	</div>
+-->
+        <p> <span>在Linux基金会认证工程师（ <strong>联邦经济竞争法</strong> ）被训练在Linux系统设置，配置，管理和解决网络服务，并对此负责设计和实施的系统架构和解决日常生活相关的问题。</span> </p><div id="attachment_9870" style="width: 610px" class="wp-caption aligncenter"> <a href="https://www.howtoing.com/wp-content/uploads/2014/11/lfce2.png"><img src="https://www.howtoing.com/wp-content/uploads/2014/11/lfce2.png" data-lazy-src="https://www.howtoing.com/wp-content/uploads/2014/11/lfce2.png" class="size-full wp-image-9870" alt="配置NFS服务器" width="600" height="400"></a> <p class="wp-caption-text"> <span> Linux基础认证工程师 - 第2部分</span> </p></div><p> <span> Linux基础认证计划（LFCE）简介。</span> </p><div class="post-format"><div class="video-container"><iframe src="http://translate.googleusercontent.com/translate_c?depth=1&amp;hl=zh-CN&amp;rurl=translate.google.com&amp;sl=en&amp;tl=zh-CN&amp;u=http://www.youtube.com/embed/Y29qZ71Kicg&amp;usg=ALkJrhjtOT-QeZEqx9wSVCwsy7hOFQjiqQ" width="720" height="405" frameborder="0" allowfullscreen="allowfullscreen"></iframe></div></div><p> <span>在本系列的第1部分中，我们说明了如何安装NFS（网络文件系统）服务器，并将服务设置为在引导时自动启动。</span> <span>如果您还没有这样做，请参阅该文章，并按照概述的步骤，然后继续。</span> </p><ol><li> <span> <a href="https://www.howtoing.com/installing-network-services-and-configuring-services-at-system-boot/" target="_blank">安装网络服务和配置引导时的自动启动 - 第1部分</a></span> </li></ol><p> <span>现在我将告诉你如何正确配置<b>NFSv4</b>服务器（无身份验证安全性），这样你可以设置网络共享中的Linux客户端使用，如果这些文件系统进行本地安装。</span> <span>请注意，您可以使用LDAP或NIS进行身份验证，但这两个选项都超出了LFCE认证的范围。</span> </p><h3> <span>配置NFSv4服务器</span> </h3><p> <span>一旦NFS服务器启动并运行，我们将关注：</span> </p><ol><li> <span>指定和配置我们要通过网络共享的本地目录，以及</span> </li><li> <span>自动安装在客户端的网络共享，或者通过<b>/ etc / fstab</b>文件或基于内核的自动挂载实用程序（autofs的）。</span> </li></ol><p> <span>我们将在后面解释什么时候选择一种方法或其他方法。</span> </p><p> <span>我们虽之前，我们需要确保的<b>idmapd</b>守护进程正在运行和配置。</span> <span>该服务提供<b>的NFSv4</b>名称映射（ <b>用户@ MYDOMAIN），</b>以用户和组ID，并要求实施NFSv4服务器。</span> </p><p> <span>编辑<b>/ etc / default / nfs中常见</b>启用idmapd。</span> </p><pre>NEED_IDMAPD=YES
+</pre><p> <span>和编辑<b>/etc/idmapd.conf</b>您的本地域名（默认为主机的FQDN）。</span> </p><pre>Domain = yourdomain.com
+</pre><p> <span>然后启动idmapd。</span> </p><pre># service nfs-common start 	[sysvinit / upstart based systems]
+# systemctl start nfs-common 	[systemd based systems]
+</pre><h4> <span>导出网络共享</span> </h4><p> <span>在<b>/ etc / exports</b>文件包含我们的NFS服务器主要配置指令，定义将被导出到远程主机文件系统，并指定可用的选项。</span> <span>在此文件中，每个网络共享使用单独的行来指示，默认情况下具有以下结构：</span> </p><pre>/filesystem/to/export client1([options]) clientN([options])
+</pre><p> <span>凡<b>/文件系统/为/ export</b>是绝对路径导出的文件系统，而<b>客户端1（</b>最高clientN）代表特定的客户端（主机名或IP地址）或网络（允许使用通配符），以该份额正被出口。</span> <span>最后，options是分别导出共享时考虑的逗号分隔值（选项）的列表。</span> <span>请注意，每个主机名和其前面的括号之间没有空格。</span> </p><p> <span>这里是最常见的选项及其相应描述的列表：</span> </p><ol><li> <span> <b>RO（</b>简称只读）：远程客户端可以安装具有只读权限导出的文件系统。</span> </li><li> <span> <b>RW（</b>简称读写）：允许远程主机尽在导出的文件系统写的变化。</span> </li><li> <span> <b>wdelay（</b>简称写入延迟）：NFS服务器延迟提交更改到磁盘，如果怀疑另一个相关的写请求已迫在眉睫。</span> <span>但是，如果NFS服务器收到多个小无关请求，此选项会降低性能，所以<b>no_wdelay</b>选项可用于将其关闭。</span> </li><li> <span> <b>同步</b> ：NFS服务器回复的修改已经提交到永久存储（即硬盘）后，才请求。</span> <span>它的对面<b>，async</b>选项，可以提高性能，但在数据丢失或损坏的不洁服务器重新启动后的成本。</span> </li><li> <span> <b>root_squash：</b>从服务器具有超级用户权限，防止远程root用户，并指定他们为用户nobody的用户ID。</span> <span>如果你想“ <b>南瓜</b> ”的所有用户（不只是根），您可以使用<b>all_squash会将</b>选项。</span> </li><li> <span> <b>anonuid</b> / <b>anongid：</b>显式设置匿名帐户（一个人）的UID和GID。</span> </li><li> <span> <b>subtree_check：</b>如果只有一个文件系统的一个子目录被导出，此选项验证请求的文件位于导出的子目录中。</span> <span>在另一方面，如果整个文件系统被导出，禁用此选项与<b>no_subtree_check</b>将加快转移。</span> <span>默认选项时下<b>no_subtree_check</b>作为子树检查往往会造成更多的问题比它的价值，根据人的5出口。</span> </li><li> <span> <b>FSID = 0</b> | <b>根</b> （零或根）：指定指定的文件系统是多个导出目录的根目录下（仅适用于NFSv4的）。</span> </li></ol><p> <span>在这篇文章中，我们将使用目录<b>/ NFS共享</b>和<b>/ NFS-SHARE / MYDIR</b>上<b>192.168.0.10（NFS</b>服务器）作为我们的测试文件系统。</span> </p><p> <span>我们可以使用以下命令总是在NFS服务器中列出可用的网络共享：</span> </p><pre># showmount -e [IP or hostname]
+</pre><div id="attachment_9866" style="width: 373px" class="wp-caption aligncenter"> <a href="https://www.howtoing.com/wp-content/uploads/2014/11/Check-NFS-Shares.png"><img src="https://www.howtoing.com/wp-content/uploads/2014/11/Check-NFS-Shares.png" data-lazy-src="https://www.howtoing.com/wp-content/uploads/2014/11/Check-NFS-Shares.png" class="size-full wp-image-9866" alt="检查NFS共享" width="363" height="97"></a> <p class="wp-caption-text"> <span>检查NFS共享</span> </p></div><p> <span>在上面的输出中，我们可以看到<b>/ NFS共享</b>和<b>/ NFS-SHARE / MYDIR</b>股<b>192.168.0.10</b>已出口到客户端的IP地址为<b>192.168.0.17。</b></span> </p><p> <span>我们对出口目录的初始配置（请参阅您的NFS服务器上的<b>/ etc / exports的</b>目录）如下：</span> </p><pre>/NFS-SHARE  	192.168.0.17(fsid=0,no_subtree_check,rw,root_squash,sync,anonuid=1000,anongid=1000)
+/NFS-SHARE/mydir    	192.168.0.17(ro,sync,no_subtree_check)
+</pre><p> <span>编辑配置文件后，我们必须重新启动NFS服务：</span> </p><pre># service nfs-kernel-server restart 		[sysvinit / upstart based system]
+# systemctl restart nfs-server			[systemd based systems]
+</pre><h6> <span>使用autofs安装导出的网络共享</span> </h6><p> <span>您可能希望参考LFCS系列<b>（“5部分</b> <a href="https://www.howtoing.com/mount-filesystem-in-linux/" target="_blank">如何挂载/卸载本地和网络（Samba和NFS）文件系统在Linux中</a> ”）的详细信息，远程NFS共享的按需使用<b>mount</b>命令或永久通过安装<b>/ etc / fstab</b>文件。</span> </p><p> <span>使用这些方法安装网络文件系统的缺点是，系统必须分配必要的资源以保持共享安装在任何时候，或至少直到我们决定手动卸载它们。</span> <span>另一种方法是自动安装点播所需的文件系统（不使用<b>mount</b>命令）通过<b>autofs的</b> ，它可以挂载文件系统时使用它们和闲置一段时间后卸载它们。</span> </p><p> <span> Autofs的读取<b>/etc/auto.master文件</b> ，其格式如下：</span> </p><pre>[mount point]	[map file]
+</pre><p> <span>其中<b>[图文件]</b>用来指示在多个安装点<b>[挂载点]。</b></span> </p><p> <span>然后，该主图文件<b>（/etc/auto.master文件</b> ）被用来确定哪些挂载点被定义，然后为每个指定的参数启动automount进程挂载点。</span> </p><h6> <span>使用autofs安装导出的NFS共享</span> </h6><p> <span>编辑您<b>的/etc/auto.master文件</b> ，如下所示：</span> </p><pre>/media/nfs	/etc/auto.nfs-share	--timeout=60
+</pre><p> <span>并创建一个名为<b>/etc/auto.nfs-share</b>包含以下内容映射文件：</span> </p><pre>writeable_share  -fstype=nfs4 192.168.0.10:/
+non_writeable_share  -fstype=nfs4 192.168.0.10:/mydir
+</pre><p> <span>请注意，在<b>/etc/auto.nfs-share</b>第一个字段是一个子目录中<b>/媒体/ NFS</b>的名称。</span> <span>每个子目录由autofs动态创建。</span> </p><p> <span>现在，重新启动autofs服务：</span> </p><pre># service autofs restart 			[sysvinit / upstart based systems]
+# systemctl restart autofs 			[systemd based systems]
+</pre><p> <span>最后，使<b>autofs，</b>从而开始启动，运行以下命令：</span> </p><pre># chkconfig --level 345 autofs on
+# systemctl enable autofs 			[systemd based systems]
+</pre><h6> <span>在启动autofs守护程序后检查装入的文件系统</span> </h6><p> <span>当我们重新启动<b>autofs的</b> <b>，mount</b>命令向我们展示了地图文件<b>（/etc/auto.nfs-share）</b>被安装在<b>/etc/auto.master文件</b>指定的目录：</span> </p><div id="attachment_9867" style="width: 630px" class="wp-caption aligncenter"> <a href="https://www.howtoing.com/wp-content/uploads/2014/11/NFS-Share-Mounted-620x164.png"><img src="https://www.howtoing.com/wp-content/uploads/2014/11/NFS-Share-Mounted-620x164.png" data-lazy-src="https://www.howtoing.com/wp-content/uploads/2014/11/NFS-Share-Mounted-620x164.png" class="size-medium wp-image-9867" alt="已挂载NFS共享" width="620" height="164" srcset="https://www.howtoing.com/wp-content/uploads/2014/11/NFS-Share-Mounted-620x164.png 620w, https://www.howtoing.com/wp-content/uploads/2014/11/NFS-Share-Mounted-620x164.png 694w" sizes="(max-width: 620px) 100vw, 620px"></a> <p class="wp-caption-text"> <span>已挂载NFS共享</span> </p></div><p> <span>请注意，没有目录实际上已经安装呢，可是当我们尝试访问<b>/etc/auto.nfs-share</b>指定的股票将自动：</span> </p><div id="attachment_9868" style="width: 630px" class="wp-caption aligncenter"> <a href="https://www.howtoing.com/wp-content/uploads/2014/11/Automount-NFS-Shares-620x196.png"><img src="https://www.howtoing.com/wp-content/uploads/2014/11/Automount-NFS-Shares-620x196.png" data-lazy-src="https://www.howtoing.com/wp-content/uploads/2014/11/Automount-NFS-Shares-620x196.png" class="size-medium wp-image-9868" alt="自动挂载NFS共享" width="620" height="196" srcset="https://www.howtoing.com/wp-content/uploads/2014/11/Automount-NFS-Shares-620x196.png 620w, https://www.howtoing.com/wp-content/uploads/2014/11/Automount-NFS-Shares-1024x323.png 1024w, https://www.howtoing.com/wp-content/uploads/2014/11/Automount-NFS-Shares-620x196.png 1135w" sizes="(max-width: 620px) 100vw, 620px"></a> <p class="wp-caption-text"> <span>自动挂载NFS共享</span> </p></div><p> <span>正如我们所看到的，autofs服务“ <b>坐骑</b> ”的地图文件，可以这么说，而是等待，直到请求发送到文件系统进行真正安装它们。</span> </p><h6> <span>在导出的文件系统中执行写入测试</span> </h6><p> <span>该<b>anonuid</b>和<b>anongid</b>选项，并在第一的份额设置<b>root_squash</b>一起，让我们来映射root用户在客户端服务器执行的本地帐户的请求。</span> </p><p> <span>换句话说，当客户端中的root用户在导出的目录中创建一个文件时，其所有权将自动映射到UID和GID = 1000的用户帐户，前提是此类帐户存在于服务器上：</span> </p><div id="attachment_9869" style="width: 629px" class="wp-caption aligncenter"> <a href="https://www.howtoing.com/wp-content/uploads/2014/11/Perform-NFS-Write-Tests.png"><img src="https://www.howtoing.com/wp-content/uploads/2014/11/Perform-NFS-Write-Tests.png" data-lazy-src="https://www.howtoing.com/wp-content/uploads/2014/11/Perform-NFS-Write-Tests.png" class="size-full wp-image-9869" alt="执行NFS写入测试" width="619" height="184"></a> <p class="wp-caption-text"> <span>执行NFS写入测试</span> </p></div><h3> <span>结论</span> </h3><p> <span>我希望您能够使用本文作为指南成功设置和配置适合您的环境的NFS服务器。</span> <span>您可能还需要参考相关的手册页以获得更多帮助（ <b>男出口</b>和<b>人idmapd.conf，</b>例如）。</span> </p><p> <span>随时可以尝试其他选项和测试用例，如前所述，并且毫不犹豫地使用下面的表单发送您的意见，建议或问题。</span> <span>我们很高兴听到你的来信。</span> </p><div align="center" style="background: #c33; margin: 10px 0px; border: #c33 1px solid; padding: 10px 10px 10px 10px;"> <span> <strong><a onclick="ga('send','event','Become a Linux Certified Engineer','linuxfoundation.org')" rel="nofollow" target="_blank" href="http://www.shareasale.com/r.cfm?b=768109&u=1260899&m=59485&urllink=&afftrack=" style="color: #fff; text-decoration: none; font-weight: bold;">成为Linux认证工程师</a></strong></span> </div></h2>
+    </div>
+    <div class="w3-row">
+
+            <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+            <!-- howtoing-post-content-left-ads-336*280 -->
+            <ins class="adsbygoogle"
+                 style="display:inline-block;width:336px;height:280px"
+                 data-ad-client="ca-pub-7163569408396951"
+                 data-ad-slot="7352319254"></ins>
+            <script>
+            $(document).ready(function(){(adsbygoogle = window.adsbygoogle || []).push({})});  
+            </script>
+
+    </div>
+        <div class="w3-row post-post-bottom-tag">
+        <span class="post-tag-line-height post-tag w3-tag  w3-left w3-small w3-green" style="color:gray;">Tag标签：</span>
+                    <a href="https://www.howtoing.com/tag/nfs"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">NFS</span></a>
+                    <a href="https://www.howtoing.com/tag/linux-certifications"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">Linux Certifications</span></a>
+                    <a href="https://www.howtoing.com/tag/lfce-certification"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">lfce certification</span></a>
+                    <a href="https://www.howtoing.com/tag/lfce"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">LFCE</span></a>
+                    <a href="https://www.howtoing.com/tag/autofs"><span class="post-tag-line-height post-tag w3-tag w3-left w3-small w3-green" style="color:gray;">autofs</span></a>
+            </div>
+        <!-- content end -->
+</div>
+            <div class="w3-row">
+    <div class="w3-half w3-container w3-next-wrap">
+                <p class="w3-left w3-pre-post">上一篇</p><br>
+        <p class="w3-left delete-common-m-p"><a href="https://www.howtoing.com/disk-encryption-in-linux">如何在Linux中使用&#039;Cryptsetup&#039;工具设置加密的文件系统和交换空间 - 第3部分</a></p>
+            </div>
+    <div class="w3-half w3-container w3-next-wrap">
+                <p class="w3-right w3-new-post">下一篇</p><br>
+        <p class="w3-right delete-common-m-p"><a href="https://www.howtoing.com/create-raid-10-in-linux">在Linux中设置RAID 10或1 + 0（嵌套） - 第6部分</a></p>
+            </div>
+</div>            <!-- <h3 class="w3-center w3-bottombar w3-border-gray post-relation-article">相关文章</h3> -->
+<br/>
+<div id="London" class="w3-container city delete-common-m-p">
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-format="autorelaxed"
+             data-ad-client="ca-pub-9856485789689900"
+             data-ad-slot="9308464999"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+</div>
+        </div>
+        <div class="w3-col index-right">
+
+    <div class="w3-row index-common-h2">
+        文章分类<span class="w3-badge w3-right w3-margin-right"> 10 </span>
+    </div>
+  <div class="w3-row">
+    <div class="w3-col s6 w3-dark-grey w3-center" style="padding:10px 0px;"> <a href="/category/cloud">运维</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;"><i class="fa fa-sitemap" aria-hidden="true"></i> <a href="/category/system-architecture">架构</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center" style="padding:10px 0px;">
+      <i class="fa fa-wrench" aria-hidden="true"></i> <a href="/category/developer-kits">开发工具</a>
+    </div>
+    <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;"><i class="fa fa-linux" aria-hidden="true"></i> <a href="/category/operating-system">操作系统</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center" style="padding:10px 0px;"><i class="fa fa-code" aria-hidden="true"></i> <a href="/category/programming-2">编程语言</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;"><a href="/category/html-css">WEB开发设计</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center" style="padding:10px 0px;"><i class="fa fa-server" aria-hidden="true"></i> <a href="/category/server">服务器</a></div>
+    <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;"><i class="fa fa-database" aria-hidden="true"></i>  <a href="/category/database">数据库</a></div>
+     <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;"> <a href="/category/network-security">网络安全</a></div>
+
+      <div class="w3-col s6 w3-dark-grey w3-center w3-border-left w3-border-bottom w3-border-color-white" style="padding:10px 0px;">  <a href="/category/others">综合分类</a></div>
+  </div>
+    <div class="w3-row index-common-h2">
+        热门文章<span class="w3-badge w3-right w3-margin-right">8</span>
+    </div>
+        <div class="w3-row">
+        <ul class="w3-ul delete-common-m-p">
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/install-apache-activemq-on-centos-rhel">如何在CentOS / RHEL 8上安装Apache ActiveMQ</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/install-fail2ban-to-protect-ssh-on-centos-rhel">如何在CentOS / RHEL 8上安装Fail2Ban保护SSH</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/understand-core-components-of-ansible">理解Ansible的核心组成部分-第1部分</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/install-java-on-centos-rhel-fedora">如何在CentOS / RHEL 7/8和Fedora 30/31上安装Java 13</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/create-centralized-log-server-with-rsyslog-in-centos-8">在CentOS / RHEL 8中使用Rsyslog设置集中式日志服务器</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/linux-tree-command-examples">Linux“ tree Command”初学者用法示例</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/install-mongodb-on-debian">如何在Debian 10上安装MongoDB 4</a></li>
+                    <li class="index-hot-article"><a href="https://www.howtoing.com/install-ansible-on-centos-rhel-8">如何在CentOS / RHEL 8上安装Ansible自动化工具</a></li>
+                  </ul>
+    </div>
+    
+    <div class="w3-row index-common-right-ads">
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <!-- howtoing-side-300*600 -->
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:300px;height:250px"
+         data-ad-client="ca-pub-7163569408396951"
+         data-ad-slot="7372376843"></ins>
+    <script>
+      $(document).ready(function(){(adsbygoogle = window.adsbygoogle || []).push({})});
+    </script>
+    </div>
+
+
+     <div class="w3-row">
+      <div class="w3-row w3-border index-qq">
+         <img src="/images/linux_wechat.jpg" width="220px"/><br/>
+         <img src="/images/linux_qq2.jpg" width="220px"/><br/>
+          <img src="/images/follow-us.png" width="220px"/>
+          <p class="delete-common-m-p">Linux入门</p>
+          <p class="delete-common-m-p">QQ交流群:308781113(已满)</p>
+      </div>
+    </div>
+
+
+
+</div>
+    </div>
+        </div>
+    </div>
+    <!-- footer -->
+            <footer class="w3-center w3-light-grey w3-margin-top w3-padding-24 w3-medium">
+      <p><wb:follow-button uid="2991975565" type="red_1" width="67" height="24" ></wb:follow-button>howtoing.com是一个运维教程站，开始于2012年5月。这里提供如何简单的学习引导Linux/Windows系统管理员的目标。我们一直在努力提供简单易学高质量的文章。</p>
+      <p>联系邮箱: howtoing@foxmail.com</p>
+      <p>©2019 Howtoing运维教程 京ICP备17008628号-1
+      </p>
+</footer>
+    
+        <script src="/js/bootstrap.min.js" charset="utf-8"></script>
+    <!-- <script src="/js/dynamicscrollspy.js" charset="utf-8"></script> -->
+    <script src="/js/prettify.js" charset="utf-8"></script>
+    <script src="/js/howto.js" charset="utf-8"></script>
+        <!-- share -->
+        <!-- Start of StatCounter Code for Default Guide -->
+    <script type="text/javascript">
+    var sc_project=11028908; 
+    var sc_invisible=1; 
+    var sc_security="bc715dee"; 
+    var scJsHost = (("https:" == document.location.protocol) ?
+    "https://secure." : "http://www.");
+    document.write("<sc"+"ript type='text/javascript' src='" +
+    scJsHost+
+    "statcounter.com/counter/counter.js'></"+"script>");
+    </script>
+    <noscript><div class="statcounter"><a title="Web Analytics"
+    href="http://statcounter.com/" target="_blank"><img
+    class="statcounter"
+    src="//c.statcounter.com/11028908/0/bc715dee/1/" alt="Web
+    Analytics"></a></div></noscript>
+    <!-- End of StatCounter Code for Default Guide -->
+</body>
+</html>
