@@ -675,7 +675,7 @@ $(function(){
   if(!getCookie('c_adb')){
     var importCheck = document.createElement('script');
     importCheck.type="text/javascript";
-    importCheck.src = 'https://g.csdnimg.cn/check-adb/1.0.3/check-adb.js';
+    importCheck.src = 'https://g.csdnimg.cn/check-adb/1.0.4/check-adb.js';
     document.head.appendChild(importCheck);
   }
 })
