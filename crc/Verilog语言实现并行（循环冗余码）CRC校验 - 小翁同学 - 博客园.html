@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="origin">
+    <meta property="og:description" content="1 前言 （1） 什么是CRC校验？ CRC即循环冗余校验码：是数据通信领域中最常用的一种查错校验码，其特征是信息字段和校验字段的长度可以任意选定。循环冗余检查（CRC）是一种数据传输检错功能，对数据">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <title>Verilog语言实现并行（循环冗余码）CRC校验 - 小翁同学 - 博客园</title>
+    
+    <link rel="stylesheet" href="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+    <link id="MainCss" rel="stylesheet" href="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-simplememory.css">
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-SimpleMemory-mobile.css">
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/kingstacker/rss">
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/kingstacker/rsd.xml">
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/kingstacker/wlwmanifest.xml">
+    <script src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_2019093001.js"></script><script async="" src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script type="text/javascript" src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/encoder.js"></script><script src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js"></script>
+    <script>
+        var currentBlogId = 372667;
+        var currentBlogApp = 'kingstacker';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+    </script>
+    
+    
+    
+<link rel="preload" href="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2019093001.js" async=""></script></head>
+<body>
+    <a name="top"></a>
+    
+    
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+        <a id="lnkBlogLogo" href="https://www.cnblogs.com/kingstacker/"><img id="blogLogo" src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.gif" alt="返回主页"></a>		
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/kingstacker/">kingstacker</a>
+</h1>
+<h2>
+事情去做很容易，做到极致就很难。
+</h2>
+
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+</li>
+<li>
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/kingstacker/">
+首页</a>
+</li>
+<li>
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+</li>
+<li>
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6">
+联系</a></li>
+<li>
+<a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/kingstacker/rss/">
+订阅</a>
+<!--<partial name="./Shared/_XmlLink.cshtml" model="Model" /></li>--></li>
+<li>
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+</ul>
+
+
+		<div class="blogStats">
+			
+			<span id="stats_post_count">随笔 - 
+84&nbsp; </span>
+<span id="stats_article_count">文章 - 
+0&nbsp; </span>
+<span id="stats-comment_count">评论 - 
+5</span>
+
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		<div id="post_detail">
+    <!--done-->
+    <div id="topics">
+        <div class="post">
+            <h1 class="postTitle">
+                
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/kingstacker/p/9848191.html">Verilog语言实现并行（循环冗余码）CRC校验</a>
+
+            </h1>
+            <div class="clear"></div>
+            <div class="postBody">
+                
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <p class="a" align="center">&nbsp;</p>
+<h1>1 前言</h1>
+<p>（1）&nbsp;&nbsp;&nbsp; 什么是CRC校验？</p>
+<p>CRC即循环冗余校验码：是数据通信领域中最常用的一种查错校验码，其特征是信息字段和校验字段的长度可以任意选定。循环冗余检查（CRC）是一种
+数据传输检错功能，对数据进行多项式计算，并将得到的结果附在帧的后面，接收设备也执行类似的算法，以保证数据传输的正确性和完整性。</p>
+<p>LFSR计算CRC，可以用多项式G（x）表示，G(x) = X16+X12+X5+1模型可如下图所示。</p>
+<p>&nbsp;<img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1216043-20181025102305476-289699489.png" alt=""></p>
+<p>&nbsp;</p>
+<p>（2）&nbsp;&nbsp;&nbsp; 校验原理</p>
+<p>其根本思想就是先在要发送的帧后面附加一个数（这个就是用来校验的校验码，但要注意，这里的数也是二进制序列的，下同），生成一个新帧发送给接收
+端。当然，这个附加的数不是随意的，它要使所生成的新帧能与发送端和接收端共同选定的某个特定数整除（注意，这里不是直接采用二进制除法，而是采用一种称
+之为“模2除法”）。到达接收端后，再把接收到的新帧除以（同样采用“模2除法”）这个选定的除数。因为在发送端发送数据帧之前就已通过附加一个数，做了
+“去余”处理（也就已经能整除了），所以结果应该是没有余数。如果有余数，则表明该帧在传输过程中出现了差错。</p>
+<p>要校验的数据加上此数据计算出来的crc组成新的数据帧，如下图所示。</p>
+<p><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1216043-20181025102324805-2022599724.png" alt=""></p>
+<p>模2除法：</p>
+<p>模2除法与算术除法类似，但每一位除的结果不影响其它位，即不向上一位借位，所以实际上就是异或。在循环冗余校验码（CRC）的计算中有应用到模2除法。</p>
+<p>（3）&nbsp;&nbsp;&nbsp; 步骤</p>
+<p>CRC校验中有两个关键点，一是预先确定一个发送送端和接收端都用来作为除数的二进制比特串（或多项式），可以随机选择，也可以使用国际标准，但是最高位和最低位必须为1；二是把原始帧与上面计算出的除数进行模2除法运算，计算出CRC码。</p>
+<p>1. 选择合适的除数</p>
+<p>2. 
+看选定除数的二进制位数，然后再要发送的数据帧上面加上这个位数-1位的0，然后用新生成的帧以模2除法的方式除上面的除数，得到的余数就是该帧的CRC
+校验码。注意，余数的位数一定只比除数位数少一位，也就是CRC校验码位数比除数位数少一位，如果前面位是0也不能省略。</p>
+<p>3. 将计算出来的CRC校验码附加在原数据帧后面，构建成一个新的数据帧进行发送；最后接收端在以模2除法方式除以前面选择的除数，如果没有余数，则说明数据帧在传输的过程中没有出错。</p>
+<p>（4）&nbsp;&nbsp;&nbsp; 计算实例</p>
+<p>现假设选择的CRC生成多项式为G（X） = X4&nbsp;+ X3&nbsp;+ 1，要求出二进制序列10110011的CRC校验码。下面是具体的计算过程：</p>
+<p>①将多项式转化为二进制序列，由G（X） = X4&nbsp;+ X3&nbsp;+ 1可知二进制一种有五位，第4位、第三位和第零位分别为1，则序列为11001</p>
+<p>②多项式的位数位5，则在数据帧的后面加上5-1位0，数据帧变为101100110000，然后使用模2除法除以除数11001，得到余数。</p>
+<p>③将计算出来的CRC校验码添加在原始帧的后面，真正的数据帧为101100110100，再把这个数据帧发送到接收端。</p>
+<p>④接收端收到数据帧后，用上面选定的除数，用模2除法除去，验证余数是否为0，如果为0，则说明数据帧没有出错。</p>
+<h1>2 流程</h1>
+<p>（1）并行计算crc用verilog语言描述是复杂繁琐的，所以可以使用在线工具生成verilog或者VHDL模板：<a href="http://www.easics.com/webtools/crctool">http://www.easics.com/webtools/crctool</a>，模板生成的代码稍加修改即可使用。</p>
+<p>（2）本次校验模型为G(x) = X16+X12+X5+1。在在线工具中操作相关选项生成模板。</p>
+<p><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1216043-20181025102345242-1526199190.png" alt=""></p>
+<p>&nbsp;</p>
+<p>模板v文件如下：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #008080;"> 1</span> <span style="color: #808080;">//////////////////////////////////////////////////////////////////////////////</span><span style="color: #008000;">//</span>
+<span style="color: #008080;"> 2</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Copyright (C) 1999-2008 Easics NV.
+</span><span style="color: #008080;"> 3</span> <span style="color: #008000;">//</span><span style="color: #008000;"> This source file may be used and distributed without restriction
+</span><span style="color: #008080;"> 4</span> <span style="color: #008000;">//</span><span style="color: #008000;"> provided that this copyright statement is not removed from the file
+</span><span style="color: #008080;"> 5</span> <span style="color: #008000;">//</span><span style="color: #008000;"> and that any derivative work contains the original copyright notice
+</span><span style="color: #008080;"> 6</span> <span style="color: #008000;">//</span><span style="color: #008000;"> and the associated disclaimer.
+</span><span style="color: #008080;"> 7</span> <span style="color: #008000;">//</span>
+<span style="color: #008080;"> 8</span> <span style="color: #008000;">//</span><span style="color: #008000;"> THIS SOURCE FILE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS
+</span><span style="color: #008080;"> 9</span> <span style="color: #008000;">//</span><span style="color: #008000;"> OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+</span><span style="color: #008080;">10</span> <span style="color: #008000;">//</span><span style="color: #008000;"> WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+</span><span style="color: #008080;">11</span> <span style="color: #008000;">//</span>
+<span style="color: #008080;">12</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Purpose : synthesizable CRC function
+</span><span style="color: #008080;">13</span> <span style="color: #008000;">//</span><span style="color: #008000;">   * polynomial: x^16 + x^12 + x^5 + 1
+</span><span style="color: #008080;">14</span> <span style="color: #008000;">//</span><span style="color: #008000;">   * data width: 16
+</span><span style="color: #008080;">15</span> <span style="color: #008000;">//</span>
+<span style="color: #008080;">16</span> <span style="color: #008000;">//</span><span style="color: #008000;"> Info : tools@easics.be
+</span><span style="color: #008080;">17</span> <span style="color: #008000;">//</span>        <span style="color: #008000; text-decoration: underline;">http://www.easics.com</span>
+<span style="color: #008080;">18</span> <span style="color: #808080;">//////////////////////////////////////////////////////////////////////////////</span><span style="color: #008000;">//</span>
+<span style="color: #008080;">19</span> <span style="color: #000000;">module CRC16_D16;
+</span><span style="color: #008080;">20</span> 
+<span style="color: #008080;">21</span>   <span style="color: #008000;">//</span><span style="color: #008000;"> polynomial: x^16 + x^12 + x^5 + 1
+</span><span style="color: #008080;">22</span>   <span style="color: #008000;">//</span><span style="color: #008000;"> data width: 16
+</span><span style="color: #008080;">23</span>   <span style="color: #008000;">//</span><span style="color: #008000;"> convention: the first serial bit is D[15]</span>
+<span style="color: #008080;">24</span>   function [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span><span style="color: #000000;">] nextCRC16_D16;
+</span><span style="color: #008080;">25</span> 
+<span style="color: #008080;">26</span>     input [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span><span style="color: #000000;">] Data;
+</span><span style="color: #008080;">27</span>     input [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span><span style="color: #000000;">] crc;
+</span><span style="color: #008080;">28</span>     reg [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span><span style="color: #000000;">] d;
+</span><span style="color: #008080;">29</span>     reg [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span><span style="color: #000000;">] c;
+</span><span style="color: #008080;">30</span>     reg [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span><span style="color: #000000;">] newcrc;
+</span><span style="color: #008080;">31</span> <span style="color: #000000;">  begin
+</span><span style="color: #008080;">32</span>     d =<span style="color: #000000;"> Data;
+</span><span style="color: #008080;">33</span>     c =<span style="color: #000000;"> crc;
+</span><span style="color: #008080;">34</span> 
+<span style="color: #008080;">35</span>     newcrc[<span style="color: #800080;">0</span>] = d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">4</span>] ^ d[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">12</span><span style="color: #000000;">];
+</span><span style="color: #008080;">36</span>     newcrc[<span style="color: #800080;">1</span>] = d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">5</span>] ^ d[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">13</span><span style="color: #000000;">];
+</span><span style="color: #008080;">37</span>     newcrc[<span style="color: #800080;">2</span>] = d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">6</span>] ^ d[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">13</span>] ^ c[<span style="color: #800080;">14</span><span style="color: #000000;">];
+</span><span style="color: #008080;">38</span>     newcrc[<span style="color: #800080;">3</span>] = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">7</span>] ^ d[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">7</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">14</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">39</span>     newcrc[<span style="color: #800080;">4</span>] = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">40</span>     newcrc[<span style="color: #800080;">5</span>] = d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">5</span>] ^ d[<span style="color: #800080;">4</span>] ^ d[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">13</span><span style="color: #000000;">];
+</span><span style="color: #008080;">41</span>     newcrc[<span style="color: #800080;">6</span>] = d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">6</span>] ^ d[<span style="color: #800080;">5</span>] ^ d[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">13</span>] ^ c[<span style="color: #800080;">14</span><span style="color: #000000;">];
+</span><span style="color: #008080;">42</span>     newcrc[<span style="color: #800080;">7</span>] = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">7</span>] ^ d[<span style="color: #800080;">6</span>] ^ d[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">7</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">13</span>] ^ c[<span style="color: #800080;">14</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">43</span>     newcrc[<span style="color: #800080;">8</span>] = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">7</span>] ^ d[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">7</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">14</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">44</span>     newcrc[<span style="color: #800080;">9</span>] = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">13</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">45</span>     newcrc[<span style="color: #800080;">10</span>] = d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">13</span>] ^ c[<span style="color: #800080;">14</span><span style="color: #000000;">];
+</span><span style="color: #008080;">46</span>     newcrc[<span style="color: #800080;">11</span>] = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">14</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">47</span>     newcrc[<span style="color: #800080;">12</span>] = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">7</span>] ^ d[<span style="color: #800080;">4</span>] ^ d[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">7</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">48</span>     newcrc[<span style="color: #800080;">13</span>] = d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">5</span>] ^ d[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">9</span><span style="color: #000000;">];
+</span><span style="color: #008080;">49</span>     newcrc[<span style="color: #800080;">14</span>] = d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">6</span>] ^ d[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">10</span><span style="color: #000000;">];
+</span><span style="color: #008080;">50</span>     newcrc[<span style="color: #800080;">15</span>] = d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">7</span>] ^ d[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">7</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">11</span><span style="color: #000000;">];
+</span><span style="color: #008080;">51</span>     nextCRC16_D16 =<span style="color: #000000;"> newcrc;
+</span><span style="color: #008080;">52</span> <span style="color: #000000;">  end
+</span><span style="color: #008080;">53</span> <span style="color: #000000;">  endfunction
+</span><span style="color: #008080;">54</span> endmodule</pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>&nbsp;</p>
+<p>（3）修改模板最终如下：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #008080;"> 1</span> `timescale 1ns/<span style="color: #000000;">1ps
+</span><span style="color: #008080;"> 2</span> <span style="color: #000000;">module crc16_test (
+</span><span style="color: #008080;"> 3</span>     input     wire              i_clk                 , <span style="color: #008000;">//</span><span style="color: #008000;">时钟；</span>
+<span style="color: #008080;"> 4</span>     input     wire              i_rst_n               , <span style="color: #008000;">//</span><span style="color: #008000;">同步复位；</span>
+<span style="color: #008080;"> 5</span>     input     wire              i_din_valid           , <span style="color: #008000;">//</span><span style="color: #008000;">输入数据有效；</span>
+<span style="color: #008080;"> 6</span>     input     wire    [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span>]    i_din                 , <span style="color: #008000;">//</span><span style="color: #008000;">输入数据；</span>
+<span style="color: #008080;"> 7</span>     output    wire              o_dout_valid          , <span style="color: #008000;">//</span><span style="color: #008000;">输出CRC值有效；</span>
+<span style="color: #008080;"> 8</span>     output    wire    [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span>]    o_dout                  <span style="color: #008000;">//</span><span style="color: #008000;">输出CRC；         </span>
+<span style="color: #008080;"> 9</span> <span style="color: #000000;">);
+</span><span style="color: #008080;">10</span> reg [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span><span style="color: #000000;">] r_dout;
+</span><span style="color: #008080;">11</span> wire [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span><span style="color: #000000;">] d;
+</span><span style="color: #008080;">12</span> wire [<span style="color: #800080;">15</span>:<span style="color: #800080;">0</span><span style="color: #000000;">] c;
+</span><span style="color: #008080;">13</span> assign d =<span style="color: #000000;"> i_din;
+</span><span style="color: #008080;">14</span> assign c =<span style="color: #000000;"> r_dout;
+</span><span style="color: #008080;">15</span> <span style="color: #000000;">always @(posedge i_clk) begin
+</span><span style="color: #008080;">16</span>     <span style="color: #0000ff;">if</span> (~<span style="color: #000000;">i_rst_n) 
+</span><span style="color: #008080;">17</span>         r_dout &lt;= <span style="color: #800080;">16</span><span style="color: #800000;">'</span><span style="color: #800000;">hffff; //初始值为ffff；</span>
+<span style="color: #008080;">18</span>     <span style="color: #0000ff;">else</span> <span style="color: #0000ff;">if</span><span style="color: #000000;"> (i_din_valid) 
+</span><span style="color: #008080;">19</span>     begin <span style="color: #008000;">//</span><span style="color: #008000;">计算逻辑；</span>
+<span style="color: #008080;">20</span>         r_dout[<span style="color: #800080;">0</span>]  = d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">4</span>] ^ d[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">12</span><span style="color: #000000;">];
+</span><span style="color: #008080;">21</span>         r_dout[<span style="color: #800080;">1</span>]  = d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">5</span>] ^ d[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">13</span><span style="color: #000000;">];
+</span><span style="color: #008080;">22</span>         r_dout[<span style="color: #800080;">2</span>]  = d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">6</span>] ^ d[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">13</span>] ^ c[<span style="color: #800080;">14</span><span style="color: #000000;">];
+</span><span style="color: #008080;">23</span>         r_dout[<span style="color: #800080;">3</span>]  = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">7</span>] ^ d[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">7</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">14</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">24</span>         r_dout[<span style="color: #800080;">4</span>]  = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">25</span>         r_dout[<span style="color: #800080;">5</span>]  = d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">5</span>] ^ d[<span style="color: #800080;">4</span>] ^ d[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">13</span><span style="color: #000000;">];
+</span><span style="color: #008080;">26</span>         r_dout[<span style="color: #800080;">6</span>]  = d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">6</span>] ^ d[<span style="color: #800080;">5</span>] ^ d[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">13</span>] ^ c[<span style="color: #800080;">14</span><span style="color: #000000;">];
+</span><span style="color: #008080;">27</span>         r_dout[<span style="color: #800080;">7</span>]  = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">7</span>] ^ d[<span style="color: #800080;">6</span>] ^ d[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">7</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">13</span>] ^ c[<span style="color: #800080;">14</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">28</span>         r_dout[<span style="color: #800080;">8</span>]  = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">7</span>] ^ d[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">7</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">14</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">29</span>         r_dout[<span style="color: #800080;">9</span>]  = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">12</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">12</span>] ^ c[<span style="color: #800080;">13</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">30</span>         r_dout[<span style="color: #800080;">10</span>] = d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">13</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">13</span>] ^ c[<span style="color: #800080;">14</span><span style="color: #000000;">];
+</span><span style="color: #008080;">31</span>         r_dout[<span style="color: #800080;">11</span>] = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">14</span>] ^ d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">11</span>] ^ c[<span style="color: #800080;">14</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">32</span>         r_dout[<span style="color: #800080;">12</span>] = d[<span style="color: #800080;">15</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">7</span>] ^ d[<span style="color: #800080;">4</span>] ^ d[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">0</span>] ^ c[<span style="color: #800080;">4</span>] ^ c[<span style="color: #800080;">7</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">15</span><span style="color: #000000;">];
+</span><span style="color: #008080;">33</span>         r_dout[<span style="color: #800080;">13</span>] = d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">8</span>] ^ d[<span style="color: #800080;">5</span>] ^ d[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">1</span>] ^ c[<span style="color: #800080;">5</span>] ^ c[<span style="color: #800080;">8</span>] ^ c[<span style="color: #800080;">9</span><span style="color: #000000;">];
+</span><span style="color: #008080;">34</span>         r_dout[<span style="color: #800080;">14</span>] = d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">9</span>] ^ d[<span style="color: #800080;">6</span>] ^ d[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">2</span>] ^ c[<span style="color: #800080;">6</span>] ^ c[<span style="color: #800080;">9</span>] ^ c[<span style="color: #800080;">10</span><span style="color: #000000;">];
+</span><span style="color: #008080;">35</span>         r_dout[<span style="color: #800080;">15</span>] = d[<span style="color: #800080;">11</span>] ^ d[<span style="color: #800080;">10</span>] ^ d[<span style="color: #800080;">7</span>] ^ d[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">3</span>] ^ c[<span style="color: #800080;">7</span>] ^ c[<span style="color: #800080;">10</span>] ^ c[<span style="color: #800080;">11</span><span style="color: #000000;">];
+</span><span style="color: #008080;">36</span> <span style="color: #000000;">    end
+</span><span style="color: #008080;">37</span> <span style="color: #000000;">end 
+</span><span style="color: #008080;">38</span> reg r_dout_valid = <span style="color: #800080;">0</span><span style="color: #000000;">; 
+</span><span style="color: #008080;">39</span> always @(posedge i_clk) <span style="color: #008000;">//</span><span style="color: #008000;">输入数据在一个时钟内完成CRC计算，下一个时钟输出；</span>
+<span style="color: #008080;">40</span> <span style="color: #000000;">begin
+</span><span style="color: #008080;">41</span>     r_dout_valid &lt;=<span style="color: #000000;"> i_din_valid;
+</span><span style="color: #008080;">42</span> <span style="color: #000000;">end
+</span><span style="color: #008080;">43</span> 
+<span style="color: #008080;">44</span> assign o_dout_valid =<span style="color: #000000;"> r_dout_valid;
+</span><span style="color: #008080;">45</span> assign o_dout =<span style="color: #000000;"> r_dout ;
+</span><span style="color: #008080;">46</span> 
+<span style="color: #008080;">47</span> endmodule <span style="color: #008000;">//</span><span style="color: #008000;"> end the crc16_test model;</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>&nbsp;</p>
+<h1>3 仿真</h1>
+<p>仿真结果和在线工具计算结果进行比较，在线工具地址：<a href="http://www.ip33.com/crc.html">http://www.ip33.com/crc.html</a>。</p>
+<p>（1）编写tb文件，对代码进行测试，测试结果如下图所示：</p>
+<p><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1216043-20181025102514018-2025660156.png" alt=""></p>
+<p>（2）在线校验。输入需要校验的数据，选择参数模型，输入初始值（此次crc结果的前一个crc值，代码中初始化为ffff）。可以对比发现计算无误。</p>
+<p>第一次计算0011（初始值为ffff），结果为1f1f。</p>
+<p>第二次计算0013（初始值为1f1f），结果为d2c1。</p>
+<p><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1216043-20181025102526075-236801553.png" alt=""></p>
+<p>&nbsp;</p>
+<h1>4 综合</h1>
+<p>本次综合参考芯片为：xc7k325tffg676-2</p>
+<p>（1）&nbsp;&nbsp;&nbsp; 资源使用量如下图所示。</p>
+<p><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1216043-20181025102535014-363317492.png" alt=""></p>
+<p>&nbsp;</p>
+<p>（2）&nbsp;&nbsp;&nbsp; 模块时钟约束为100M，裕量如下图所示，满足时序要求。</p>
+<p>&nbsp;<img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1216043-20181025102540631-55714174.png" alt=""></p>
+<p>以上。</p>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block"><div id="BlogPostCategory">
+    分类: 
+            <a href="https://www.cnblogs.com/kingstacker/category/1053673.html" target="_blank">FPGA理论</a></div>
+<div id="EntryTag">
+    标签: 
+            <a href="https://www.cnblogs.com/kingstacker/tag/FPGA/">FPGA</a></div>
+
+    <div id="blog_post_info">
+<div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(9848191,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+        <a id="green_channel_follow" onclick="follow('04693f6c-86e5-4c12-6678-08d49c352df3');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/kingstacker/" target="_blank"><img src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/20190911193100.png" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/kingstacker/">小翁同学</a><br>
+            <a href="https://home.cnblogs.com/u/kingstacker/followees/">关注 - 2</a><br>
+            <a href="https://home.cnblogs.com/u/kingstacker/followers/">粉丝 - 15</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('04693f6c-86e5-4c12-6678-08d49c352df3');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(9848191,'Digg')">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(9848191,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+    <div class="clear"></div>
+    <div id="post_next_prev">
+
+    <a href="https://www.cnblogs.com/kingstacker/p/9821663.html" class="p_n_p_prefix">« </a> 上一篇：    <a href="https://www.cnblogs.com/kingstacker/p/9821663.html" title="发布于 2018-10-20 14:44">Vivado寄存器初始值问题</a>
+    <br>
+    <a href="https://www.cnblogs.com/kingstacker/p/9848393.html" class="p_n_p_prefix">» </a> 下一篇：    <a href="https://www.cnblogs.com/kingstacker/p/9848393.html" title="发布于 2018-10-25 10:49">OrCAD原理图中怎么导出FPGA的引脚分配</a>
+
+</div>
+</div>
+            </div>
+            <div class="postDesc">posted @ 
+<span id="post-date">2018-10-25 10:27</span>&nbsp;<a href="https://www.cnblogs.com/kingstacker/">小翁同学</a> 阅读(<span id="post_view_count">2638</span>) 评论(<span id="post_comment_count">0</span>) <a href="https://i.cnblogs.com/EditPosts.aspx?postid=9848191" rel="nofollow"> 编辑</a> <a href="javascript:void(0)" onclick="AddToWz(9848191); return false;">收藏</a>
+</div>
+        </div>
+	    
+	    
+    </div><!--end: topics 文章、评论容器-->
+</div>
+<script src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/highlight.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 372667, cb_blogApp = 'kingstacker', cb_blogUserGuid = '04693f6c-86e5-4c12-6678-08d49c352df3';
+    var cb_entryId = 9848191, cb_entryCreatedDate = '2018-10-25 10:27', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container"><div class="login_tips">
+    注册用户登录后才能发表评论，请 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a>
+     或 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，
+    <a href="https://www.cnblogs.com/">访问</a> 网站首页。
+</div></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万行VC++源码: 大型组态工控、电力仿真CAD与GIS源码库</a><br><a href="https://www.jdcloud.com/cn/activity/year-end?utm_source=DMT_cnblogs&amp;utm_medium=CH&amp;utm_campaign=q4vm&amp;utm_term=Virtual-Machines" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-京东云')">【活动】京东云服务器_云主机低于1折，低价高性能产品备战双11</a><br><a href="https://www.ctyun.cn/activity/#/enterprise2?hmsr=%E7%9C%8B%E7%9C%8B-%E5%8D%9A%E5%AE%A2%E5%9B%AD-1008-0%E5%85%83%E4%B8%8A%E4%BA%91&amp;hmpl=&amp;hmcu=&amp;hmkw=&amp;hmci=?track=|cp:cz_blog|tgdy:46860|ttjh:shouyedingbuyoucefenlan|key:czkk1|pf:pc" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-添加云')">【推荐】天翼云新用户专享，0元体验数十款云产品，立即开通</a><br><a href="https://www.cnblogs.com/cmt/p/11505603.html" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-华为云代金券')">【福利】git pull &amp;&amp; cherry-pick 博客园&amp;华为云百万代金券</a><br></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="Verilog%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0%E5%B9%B6%E8%A1%8C%EF%BC%88%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E7%A0%81%EF%BC%89CRC%E6%A0%A1%E9%AA%8C%20-%20%E5%B0%8F%E7%BF%81%E5%90%8C%E5%AD%A6%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CMHu7MqtiuUCFVbClgodNRsHBg"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+    </div>
+    <div id="under_post_news"><div class="recomm-block"><b>相关博文：</b><br>·  <a title="CRC校验原理及步骤" href="https://www.cnblogs.com/zzdbullet/p/9473209.html" target="_blank" onclick="clickRecomItmem(9473209)">CRC校验原理及步骤</a><br>·  <a title="CRC 校验原理及步骤" href="https://www.cnblogs.com/GyForever1004/p/8627332.html" target="_blank" onclick="clickRecomItmem(8627332)">CRC 校验原理及步骤</a><br>·  <a title="CRC校验原理及步骤" href="https://www.cnblogs.com/zzdbullet/p/9553101.html" target="_blank" onclick="clickRecomItmem(9553101)">CRC校验原理及步骤</a><br>·  <a title="Verilog语言实现并行（循环冗余码）CRC校验" href="https://www.cnblogs.com/kingstacker/p/9848191.html" target="_blank" onclick="clickRecomItmem(9848191)">Verilog语言实现并行（循环冗余码）CRC校验</a><br>·  <a title="循环冗余校验检错方案（CRC）" href="https://www.cnblogs.com/liuyu124/p/7332668.html" target="_blank" onclick="clickRecomItmem(7332668)">循环冗余校验检错方案（CRC）</a><br></div></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CMLu7MqtiuUCFVbClgodNRsHBg">
+            
+        <div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+    </div>
+    <div id="under_post_kb">
+<div class="itnews c_ad_block">
+    <b>最新 IT 新闻</b>:
+    <br>
+ ·              <a href="https://news.cnblogs.com/n/641833/" target="_blank">传音控股公告回应被华为起诉：已立案 涉案金额2000万元</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/641832/" target="_blank">氧气的秘密！</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/641831/" target="_blank">印度拟规定移动支付份额上限，或影响阿里小米等服务商</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/641830/" target="_blank">诺贝尔遗嘱全文：三项科学奖；一项文学奖；一项和平奖</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/641829/" target="_blank">Google Cloud 值多少钱？</a>
+            <br>
+    » <a href="https://news.cnblogs.com/" title="IT 新闻" target="_blank">更多新闻...</a>
+</div></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div>
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<div id="sidebar_news" class="newsItem"><!--done-->
+<h3 class="catListTitle">公告</h3>
+
+<div id="blog-news">
+    
+    <div id="profile_block">
+        昵称：
+        <a href="https://home.cnblogs.com/u/kingstacker/">
+            小翁同学
+        </a>
+        <br>
+        园龄：
+        <a href="https://home.cnblogs.com/u/kingstacker/" title="入园时间：2017-08-09">
+            2年1个月
+        </a>
+        <br>
+        粉丝：
+        <a href="https://home.cnblogs.com/u/kingstacker/followers/">
+            15
+        </a>
+        <br>
+        关注：
+        <a href="https://home.cnblogs.com/u/kingstacker/followees/">
+            2
+        </a>
+        <div id="p_b_follow">
+<a href="javascript:void(0)" onclick="follow('04693f6c-86e5-4c12-6678-08d49c352df3')">+加关注</a></div>
+        <script>getFollowStatus('04693f6c-86e5-4c12-6678-08d49c352df3');</script>
+    </div>
+</div>
+
+</div>
+
+			<div id="blog-calendar" style="">
+
+<table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0" border="0">
+    <tbody>
+        <tr>
+            <td colspan="7">
+                <table class="CalTitle" cellspacing="0" border="0">
+                    <tbody>
+                        <tr>
+                            <td class="CalNextPrev">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar('2019/09/07'); return false;">&lt;</a>
+                            </td>
+                            <td align="center">2019年10月</td>
+                            <td class="CalNextPrev" align="right">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar('2019/11/07'); return false;">&gt;</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+                    <th class="CalDayHeader" abbr="日" scope="col" align="center">日</th>
+                    <th class="CalDayHeader" abbr="一" scope="col" align="center">一</th>
+                    <th class="CalDayHeader" abbr="二" scope="col" align="center">二</th>
+                    <th class="CalDayHeader" abbr="三" scope="col" align="center">三</th>
+                    <th class="CalDayHeader" abbr="四" scope="col" align="center">四</th>
+                    <th class="CalDayHeader" abbr="五" scope="col" align="center">五</th>
+                    <th class="CalDayHeader" abbr="六" scope="col" align="center">六</th>
+        </tr>
+            <tr>
+                            <td class="CalOtherMonthDay" align="center">29</td>
+                            <td class="CalOtherMonthDay" align="center">30</td>
+                        <td class="" align="center">
+                            1
+                        </td>
+                        <td class="" align="center">
+                            2
+                        </td>
+                        <td class="" align="center">
+                            3
+                        </td>
+                        <td class="" align="center">
+                            4
+                        </td>
+                    <td class="CalWeekendDay" align="center">
+                        5
+                    </td>
+            </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            6
+                        </td>
+                            <td class="CalTodayDay" align="center">
+                                7
+                            </td>
+                            <td class="" align="center">
+                                8
+                            </td>
+                            <td class="" align="center">
+                                9
+                            </td>
+                            <td class="" align="center">
+                                10
+                            </td>
+                            <td class="" align="center">
+                                11
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            12
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            13
+                        </td>
+                            <td class="" align="center">
+                                14
+                            </td>
+                            <td class="" align="center">
+                                15
+                            </td>
+                            <td class="" align="center">
+                                16
+                            </td>
+                            <td class="" align="center">
+                                17
+                            </td>
+                            <td class="" align="center">
+                                18
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            19
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            20
+                        </td>
+                            <td class="" align="center">
+                                21
+                            </td>
+                            <td class="" align="center">
+                                22
+                            </td>
+                            <td class="" align="center">
+                                23
+                            </td>
+                            <td class="" align="center">
+                                24
+                            </td>
+                            <td class="" align="center">
+                                25
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            26
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            27
+                        </td>
+                            <td class="" align="center">
+                                28
+                            </td>
+                            <td class="" align="center">
+                                29
+                            </td>
+                            <td class="" align="center">
+                                30
+                            </td>
+                            <td class="" align="center">
+                                31
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                1
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            2
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalOtherMonthDay" align="center">
+                            3
+                        </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                4
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                5
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                6
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                7
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                8
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            9
+                        </td>
+                </tr>
+    </tbody>
+</table></div><script>loadBlogDefaultCalendar();</script>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn">
+
+<!-- 搜索 -->
+<div id="sidebar_search" class="sidebar-block">
+    <div id="sidebar_search" class="mySearch">
+        <h3 class="catListTitle">搜索</h3>
+        <div id="sidebar_search_box">
+            <div id="widget_my_zzk" class="div_my_zzk">
+                <input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk">
+            </div>
+            <div id="widget_my_google" class="div_my_zzk">
+                <input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 常用链接 -->
+<div id="sidebar_shortcut" class="sidebar-block">
+    <div class="catListLink">
+<h3 class="catListTitle">
+常用链接
+</h3>
+<ul>
+		<li>
+
+<a href="https://www.cnblogs.com/kingstacker/p/" title="我的博客的随笔列表">我的随笔</a>
+</li>
+		<li>
+
+<a href="https://www.cnblogs.com/kingstacker/MyComments.html" title="我的发表过的评论列表">我的评论</a>
+</li>
+		<li>
+
+<a href="https://www.cnblogs.com/kingstacker/OtherPosts.html" title="我评论过的随笔列表">我的参与</a>
+</li>
+		<li>
+
+<a href="https://www.cnblogs.com/kingstacker/RecentComments.html" title="我的博客的评论列表">最新评论</a>
+</li>
+		<li>
+
+<a href="https://www.cnblogs.com/kingstacker/tag/" title="我的博客的标签列表">我的标签</a>
+</li>
+
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div>
+
+
+</div>
+
+<!-- 最新随笔 -->
+
+
+
+<!-- 我的标签 -->
+<div id="sidebar_toptags" class="sidebar-block">
+    <div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+
+        <li>
+            <a href="https://www.cnblogs.com/kingstacker/tag/FPGA/">FPGA</a>(60)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/kingstacker/tag/Quartus/">Quartus</a>(20)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/kingstacker/tag/Modelsim/">Modelsim</a>(11)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/kingstacker/tag/linux/">linux</a>(5)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/kingstacker/tag/sublime/">sublime</a>(3)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/kingstacker/tag/app/">app</a>(2)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/kingstacker/tag/Matlab/">Matlab</a>(2)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/kingstacker/tag/Git/">Git</a>(1)
+        </li>
+
+</ul>
+</div>
+
+
+</div>
+
+<!-- 积分与排名 -->
+
+
+<!-- 随笔分类、随笔档案、文章分类、新闻分类、相册、链接 -->
+<div id="sidebar_categories">
+    
+        <div id="sidebar_postcategory" class="catListPostCategory sidebar-block">
+            <h3 class="catListTitle">
+                
+
+随笔分类
+
+
+
+            </h3>
+
+
+            <ul>
+
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1053673.html" rel="" target="">
+    FPGA理论(14)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1089917.html" rel="" target="">
+    Git/Github(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1319526.html" rel="" target="">
+    ISE(2)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1072471.html" rel="" target="">
+    Linux(5)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1094082.html" rel="" target="">
+    Modelsim(6)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1081629.html" rel="" target="">
+    Nice app(2)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1094081.html" rel="" target="">
+    Quartus(12)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1053694.html" rel="" target="">
+    Sublime_text3(3)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1306251.html" rel="" target="">
+    VIVADO(14)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1545106.html" rel="" target="">
+    VSCODE(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1452190.html" rel="" target="">
+    ZYNQ(3)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1094077.html" rel="" target="">
+    存储器(7)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1094076.html" rel="" target="">
+    接口类(10)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1094078.html" rel="" target="">
+    数字信号处理(6)
+</a>
+ 
+
+                        </li>
+
+            </ul>
+
+
+        </div>
+        <div id="sidebar_postarchive" class="catListPostArchive sidebar-block">
+            <h3 class="catListTitle">
+                
+
+随笔档案
+
+
+
+            </h3>
+
+
+            <ul>
+
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2019/09.html" rel="" target="">
+    2019年9月(8)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2019/08.html" rel="" target="">
+    2019年8月(4)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2019/07.html" rel="" target="">
+    2019年7月(2)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2019/06.html" rel="" target="">
+    2019年6月(4)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2019/05.html" rel="" target="">
+    2019年5月(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2019/04.html" rel="" target="">
+    2019年4月(3)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2019/03.html" rel="" target="">
+    2019年3月(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2018/12.html" rel="" target="">
+    2018年12月(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2018/11.html" rel="" target="">
+    2018年11月(3)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2018/10.html" rel="" target="">
+    2018年10月(8)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2018/09.html" rel="" target="">
+    2018年9月(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2018/06.html" rel="" target="">
+    2018年6月(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2017/12.html" rel="" target="">
+    2017年12月(3)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2017/11.html" rel="" target="">
+    2017年11月(2)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2017/10.html" rel="" target="">
+    2017年10月(7)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2017/09.html" rel="" target="">
+    2017年9月(25)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/archive/2017/08.html" rel="" target="">
+    2017年8月(10)
+</a>
+ 
+
+                        </li>
+
+            </ul>
+
+
+        </div>
+        <div id="sidebar_articlecategory" class="catListArticleCategory sidebar-block">
+            <h3 class="catListTitle">
+                
+
+文章分类
+
+
+
+            </h3>
+
+
+            <ul>
+
+                        <li>
+                            
+<a href="https://www.cnblogs.com/kingstacker/category/1089916.html" rel="" target="">
+    Git/Github
+</a>
+ 
+
+                        </li>
+
+            </ul>
+
+
+        </div>
+
+</div>
+
+<!-- 最新评论 -->
+<div id="sidebar_recentcomments" class="sidebar-block">
+    <div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div class="RecentCommentBlock">
+        <ul>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/kingstacker/p/7458905.html#4197624">1. Re:慢腾腾的Quartus prime16.0加快编译速度</a></li>
+                    <li class="recent_comment_body">@ Yang_ZL那就不晓得了 换个芯片看行不行...</li>
+                    <li class="recent_comment_author">--kingstacker</li>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/kingstacker/p/7458905.html#4185301">2. Re:慢腾腾的Quartus prime16.0加快编译速度</a></li>
+                    <li class="recent_comment_body">你好，我的 Quartus Prime 18.0 智能编译选项是灰色的，有什么方法可选吗？</li>
+                    <li class="recent_comment_author">--Yang_ZL</li>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/kingstacker/p/7577190.html#4110122">3. Re:基于FPGA的16阶级联型iir带通滤波器实现</a></li>
+                    <li class="recent_comment_body">你好！请问极点量化为啥不用乘以增益啊？<br>还有，能不能把你的源码给我看一下啊，我给你发过邮件了的</li>
+                    <li class="recent_comment_author">--局外人121</li>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/kingstacker/p/7577190.html#3989075">4. Re:基于FPGA的16阶级联型iir带通滤波器实现</a></li>
+                    <li class="recent_comment_body">@ HOOKNET根据自己系数位宽来...</li>
+                    <li class="recent_comment_author">--kingstacker</li>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/kingstacker/p/7577190.html#3985999">5. Re:基于FPGA的16阶级联型iir带通滤波器实现</a></li>
+                    <li class="recent_comment_body">楼主你好，我想请问一下为什么量化的时候选择乘以2^14呢？</li>
+                    <li class="recent_comment_author">--HOOKNET</li>
+        </ul>
+    </div>
+</div>
+
+
+</div>
+
+
+
+<!-- 阅读排行榜 -->
+<div id="sidebar_topviewedposts" class="sidebar-block">
+    <div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/kingstacker/p/7454814.html">
+                            1. JTAG基础知识(10697)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/kingstacker/p/7525764.html">
+                            2. 数字电路中的竞争冒险以及解决(6000)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/kingstacker/p/7633069.html">
+                            3. ubuntu 16.04 主题美化及终端美化(4172)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/kingstacker/p/9810704.html">
+                            4. Vivado中VIO核使用(3878)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/kingstacker/p/7666358.html">
+                            5. 怎么用Verilog语言描述同步FIFO和异步FIFO(3577)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+
+
+</div>
+
+<!-- 评论排行榜 -->
+<div id="sidebar_topcommentedposts" class="sidebar-block">
+    <div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/kingstacker/p/7577190.html">
+                            1. 基于FPGA的16阶级联型iir带通滤波器实现(3)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/kingstacker/p/7458905.html">
+                            2. 慢腾腾的Quartus prime16.0加快编译速度(2)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+
+
+</div>
+
+<!-- 推荐排行榜 -->
+<div id="sidebar_topdiggedposts" class="sidebar-block">
+    
+<div id="topdigg_posts_wrap">
+    <div class="catListView">
+        <h3 class="catListTitle">推荐排行榜</h3>
+        <div id="TopDiggPostsBlock">
+            <ul style="word-break: break-all">
+                        <li>
+                            <a href="https://www.cnblogs.com/kingstacker/p/7454814.html">
+                                1. JTAG基础知识(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/kingstacker/p/7530741.html">
+                                2. FPGA笔试题集锦（血的教训）(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/kingstacker/p/9810704.html">
+                                3. Vivado中VIO核使用(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/kingstacker/p/7819258.html">
+                                4. 基于FPGA的UART协议实现（通过线性序列机）(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/kingstacker/p/7666358.html">
+                                5. 怎么用Verilog语言描述同步FIFO和异步FIFO(1)
+                            </a>
+                        </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</div></div>
+                    <script>loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		<!--done-->
+Copyright © 2019 小翁同学
+<br><span id="poweredby">Powered by .NET Core 3.0.0 on Linux</span>
+
+
+
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+    
+
+
+</body></html>

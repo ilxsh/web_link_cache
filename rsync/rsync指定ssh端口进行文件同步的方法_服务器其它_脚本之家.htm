@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta http-equiv="content-type" content="text/html; charset=GBK">
+<meta charset="gb2312">
+<meta name="applicable-device" content="pc">
+<meta name="renderer" content="webkit">
+<meta name="force-rendering" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+<meta http-equiv="Cache-Control" content="no-transform">
+<title>rsync指定ssh端口进行文件同步的方法_服务器其它_脚本之家</title>
+<meta name="keywords" content="rsync,ssh端口">
+<meta name="description" content="这篇文章主要介绍了rsync指定ssh端口进行文件同步的方法,需要的朋友可以参考下">
+<link rel="alternate" media="only screen and(max-width: 640px)" href="https://m.jb51.net/article/135122.htm">
+<meta http-equiv="mobile-agent" content="format=html5; url=https://m.jb51.net/article/135122.htm">
+<meta http-equiv="mobile-agent" content="format=xhtml; url=https://m.jb51.net/article/135122.htm">
+<script type="text/javascript" async="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/auto_dup.js"></script><script src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/hm.js"></script><script type="text/javascript" async="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/pr.js" id="icwaeub"></script><script type="text/javascript" async="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/cwaeub.js"></script><script src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/push.js"></script><script type="text/javascript">
+var tougao="mdxy-dxy",lmname="服务器",suoyin="no";
+(function(){var reWriteUrl=function(url){if(url){var Splits=url.split("/"),siteName=window.location.pathname;if(typeof siteName!=="undefined"){return "https://m.jb51.net"+siteName}}};if(/Android|webOS|iPhone|iPad|Windows Phone|iPod|BlackBerry|SymbianOS|Nokia|Mobile/i.test(navigator.userAgent)){var url=window.location.href;var pathname=window.location.pathname;if(url.indexOf("?pc")<0){try{window.location.href=reWriteUrl(url)}catch(e){}}}})();
+</script>
+<meta name="referrer" content="always">
+<link type="text/css" href="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/base.css" rel="stylesheet">
+<link type="text/css" href="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/common.css" rel="stylesheet">
+<script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/jquery.js"></script>
+<script type="text/javascript">
+    if (typeof jQuery == 'undefined') {
+        document.write(unescape("%3Cscript src='/skin/js/jquery.js' type='text/javascript'%3E%3C/script%3E"));
+    }
+</script>
+<script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/function.js"></script>
+<script data-ad-client="ca-pub-6384567588307613" async="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/adsbygoogle.js"></script> 
+</head>
+<body>
+<!--topTools Start -->
+<div id="topbar">
+    <div id="wrap">
+		<div class="topbarleft">
+			<a href="https://www.jb51.net/" target="_blank">脚本之家</a>
+			<a href="http://s.jb51.net/" target="_blank" rel="nofollow">服务器常用软件</a>
+		</div>
+		<div class="fr">
+			<ul>
+				<li><i class="ico-mobile"></i><a target="_blank" href="https://m.jb51.net/" rel="nofollow">手机版</a></li>
+				<li><i class="ico-contribute"></i><a href="http://tougao.jb51.net/" rel="nofollow" target="_blank">投稿中心</a></li>
+				<li id="wxHide"><i class="ico-wechat"></i><a href="javascript:void(0)" target="_blank">关注微信</a>
+					<div id="wxShow" class="wxHide_box"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/erwm.jpg" alt="扫一扫" hight="84" data-baiduimageplus-ignore="" width="84"></div>
+				</li>
+			</ul>
+			<!--快捷导航 开始 -->
+			<div class="text_d right" id="navHide">
+				<a rel="nofollow" href="javascript:void(0);">快捷导航 <i class="arrowright"></i></a>
+				<div id="navBox" class="nwebnav">
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="https://www.jb51.net/softs/" target="_blank">软件下载</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="https://www.jb51.net/softs/android.html" target="_blank">android</a>
+								<a rel="nofollow" href="https://www.jb51.net/softs/mac.html" target="_blank">MAC</a>
+								<a rel="nofollow" href="https://www.jb51.net/qudong/" target="_blank">驱动下载</a>
+								<a rel="nofollow" href="https://www.jb51.net/fonts/" target="_blank">字体下载</a>
+								<a rel="nofollow" href="https://www.jb51.net/dll/" target="_blank">DLL</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="https://www.jb51.net/codes/" target="_blank">源码下载</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="https://www.jb51.net/codes/php.html" target="_blank">PHP</a>
+								<a rel="nofollow" href="https://www.jb51.net/codes/aspnet.html" target="_blank">ASP.NET</a>
+								<a rel="nofollow" href="https://www.jb51.net/codes/asp.html" target="_blank">ASP</a>
+								<a rel="nofollow" href="https://www.jb51.net/codes/jsp.html" target="_blank">JSP</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="https://www.jb51.net/list/index_84.htm" target="_blank">软件编程</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_85_1.htm" target="_blank">C#</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_134_1.htm" target="_blank">JAVA</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_159_1.htm" target="_blank">C 语言</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_206_1.htm" target="_blank">Delphi</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_233_1.htm" target="_blank">Android</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="https://www.jb51.net/list/index_1.htm" target="_blank">网络编程</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_15_1.htm" target="_blank">PHP</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_21_1.htm" target="_blank">ASP.NET</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_2_1.htm" target="_blank">ASP</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_3_1.htm" target="_blank">JavaScript</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="http://tools.jb51.net/" target="_blank">在线工具</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="https://www.jb51.net/tools/cssyasuo.shtml" target="_blank">CSS格式化</a>
+								<a rel="nofollow" href="http://tools.jb51.net/tools/js_geshihua.asp" target="_blank">JS格式化</a>
+								<a rel="nofollow" href="https://www.jb51.net/tools/html-js.htm" target="_blank">Html转化为Js</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="https://www.jb51.net/list/index_104.htm" target="_blank">数据库</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_112_1.htm" target="_blank">MYSQL</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_113_1.htm" target="_blank">MSSQL</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_154_1.htm" target="_blank">oracle</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_155_1.htm" target="_blank">DB2</a>
+								<a rel="nofollow" href="https://www.jb51.net/list/list_252_1.htm" target="_blank">MARIADB</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="https://www.jb51.net/cms/" target="_blank">CMS</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="https://www.jb51.net/cms/list411_1.html" target="_blank">PHPCMS</a>
+								<a rel="nofollow" href="https://www.jb51.net/cms/list408_1.html" target="_blank">DEDECMS</a>
+								<a rel="nofollow" href="https://www.jb51.net/cms/list578_1.html" target="_blank">帝国CMS</a>
+								<a rel="nofollow" href="https://www.jb51.net/cms/list419_1.html" target="_blank">WordPress</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="javascript:0;" target="_blank">常用工具</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="https://www.jb51.net/zt/phphuanjing.html" target="_blank">PHP开发工具</a>
+								<a rel="nofollow" href="https://www.jb51.net/zt/python.html" target="_blank">python</a>
+								<a rel="nofollow" href="https://www.jb51.net/zt/photoshopxz.html" target="_blank">Photoshop</a>
+								<a rel="nofollow" href="https://www.jb51.net/bibei/win/index.html" target="_blank">必备软件</a>
+							</dd>
+						</dl>
+					</div>
+				</div>
+			</div>
+			<!--快捷导航 结束 -->
+		</div>
+    </div>
+</div>
+<!--topTools end -->
+
+<div id="header">
+	<!-- Logo start -->
+	  <div id="logo"><a href="https://www.jb51.net/"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/logo.gif" title="脚本之家" alt="脚本之家"></a></div>
+	  <div class="logom fl"><a href="http://www.jhlengku.com/" target="_blank"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/dkwm430.gif" width="430" height="60"></a>
+</div>
+	  <div class="logor fr"><a href="http://wpa.qq.com/msgrd?v=3&amp;uin=939067999&amp;site=qq&amp;menu=yes" target="_blank"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/ll430.gif" width="430" height="60"></a>
+</div>
+	<!--Logo end -->
+</div>	
+	<!--Logo end -->
+	
+	<!-- 导航开始 -->
+<div id="nav">
+	<ul>
+		<li><a href="https://www.jb51.net/">网站首页</a></li>
+		<li><a href="https://www.jb51.net/web/">网页制作</a></li>
+		<li><a href="https://www.jb51.net/list/index_1.htm">网络编程</a></li>
+		<li><a href="https://www.jb51.net/list/index_96.htm">脚本专栏</a></li>
+		<li><a href="https://www.jb51.net/jiaoben/">脚本下载</a></li>
+		<li><a href="https://www.jb51.net/list/index_104.htm">数据库</a></li>
+		<li><a href="https://www.jb51.net/list/list_82_1.htm">服务器</a></li>
+		<li><a href="https://www.jb51.net/books/">电子书籍</a></li>
+		<li><a href="https://www.jb51.net/os/">操作系统</a></li>
+		<li><a href="https://www.jb51.net/yunying/">网站运营</a></li>
+		<li><a href="https://www.jb51.net/pingmian/">平面设计</a></li>
+		<li><p><i>其它</i><span>
+			<a href="https://www.jb51.net/media/">媒体动画</a>
+			<a href="https://www.jb51.net/diannaojichu/">电脑基础</a>
+			<a href="https://www.jb51.net/hardware/">硬件教程</a>
+			<a href="https://www.jb51.net/hack/">网络安全</a>	
+		</span></p>
+		</li>
+	</ul>
+</div>
+	<!--导航结束-->
+
+
+<!-- 二级菜单开始 -->
+<div id="submenu">
+	<div class="subnav clearfix">
+<ul><li><a href="https://www.jb51.net/list/list_192_1.htm" title="星外虚拟主机">星外虚拟主机</a></li>
+<li><a href="https://www.jb51.net/list/list_193_1.htm" title="华众虚拟主机">华众虚拟主机</a></li>
+<li><a href="https://www.jb51.net/list/list_203_1.htm" title="Linux">Linux</a></li>
+<li><a href="https://www.jb51.net/list/list_204_1.htm" title="win服务器">win服务器</a></li>
+<li><a href="https://www.jb51.net/list/list_218_1.htm" title="FTP服务器">FTP服务器</a></li>
+<li><a href="https://www.jb51.net/list/list_219_1.htm" title="DNS服务器">DNS服务器</a></li>
+<li><a href="https://www.jb51.net/list/list_223_1.htm" title="Tomcat ">Tomcat </a></li>
+<li><a href="https://www.jb51.net/list/list_226_1.htm" title="nginx">nginx</a></li>
+<li><a href="https://www.jb51.net/list/list_247_1.htm" title="zabbix">zabbix</a></li>
+<li><a href="https://www.jb51.net/list/list_255_1.htm" title="云和虚拟化">云和虚拟化</a></li>
+<li><a href="https://www.jb51.net/list/list_220_1.htm" title="服务器其它">服务器其它</a></li>
+</ul>
+	</div>
+</div>
+<!-- 二级菜单结束 -->	
+
+<!--content Star -->
+<div id="wrapper">
+	<div id="container">
+		<div class="pt10 clearfix">
+			<div class="clearfix"><div class="mainlr"><a href="http://wpa.qq.com/msgrd?v=3&amp;uin=2018222888&amp;site=qq&amp;menu=yes" target="_blank"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/2018222888_1200.gif" alt="seo" width="1200" height="50"></a></div><div class="blank5"></div><div class="mainlr"><a href="https://jq.qq.com/?_wv=1027&amp;k=5QfkGxG" target="_blank"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/ssfb8_1200.png" alt="" width="1200" height="50"></a></div><div class="blank5"></div><div class="mainlr"><a href="https://jq.qq.com/?_wv=1027&amp;k=5iTQHP6" target="_blank"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/ssfb_1200.png" alt="" width="1200" height="50"></a></div><div class="blank5"></div><div class="mainlr"><a href="https://jq.qq.com/?_wv=1027&amp;k=5pJlGpO" target="_blank"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/xiongzhang_1200.png" alt="" width="1200" height="50"></a></div><div class="blank5"></div><div id="txtlink"><ul><li><a href="https://dwz.cn/kMi9ZjsH" target="_blank"><span style="color:blue;">【阿里云】产品2000元优惠券（点我）领取</span></a></li><li><a href="http://www.uujs.cc/" target="_blank"><span style="color:blue;">免费网站全球加速和防御[优优加速]</span></a></li><li><a href="https://www.95idc.com/" target="_blank"><span style="color:blue;">95IDC█香港沙田CN2服务器 599/月</span></a></li><li><a href="http://www.zh.cc/us/" target="_blank"><span style="color:blue;">不限内容美国独立服务器出租</span></a></li><li><a href="https://okzy.co/" target="_blank"><span style="color:red;">OK资源站提供高清电影采集</span></a></li><li><a href="http://www.hkcn2.com/51.htm" target="_blank"><span style="color:red;">**香港高防10m大带宽独服，低至999元**</span></a></li><li><a href="http://wpa.qq.com/msgrd?v=3&amp;uin=6883741&amp;site=qq&amp;menu=yes" target="_blank"><span style="color:red;">高价收【网赚粉】等各类活粉Q6883741</span></a></li><li><a href="http://www.zoneidc.com/" target="_blank"><span style="color:red;">香港/美国/韩国等十五国云服务器9.9元/月起</span></a></li><li><a href="http://t.cn/E9OUxEx" target="_blank"><span style="color:blue;">500G学习资源/python/php/java</span></a></li><li><a href="https://www.50vm.com/" target="_blank"><span style="color:blue;">宿迁100G高防VPS大带宽300元/月|创梦网络</span></a></li><li><a href="http://www.gwidc.com/host/home/free.html" target="_blank"><span style="color:blue;">港湾网络-云虚拟主机 永久免费！~</span></a></li><li><a href="https://www.tzidc.com/dist/highDefense.html#jb51" target="_blank"><span style="color:blue;">██高防ip██高防服务器租用</span></a></li><li><a href="http://www.ushk.net/server.html" target="_blank"><span style="color:red;">██美港数据██高端香港服务器租用</span></a></li><li><a href="http://vps.zzidc.com/tongji/jb51w.html" target="_blank"><span style="color:red;">★☆云服务器5折，天天抽红包抵扣☆★</span></a></li><li><a href="http://www.enkj.com/idc/zuyong/6" target="_blank"><span style="color:red;">移动BGP，百兆独享带宽，399元/月</span></a></li><li><a href="http://www.xiaozhiyun.com/2016/" target="_blank"><span style="color:red;">韩国香港美国站群服务器 巨牛网络</span></a></li><li><a href="https://www.wsisp.net/clientcenter/shownews_852.html?indexjb" target="_blank"><span style="color:blue;">█▇▆5M独享云主机599/年▆▇█</span></a></li><li><a href="http://www.qy.com.cn/" target="_blank"><span style="color:blue;">群英云服务器送10M带宽30G防御,49元起</span></a></li><li><a href="http://www.tuidc.com/" target="_blank"><span style="color:blue;">服务器租用/托管-域名空间/认准腾佑科技</span></a></li><li><a href="http://www.vzidc.com/cloud/" target="_blank"><span style="color:blue;">华为云4核8g限时免费送另有代金券免费送</span></a></li><li><a href="http://www.ssf.cc/" target="_blank"><span style="color:red;">免备vps20/百独799/双线350/45互联</span></a></li><li><a href="http://www.zitian.cn/" target="_blank"><span style="color:red;">中原地区核心数据中心，月付299元起</span></a></li><li><a href="http://www.qy.cn/gfhd.html" target="_blank"><span style="color:red;">██群英网络██◆◆◆300G高防仅需599元◆◆◆</span></a></li><li><a href="http://www.pdidc.com/" target="_blank"><span style="color:red;">浦东数据中心上海电信4星云主机30元/月起</span></a></li><li><a href="http://www.pppoevps.com/" target="_blank"><span style="color:blue;">█动态拨号IP云主机，电信ADSL独享20M█ </span></a></li><li><a href="http://www.360jq.com/hkshuang.htm" target="_blank"><span style="color:blue;">[香港双高防]无视CC★DDOS/堪比广东！</span></a></li><li><a href="http://www.cyidc.cc/" target="_blank"><span style="color:blue;">畅游网络 百独服务器 包跑满 998元</span></a></li><li><a href="http://www.wdw6.com/" target="_blank"><span style="color:blue;">bgp多线机房、大带宽</span></a></li><li><a href="https://www.beianidc.com/cuxiao.html?jb51.net" target="_blank"><span style="color:red;">佛山机房直销/7天无理由退款/防火墙自助管理</span></a></li><li><a href="http://www.ku86.com/" target="_blank"><span style="color:red;">百兆 12核24线程 16G内存 2T 999/月</span></a></li><li><a href="http://tianyi.jb51.net/" target="_blank"><span style="color:red;">天翼云，云主机，云存储，云安全</span></a></li><li><a href="http://t.cn/E9OUxEx" target="_blank"><span style="color:red;">500G学习资源/python/php/java</span></a></li></ul><div class="clearfix"></div></div><div class="blank5"></div><div class="topimg"><ul><li><a href="http://www.ruixunidc.net/a/youhuihuodong/" target="_blank"><img alt="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/ruixun235.gif"></a></li><li><a href="https://inxy.com/?utm_source=jb51&amp;utm_medium=cpc&amp;utm_campaign=allsales" target="_blank"><img alt="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/inxy.gif"></a></li><li><a href="https://www.7e.hk/" target="_blank"><img alt="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/7ehk210.gif"></a></li><li><a href="http://www.ku86.com/" target="_blank"><img alt="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/jieidc_237.gif"></a></li><li><a href="https://www.8a.hk/server/" target="_blank"><img alt="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/8a210.gif"></a></li></ul></div><div class="blank5"></div>
+</div>
+		</div>
+	
+		<div class="clearfix">
+			<div class="breadcrumb">
+				<i class="ico-path"></i>您的位置：<a href="https://www.jb51.net/">首页</a> → <a href="https://www.jb51.net/list/index_27.htm" title="网站技巧">网站技巧</a> → <a href="https://www.jb51.net/list/list_82_1.htm" title="服务器">服务器</a> → <a href="https://www.jb51.net/list/list_220_1.htm" title="服务器其它">服务器其它</a> → 正文内容 rsync指定ssh端口
+			</div>
+			<div class="search">
+			<form action="/do/search.php" target="_blank">
+				<input type="hidden" name="s" value="10520733385329581432">
+				<input type="hidden" name="ie" value="gbk">
+				<input type="text" name="q" class="searchinput" placeholder="请输入关键词">
+				<input type="submit" value=" " class="search-button">
+			</form>
+			</div>
+		</div>
+	
+	   <div id="main" class="clearfix">
+		  <div class="main-left">
+			  <div id="article">
+			  		<h1 class="title">rsync指定ssh端口进行文件同步的方法</h1>
+					<div class="info"> &nbsp;更新时间：2018年02月17日 14:35:18 &nbsp; 投稿：mdxy-dxy  &nbsp; <a href="#comments"> <img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/text-message.png" width="15" height="15"> 我要评论</a></div>
+					<div class="lbd clearfix">
+</div>
+                    <div class="summary">这篇文章主要介绍了rsync指定ssh端口进行文件同步的方法,需要的朋友可以参考下</div>
+					<div class="lbd clearfix"><script async="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/adsbygoogle.js"></script><ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-6384567588307613" data-ad-slot="3921475131"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+					<div id="content">
+						<p>有台服务器因为安全性需要，修改了默认的ssh端口为34778端口。<br>
+因此rsync使用ssh同步的时候需要指定ssh的端口</p>
+<p>rsync提供了一个-e参数</p>
+<p>-e参数的作用是可以使用户自由选择想使用的shell程序来连接远端服务器，因此也可以设置成使用默认的ssh来连接，这样我们就可以加入ssh的参数了</p>
+<p>具体语句写法如下：</p>
+<blockquote>
+<p>rsync -e 'ssh -p 34778' username@hostname:SourceFile DestFile</p>
+</blockquote>
+<p>单引号，目的是为了使引号内的参数为引号内的命令所用</p>
+<p>实例：</p>
+<blockquote>
+<p>rsync -auz -e 'ssh -p 43378' /data/svn/ root@192.168.1.254:/data/backup</p>
+</blockquote>
+<p>详解：<br>
+通过rsync，并使用auz参数，结合-e修改ssh的端口，将本地的/data/svn作为源数据，用root用户推到远端服务器192.168.1.254的/data/backup目录下。</p>
+<p>需要注意的是源目录和目标目录是否带"/"结尾是有很大区别的<br>
+源目录带"/"结尾而目标目录不带，表示将源目录里面的所有文件（/data/svn/*）都同步到目标目录下（/data/backup/*）。<br>
+源目录带"/"结尾而目标目录也带“/”结尾，则表示将源目录作为文件夹，同步到目标目录下（/data/backup/svn/*）。</p>
+<p><strong>端口攻击之873端口rsync默认口令漏洞</strong></p>
+<p>1、简介：</p>
+<p>rsync是Unix下的一款应用软件，它能同步更新两处计算机的文件与目录，并适当利用差分编码以减少数据传输。</p>
+<p>2、Rsync使用教程：</p>
+<p>用途：</p>
+<p>当成镜像备份功能。</p>
+<p>优点：</p>
+<p>速度快，可对比本地文件，差异备份。</p>
+<p>用法：</p>
+<p>1、将/etc/内复制到/tmp/etc</p>
+<p>rsync –av /etc /tmp<br>
+2、将rsh.server的/etc 复制到本地 /tmp</p>
+<p>rsync –av –e ssh user@rsh.server:/etc /tmp<br>
+3、通过rsync提供的服务（daemon），rsync使用873端口</p>
+<p>Server:启动rsync，看：</p>
+<p>/etc/xinetd.d/rsync<br>
+编辑：</p>
+<p>/etc/rsyncd.conf<br>
+设置client端连接账号密码</p>
+<p>Client:rsync –av –user@hostname::/dir/path /local/path<br>
+三种模式差异在几个分号 :</p>
+<p>命令：</p>
+<p>Rsync [-avrlptgoD] [-e ssh] [user@hostIP:/dir] [/local/path]</p>
+<p>-v 观察模式，输出更多资讯</p>
+<p>-q 与 –v 相反，仅显示错误信息</p>
+<p>-r 递归复制，针对目录</p>
+<p>-u 仅更新较新的文件</p>
+<p>-l 复制连接的属性</p>
+<p>-p 复制时保持属性不变</p>
+<p>-g 保存原有群组</p>
+<p>-o 保存原有拥有人</p>
+<p>-D 保存原有装置属性</p>
+<p>-t 保存原有时间属性</p>
+<p>-I 忽略更新时间属性，档案比对较快</p>
+<p>-z 加上压缩参数</p>
+<p>-e 使用协议通道，例如ssh，-e ssh</p>
+<p>-a 相对于-rlptgoD，所以-a最常用<br>
+3、安全问题：</p>
+<p>rsync默认的端口是873，可以使用nmap扫描IP是否开放该端口。</p>
+<p>nmap -n --open -p 873 x.x.x.x/24<br>
+找到开放端口后，查看时候可默认口令登陆。使用命令查看：</p>
+<p>rsync -av x.x.x.x::<br>
+</p>
+<p>既然是同步文件，自然有选择查看、上传或者下载的能力，这要视权限设定。</p>
+<p>运气好的情况下秒杀站点。</p>
+<p>4、安全配置注意事项</p>
+<p>注意两种方式防御，一是限定访问的IP，另一个是不允许匿名访问，添加用户口令。</p>
+<p>限定IP的两种方式</p>
+<p>IPTables防火墙</p>
+<p>给rsync的端口添加一个iptables。</p>
+<p>只希望能够从内部网络（192.168.101.0/24）访问：</p>
+<p>iptables -A INPUT -i eth0 -p tcp -s 192.168.101.0/24 --dport 873 -m state --state NEW,ESTABLISHED -j ACCEPT</p>
+<p>iptables -A OUTPUT -o eth0 -p tcp --sport 873 -m state --state ESTABLISHED -j ACCEPT<br>
+除此之外rsyncd.conf中的hosts allow也可以设置只允许来源ip。</p>
+<p>hosts allow = X.X.X.X #允许访问的IP<br>
+添加用户口令</p>
+<p>添加rsync用户权限访问，注意配置的是rsyncd.conf中的：</p>
+<p>secrets file = /etc/rsyncd.secrets #密码文件位置，认证文件设置，设置用户名和密码</p>
+<p>auth users = rsync #授权帐号,认证的用户名，如果没有这行则表明是匿名，多个用户用,分隔。</p>
+                        
+                        <div class="art_xg">
+                        <h4>您可能感兴趣的文章:</h4><ul><li><a href="https://www.jb51.net/article/107751.htm" title="SSH远程登录和端口转发详解" target="_blank">SSH远程登录和端口转发详解</a></li><li><a href="https://www.jb51.net/article/148868.htm" title="SSH的ssh-keygen命令基本用法详解" target="_blank">SSH的ssh-keygen命令基本用法详解</a></li><li><a href="https://www.jb51.net/article/148862.htm" title="windows安装openssh并通过生成SSH密钥登录Linux服务器" target="_blank">windows安装openssh并通过生成SSH密钥登录Linux服务器</a></li><li><a href="https://www.jb51.net/article/148768.htm" title="实现一台或者多台Linux实例解绑SSH密钥对" target="_blank">实现一台或者多台Linux实例解绑SSH密钥对</a></li><li><a href="https://www.jb51.net/article/148522.htm" title="深入浅析SSH的三个组件ssh、sftp、scp" target="_blank">深入浅析SSH的三个组件ssh、sftp、scp</a></li><li><a href="https://www.jb51.net/article/147404.htm" title="使用PSSH批量管理Linux服务器" target="_blank">使用PSSH批量管理Linux服务器</a></li><li><a href="https://www.jb51.net/article/147375.htm" title="Redis未授权访问配合SSH key文件利用详解" target="_blank">Redis未授权访问配合SSH key文件利用详解</a></li><li><a href="https://www.jb51.net/article/145770.htm" title="SSH原理及两种登录方法图文详解" target="_blank">SSH原理及两种登录方法图文详解</a></li><li><a href="https://www.jb51.net/article/145689.htm" title="创建支持SSH服务的Docker镜像的方法" target="_blank">创建支持SSH服务的Docker镜像的方法</a></li><li><a href="https://www.jb51.net/article/144599.htm" title="CentOS7增加或修改SSH端口号的方法" target="_blank">CentOS7增加或修改SSH端口号的方法</a></li><li><a href="https://www.jb51.net/article/143896.htm" title="PyCharm设置SSH远程调试的方法" target="_blank">PyCharm设置SSH远程调试的方法</a></li><li><a href="https://www.jb51.net/article/143886.htm" title="详解基于django实现的webssh简单例子" target="_blank">详解基于django实现的webssh简单例子</a></li><li><a href="https://www.jb51.net/article/143671.htm" title="SSH 上传文件及文件夹到linux服务器的方法" target="_blank">SSH 上传文件及文件夹到linux服务器的方法</a></li><li><a href="https://www.jb51.net/article/139068.htm" title="CentOS6.5与CentOS7 ssh修改默认端口号的方法" target="_blank">CentOS6.5与CentOS7 ssh修改默认端口号的方法</a></li><li><a href="https://www.jb51.net/article/137843.htm" title="Spring+Hibernate+Struts(SSH)框架整合实战" target="_blank">Spring+Hibernate+Struts(SSH)框架整合实战</a></li><li><a href="https://www.jb51.net/article/135869.htm" title="ubuntu16.04安装ssh服务并实现远程访问的方法" target="_blank">ubuntu16.04安装ssh服务并实现远程访问的方法</a></li><li><a href="https://www.jb51.net/article/134747.htm" title="利用python 更新ssh 远程代码 操作远程服务器的实现代码" target="_blank">利用python 更新ssh 远程代码 操作远程服务器的实现代码</a></li><li><a href="https://www.jb51.net/article/134507.htm" title="用Go写一个轻量级的ssh批量操作工具的方法" target="_blank">用Go写一个轻量级的ssh批量操作工具的方法</a></li><li><a href="https://www.jb51.net/article/148886.htm" title="SSH端口转发,本地端口转发,远程端口转发,动态端口转发详解" target="_blank">SSH端口转发,本地端口转发,远程端口转发,动态端口转发详解</a></li></ul>
+                        </div>
+						<div class="clearfix">
+						<div id="_i45rs7zxjz" style="width: 100%;"><iframe scrolling="no" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/s.html" width="820" height="150" frameborder="0"></iframe></div><script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/oq.js"></script>
+
+						</div>
+					<p>原文链接：http://www.netkou.com/?post=165</p><div class="jb51ewm"><div class="fl"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/jb51ewm.png"></div><div class="fr"><p>微信公众号搜索 “ <span>脚本之家</span> ” ，选择关注</p><p>程序猿的那些事、送书等活动等着你</p></div></div></div><!--endmain-->
+					<div class="tags clearfix">
+						<i class="icon-tag"></i>
+						<ul class="meta-tags">
+						  <li class="tag item"><a href="http://common.jb51.net/tag/rsync/1.htm" target="_blank" title="搜索关于rsync的文章" rel="nofollow">rsync</a></li>
+<li class="tag item"><a href="http://common.jb51.net/tag/ssh%E7%AB%AF%E5%8F%A3/1.htm" target="_blank" title="搜索关于ssh端口的文章" rel="nofollow">ssh端口</a></li>
+
+						</ul>
+					</div>
+					<div class="lbd clearfix">
+						<a href="http://www.xz577.com/v/" target="_blank"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/all_tb.gif" class="nohref"></a>
+
+					</div>
+					<div id="shoucang"></div>
+					<div class="xgcomm clearfix">
+						<h2>相关文章</h2>
+						<ul><li class="lbd clearfix"><div><div id="nxvnbytzr" style="padding-bottom:0px;"><div id="qowpm" style="zoom:1;"><div><iframe scrolling="no" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/s_002.html" width="820" height="120" frameborder="0"></iframe></div></div></div></div><script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/hak_cq.js"></script>
+</li><li><div class="item-inner"><a href="https://www.jb51.net/article/73597.htm" title="Git使用小坑 Out of memory错误的解决方法" class="img-wrap" target="_blank"> <img alt="Git使用小坑 Out of memory错误的解决方法" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/bcimg0.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="https://www.jb51.net/article/73597.htm" title="Git使用小坑 Out of memory错误的解决方法">Git使用小坑 Out of memory错误的解决方法</a></p><div class="item-info"><div class="js">这篇文章主要介绍了Git使用小坑 Out of memory错误的解决方法,需要的朋友可以参考下</div><span class="lbtn" style="float:right"> 2015-10-10 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="https://www.jb51.net/article/73096.htm" title="WampServer下使用多端口访问的技巧" class="img-wrap" target="_blank"> <img alt="WampServer下使用多端口访问的技巧" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/bcimg1.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="https://www.jb51.net/article/73096.htm" title="WampServer下使用多端口访问的技巧">WampServer下使用多端口访问的技巧</a></p><div class="item-info"><div class="js">由于在学习中要用到跨域请求，所以不得不在wamp集成环境下添加多站点服务。本文主要给大家介绍wampserver下使用多端口访问，需要的朋友可以参考下</div><span class="lbtn" style="float:right"> 2015-10-10 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="https://www.jb51.net/article/82097.htm" title="HP服务器RAID 0阵列配置教程" class="img-wrap" target="_blank"> <img alt="HP服务器RAID 0阵列配置教程" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/bcimg2.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="https://www.jb51.net/article/82097.htm" title="HP服务器RAID 0阵列配置教程">HP服务器RAID 0阵列配置教程</a></p><div class="item-info"><div class="js">这篇文章主要介绍了HP服务器RAID 0阵列配置教程,需要的朋友可以参考下</div><span class="lbtn" style="float:right"> 2016-04-04 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="https://www.jb51.net/article/69857.htm" title="快云vps主机配置免费vpn服务器的方法(windows/linux)" class="img-wrap" target="_blank"> <img alt="快云vps主机配置免费vpn服务器的方法(windows/linux)" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/bcimg3.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="https://www.jb51.net/article/69857.htm" title="快云vps主机配置免费vpn服务器的方法(windows/linux)">快云vps主机配置免费vpn服务器的方法(windows/linux)</a></p><div class="item-info"><div class="js">今天快云VPS小编，就分享一下，利用相关的免费vpn代理软件和快云VPS怎么配置自己的免费vpn代理服务器，有了自己的免费vpn代理服务器，建立自己的vpn帐号，就不用在到处去找免费的vpn了，或许你还可以送给你的小伙伴一些免费vpn帐号</div><span class="lbtn" style="float:right"> 2015-07-07 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="https://www.jb51.net/article/38349.htm" title="nginx/apache/php隐藏http头部版本信息的实现方法" class="img-wrap" target="_blank"> <img alt="nginx/apache/php隐藏http头部版本信息的实现方法" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/bcimg4.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="https://www.jb51.net/article/38349.htm" title="nginx/apache/php隐藏http头部版本信息的实现方法">nginx/apache/php隐藏http头部版本信息的实现方法</a></p><div class="item-info"><div class="js">有时候我们需要隐藏我们的服务器版本信息，防止有心人士的研究，更安全，这里介绍下在nginx/apache/php中如何隐藏http头部版本信息的方法，有需要的朋友参考下吧</div><span class="lbtn" style="float:right"> 2013-06-06 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="https://www.jb51.net/article/121285.htm" title="github的使用_动力节点Java学院整理" class="img-wrap" target="_blank"> <img alt="github的使用_动力节点Java学院整理" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/bcimg5.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="https://www.jb51.net/article/121285.htm" title="github的使用_动力节点Java学院整理">github的使用_动力节点Java学院整理</a></p><div class="item-info"><div class="js">这篇文章主要为大家详细介绍了github使用的相关资料，具有一定的参考价值，感兴趣的小伙伴们可以参考一下</div><span class="lbtn" style="float:right"> 2017-08-08 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="https://www.jb51.net/article/73540.htm" title="N点主机管理系统重置密码方法(在线修改密码)" class="img-wrap" target="_blank"> <img alt="N点主机管理系统重置密码方法(在线修改密码)" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/bcimg6.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="https://www.jb51.net/article/73540.htm" title="N点主机管理系统重置密码方法(在线修改密码)">N点主机管理系统重置密码方法(在线修改密码)</a></p><div class="item-info"><div class="js">这篇文章主要介绍了N点主机管理系统重置密码方法(在线修改密码),需要的朋友可以参考下</div><span class="lbtn" style="float:right"> 2015-10-10 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="https://www.jb51.net/article/91424.htm" title="Cobbler 批量安装操作系统的配置方法" class="img-wrap" target="_blank"> <img alt="Cobbler 批量安装操作系统的配置方法" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/bcimg7.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="https://www.jb51.net/article/91424.htm" title="Cobbler 批量安装操作系统的配置方法">Cobbler 批量安装操作系统的配置方法</a></p><div class="item-info"><div class="js">Cobbler是一个快速网络安装linux的服务，而且在经过调整也可以支持网络安装windows。该工具使用python开发，小巧轻便（才15k行代码），使用简单的命令即可完成PXE网络安装环境的配置，同时还可以管理DHCP，DNS，以及yum包镜像</div><span class="lbtn" style="float:right"> 2016-08-08 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="https://www.jb51.net/article/105351.htm" title="Mac环境下搭建svn环境和使用方法" class="img-wrap" target="_blank"> <img alt="Mac环境下搭建svn环境和使用方法" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/bcimg8.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="https://www.jb51.net/article/105351.htm" title="Mac环境下搭建svn环境和使用方法">Mac环境下搭建svn环境和使用方法</a></p><div class="item-info"><div class="js">本篇文章主要介绍了Mac环境下搭建svn环境的使用方法。由于Mac自带了svn的服务器端和客户端功能，所以我们可以在不装任何第三方软件的前提下使用svn功能，只需要简单配置，有兴趣的可以了解一下。
+</div><span class="lbtn" style="float:right"> 2017-02-02 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="https://www.jb51.net/article/44460.htm" title="服务器(VPS)安装WebSite Panel面板教程(图文)" class="img-wrap" target="_blank"> <img alt="服务器(VPS)安装WebSite Panel面板教程(图文)" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/bcimg9.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="https://www.jb51.net/article/44460.htm" title="服务器(VPS)安装WebSite Panel面板教程(图文)">服务器(VPS)安装WebSite Panel面板教程(图文)</a></p><div class="item-info"><div class="js">这篇文章主要为大家分享下WebsitePanel的安装方法，WebsitePanel简称WSP是微软旗下，开源免费的虚拟主机系统，需要win2008 r2环境</div><span class="lbtn" style="float:right"> 2013-12-12 </span></div></div></div></div></li>
+</ul>
+					</div>
+					<div class="lbd clearfix mt5">
+						<div id="_3lj6e4v7txi"><iframe scrolling="no" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/s_003.html" width="820" height="120" frameborder="0"></iframe></div><script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/qq.js"></script>
+
+					</div>
+					<a href="#comments"></a>
+					<div id="comments">
+						<h2>最新评论</h2>
+						<div class="pd5"><div id="SOHUCS" sid="art_135122"></div></div>
+					</div>
+				  </div><!--endborder-->
+			  </div><!--end fl-->
+		  
+			<div class="main-right">
+				<div id="sidebar-right">
+					<div class="r300 clearfix"><script async="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/adsbygoogle.js"></script><ins class="adsbygoogle" style="display:inline-block;width:300px;height:250px" data-ad-client="ca-pub-6384567588307613" data-ad-slot="4845332105"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>                        
+					<div class="sidebox bor-blue">
+						<div class="bor-default pb10">
+							<h4 class="blue">大家感兴趣的内容</h4>
+                            <ul class="newsList newList-in">
+							<li><em class="no1">1</em><a href="https://www.jb51.net/article/31920.htm" title="rsync 常见错误与解决方法整理" target="_blank">rsync 常见错误与解决方法整理</a></li><li><em class="no2">2</em><a href="https://www.jb51.net/article/55442.htm" title="Git 常用命令速查表(图文+表格)" target="_blank">Git 常用命令速查表(图文+表格)</a></li><li><em class="no3">3</em><a href="https://www.jb51.net/article/39265.htm" title="Raid教程 全程图解手把手教你做RAID" target="_blank">Raid教程 全程图解手把手教你做R</a></li><li><em class="no4">4</em><a href="https://www.jb51.net/article/55440.htm" title="Git客户端TortoiseGit（Windows系统）的使用方法" target="_blank">Git客户端TortoiseGit（Windows系</a></li><li><em class="no5">5</em><a href="https://www.jb51.net/article/76265.htm" title="服务器共享文件夹设置软件、文件共享服务器软件和共享文件夹加密工具的选择" target="_blank">服务器共享文件夹设置软件、文件</a></li><li><em class="no6">6</em><a href="https://www.jb51.net/article/50365.htm" title="用两块硬盘组建RAID0磁盘阵列简单教程(图文详解)" target="_blank">用两块硬盘组建RAID0磁盘阵列简单</a></li><li><em class="no7">7</em><a href="https://www.jb51.net/article/26413.htm" title="正确开启Win2008远程桌面的方法" target="_blank">正确开启Win2008远程桌面的方法</a></li><li><em class="no8">8</em><a href="https://www.jb51.net/article/34026.htm" title="HP ILO2 使用详细教程[图文]" target="_blank">HP ILO2 使用详细教程[图文]</a></li><li><em class="no9">9</em><a href="https://www.jb51.net/article/34932.htm" title="502 bad gateway是什么意思 502 bad gateway错误解决方法" target="_blank">502 bad gateway是什么意思 502 </a></li><li><em class="no10">10</em><a href="https://www.jb51.net/article/30334.htm" title="在Windows平台下安装与配置Memcached的方法分享" target="_blank">在Windows平台下安装与配置Memca</a></li>
+                            </ul>
+						</div>
+					</div>
+					<div class="r300 clearfix mt10"><script async="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/adsbygoogle.js"></script><!--thea+300*250--><ins class="adsbygoogle" style="display:inline-block;width:300px;height:250px" data-ad-client="ca-pub-6389290466807248" data-ad-slot="6788945816"></ins><script>(adsbygoogle=window.adsbygoogle||[]).push({});</script><div class="blank5"></div><a href="https://www.kuaidaili.com/?utm_source=jbzj&amp;utm_medium=j1&amp;utm_campaign=j1a1" target="_blank"><img alt="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/kdaili.png" width="300" height="100"></a><div class="blank5"></div><a href="https://www.50vm.com/server.html?pg=34" target="_blank"><img alt="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/99idc300.jpg" width="300" height="100"></a>
+</div>
+					<div class="sidebox bor-blue">
+						<div class="bor-default pb10">
+							<h4 class="blue">最近更新的内容</h4>
+                            <ul class="newsListA">
+							<li><a href="https://www.jb51.net/article/123052.htm" title="Mac OSX下使用MAMP安装配置PHP开发环境" target="_blank">Mac OSX下使用MAMP安装配置PHP开发环境</a></li><li><a href="https://www.jb51.net/article/109436.htm" title="iis、apache、nginx使用X-Frame-Options防止网页被Frame的解决方法" target="_blank">iis、apache、nginx使用X-Frame-Options防</a></li><li><a href="https://www.jb51.net/article/53707.htm" title="DELL R710服务器做RAID5磁盘阵列图文教程" target="_blank">DELL R710服务器做RAID5磁盘阵列图文教程</a></li><li><a href="https://www.jb51.net/article/159840.htm" title="WHMCS V7.4.2 图文安装教程" target="_blank">WHMCS V7.4.2 图文安装教程</a></li><li><a href="https://www.jb51.net/article/139665.htm" title="为IBM x3650 M2 服务器配置RAID卡图文教程" target="_blank">为IBM x3650 M2 服务器配置RAID卡图文教程</a></li><li><a href="https://www.jb51.net/article/96096.htm" title="CentOS环境下单独安装apachebench的方法" target="_blank">CentOS环境下单独安装apachebench的方法</a></li><li><a href="https://www.jb51.net/article/159839.htm" title="如何使用宝塔安装ionCube扩展" target="_blank">如何使用宝塔安装ionCube扩展</a></li><li><a href="https://www.jb51.net/article/96892.htm" title="centos6.4+nginx+mysql+php+phpmyadmin整合过程详解" target="_blank">centos6.4+nginx+mysql+php+phpmyadmin整</a></li><li><a href="https://www.jb51.net/article/72683.htm" title="便宜vps多是哪些技术架构方式(VPS分割架构是怎么超售的)" target="_blank">便宜vps多是哪些技术架构方式(VPS分割架构</a></li><li><a href="https://www.jb51.net/article/81892.htm" title="DELL DOSA 6.X 服务器引导光盘Dell Systems Build and Update Utility ISO下载地址" target="_blank">DELL DOSA 6.X 服务器引导光盘Dell Syste</a></li>
+                            </ul>
+						</div>
+					</div>
+					<div class="r300 clearfix mt10">
+						<div class="idc3"><a href="http://tools.jb51.net/" target="_blank"><h1>在线工具</h1><span>代码格式化等</span> </a><a href="https://www.jb51.net/s/idc/" target="_blank"><h1>高防主机</h1><span>600G 防护</span> </a><a href="http://www.33ip.com/" target="_blank"><h1>枫信科技</h1><span>IDC服务商</span> </a></div>
+
+					</div>
+                    <div class="sidebox bor-blue">
+						<div class="bor-default pb10">
+							<h4 class="blue">常用在线小工具</h4>
+							<ul class="newsListA"><li><a href="http://tools.jb51.net/code/css" target="_blank"><font color="red">CSS代码工具</font></a></li><li><a href="http://tools.jb51.net/code/js" target="_blank"><font color="red">JavaScript代码格式化工具</font></a></li><li><a href="http://tools.jb51.net/code/xmlformat" target="_blank">在线XML格式化/压缩工具</a></li><li><a href="http://tools.jb51.net/code/phpformat" target="_blank"><font color="red">php代码在线格式化美化工具</font></a></li><li><a href="http://tools.jb51.net/code/sqlcodeformat" target="_blank">sql代码在线格式化美化工具</a></li><li><a href="http://tools.jb51.net/transcoding/html_transcode" target="_blank">在线HTML转义/反转义工具</a></li><li><a href="http://tools.jb51.net/code/json" target="_blank">在线JSON代码检验/检验/美化/格式化</a></li><li><a href="http://tools.jb51.net/regex/javascript" target="_blank">JavaScript正则在线测试工具</a></li><li><a href="http://tools.jb51.net/transcoding/jb51qrcode" target="_blank">在线生成二维码工具(加强版)</a></li><li><a href="http://tools.jb51.net/" target="_blank">更多在线工具</a></li>
+</ul>
+						</div>
+					</div>
+					<div class="r300 clearfix mt10"><a href="http://tuidc.com/" target="_blank"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/tengyou300.gif" width="300" height="100"></a><div class="blank5"></div><a href="http://www.enkj.com/encloud/" target="_blank"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/enkj300.gif" alt="云服务器" width="300" height="100"></a>
+</div>
+					<div class="mt10 rFixedBox">
+						<div class="r300 clearfix"><script async="" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/adsbygoogle.js"></script><ins class="adsbygoogle" style="display:inline-block;width:300px;height:250px" data-ad-client="ca-pub-6384567588307613" data-ad-slot="2129515335"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+						<div class="r300 clearfix mt10">
+							<div id="_ojnxe93lm8" style="width: 100%;"><iframe scrolling="no" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/s_004.html" width="300" height="250" frameborder="0"></iframe></div><script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/k-blu.js"></script>
+
+						</div>
+					</div>
+				  </div>
+			  </div><!--end fr-->
+		  </div>
+	  </div>
+	  <!--share start-->
+	 <div id="right-share">
+		<div class="right-share jb-share" id="jb-share">
+			<a class="rshare-weixin" title="">微信</a>
+			<a rel="nofollow" class="rshare-qzone" target="_blank" href="http://tougao.jb51.net/" title="投稿">投稿</a>
+			<a rel="nofollow" class="rshare-sqq" target="_blank" href="http://shequ.jb51.net/" title="交流社区">交流社区</a>
+			<a rel="nofollow" class="rshare-tsina" target="_blank" href="http://tools.jb51.net/" title="在线工具">在线工具</a>
+		</div>
+		<a class="rshare-top" onclick="javascript:;"></a>
+		<div id="weixin-code" class="hide">
+		<div class="popup_weixin_head"><p>关注微信公众号</p> 
+		<div id="code"><img src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/erwm.jpg" alt="扫一扫" hight="100" width="100"></div>
+		</div>
+		</div>	
+	 </div>
+	<!--share end-->
+
+</div><!--end content-->
+<div id="footer">
+	<div class="footer-bottom">
+		<p>
+			<a rel="nofollow" href="https://www.jb51.net/about.htm" target="_blank">关于我们</a> - 
+			<a rel="nofollow" href="https://www.jb51.net/support.htm" target="_blank">广告合作</a> - 
+			<a rel="nofollow" href="https://www.jb51.net/linkus.htm" target="_blank">联系我们</a> -  
+			<a rel="nofollow" href="https://www.jb51.net/sm.htm" target="_blank">免责声明</a> -  
+			<a rel="nofollow" href="https://www.jb51.net/sitemap.htm" target="_blank">网站地图</a> - 
+			<a rel="nofollow" href="tencent://message/?uin=461478385&amp;Site=https://www.jb51.net" target="_blank">投诉建议</a> - 
+			<a rel="nofollow" href="https://www.jb51.net/up.htm" target="_blank">在线投稿</a>
+		</p>
+		<p>&#169;CopyRight 2006-2019 JB51.Net Inc All Rights Reserved. 脚本之家 版权所有</p>
+	</div>
+</div><!--end footer-->
+<link type="text/css" rel="stylesheet" href="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/shCore.css">
+<link type="text/css" rel="Stylesheet" href="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/shThemeDefault.css">
+<script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/shCore.js"></script>
+<script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/shAutoloader.js"></script>
+<script type="text/javascript"> 
+/*更多导航*/
+$("#nav p").hover(function(){$(this).addClass("hover")},function(){$(this).removeClass("hover")});
+if (top.location != self.location)top.location=self.location;
+var varwindow=$(window);
+$('#content').find('img').each(function(){
+        var img = this;
+        if (img.width >= 650 && !$(this).hasClass("nohref")){
+            img.style.width = "650px";
+            img.style.height = "auto";
+            //$(img).removeAttr('height');
+            var aTag = document.createElement('a');
+            aTag.href = img.src;
+			aTag.target="_blank";
+            $(aTag).addClass('bPic')
+            .insertAfter(img).append(img)
+          }
+    });
+ $(window).scroll(function()
+    {	
+    	//rFixedBox跟随滚动
+    	var h = varwindow.height();
+        var top = varwindow.scrollTop();
+    	var rFixedBox = $('.rFixedBox').prev().offset();
+        var fixedTop = rFixedBox.top;
+		
+        if(top>=fixedTop+330)
+        {
+			var h1 = parseInt($('#content').children('.main').height());
+			$('.rFixedBox').css({'position':'fixed','top': 0});
+        }
+        else
+        {
+            $('.rFixedBox').css({'position':'static', 'top':0});   
+        }	
+       /* return true;*/
+	   
+	   /*右侧快捷菜单*/
+	   sideFixed();
+    });
+	
+	var ww = varwindow.width();
+	function sideFixed(){
+	var scrolltop = document.body.scrollTop || document.documentElement.scrollTop;
+	var a1 = 550;
+	if(ww>440){
+		if(a1<=scrolltop){
+			$('#right-share').slideDown();
+			}
+		else{
+			$('#right-share').slideUp();
+			}
+		}
+	}
+	$('.rshare-weixin').hover(function(){
+			$('#weixin-code').removeClass('hide');
+		},function(){
+			$('#weixin-code').addClass('hide');
+		});
+	/*二维码*/
+	$('#right-share .rshare-top').on('click',function(){
+        $('html,body').animate({'scrollTop':0},500);
+    });
+if(suoyin=="ok"){
+	GenerateContentList();
+}
+
+SyntaxHighlighter.autoloader(
+	'applescript			/jslib/syntaxhighlighter/scripts/shBrushAppleScript.js',
+	'actionscript3 as3		/jslib/syntaxhighlighter/scripts/shBrushAS3.js',
+	'bash shell				/jslib/syntaxhighlighter/scripts/shBrushBash.js',
+	'coldfusion cf			/jslib/syntaxhighlighter/scripts/shBrushColdFusion.js',
+	'cpp c					/jslib/syntaxhighlighter/scripts/shBrushCpp.js',
+	'obj-c objc				/jslib/syntaxhighlighter/scripts/shBrushObjC.js',
+	'c# c-sharp csharp		/jslib/syntaxhighlighter/scripts/shBrushCSharp.js',
+	'css					/jslib/syntaxhighlighter/scripts/shBrushCss.js',
+	'delphi pascal			/jslib/syntaxhighlighter/scripts/shBrushDelphi.js',
+	'diff patch pas			/jslib/syntaxhighlighter/scripts/shBrushDiff.js',
+	'erl erlang				/jslib/syntaxhighlighter/scripts/shBrushErlang.js',
+	'groovy					/jslib/syntaxhighlighter/scripts/shBrushGroovy.js',
+	'haxe hx				/jslib/syntaxhighlighter/scripts/shBrushHaxe.js',
+	'java					/jslib/syntaxhighlighter/scripts/shBrushJava.js',
+	'jfx javafx				/jslib/syntaxhighlighter/scripts/shBrushJavaFX.js',
+	'js jscript javascript	/jslib/syntaxhighlighter/scripts/shBrushJScript.js',
+	'perl pl				/jslib/syntaxhighlighter/scripts/shBrushPerl.js',
+	'php					/jslib/syntaxhighlighter/scripts/shBrushPhp.js',
+	'text plain				/jslib/syntaxhighlighter/scripts/shBrushPlain.js',
+	'py python				/jslib/syntaxhighlighter/scripts/shBrushPython.js',
+	'ruby rails ror rb		/jslib/syntaxhighlighter/scripts/shBrushRuby.js',
+	'scala					/jslib/syntaxhighlighter/scripts/shBrushScala.js',
+	'sql					/jslib/syntaxhighlighter/scripts/shBrushSql.js',
+	'vb vbnet				/jslib/syntaxhighlighter/scripts/shBrushVb.js',
+	'ps powershell			/jslib/syntaxhighlighter/scripts/shBrushPowerShell.js',
+	'xml xhtml xslt html	/jslib/syntaxhighlighter/scripts/shBrushXml.js'
+);
+SyntaxHighlighter.all();
+
+var ourl="http://www.netkou.com/?post=165";
+
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+<script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/arc2019.js"></script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<script>jbLoader();</script>
+<!--右侧浮动临时增加-->
+<script>jbLoader();</script>
+<script charset="utf-8" id="ParadigmSDKv3" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/ParadigmSDK_v3.js">
+</script>
+<script>
+    ParadigmSDKv3.init("f13aa2223b4346609714cb6488eb2830");
+    ParadigmSDKv3.trackDetailPageShow(9569);
+</script>
+<div id="tongji">
+<script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/tongji2.js"></script><script src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/stat_002.js" language="JavaScript"></script><script src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/core.js" charset="utf-8" type="text/javascript"></script><a href="https://www.cnzz.com/stat/website.php?web_id=1585378" target="_blank" title="站长统计">站长统计</a><script src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/stat.js" language="JavaScript"></script><script src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/core_002.js" charset="utf-8" type="text/javascript"></script><a href="https://www.cnzz.com/stat/website.php?web_id=5488963" target="_blank" title="站长统计">站长统计</a>
+<script type="text/javascript">
+//tu+
+var cpro_id = "u1893014";
+document.write('<scri'+'pt src="//cpro.baidustatic.com/cpro/ui/i.js" type="text/javascript"></s'+'cript>');
+(function(){
+var src = (document.location.protocol == "http:") ? "http://js.passport.qihucdn.com/11.0.1.js?2f793ca9dd6f4c32488903eed5c7fbcb":"https://jspassport.ssl.qhimg.com/11.0.1.js?2f793ca9dd6f4c32488903eed5c7fbcb";
+document.write('<script src="' + src + '" id="sozz"><\/script>');
+})();
+</script><script src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/i.js" type="text/javascript"></script><script src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/11.js" id="sozz"></script><script charset="utf-8" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/ab77b6ea7f3fbf79.js"></script>
+</div> 
+<script type="text/javascript" src="rsync%E6%8C%87%E5%AE%9Assh%E7%AB%AF%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E5%90%8C%E6%AD%A5%E7%9A%84%E6%96%B9%E6%B3%95_%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B6%E5%AE%83_%E8%84%9A%E6%9C%AC%E4%B9%8B%E5%AE%B6_files/pl.html"></script>
+<script type="application/ld+json">
+        {
+            "@context": "https://ziyuan.baidu.com/contexts/cambrian.jsonld",
+            "@id": "https://www.jb51.net/article/135122.htm",
+            "appid": "1549322409310619",
+            "title": "rsync指定ssh端口进行文件同步的方法",
+            "description": "这篇文章主要介绍了rsync指定ssh端口进行文件同步的方法,需要的朋友可以参考下",
+            "pubDate": "2018-02-17T14:35:18",
+			"upDate": "2018-02-17T14:35:18"
+        }
+</script>
+
+
+
+</body></html>
+<!-- published at 2019/10/10 8:28:35By dxycms qq:461478385  -->

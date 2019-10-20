@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html class=""><head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,Chrome=1">
+<meta name="renderer" content="webkit">
+<title>Dockerfile最佳实践（二） - DockOne.io</title>
+<meta name="keywords" content="dockerfile,最佳,实践">
+<meta name="description" content="Dockerfile最佳实践（二） - 【编者的话】本文是 Docker 入门教程第三章－DockerFile 进阶篇的第二部分。作者主要介绍了 Docker 的变化、常用指令以及基础镜像的最佳用法。
+自从我上一篇 Dockerfile 最佳实践后，Docker 发生了很大变化。上一篇会继续留着...">
+<meta property="qc:admins" content="460401166337656177">
+<!-- base href="http://dockone.io/" --><!--[if IE]></base><![endif]-->
+<link href="http://static.dockone.io/favicon.ico?t=20150328" rel="shortcut icon" type="image/x-icon">
+
+<link rel="stylesheet" type="text/css" href="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/foot.css">
+
+<link rel="stylesheet" type="text/css" href="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/icon.css">
+
+<link href="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/common.css" rel="stylesheet" type="text/css">
+<link href="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/link.css" rel="stylesheet" type="text/css">
+<link href="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/style.css" rel="stylesheet" type="text/css">
+
+
+<script type="text/javascript">
+	var _DF6E0BB317924E0C89979234238FC48F="";
+	var G_POST_HASH=_DF6E0BB317924E0C89979234238FC48F;
+	var G_INDEX_SCRIPT = "";
+	var G_SITE_NAME = "DockOne.io";
+	var G_BASE_URL = "http://dockone.io";
+	var G_STATIC_URL = "http://dockone.io/static";
+	var G_UPLOAD_URL = "http://dockone.io/uploads";
+	var G_USER_ID = "";
+	var G_USER_NAME = "";
+	var G_UPLOAD_ENABLE = "N";
+	var G_UNREAD_NOTIFICATION = 0;
+	var G_NOTIFICATION_INTERVAL = 100000;
+	var G_CAN_CREATE_TOPIC = "";
+	var G_REQUEST_URL = "/article/";
+
+	</script>
+<script src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/jquery.js" type="text/javascript"></script>
+<script src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/jquery_002.js" type="text/javascript"></script>
+<script src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/plug-in_module.js" type="text/javascript"></script>
+<script src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/aws.js" type="text/javascript"></script>
+<script src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/aw_template.js" type="text/javascript"></script>
+<script src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/app.js" type="text/javascript"></script>
+<script type="text/javascript" src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/compatibility.js"></script>
+<!--[if lte IE 8]>
+	<script type="text/javascript" src="http://dockone.io/static/js/respond.js"></script>
+<![endif]-->
+<style type="text/css">.fancybox-margin{margin-right:20px;}</style></head>
+<body><noscript unselectable="on" id="noscript">
+    <div class="aw-404 aw-404-wrap container">
+        <img src="http://dockone.io/static/common/no-js.jpg">
+        <p>你的浏览器禁用了JavaScript, 请开启后刷新浏览器获得更好的体验!</p>
+    </div>
+</noscript>
+
+
+	<div class="aw-top-menu-wrap">
+		<div class="container">
+			<!-- logo -->
+			<div class="aw-logo hidden-xs">
+				<a href="http://dockone.io/"></a>
+			</div>
+			<!-- end logo -->
+			<!-- 搜索框 -->
+			<div class="aw-search-box  hidden-xs hidden-sm">
+				<form class="navbar-search" action="http://dockone.io/search/" id="global_search_form" method="post">
+					<input class="form-control search-query" type="text" placeholder="搜索问题、话题或人" autocomplete="off" name="q" id="aw-search-query">
+					<span title="搜索" id="global_search_btns" onclick="$('#global_search_form').submit();"><i class="icon icon-search"></i></span>
+					<div class="aw-dropdown">
+						<div class="mod-body">
+							<p class="title">输入关键字进行搜索</p>
+							<ul class="aw-dropdown-list hide"></ul>
+							<p class="search"><span>搜索:</span><a onclick="$('#global_search_form').submit();"></a></p>
+						</div>
+						<div class="mod-footer">
+							<a href="http://dockone.io/publish" onclick="$('#header_publish').click();" class="pull-right btn btn-mini btn-success publish">发起问题</a>
+						</div>
+					</div>
+				</form>
+			</div>
+			<!-- end 搜索框 -->
+			<!-- 导航 -->
+			<div class="aw-top-nav navbar">
+				<div class="navbar-header">
+			      <button class="navbar-toggle pull-left">
+			        <span class="icon-bar"></span>
+			        <span class="icon-bar"></span>
+			        <span class="icon-bar"></span>
+			      </button>
+			    </div>
+				<nav role="navigation" class="collapse navbar-collapse bs-navbar-collapse">
+			      <ul class="nav navbar-nav">
+			      	                    <li><a href="" class=""><i class="icon icon-ul"></i> 发现</a></li>
+
+					<!-- <li><a href="http://dockone.io/question/" class="">问题</a></li>
+
+					<li><a href="http://dockone.io/article/" class="active">文章</a></li> -->
+
+					<li><a href="http://dockone.io/topic/"><i class="icon icon-topic"></i> 话题</a></li>
+										<li><a href="http://dockone.io/help/"><i class="icon icon-bulb"></i> 帮助</a></li>			      </ul>
+			    </nav>
+			</div>
+			<!-- end 导航 -->
+			<!-- 用户栏 -->
+			<div class="aw-user-nav">
+				<!-- 登陆&注册栏 -->
+									<a class="login btn btn-normal btn-primary" href="http://dockone.io/login/">登录</a>
+					<a class="register btn btn-normal btn-success" href="http://dockone.io/account/register/">注册</a>								<!-- end 登陆&注册栏 -->
+			</div>
+			<!-- end 用户栏 -->
+			<!-- 发起 -->
+						<!-- end 发起 -->
+		</div>
+	</div>
+	
+<script type="text/javascript">
+$(document).ready(function(){
+$("#newClassImg").attr("src", "http://static.dockone.io/partner/banner.jpg?"+new Date().getTime());
+  });
+</script>
+<div class="aw-container-wrap">
+    <div class="container">
+<br>
+<a href="http://dockone.io/article/2626" target="_blank" style="display:block;margin:0 auto;margin-bottom:15px;margin-top:-40px;"><img id="newClassImg" src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/banner.jpg"></a>
+        <div class="row">
+            <div class="aw-content-wrap clearfix">
+                <div class="col-sm-12 col-md-9 aw-main-content aw-article-content">
+                    <div class="aw-mod aw-topic-bar" id="question_topic_editor" data-type="article" data-id="132">
+                        <div class="tag-bar clearfix">
+                                                                                    <span class="topic-tag" data-id="21">
+                                <a class="text" href="http://dockone.io/topic/Dockerfile">Dockerfile</a>
+                            </span>
+                                                        <span class="topic-tag" data-id="42">
+                                <a class="text" href="http://dockone.io/topic/Docker+Tutorial">Docker Tutorial</a>
+                            </span>
+                                                        <span class="topic-tag" data-id="7">
+                                <a class="text" href="http://dockone.io/topic/Docker">Docker</a>
+                            </span>
+                                                        
+                                                    </div>
+                    </div>
+                    <div class="aw-mod aw-question-detail">
+                        <div class="mod-head">
+                            <h1>
+                                Dockerfile最佳实践（二）                            </h1>
+
+                                                    </div>
+                        <div class="mod-body">
+                            <div class="content markitup-box">
+                                <br>【编者的话】本文是 <a href="http://dockerone.com/article/103">Docker 入门教程第三章－DockerFile</a> 进阶篇的第二部分。作者主要介绍了 Docker 的变化、常用指令以及基础镜像的最佳用法。<br>
+<br>自从我<a href="http://dockerone.com/article/131">上一篇 Dockerfile 最佳实践</a>后，Docker 发生了很大变化。上一篇会继续留着，这篇文章将介绍 Docker 有什么变化以及你现在应当做些什么。<br>
+<br><h3>1、不要开机初始化</h3>容器模型是进程而不是机器。如果你认为你需要开机初始化，那么你就错了。<br>
+<br><h3>2、可信任构建</h3>即使你不喜欢这个题目但它是很棒的一个功能。我把大部分 GitHub 仓库添加到可信任构建，因此当我提交一个新镜像之后不久，就在等待索引。另外，我不必再创建单独的 Dockerfile 仓库与他人分享，它们都在同一个地方。<br>
+<br>请记住，这不是你尝试新东西的试验场。在你推送之前，请在本地先构建一下。Docker 可以确保你在本地的构建和运行，与你推送到任何地方的构建和运行是一样的。本地开发和测试、提交和推送、以及等待索引上的官方镜像都是建立在可信任构建的基础之上的。<br>
+<br><h3>3、不要在构建中升级版本</h3>更新将发生在基础镜像里，你不需要在你的容器内来<code class="prettyprint">apt-get upgrade</code>更新。因为在隔离情况下，如果更新时试图修改 init 或改变容器内的设备，更新可能会经常失败。它还可能会产生不一致的镜像，因为你不再有你的应用程序该如何运行以及包含在镜像中依赖的哪种版本的正确源文件。<br>
+<br>如果基础镜像需要安全更新，那么让上游的知道，让他们给大家更新，并确保你再次构建的一致性。<br>
+<br><h3>4、使用小型基础镜像</h3>有些镜像比其他的更臃肿。我建议使用<code class="prettyprint">debian:jessie</code>作为你的基础镜像。如果你熟悉Ubuntu，你将发现一个更轻量和巧妙的自制 debian，它足够小并且没有包含任何不需要的包。<br>
+<br><h3>5、使用特定的标签</h3>对于你的基础镜像这是非常重要的。Dockerfile 中<code class="prettyprint">FROM</code>应始终包含依赖的基础镜像的完整仓库名和标签。比如说<code class="prettyprint">FROM debian:jessie</code>而不仅仅是<code class="prettyprint">FROM debian</code>。<br>
+<br><h3>6、常见指令组合</h3>您的<code class="prettyprint">apt-get update</code>应该与<code class="prettyprint">apt-get install</code>组合。此外，你应该采取<code class="prettyprint">\</code>的优势使用多行来进行安装。<br>
+<br><pre class="prettyprint">＃Dockerfile&nbsp;for&nbsp;https://index.docker.io/u/crosbymichael/python/&nbsp;<br>
+FROM&nbsp;debian:jessie<br>
+<br>
+RUN&nbsp;apt-get&nbsp;update&nbsp;&amp;&amp;&nbsp;apt-get&nbsp;install&nbsp;-y&nbsp;\<br>
+git&nbsp;\<br>
+libxml2-dev&nbsp;\<br>
+python&nbsp;\<br>
+build-essential&nbsp;\<br>
+make&nbsp;\<br>
+gcc&nbsp;\<br>
+python-dev&nbsp;\<br>
+locales&nbsp;\<br>
+python-pip<br>
+<br>
+RUN&nbsp;dpkg-reconfigure&nbsp;locales&nbsp;&amp;&amp;&nbsp;\<br>
+locale-gen&nbsp;C.UTF-8&nbsp;&amp;&amp;&nbsp;\<br>
+/usr/sbin/update-locale&nbsp;LANG=C.UTF-8<br>
+<br>
+ENV&nbsp;LC_ALL&nbsp;C.UTF-8<br>
+</pre><br>
+谨记层和缓存都是不错的。不要害怕过多的层，因为缓存是大救星。当然，你应当尽量使用上游的包。<br>
+<br><h3>7、使用自己的基础镜像</h3>我不是在谈论运行 debbootstrap 来制作自己的 debian。你不是 
+tianon（Tianon Gravi），没有人想要你认为别人需要你的 500mb 的狗屎垃圾基础镜像。我说的是，如果你要运行 python 
+应用程序需要有一个python基础镜像。前面示例中用于构建  <code class="prettyprint">crosbymichael/python</code> 的 Dockerfile 也被用于其他很多构建 Python 应用程序的镜像。<br>
+<pre class="prettyprint">FROM&nbsp;crosbymichael/python<br>
+<br>
+RUN&nbsp;pip&nbsp;install&nbsp;butterfly<br>
+RUN&nbsp;echo&nbsp;"root\nroot\n"&nbsp;|&nbsp;passwd&nbsp;root<br>
+<br>
+EXPOSE&nbsp;9191<br>
+ENTRYPOINT&nbsp;["butterfly.server.py"]<br>
+CMD&nbsp;["--port=9191",&nbsp;"--host=0.0.0.0"]<br>
+</pre><br>
+另一个：<br>
+<pre class="prettyprint">FROM&nbsp;crosbymichael/python<br>
+<br>
+RUN&nbsp;pip&nbsp;install&nbsp;--upgrade&nbsp;youtube_dl&nbsp;&amp;&amp;&nbsp;mkdir&nbsp;/download<br>
+WORKDIR&nbsp;/download<br>
+ENTRYPOINT&nbsp;["youtube-dl"]<br>
+CMD&nbsp;["--help"]<br>
+</pre><br>
+正如你看到的，这使得使用你的基础镜像非常小，从而使你集中精力在应用程序上。<br>
+<br>让我知道你在想什么，或者如果你有任何其它的问题，可以在评论中留言。<br>
+<br><strong>原文链接：<a href="http://crosbymichael.com/dockerfile-best-practices-take-2.html">Dockerfile Best Practices - take 2</a> （翻译：<a href="https://github.com/llitfkitfk">田浩浩</a> 审校：叶可强）</strong><br>
+<br>＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝<br>
+<strong>译者介绍</strong><br>
+<strong>田浩浩</strong>，<a href="http://sydney.edu.au/engineering/it/">悉尼大学USYD</a>硕士研究生，目前在珠海从事Android应用开发工作。业余时间专注Docker的学习与研究，希望通过<a href="http://dockerone.com/">DockerOne</a>把最新最优秀的译文贡献给大家，与读者一起畅游Docker的海洋。
+                                
+                                                            </div>
+                            <div class="meta clearfix">
+                                <div class="aw-article-vote pull-left disabled">
+                                    <a href="javascript:;" class="agree" onclick=""><i class="icon icon-agree"></i> <b>0</b></a>
+                                                                    </div>
+
+                                <span class="pull-right  more-operate">
+                                    
+                                    
+                                    <a class="text-color-999 dropdown-toggle" data-toggle="dropdown">
+                                        <i class="icon icon-share"></i> 分享                                    </a>
+                                    <div aria-labelledby="dropdownMenu" role="menu" class="aw-dropdown shareout pull-right">
+                                        <ul class="aw-dropdown-list">
+                                            <li><a onclick="AWS.User.share_out('tsina');"><i class="icon icon-weibo"></i> 微博</a></li>
+                                            <li><a onclick="AWS.User.share_out('qzone');"><i class="icon icon-qzone"></i> QZONE</a></li>
+                                            <li><a onclick="AWS.User.share_out('weixin');"><i class="icon icon-wechat"></i> 微信</a></li>
+                                        </ul>
+                                    </div>
+
+                                    <em class="text-color-999">2015-01-09</em>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="mod-footer">
+                                                    </div>
+                    </div>
+
+                    <!-- 文章评论 -->
+                    <div class="aw-mod">
+                        <div class="mod-head common-head">
+                            <h2>1 个评论</h2>
+                        </div>
+
+                        <div class="mod-body aw-feed-list">
+                            
+                                                                <div class="aw-item" id="answer_list_41">
+                                    <div class="mod-head">
+                                        <a class="aw-user-img aw-border-radius-5" href="http://dockone.io/people/jamlee">
+                                            <img src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/16_avatar_mid.jpg" alt="jamlee">
+                                        </a>
+                                        <p>
+                                            <a href="http://dockone.io/people/jamlee">jamlee</a>                                        </p>
+                                    </div>
+                                    <div class="mod-body">
+                                        <div class="markitup-box">
+                                            垃圾狗屎骂的好，超级讨厌大镜像                                        </div>
+                                    </div>
+                                    <div class="mod-footer">
+                                        <div class="meta">
+                                            <span class="pull-right text-color-999">2015-01-12 09:29</span>
+                                                                                    </div>
+                                    </div>
+                                </div>
+                                                                                    </div>
+
+                        
+                                            </div>
+                    <!-- end 文章评论 -->
+
+                    <!-- 回复编辑器 -->
+                    <div class="aw-mod aw-article-replay-box">
+                        <a name="answer_form"></a>
+                                                <p align="center">要回复文章请先<a href="http://dockone.io/login/">登录</a>或<a href="http://dockone.io/account/register/">注册</a></p>
+                                            </div>
+                    <!-- end 回复编辑器 -->
+                </div>
+                <!-- 侧边栏 -->
+                <div class="col-sm-12 col-md-3 aw-side-bar hidden-sm hidden-xs">
+                    <!-- 发起人 -->
+                                        <div class="aw-mod user-detail">
+                        <div class="mod-head">
+                            <h3>发起人</h3>
+                        </div>
+                        <div class="mod-body">
+                            <dl>
+                                <dt class="pull-left aw-border-radius-5">
+                                    <a href="http://dockone.io/people/llitfkitfk"><img alt="田浩浩" src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/26_avatar_mid.jpg"></a>
+                                </dt>
+                                <dd class="pull-left">
+                                    <a class="aw-user-name" href="http://dockone.io/people/llitfkitfk" data-id="26">田浩浩</a>
+                                                                            <i class="icon-v" title="个人认证"></i>
+                                    
+                                                                        <p>wizmacau developer</p>
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="mod-footer clearfix">
+                                                        <div class="aw-topic-bar">
+                                <div class="topic-bar clearfix">
+                                    <span class="pull-left text-color-999">
+                                        擅长话题 : &nbsp;
+                                    </span>
+                                                                        <span class="topic-tag">
+                                        <a href="http://dockone.io/topic/Docker" class="text" data-id="7">Docker</a>
+                                    </span>
+                                                                        <span class="topic-tag">
+                                        <a href="http://dockone.io/topic/Swarm" class="text" data-id="17">Swarm</a>
+                                    </span>
+                                                                        <span class="topic-tag">
+                                        <a href="http://dockone.io/topic/Compose" class="text" data-id="18">Compose</a>
+                                    </span>
+                                                                        <span class="topic-tag">
+                                        <a href="http://dockone.io/topic/%E5%AE%B9%E5%99%A8" class="text" data-id="149">容器</a>
+                                    </span>
+                                                                        <span class="topic-tag">
+                                        <a href="http://dockone.io/topic/Docker+Created" class="text" data-id="87">Docker Created</a>
+                                    </span>
+                                                                    </div>
+                            </div>
+                                                    </div>
+                    </div>
+                                        <!-- end 发起人 -->
+
+                                        <!-- 推荐内容 -->
+                    <div class="aw-mod">
+                        <div class="mod-head">
+                            <h3>推荐内容</h3>
+                        </div>
+                        <div class="mod-body">
+                            <ul>
+                                                                <li>
+                                                                        <a href="http://dockone.io/article/8945">用 Docker 快速配置前端开发环境</a>
+                                                                    </li>
+                                                                <li>
+                                                                        <a href="http://dockone.io/article/8944">学好Docker，你应该了解这些</a>
+                                                                    </li>
+                                                                <li>
+                                                                        <a href="http://dockone.io/article/8941">火热的云原生到底是什么？一文了解云原生四要素！</a>
+                                                                    </li>
+                                                                <li>
+                                                                        <a href="http://dockone.io/article/8932">容器云平台基础架构方案设计思考</a>
+                                                                    </li>
+                                                                <li>
+                                                                        <a href="http://dockone.io/article/8926">Docker容器互联方法</a>
+                                                                    </li>
+                                                                <li>
+                                                                        <a href="http://dockone.io/article/8924">使用Spring Cloud和Docker构建微服务架构</a>
+                                                                    </li>
+                                                                <li>
+                                                                        <a href="http://dockone.io/article/8923">Docker五大优势：持续集成、版本控制、可移植性、隔离性和安全性</a>
+                                                                    </li>
+                                                                <li>
+                                                                        <a href="http://dockone.io/article/8922">五个Docker监控工具的对比</a>
+                                                                    </li>
+                                                                <li>
+                                                                        <a href="http://dockone.io/article/8886">基于Docker快速搭建多节点Hadoop集群 </a>
+                                                                    </li>
+                                                                <li>
+                                                                        <a href="http://dockone.io/article/8879">土法搞Docker系列之自制Docker的graph driver vdisk</a>
+                                                                    </li>
+                                                            </ul>
+                        </div>
+                    </div>
+                    <!-- end 推荐内容 -->
+                    
+                                        <!-- 相关问题 -->
+                    <div class="aw-mod aw-text-align-justify question-related-list">
+                        <div class="mod-head">
+                            <h3>相关问题</h3>
+                        </div>
+                        <div class="mod-body">
+                            <ul>
+                                                                <li><a href="http://dockone.io/question/928">Dockerfile构建问题</a></li>
+                                                                <li><a href="http://dockone.io/question/91">Docker几个疑难问题的最佳实践？</a></li>
+                                                                <li><a href="http://dockone.io/question/469">dockerfile的CMD和ENTRYPOINT命令有什么区别？？</a></li>
+                                                                <li><a href="http://dockone.io/question/683">大家在写 dockerfile 时有啥最佳实践？希望得到大家的建议。</a></li>
+                                                                <li><a href="http://dockone.io/question/205">不是如何在Dockerfile中设置代理？是设置了没起作用，dockerone编辑没理解意思</a></li>
+                                                                <li><a href="http://dockone.io/question/1333">docker在1.9之后的dockerfile中新增关键字STOPSIGNAL定义后如何使用?</a></li>
+                                                                <li><a href="http://dockone.io/question/690">如何利用dockerfile构建一个reids镜像错误 请教大牛帮忙解决 yum怎么不识别呀？</a></li>
+                                                                <li><a href="http://dockone.io/question/1529">创建了一个有ssh服务的容器，如何ssh登录后，可以获取到Dockerfile中的环境变量呢？</a></li>
+                                                                <li><a href="http://dockone.io/question/285">在GitHub上存放Dockerfile的最佳实践？</a></li>
+                                                                <li><a href="http://dockone.io/question/47">Docker 用镜像方式迁移和用Dockerfile动态生成有什么区别？</a></li>
+                                                                <li><a href="http://dockone.io/question/99">Dockerfile文件的 ADD src dest ,src表示的文件或目录只能跟Dockerfile文件在同一目录吗？  </a></li>
+                                                            </ul>
+                        </div>
+                    </div>
+                    <!-- end 相关问题 -->
+                                    </div>
+                <!-- end 侧边栏 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    ANSWER_EDIT_TIME = 30;
+
+    $(document).ready(function () {
+        if ($('.aw-article-vote.disabled').length)
+        {
+            $('.aw-article-vote.disabled a').attr('onclick', '');
+        }
+
+        AWS.at_user_lists('#wmd-input');
+
+        AWS.Init.init_article_comment_box($('.aw-article-comment'));
+    });
+</script>
+
+	
+<footer class="footer">
+  <div class="subscribe-email row1 text-center">
+    <h3>DockOne.io，专业的Cloud Native技术交流平台</h3>
+    <p>关注Cloud Native相关的产品以及开源项目</p>
+      </div>
+  <div class="row1">
+    <div class="copyright">
+      <p> 2019 <strong>DockOne</strong>. All Rights Reserved.</p>
+      <p class="">DockOne，新圈子，新思路，新视野。</p>
+<p class="zz">本网站服务器由<a href="http://www.ucloud.cn/?utm_source=zanzhu&amp;utm_campaign=DokerOne&amp;utm_medium=display">UCloud云服务</a>提供。</p>
+    </div>
+
+    <div class="footer-follow">
+      <ul class="cf">
+        <li><a class="icons-weibo" href="http://weibo.com/dockerone" title="Weibo" target="_blank">Weibo</a></li>
+        <li style="position:relative"><a class="icons-twitter" onmouseover="mousemethod('block','img1')" onmouseout="mousemethod('none','img1')" title="Wechat" target="_blank" style="cursor:pointer;">Wechat</a><img src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/wechat.jpg" style="position:absolute; top:37px; left:-32px; display:none;" id="img1" width="100"></li>
+<li><a class="icons-weekly" href="http://weekly.dockone.io/" title="周报" target="_blank">周报</a></li>
+ <li><a class="icons-rss" href="http://dockone.io/feed" title="Feed" target="_blank">Feed</a></li>
+      </ul>
+    </div>
+    <script>
+	function mousemethod(op,imgid){
+	document.getElementById(imgid).style.display=op;
+	}
+</script>
+  </div>
+
+</footer>
+
+
+<a class="aw-back-top hidden-xs" href="javascript:;" onclick="$.scrollTo(1, 600, {queue:true});"><i class="icon icon-up"></i></a>
+
+<script type="text/javascript">
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F1f6d1a718ac6b6eb3902c92775fb128e' type='text/javascript'%3E%3C/script%3E"));
+</script><script src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/h.js" type="text/javascript"></script>
+
+<!-- DO NOT REMOVE -->
+<div id="aw-ajax-box" class="aw-ajax-box"></div>
+<div style="display:none;" id="__crond"><img src="Dockerfile%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88%E4%BA%8C%EF%BC%89%20-%20DockOne.io_files/1559503045.html" width="1" height="1"></div>
+
+<!-- Escape time: 0.10101509094238 --><!-- / DO NOT REMOVE -->
+
+
+
+</body></html>

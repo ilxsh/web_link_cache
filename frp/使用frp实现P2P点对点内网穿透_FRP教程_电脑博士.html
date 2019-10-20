@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.33,minimum-scale=1.0,maximum-scale=1.0">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta http-equiv="Content-Language" content="zh-CN" />
+	 <title>使用frp实现P2P点对点内网穿透_FRP教程_电脑博士</title>
+ <meta name="keywords" content="" />
+ <meta name="description" content="使用frp实现P2P点对点内网穿透是电脑博士中一篇关于的文章，欢迎您阅读和评论,电脑博士" />
+	<meta name="generator" content="Z-BlogPHP 1.5.2 Zero" />
+	<link rel="stylesheet" rev="stylesheet" href="http://diannaobos.com/zb_users/theme/tx_mi/style/txcstx.css" type="text/css" media="all"/>
+	<script src="http://diannaobos.com/zb_system/script/common.js" type="text/javascript"></script>
+	<script src="http://diannaobos.com/zb_users/theme/tx_mi/script/menu.js" type="text/javascript"></script>
+	<script src="http://diannaobos.com/zb_system/script/c_html_js_add.php" type="text/javascript"></script>
+    <script type="text/javascript" src="http://diannaobos.com/zb_users/theme/tx_mi/script/scrolltopcontrol.js"></script>
+<link rel="stylesheet" type="text/css" href="http://diannaobos.com/zb_users/plugin/mochu_music/css/player.css"/>
+<style type="text/css">
+body{color:#333333;}a{text-decoration: none;color: #2967D4;}a:hover{color: #2D5FA8;text-decoration: none;}.zh{width:1100px;}.secai{color: #2D5FA8;}#divCalendar td a,#comment .button,.pagebar .now-page,.pagebar .now-page,#ss #btnPost,#hamburgermenu,.pagebar .now-page,#keyword,#rigth #divSearchPanel input[type="submit"]{background-color: #2D5FA8;}#rigth #divSearchPanel dd form{border:1px solid #2D5FA8;}#hamburgermenu li a:hover,#hamburgermenu ul li a.on,.pagebar a:hover{background-color: #3876D1;}
+</style>
+
+</head>
+
+<body>
+<div id="top"><dl class="zh"><span><a href="http://diannaobos.com/feed.php">RSS订阅</a></span>专注X86/ARM架构技术</dl></div>
+
+<div id="w980"  class="zh">
+<div id="head"><!--广告代码粘贴处--><!--广告代码结束--><span id="ss"><form method="post" action="http://diannaobos.com/zb_system/cmd.php?act=search"><input type="text" name="q" id="edtSearch" size="12" /><input type="submit" value="搜索" name="btnPost" id="btnPost" /></form>
+</span>
+<a href="http://diannaobos.com/" class="logo" title="电脑博士 "></a></div>
+
+  <header>
+    <div id="navbar"><span class="jieshao">电脑博士</span>
+      <a href="#" class="menubtn">menu</a>
+      <!-- use captain icon for toggle menu -->
+      <div id="hamburgermenu">
+        <ul class="dhgl"><li><a href="http://diannaobos.com/">首 页</a></li><li><a href="http://diannaobos.com/home/">导航</a></li><li><a href="http://diannaobos.com/frp/">内网穿透</a></li><li><a href="http://diannaobos.com/2.html">关于站长</a></li> <div class="clear"></div></ul>
+        <ul class="search clear"><form name="formsearch" id="formsearch" method="post" action="http://diannaobos.com/zb_system/cmd.php?act=search" target="_self" autocomplete="off"><input class="input" name="q" type="text" id="keyword"><input class="imgbt" type="submit" value=""></form></ul>
+      </div>
+    </div>
+    <div class="overlay"></div>
+  </header>
+<!--广告代码粘贴处--><div>博客交流QQ群693563350 <a style="color:red" href="https://www.diannaobos.com/605.html">赞助本站</a></div>
+<div id="place">你现在的位置：<a href="http://diannaobos.com/">网站首页</a> / <a href="http://diannaobos.com/category-7.html">FRP教程</a> / 正文内容</div>
+<div id="cennr">
+<div id="left">
+<!--广告代码粘贴处--><div></div>
+<dl id="info">
+<dt><h1>使用frp实现P2P点对点内网穿透</h1><span><em class="kan">3502</em><em class="ping">0</em></span>   <a href="http://diannaobos.com/category-7.html" title="FRP教程"  class="secai">FRP教程</a> | 2019年03月26日</dt>
+
+<dd id="zi"><p style="box-sizing: border-box; margin-top: 1.5em; margin-bottom: 1.5em; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal; word-break: break-all !important;"><span style="box-sizing: border-box; font-weight: 700; font-family: 宋体, SimSun; color: #000000;">因为国外vps延迟高到几乎不可用，又因为支付不起国内某某云们的高昂的带宽费用，好不容易实现了NAT穿透，而不得不忍受着网络的延迟，数据传输的缓慢？？（谁让我的网络没有公网地址呐！还穷！）</span></p><p style="box-sizing: border-box; margin-top: 1.5em; margin-bottom: 1.5em; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal; word-break: break-all !important;"><span style="font-family: 宋体, SimSun; color: #000000;">**这篇博文就是“你”的福音！！<br data-filtered="filtered" style="box-sizing: border-box;"/>绝对全网首发！<br data-filtered="filtered" style="box-sizing: border-box;"/>博主耗费巨大尽力亲自测试、验证！<br data-filtered="filtered" style="box-sizing: border-box;"/>不保证你看完可以实现跟我一样的效果，但绝对保证值得一看！ 觉着有用打赏点补贴服务器租金&nbsp;</span></p><h2 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px 0px; font-size: 1.75em; padding-bottom: 10px; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">各位客官请看：</span></h2><p><img src="http://diannaobos.com/zb_users/upload/2019/03/201903261553585129341767.png" title="2725933421.png" alt="2725933421.png"/></p><h4 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px; font-size: 18px; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">个中玄机，施主们自行参悟......(别打死我！工作太忙，没时间写文字说明，后续补上！:dog:)</span></h4><p style="box-sizing: border-box; margin-top: 1.5em; margin-bottom: 1.5em; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal; word-break: break-all !important;"><span style="font-family: 宋体, SimSun; color: #000000;">================================</span></p><div name="2018.12.12填坑了" data-unique="2018.12.12填坑了" style="box-sizing: border-box; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal;"></div><h3 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px 0px; font-size: 1.5em; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">填坑了</span></h3><div name="嗯..............怎么填呢？还是举例说明吧，对照上面拓扑。" data-unique="嗯..............怎么填呢？还是举例说明吧，对照上面拓扑。" style="box-sizing: border-box; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal;"></div><h4 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px; font-size: 18px; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">嗯..............怎么填呢？还是举例说明吧，对照上面拓扑。</span></h4><div name="一、需求" data-unique="一、需求" style="box-sizing: border-box; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal;"></div><h2 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px 0px; font-size: 1.75em; padding-bottom: 10px; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">一、需求</span></h2><div name="frpc（客户端）与Visitor（访问端）间通过UDP传输（适合frpcs服务端小水管食用，Client于Visitor之间不受服务端带宽限制，主要看C与V的出口带宽和你的宽带质量。）" data-unique="frpc（客户端）与Visitor（访问端）间通过UDP传输（适合frpcs服务端小水管食用，Client于Visitor之间不受服务端带宽限制，主要看C与V的出口带宽和你的宽带质量。）" style="box-sizing: border-box; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal;"></div><h4 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px; font-size: 18px; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">frpc（客户端）与Visitor（访问端）间通过UDP传输（适合frpcs服务端小水管食用，Client于Visitor之间不受服务端带宽限制，主要看C与V的出口带宽和你的宽带质量。）</span></h4><div name="二、配置" data-unique="二、配置" style="box-sizing: border-box; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal;"></div><h2 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px 0px; font-size: 1.75em; padding-bottom: 10px; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">二、配置</span></h2><div name="客户端配置（拓扑图中右边“客户端B”）" data-unique="客户端配置（拓扑图中右边“客户端B”）" style="box-sizing: border-box; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal;"></div><h3 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px 0px; font-size: 1.5em; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">客户端配置（拓扑图中右边“客户端B”）</span></h3><pre style="box-sizing: border-box; overflow: hidden; font-family: Menlo, Monaco, Consolas, &quot;Courier New&quot;, monospace; font-size: 13px; padding: 0px; margin-top: 1.5em; margin-bottom: 1.5em; line-height: 1.42857; color: rgb(255, 255, 255); word-break: break-all; word-wrap: break-word; background-color: rgb(63, 63, 63); border: none rgb(222, 229, 231); border-radius: 0px; position: relative;"><span style="font-family: 宋体, SimSun; color: #000000;">[common]<br/>server_addr = 1.1.1.8<br/>server_port = 7000<br/>token = xxxxxxxx<br/><br/>[p2p_rdp]<br/>type = stcp<br/>sk = 1234<br/>local_ip = 127.0.0.1<br/>local_port = 3389<br/></span></pre><div name="重点（拿出小本本记笔记！认真听）" data-unique="重点（拿出小本本记笔记！认真听）" style="box-sizing: border-box; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal;"></div><h3 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px 0px; font-size: 1.5em; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">重点</span></h3><pre style="box-sizing: border-box; overflow: hidden; font-family: Menlo, Monaco, Consolas, &quot;Courier New&quot;, monospace; font-size: 13px; padding: 0px; margin-top: 1.5em; margin-bottom: 1.5em; line-height: 1.42857; color: rgb(255, 255, 255); word-break: break-all; word-wrap: break-word; background-color: rgb(63, 63, 63); border: none rgb(222, 229, 231); border-radius: 0px; position: relative;"><span style="font-family: 宋体, SimSun; color: #000000;">[common]<br/>server_addr = 你的frpc服务器地址，上面用1.1.1.8举例<br/>server_port = 你的frpc服务器端口，注意vps的iptables、firewalld或者vps管理端安全组放行该端口！ &nbsp;<br/>token = 本端与服务器端认证密码，与服务器端配置一致！<br/><br/>[p2p_rdp] &nbsp;名字稍微注意一下，下文中visitor端配置用到。<br/>type = stcp &nbsp; 重点！！拓扑图中示例为xtcp，就稳定性和使用成功率而言目前xtcp不够成熟，优选stcp协议！<br/>sk = client端和visitor端认证密码，注意两端要一致，与服务器无关<br/>local_ip = 127.0.0.1<br/>local_port = 你需要开放出去的端口，拓扑中以windows远程桌面为例<br/></span></pre><div name="Visitor端配置（大部分配置教程也称之为“客户端”，我个人理解为访客端）" data-unique="Visitor端配置（大部分配置教程也称之为“客户端”，我个人理解为访客端）" style="box-sizing: border-box; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal;"></div><h3 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px 0px; font-size: 1.5em; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">Visitor端配置（大部分配置教程也称之为“客户端”，我个人理解为访客端）</span></h3><pre style="box-sizing: border-box; overflow: hidden; font-family: Menlo, Monaco, Consolas, &quot;Courier New&quot;, monospace; font-size: 13px; padding: 0px; margin-top: 1.5em; margin-bottom: 1.5em; line-height: 1.42857; color: rgb(255, 255, 255); word-break: break-all; word-wrap: break-word; background-color: rgb(63, 63, 63); border: none rgb(222, 229, 231); border-radius: 0px; position: relative;"><span style="font-family: 宋体, SimSun; color: #000000;">[common]<br/>server_addr = 1.1.1.8<br/>server_port = 7000<br/>token = xxxxxxxx<br/><br/>[RDP_visitor]<br/>type = stcp<br/>role = visitor<br/>server_name = p2p_rdp<br/>sk = 1234<br/>bind_addr = 127.0.0.1<br/>bind_port = 53389<br/></span></pre><div name="复习重点（认真听，过时不候！）" data-unique="复习重点（认真听，过时不候！）" style="box-sizing: border-box; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal;"></div><h3 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px 0px; font-size: 1.5em; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">复习重点</span></h3><pre style="box-sizing: border-box; overflow: hidden; font-family: Menlo, Monaco, Consolas, &quot;Courier New&quot;, monospace; font-size: 13px; padding: 0px; margin-top: 1.5em; margin-bottom: 1.5em; line-height: 1.42857; color: rgb(255, 255, 255); word-break: break-all; word-wrap: break-word; background-color: rgb(63, 63, 63); border: none rgb(222, 229, 231); border-radius: 0px; position: relative;"><span style="font-family: 宋体, SimSun; color: #000000;">[common]<br/>server_addr = 1.1.1.8<br/>server_port = 7000<br/>token = xxxxxxxx<br/><br/>[RDP_visitor] &nbsp;随意<br/>type = stcp &nbsp;与client端一致<br/>role = visitor &nbsp;好理解，这是“访客端”<br/>server_name = p2p_rdp &nbsp;注意上文中的提示，与client端配置一致<br/>sk = 1234 &nbsp; 还要再讲一次不？看笔记<br/>bind_addr = 127.0.0.1 &nbsp;<br/>bind_port = 53389 假如你配置的为该端口号<br/></span></pre><div name="配置都正确后，在visitor端打开你的远程桌面连接（以Windows为例），计算机：127.0.0.1:53389(注意端口号)" data-unique="配置都正确后，在visitor端打开你的远程桌面连接（以Windows为例），计算机：127.0.0.1:53389(注意端口号)" style="box-sizing: border-box; color: rgb(88, 102, 110); font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; white-space: normal;"></div><h3 style="box-sizing: border-box; font-family: &quot;Source Sans Pro&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft Yahei&quot;, SimSun, Helvetica, Arial, sans-serif; font-weight: 500; line-height: 1.1; color: rgb(64, 64, 64); margin: 1.5em 0px 0px; font-size: 1.5em; white-space: normal;"><span style="font-family: 宋体, SimSun; color: #000000;">配置都正确后，在visitor端打开你的远程桌面连接（以Windows为例），计算机：</span><code style="box-sizing: border-box; font-family: Menlo, Monaco, Consolas, &quot;Courier New&quot;, monospace; font-size: 18.9px; padding: 2px 4px; color: rgb(199, 37, 78); background-color: rgb(249, 242, 244); border-radius: 4px;"><span style="font-family: 宋体, SimSun; color: #000000;">127.0.0.1:53389</span></code><span style="font-family: 宋体, SimSun; color: #000000;">(注意端口号)</span></h3><p><br/></p><div id="apajax" style="display:none;"></div></dd>
+
+<dd id="post_nav">
+<a class="prev" href="http://diannaobos.com/post/807.html" title="树莓派搭建LNMP网站环境教程"></a><a class="next" href="http://diannaobos.com/post/809.html" title="树莓派搭建LAMP网站服务器"></a><p class="l"><a href="http://diannaobos.com/post/807.html" title="树莓派搭建LNMP网站环境教程">上一篇：树莓派搭建LNMP网站环境教程</a>
+</p>
+<p class="r"><a href="http://diannaobos.com/post/809.html" title="树莓派搭建LAMP网站服务器">下一篇：树莓派搭建LAMP网站服务器</a>
+ </p>
+
+<div class="clear"><!--广告代码粘贴处-->
+  <center><img width=200px src="https://diannaobos.com/zb_users/upload/2018/03/20180328125125152221268588492.jpg"/></a></center>
+  </div>
+</dd>
+
+<dd id="guan"><h2>猜你喜欢</h2>
+<ul>
+<li><span class="time">04-12</span><span class="title"><i class="icon-doc-text"></i><a href="http://diannaobos.com/post/417.html" title="CentOS/Ubuntu系统的FRP开机启动方法">CentOS/Ubuntu系统的FRP开机启动方法</a></span></li><li><span class="time">07-23</span><span class="title"><i class="icon-doc-text"></i><a href="http://diannaobos.com/post/492.html" title="FRP作者中文文档">FRP作者中文文档</a></span></li><li><span class="time">02-20</span><span class="title"><i class="icon-doc-text"></i><a href="http://diannaobos.com/post/360.html" title="利用FRP实现外网访问树莓派上的web服务">利用FRP实现外网访问树莓派上的web服务</a></span></li><li><span class="time">02-22</span><span class="title"><i class="icon-doc-text"></i><a href="http://diannaobos.com/post/362.html" title="FRP客户端linux一键安装脚本可加入service">FRP客户端linux一键安装脚本可加入service</a></span></li><li><span class="time">11-23</span><span class="title"><i class="icon-doc-text"></i><a href="http://diannaobos.com/post/752.html" title="FRP NSSM服务启动和停止脚本">FRP NSSM服务启动和停止脚本</a></span></li><li><span class="time">03-15</span><span class="title"><i class="icon-doc-text"></i><a href="http://diannaobos.com/post/636.html" title="梅林固件路由器使用frp方法">梅林固件路由器使用frp方法</a></span></li></ul></dd>
+
+</dl>
+
+
+
+</div>
+<div id="rigth"><dl class="function" id="divCatalog">
+<dt class="function_t">网站分类</dt><dd class="function_c">
+
+
+<ul><li><a href="http://diannaobos.com/category-1.html">电脑技术</a></li>
+<li><a href="http://diannaobos.com/category-4.html">Windows</a></li>
+<li><a href="http://diannaobos.com/category-5.html">Linux</a></li>
+<li><a href="http://diannaobos.com/category-6.html">Android</a></li>
+<li><a href="http://diannaobos.com/category-7.html">FRP教程</a></li>
+<li><a href="http://diannaobos.com/category-8.html">建站</a></li>
+<li><a href="http://diannaobos.com/category-9.html">科技</a></li>
+<li><a href="http://diannaobos.com/category-10.html">网络</a></li>
+<li><a href="http://diannaobos.com/category-11.html">主机评测</a></li>
+<li><a href="http://diannaobos.com/category-15.html">苹果</a></li>
+</ul>
+
+</dd>
+</dl><dl class="function" id="1">
+<dt class="function_t">FRP包教会服务</dt><dd class="function_c">
+
+<div><a href="https://item.taobao.com/item.htm?spm=a230r.1.14.45.67453e90jnhaMN&id=563803332616&ns=1&abbucket=15#detail" target="_blank"><img src="https://gd1.alicdn.com/imgextra/i4/3488695135/TB2ycEfmhPI8KJjSspfXXcCFXXa_!!3488695135.png"><br />
+FRP内网穿透搭建服务，请说下你的需求，我看看是否可以满足你的需求，购买后我会全程教会使用，包括搭建服务器，客户端的使用，服务器（VPS）自行提供。
+用途：我们这个程序的作用是异地访问阿里云ip或其他云服务器的ip就可以访问指定内网端口，付费帮你搭建内网穿透服务器和配置好客户端，在异地访问家或公司内网中的端口上的服务，可用于微信开发和网站调试。</a></div>
+
+
+</dd>
+</dl><dl class="function" id="">
+<dt style="display:none;"></dt><dd class="function_c">
+
+<div><a href="http://wpa.qq.com/msgrd?v=3&uin=787972938&site=qq&menu=yes" target="_blank"><img src="https://ws3.sinaimg.cn/large/005BYqpggy1g12g3gc3x0j30b40b43z5.jpg"></a></div>
+
+
+</dd>
+</dl><dl class="function" id="divLinkage">
+<dt class="function_t">友情链接</dt><dd class="function_c">
+
+<div><li><a href="https://napyy.com/" target="_blank"><font color="#FF0000" size="4">内网穿透,动态DNS</font></a></li>
+<li><a href="http://www.hddsd.com/" target="_blank">好东东商店</a></li>
+<li><a href="http://ximcx.cn/" target="_blank">西门吹雪</a></li>
+<li><a href="http://www.z18zs.com/" target="_blank">捷闪站长网</a></li>
+<li><a href="http://www.crazewolf.com/" target="_blank">垃圾狗</a></li>
+<li><a href="http://coderschool.cn/" target="_blank">技术拉近你我</a></li>
+<li><a href="https://www.qiujiahui.com/" target="_blank">Tech Trace</a></li>
+<li><a href="https://www.wn789.com/" target="_blank">蜗牛789</a></li>
+<li><a href="http://www.lijian.me/" target="_blank">李子博客</a></li>
+<li><a href="http://woshilijie.com/" target="_blank">李洁博客</a></li>
+<li><a href="http://www.hunyl.com" target="_blank">阳光博客</a></li>
+<li><a href="http://www.teddybell.cf/" target="_blank">啤酒加冰</a></li>
+<li><a href="http://www.nwct.me/" target="_blank">内网穿透</a></li>
+<li><a href="https://blog.wxlost.com/" target="_blank">迷失的笔记</a></li>
+<li><a href="https://www.yd631.com/" target="_blank">VPS推荐</a></li>
+<li><a href="http://hongsehuoxian.com/" target="_blank">java开发</a></li>
+<li><a href="http://www.58zn.cn/" target="_blank">魅力博客</a></li>
+<li><a href="https://www.linlu.run/" target="_blank">灵鹿博客</a></li>
+<li><a href="http://www.autoth.cn" target="_blank">小Z的一天</a></li>
+<li><a href="http://60t.org/" target="_blank">搞一个大新闻</a></li>
+<li><a href="http://7minlicai.cn/" target="_blank">7分钟理财</a></li>
+<li><a href="https://krito.me/" target="_blank">krito's Blog</a></li>
+<li><a href="https://ithor.me/" target="_blank">Coole's Blog</a></li>
+</div>
+
+
+</dd>
+</dl></div></div>
+<div class="clear"></div>
+
+<div  id="footer">
+<center><p>Powered By 电脑博士</p></center>
+<center><a href="http://diannaobos.com/440.html">版权声明</a>|<a href="http://diannaobos.com/442.html">法律声明</a>|<a href="http://diannaobos.com/441.html">下载声明</a>|<a href="http://diannaobos.com/sitemap.xml">网站地图</a><br />本站发布的系统与软件仅为个人学习测试使用，请在下载后24小时内删除，不得用于任何商业用途，否则后果自负，请支持购买微软正版软件！如侵犯到您的权益,请及时通知我们,我们会及时处理。<br />Copyright <a href="/">电脑博士</a> 2016-2019.Some Rights Reserved.</center><br>    <div class="Mydav">        <div title="关闭广告" class="Mydav_close"></div>        <a title="马上去看看~" target="_blank" href="http://www.hddsd.com">            <img src="http://diannaobos.com/zb_users/upload/2019/05/20190525160730155877165047628.jpg" />        </a></div><style type="text/css">    @import url(http://diannaobos.com/dav/dav.css);    </style>    <script src="http://diannaobos.com/dav/dav.js" type="text/javascript"></script><div style="width:300px;margin:0 auto; padding:20px 0;"><a href="http://www.miitbeian.gov.cn/" style="display:inline-block;text-decoration:none;height:20px;line-height:20px;" target="_blank"><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px; color:#939393;">浙ICP备16017479号-1</p></a><a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=33102202000169" style="display:inline-block;text-decoration:none;height:20px;line-height:20px;"><img src="http://diannaobos.com/zb_users/upload/2016/08/beianlogo.png" style="float:left;"/><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px; color:#939393;">浙公网安备 33102202000169号</p></a>		 	</div><span style="display:none"><script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1261008847'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1261008847' type='text/javascript'%3E%3C/script%3E"));</script></span></div>
+</div>
+<div id="QPlayer">
+<div id="pContent">
+	<div id="player">
+		<span class="cover"></span>
+		<div class="ctrl">
+			<div class="musicTag marquee">
+				<strong>Title</strong>
+				 <span> - </span>
+				<span class="artist">Artist</span>
+			</div>
+			<div class="progress">
+				<div class="timer left">0:00</div>
+				<div class="contr">
+					<div class="rewind icon"></div>
+					<div class="playback icon"></div>
+					<div class="fastforward icon"></div>
+				</div>
+				<div class="right">
+					<div class="mochulie icon"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="ssBtn">
+	        <div class="adf"></div>
+    </div>
+</div>
+<ol id="playlist"></ol>
+</div>
+<script>
+	var	playlist = [{title:"非酋",artist:"none",mp3:"http://soft.kskxs.com/mp3/06-fq.mp3",cover:"https://imgessl.kugou.com/uploadpic/softhead/400/20170822/20170822101509956.jpg",},{title:"空空如也",artist:"none",mp3:"http://soft.kskxs.com/mp3/05-kkry.mp3",cover:"https://ss0.baidu.com/6ONWsjip0QIZ8tyhnq/it/u=465663213,1142843440&fm=58&bpow=640&bpoh=520",},{title:"最美的期待",artist:"none",mp3:"http://soft.kskxs.com/mp3/04-zmdqd.mp3",cover:"https://imgessl.kugou.com/uploadpic/softhead/400/20180718/20180718110356316.jpg",},{title:"带你去旅行",artist:"none",mp3:"http://soft.kskxs.com/mp3/03-dnqlx.mp3",cover:"https://imgessl.kugou.com/uploadpic/softhead/400/20180615/20180615175439189.jpg",},{title:"体面",artist:"none",mp3:"http://soft.kskxs.com/mp3/02-tm.mp3",cover:"https://imgessl.kugou.com/uploadpic/softhead/400/20181207/20181207170840755.jpg",},{title:"烟火里的尘埃",artist:"none",mp3:"http://soft.kskxs.com/mp3/01-yhldca.mp3",cover:"http://imgxc1.kwcdn.kuwo.cn/star/koowoLive/0/0/1506685785663_0.jpg",},
+];
+  var isRotate = true;
+  var autoplay = false;
+</script>
+
+<script>
+function bgChange(){
+	var lis= $('.lib');
+	for(var i=0; i<lis.length; i+=2)
+	lis[i].style.background = 'rgba(246, 246, 246, 0.5)';
+}
+window.onload = bgChange;
+</script><script type="text/javascript" src="http://diannaobos.com/zb_users/plugin/APlayer/APlayer.min.js?v=1.6.0"></script>
+<script>function apajaxload(){var APlayers=[];var APlayerOptions=[];if($("#apajax").length>0){eval($("#apajax").text());var len=APlayerOptions.length;for(var i=0;i<len;i++){APlayers[i]=new APlayer({element:document.getElementById('ap'+APlayerOptions[i]['id']),narrow:APlayerOptions[i]['narrow'],autoplay:APlayerOptions[i]['autoplay'],showlrc:APlayerOptions[i]['showlrc'],mutex:APlayerOptions[i]['mutex'],theme:APlayerOptions[i]['theme'],mode:APlayerOptions[i]['mode'],preload:APlayerOptions[i]['preload'],listmaxheight:APlayerOptions[i]['listmaxheight'],music:APlayerOptions[i]['music']})}}}apajaxload();</script><script language="javascript" src="http://diannaobos.com/zb_users/plugin/mochu_music/js/jquery.marquee.min.js"></script>
+<script language="javascript" src="http://diannaobos.com/zb_users/plugin/mochu_music/js/player.js"></script>
+</body>
+</html>
+<!--30.45 ms , 9 query , 2560kb memory , 0 error-->

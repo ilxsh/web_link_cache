@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="origin">
+    <meta property="og:description" content="国人讲CRC的没有什么能讲明白的文章，除了一篇《我学习 CRC32、CRC16、CRC 原理和算法的总结（与 WINRAR 结果一致）》，这里先感谢他，另，他也有一些没有说明白的地方，怎么说呢，还是鄙">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <title>【脑冻结】CRC我就拿下了 - poiu_elab - 博客园</title>
+    
+    <link rel="stylesheet" href="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+    <link id="MainCss" rel="stylesheet" href="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-mountainink.css">
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-mountainink-mobile.css">
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/poiu-elab/rss">
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/poiu-elab/rsd.xml">
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/poiu-elab/wlwmanifest.xml">
+    <script src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_2019093001.js"></script><script async="" src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script type="text/javascript" src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/encoder.js"></script><script src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js"></script>
+    <script>
+        var currentBlogId = 106774;
+        var currentBlogApp = 'poiu-elab';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+    </script>
+    
+    
+    
+<link rel="preload" href="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2019093001.js" async=""></script></head>
+<body>
+    <a name="top"></a>
+    
+    
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+        <a id="lnkBlogLogo" href="https://www.cnblogs.com/poiu-elab/"><img id="blogLogo" src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.gif" alt="返回主页"></a>		
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/poiu-elab/">poiu_elab</a>
+</h1>
+<h2>
+
+</h2>
+
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li>
+</li>
+<li>
+
+</li>
+<li>
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+</li>
+<li>
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/poiu_elab">
+联系</a></li>
+<li>
+
+<!--<partial name="./Shared/_XmlLink.cshtml" model="Model" /></li>--></li>
+<li>
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+</ul>
+
+
+		<div class="blogStats">
+			
+			<span id="stats_post_count">随笔 - 
+97&nbsp; </span>
+<span id="stats_article_count">文章 - 
+0&nbsp; </span>
+<span id="stats-comment_count">评论 - 
+13</span>
+
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		<div id="post_detail">
+    <!--done-->
+    <div id="topics">
+        <div class="post">
+            <h1 class="postTitle">
+                
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/poiu-elab/archive/2012/10/22/2734715.html">【脑冻结】CRC我就拿下了</a>
+
+            </h1>
+            <div class="clear"></div>
+            <div class="postBody">
+                
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <p>国人讲CRC的没有什么能讲明白的文章，除了一篇《我学习 CRC32、CRC16、CRC 原理和算法的总结（与 WINRAR 结果一致）》，这里先感谢他，另，他也有一些没有说明白的地方，怎么说呢，还是鄙人自己来吧。</p>
+<p>我弄明白CRC这个原理和算法主要参考的是上面的国人的那篇和这个外国的《A PAINLESS GUIDE TO CRC ERROR DETECTION ALGORITHMS INDEX V3.00 (9/24/96)》，地址 <a href="http://www.repairfaq.org/filipg/LINK/F_crc_v3.html">http://www.repairfaq.org/filipg/LINK/F_crc_v3.html</a> 这两篇大作。</p>
+<p>首先要明确的是CRC只是一种错误检错的码，而没有纠正的作用，那么纠错码可以通过对原数据的+/-/*/÷等进行，但是+/-的问题太大，比如都
+是对原数据每个bit进行累加运算，如果出错了的话，比如有1bit的1变为0，1bit的0变为1，+/-运算完全识别不出这种错误，显然这种错误除法
+的辨认概率是非常大的，于是不知道哪位大神就把CRC这种校验方式给搞出来了。</p>
+<p>这里我先介绍一下CRC的运算方式，其实就是一个数去除以生成多项式，余数就是CRC校验码，但是这里的除法和现实意义上面的除法有点出入。</p>
+<p>首先先看一下原始的除法取余运算。正常除法，120÷9=13…3，这里的余数即是我们所要的校验位的码字。</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 1 0 1<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ______________ <br>1 0 0 1/ 1 1 1 1 0 0 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 被除数120是1111000，除数9是1001 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 1<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------- <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 1 0 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 第一次减法后得到011<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 1<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------- <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 1 0 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 第二次减法后得到0101<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 1<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------- <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 1&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; 余数是3</pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>这里用的是真正的减法，不好用，要用减法真的，于是将所有减法运算都用XOR运算替换掉，CRC就横空出世了，这里还用120这个数举例子，CRC所用的除法里，120÷9=14…6</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 1 1 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ______________ <br>1 0 0 1/ 1 1 1 1 0 0 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 被除数120是1111000，除数9是1001 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 1<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------- <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 1 0 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 第一次XOR后得到011<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 1<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------- <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 1 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 第二次XOR后得到0101<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 1<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------- <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 1 0&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; 余数是6</pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>这里的6就是真正的CRC校验码，那么他是谁的CRC呢？注意，他不是120的CRC校验码，而是15(0x0F)的CRC校验码，这里为啥是这
+样，只能说是规定，因为CRC相当于是余数，如果说110b是1111b的CRC校验码，那么将1111 
+110b排成一排送入CRC模块，剩余的余数就应该是0，规定就是这样的。所以对于110b只能说他是1111b的CRC校验码，不能说他是
+1111000b的CRC校验码。</p>
+<p>通过这个例子，可以说明CRC这种算法的结构，对1111b进行CRC校验运算，校验码是110b，其中，1111b为数据，1001b（9）就是
+生成多项式，这里的CRC位数为3，记为W=3，因为是在1111b后面追加3bit的数据，所以是CRC3，生成多项式可以写作g(x) = 
+x3+1。以此为例来循序渐进的介绍CRC的3种计算方法。</p>
+<p>一、直接计算法</p>
+<p>直接计算法就是用寄存器去模拟上面的CRC除法过程，我们假设待测数据是11 0101 1011，生成项是10011（g(x) = 
+x4+x+1），需要有一个4bit的寄存器（因为每次的最高位都必定被XOR为0或者是移位直到最高位为0再XOR），通过反复的移位和进行CRC的除
+法，最终该寄存器中的值就是我们所要求的余数。开始<br><br>1) 待测数据后扩展W=4个比特0，变成1101011011 0000(augmented message)； <br>2) 寄存器初始化置0； <br>3) 先在寄存器中移入数据1101； <br>4)
+ 
+寄存器左移一位，并且右边移入下一位数据0。这样最高位1移出，由于最高位是1，故本次的商是1，要用除数1001来进行XOR，最高位肯定XOR得0，
+故不管它，只要用低4位0011来进行XOR就可以，即0011对此时寄存器进行XOR，寄存器中得到1001，即第一次 XOR 
+后的结果（相当于是数据11010与生成项10011进行了一次XOR，并把最高位0消掉了）。 
+如果移出的最高位是0，则用0000来进行XOR（相当于只是进行了移位）。 <br>5) 一直重复这个过程，就能得到最后余数了。<br><br></p>
+<div class="cnblogs_code">
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; 2&nbsp;&nbsp; 1&nbsp;&nbsp; 0&nbsp;&nbsp; Bits<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +---+---+---+---+<br>&nbsp;Pop! &lt;-- |&nbsp;&nbsp; |&nbsp;&nbsp; |&nbsp;&nbsp; |&nbsp;&nbsp; | &lt;----- Augmented message(1101011011 0000)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +---+---+---+---+</pre>
+</div>
+<p>代码描述如下</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #0000ff;">#define</span> CRC_WIDTH   4
+<span style="color: #0000ff;">#define</span> CRC_POLY    0x3     <span style="color: #008000;">//</span><span style="color: #008000;"> 0011b</span>
+
+<span style="color: #008000;">//</span><span style="color: #008000;"> load data</span>
+    data = <span style="color: #800080;">0x35B</span>;           <span style="color: #008000;">//</span><span style="color: #008000;"> 1101011011b
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> append W zeros to the data</span>
+    data &lt;&lt;=<span style="color: #000000;"> CRC_WIDTH;
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> initial the regs</span>
+    regs = <span style="color: #800080;">0</span><span style="color: #000000;">;
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> processing</span>
+    <span style="color: #0000ff;">for</span>(shift_bit=DATA_WIDTH+CRC_WIDTH; shift_bit&gt;<span style="color: #800080;">0</span>; shift_bit--<span style="color: #000000;">){
+    </span><span style="color: #008000;">//</span><span style="color: #008000;"> shift</span>
+        regs = (regs&lt;&lt;<span style="color: #800080;">1</span>) | ((data&gt;&gt;(shift_bit-<span style="color: #800080;">1</span>))&amp;<span style="color: #800080;">0x1</span><span style="color: #000000;">);
+    </span><span style="color: #008000;">//</span><span style="color: #008000;"> xor</span>
+        <span style="color: #0000ff;">if</span>(regs&gt;&gt;CRC_WIDTH)     regs = regs ^<span style="color: #000000;"> CRC_POLY;
+    }</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>这种方法是最直观的方法，先理解了这种方法才能理解后面的方法，从这里的C代码到硬件实现就更简单了，画出电路图</p>
+<div class="cnblogs_code">
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +---+&nbsp;&nbsp; +---+&nbsp;&nbsp; +---+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +---+<br>&nbsp;&nbsp;&nbsp; +&lt;--|&nbsp;&nbsp; |&lt;--|&nbsp;&nbsp; |&lt;--|&nbsp;&nbsp; |&lt;--XOR&lt;--|&nbsp;&nbsp; |&lt;--XOR&lt;-- Augmented message<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp; +---+&nbsp;&nbsp; +---+&nbsp;&nbsp; +---+&nbsp;&nbsp;&nbsp; ^&nbsp;&nbsp;&nbsp; +---+&nbsp;&nbsp;&nbsp; ^<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br>&nbsp;&nbsp;&nbsp; +----------------------------+-------------+</pre>
+</div>
+<p>稍微体会一下就会明白，看清XOR的位置，对应除法的时候异或运算的处理，就好。</p>
+<p>&nbsp;</p>
+<p>二、驱动表法（table drive）</p>
+<p>故名思议，驱动表法就是查表，预先生成一个表，就省得每次都进行XOR费时费力，驱动表法的概念推导却是全靠了直接计算法得来的。（但是其实驱动表法并不是我们常用的查表法，常用的查表法这里被称为“直接查表法”，这是后话。）具体怎么来的呢，听我慢慢道来</p>
+<p>首先，举个例子，待测数据是1011 0100b，生成多项式比如是1 0001 
+1100b，那么我们比如想做的是4bit的查找表，这里查找表的大小其实是无关紧要的，只不过一般都用的是8bit的查找表，因为一般的数据都是以
+byte为单位的，如果是4bit的查找表那么我们的表大小就是16，但是每个表单元还是根据CRC的宽度定的，话不多说，先来看看直接法计算的过程，</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #800080;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 1 1 1 0 0 0 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ________________________________<br>1 0 0 0 1 1 1 0 0/ 1 0 1 1 0 1 0 0 0 0 0 0 0 0 0 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 0 1 1 1 0 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -------------------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 1 1 0 1 0 0 0 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 0 1 1 1 0 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -------------------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 1 0 0 1 1 0 0 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 0 1 1 1 0 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -------------------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 0 0 1 0 0 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 0 0 1 1 1 0 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -------------------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 0 1 0 0 0 0 0<br></span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>&nbsp;首先，要知道的是A^B^C = A^(B^C)，那么我们在使用直接计算法的时候，针对前4bit，我们需要计算4次，3次都是要计算与生成多项式的XOR结果，那么查表法应运而生，看下面的式子</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>                                   <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span><span style="color: #000000;"> 
+                  ________________________________
+</span><span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span>/ <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span>
+                   <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0              ---&gt;</span>
+                     <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0            ---&gt;</span>
+                       <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0          ---&gt;</span>
+                         <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0        ---&gt;</span>
+                   -------------------------------
+                           <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span>
+                           <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span>
+                   -------------------------------
+                                   <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>我们用空间去换时间，计算4次，并且知道要计算的高4bit是1011，那么我们把根据生成多项式进行移位，得出的高4bit为index的table中查出后面的8bit就可以相当于原来的4次高4bit的XOR运算，就可以变成这样</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>                                   <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span><span style="color: #000000;"> 
+                  ________________________________
+</span><span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span>/ <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span><span style="color: #000000;">
+                  (</span><span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span>)<span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span>
+                   -------------------------------
+                           <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span>
+                           <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span>
+                   -------------------------------
+                                   <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">1</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span> <span style="color: #800080;">0</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>即是说，应用POLY（生成多项式）来搞出4bit的查找表，index是由生成多项式的最高bit进行移位和XOR运算得到，内容当然也就是上面这样的XOR的后面8bit的结果，针对上面的例子，查找表的生成函数是这样的</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #0000ff;">#define</span> LUT_WIDTH   4
+<span style="color: #0000ff;">#define</span> CRC_WIDTH   8
+<span style="color: #0000ff;">#define</span> CRC_POLY    0x11C
+
+<span style="color: #0000ff;">for</span>(index=<span style="color: #800080;">0</span>; index&lt;(<span style="color: #800080;">1</span>&lt;&lt;LUT_WIDTH); index++<span style="color: #000000;">){
+    temp </span>= <span style="color: #800080;">0</span><span style="color: #000000;">;
+    </span><span style="color: #0000ff;">for</span>(bit_cnt=LUT_WIDTH; bit_cnt&gt;<span style="color: #800080;">0</span>; bit_cnt--<span style="color: #000000;">){
+        </span><span style="color: #0000ff;">if</span>((index&gt;&gt;(bit_cnt-<span style="color: #800080;">1</span>) ^ temp&gt;&gt;(CRC_WIDTH-<span style="color: #800080;">1</span>))&amp;<span style="color: #800080;">0x1</span>)  temp = (temp&lt;&lt;<span style="color: #800080;">1</span>) ^<span style="color: #000000;"> CRC_POLY;
+        </span><span style="color: #0000ff;">else</span>                                                temp &lt;&lt;= <span style="color: #800080;">1</span><span style="color: #000000;">;
+    }
+    table[index] </span>= (unsigned <span style="color: #0000ff;">char</span><span style="color: #000000;">)temp;
+}</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>这样，表就制作完成了，好进入正题，接着就开始驱动表法的计算方法了，拿到表之后要怎么查呢？（4bit的没人用，为了描述方便，以常用的8bit index的查找表为例叙述）</p>
+<p>1)register左移一个字节,从原始数据中读入一个新的字节. &nbsp;<br>2)利用刚从register移出的字节作为index定位table中的一个值 &nbsp;<br>3)把这个值XOR到register中。 <br>4)如果还有未处理的数据则回到第一步继续执行。 </p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>              <span style="color: #800080;">1</span>    <span style="color: #800080;">0</span><span style="color: #000000;">   Bytes
+           </span>+----+----+
+    +-----&lt;|    |    | &lt;-----<span style="color: #000000;"> Augmented message
+    </span>|      +----+----+
+    |           ^
+    |           |
+    |<span style="color: #000000;">          XOR
+    </span>|           |
+    |     <span style="color: #800080;">0</span>+----+----+<span style="color: #000000;">
+    v      </span>+----+----+
+    |      +----+----+
+    |      +----+----+
+    |      +----+----+
+    |      +----+----+
+    |      +----+----+
+    +-----&gt;+----+----+
+           +----+----+
+           +----+----+
+           +----+----+
+           +----+----+
+        <span style="color: #800080;">255</span>+----+----+</pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>这里举个计算的例子，计算0x31, 0x32, 0x33, 0x34对CRC-CCITT（CRC16，POLY=0x1021）的计算。高亮的字体就是每一步的寄存器中的数据。</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #800080;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; __________________<br>&nbsp; 10 21/ <span style="font-family: 黑体;"><em><strong>31 32</strong></em></span> 33 34 00 00<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 26 72&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --&gt; index=31<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: 黑体;"><em><strong>14 41</strong></em></span> 34 00 00<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 52 B5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --&gt; index=14<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: 黑体;"><em><strong>13 81</strong></em></span> 00 00<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 22 52&nbsp;&nbsp;&nbsp;&nbsp; --&gt; index=13<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: 黑体;"><em><strong>A3 52</strong></em></span> 00<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 85 89&nbsp; --&gt; index=A3<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: 黑体;"><em><strong>D7 89</strong></em></span><br></span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>计算过程代码描述</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>unsigned <span style="color: #0000ff;">char</span>   buff[] = {<span style="color: #800080;">0x31</span>, <span style="color: #800080;">0x32</span>, <span style="color: #800080;">0x33</span>, <span style="color: #800080;">0x34</span><span style="color: #000000;">};
+unsigned </span><span style="color: #0000ff;">int</span>    len  = <span style="color: #0000ff;">sizeof</span><span style="color: #000000;">(buff);
+unsigned </span><span style="color: #0000ff;">char</span>   *<span style="color: #000000;">pointer;
+unsigned </span><span style="color: #0000ff;">int</span><span style="color: #000000;">    regs;
+
+pointer </span>=<span style="color: #000000;"> buff;
+regs </span>= <span style="color: #800080;">0</span><span style="color: #000000;">;
+</span><span style="color: #0000ff;">while</span>(len--<span style="color: #000000;">){
+    regs </span>= ((regs&lt;&lt;<span style="color: #800080;">8</span>)|*pointer++) ^ table[(regs&gt;&gt;<span style="color: #800080;">8</span>)&amp;<span style="color: #800080;">0xFF</span><span style="color: #000000;">];
+}
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> append zeros to finish the calculation</span>
+<span style="color: #0000ff;">for</span>(i=<span style="color: #800080;">0</span>; i&lt;<span style="color: #800080;">2</span>; i++<span style="color: #000000;">){
+    regs </span>= (regs&lt;&lt;<span style="color: #800080;">8</span>) ^ table[(regs&gt;&gt;<span style="color: #800080;">8</span>)&amp;<span style="color: #800080;">0xFF</span><span style="color: #000000;">];
+}</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>&nbsp;</p>
+<p>三、直驱表法（direct table）</p>
+<p>这才是平常软硬件正常使用的方法，先来看看他的庐山真面目（对比图，CRC32），先看下CRC32的驱动表法的图形</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; Bytes<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; +-----&lt;|&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; | &lt;----- Augmented message<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ^<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; XOR<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 0+----+----+----+----+<br>&nbsp;&nbsp;&nbsp; v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; +-----&gt;+----+----+----+----+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 255+----+----+----+----+</pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>首先要明确的就是，驱动表法，寄存器的初始值必须是0，之后开始运算，如果不是0的话相当于是在原数据的最高位前面insert了数据，之后，就是
+后面加上去的0，其实没有真正的作用观察前面{31 32 33 
+34}计算的表就能得出这个结论，0的实际意义就是要为了把前面的数据都送进register里面进行运算。英文原文解释如下（但是我没看懂 
+后来自己琢磨明白的）</p>
+<p>TAIL<br>&nbsp;&nbsp;&nbsp; The W/4 augmented zero bytes that appear 
+at the end of the message will be pushed into the register from the 
+right as all the other bytes are, but their values (0) will have no 
+effect whatsoever on the register because 1) XORing with zero does not 
+change the target byte, and 2) the four bytes are never propagated out 
+the left side of the register where their zeroness might have some sort 
+of influence. Thus, the sole function of the W/4 augmented zero bytes is
+ to drive the calculation for another W/4 byte cycles so that the end of
+ the REAL data passes all the way through the register. <br>HEAD<br>&nbsp;&nbsp;&nbsp;
+ If the initial value of the register is zero, the first four iterations
+ of the loop will have the sole effect of shifting in the first four 
+bytes of the message from the right. This is because the first 32 
+control bits are all zero and so nothing is XORed into the register. 
+Even if the initial value is not zero, the first 4 byte iterations of 
+the algorithm will have the sole effect of shifting the first 4 bytes of
+ the message into the register and then XORing them with some constant 
+value (that is a function of the initial value of the register). <br><br>These facts, combined with the XOR property<br>(A xor B) xor C = A xor (B xor C)</p>
+<p>&nbsp;</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #800080;">&nbsp;        <span style="font-family: 黑体;"><em><strong>31 32</strong></em></span> 33 34 00 00  --&gt; data(1)=31, data(2)=32, data(3)=33, data(4)=34<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 26 72&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --&gt; index(1)=31, 31 = data(1) ^ 00<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: 黑体;"><em><strong>14 41</strong></em></span> 34 00 00<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 52 B5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --&gt; index(2)=14, 14 = data(2) ^ table(index(1))[15:8]<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: 黑体;"><em><strong>13 81</strong></em></span> 00 00<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 22 52&nbsp;&nbsp;&nbsp;&nbsp; --&gt; index(3)=13, 13 = data(3) ^ table(index(2))[15:8] ^ table(index(1))[7:0]<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: 黑体;"><em><strong>A3 52</strong></em></span> 00<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 85 89&nbsp; --&gt; index(4)=A3, A3 = data(4) ^ table(index(3))[15:8] ^ table(index(2))[7:0]<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="font-family: 黑体;"><em><strong>D7 89</strong></em></span></span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>观察每一步的index，就会发现，如果是CRC-CCITT的计算，其实的话每一步的index和最终结果都可以这么表示</p>
+<div class="cnblogs_code">
+<pre>index(n) = data(n)[<span style="color: #800080;">7</span>:<span style="color: #800080;">0</span>] ^ table(index(n-<span style="color: #800080;">1</span>))[<span style="color: #800080;">15</span>:<span style="color: #800080;">8</span>] ^ table(index(n-<span style="color: #800080;">2</span>))[<span style="color: #800080;">7</span>:<span style="color: #800080;">0</span><span style="color: #000000;">];
+result </span>= index(last);</pre>
+</div>
+<p>于是再看直驱表法的图形</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>&nbsp;&nbsp;&nbsp; +-----&lt;Message (non augmented)<br>&nbsp;&nbsp;&nbsp; |<br>&nbsp;&nbsp;&nbsp; v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; Bytes<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp; XOR----&lt;|&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; |<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ^<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; XOR<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 0+----+----+----+----+<br>&nbsp;&nbsp;&nbsp; v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp; +-----&gt;+----+----+----+----+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +----+----+----+----+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 255+----+----+----+----+</pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>算法描述</p>
+<p>1) Shift the register left by one byte(this byte is called top byte), reading in a new message byte.<br>2) XOR the top byte with the next message byte to yield an index into the table ([0,255]).<br>3) XOR the table value into the register.<br>4) Goto 1 if more message to be processed. </p>
+<p>代码这样</p>
+<div class="cnblogs_code">
+<pre><span style="color: #008000;">//</span><span style="color: #008000;"> direct table crc calculation， CRC16</span>
+    pointer =<span style="color: #000000;"> buff;
+    regs </span>=<span style="color: #000000;"> CRC_INIT;
+    </span><span style="color: #0000ff;">for</span>(i=<span style="color: #800080;">0</span>; i&lt;len; i++<span style="color: #000000;">){
+        regs </span>= (regs&lt;&lt;<span style="color: #800080;">8</span>) ^ table[(regs&gt;&gt;<span style="color: #800080;">8</span>)&amp;<span style="color: #800080;">0xFF</span> ^ *pointer++<span style="color: #000000;">];
+    }</span></pre>
+</div>
+<p>这样的话如果使用这种方法，那么最后append 
+zero的0，因为XOR运算，所以XOR0还是原来的数，于是最后两步的0就省掉了（注：这个过程是首先有了驱动表法，根据计算过程推出了直驱表法，再
+接着由于推出的直驱表法而省略掉了最后面的augmented zeros）。</p>
+<p>还举例子为31323334，POLY还是0x1021的例子</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #800080;">31 --&gt; <span style="font-family: 黑体;"><em><strong>00 00</strong></em></span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="text-decoration: underline;">31</span> 26<span style="font-family: tahoma,arial,helvetica,sans-serif;"><span style="color: #800080;"> 72</span></span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>32 -----&gt; <span style="font-family: 黑体;"><em><strong>26 72</strong></em></span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="text-decoration: underline;">14</span> 52 B5<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>33 --------&gt; <span style="font-family: 黑体;"><em><strong>20 B5</strong></em></span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="text-decoration: underline;">13</span> 22 52<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>34 -----------&gt; <span style="font-family: 黑体;"><em><strong>97 52</strong></em></span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="text-decoration: underline;">A3</span> 85 89<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong><em><span style="font-family: 黑体;">D7 89</span></em></strong><br></span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>&nbsp;下划线的是每一步的index，高亮的是每一步寄存器中留下的值，可以看出，每一步留下的值相当于都是前面的数据计算所得的CRC校验
+码。而这里的00，是真正意义上的CRC_INIT，就是寄存器的初始值，其实我觉得反映的就是接着前面计算CRC值再继续进行计算，因为寄存器中每次的
+值相当于都是前面输入数据的CRC值，那么寄存器中有啥都是前面数据留下的真正的CRC值，所以寄存器的初始值就是这个意思，在什么样的基础上继续进行
+CRC的计算。</p>
+<p>四、CRC计算模型</p>
+<p>CRC不止这点东西，还有一些其他的东西要处理，比如CRC其实都是有model的，不光是CRC的POLY和INIT</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #000000;">Name&nbsp;&nbsp; : "CRC-32" <br>Width&nbsp; : 32 <br>Poly&nbsp;&nbsp; : 04C11DB7 <br>Init&nbsp;&nbsp; : FFFFFFFF <br>RefIn&nbsp; : True <br>RefOut : True <br>XorOut : FFFFFFFF <br>Check&nbsp; : CBF43926<br></span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>这里面知道的不解释，</p>
+<p>RefIn&nbsp; 指的就是如果这个值是FALSE，表示待测数据的每个字节都不用“颠倒”，即BIT7仍是作为最高位，BIT0作为最低位。 如果这个值是TRUE，表示待测数据的每个字节都要先“颠倒”，即BIT7作为最低位，BIT0作为最高位。</p>
+<p>RefOut&nbsp; 是说如果这个值是FALSE，表示计算结束后，寄存器中的值直接进入XOROUT处理即可。 
+如果这个值是TRUE，表示计算结束后，寄存器中的值要先“颠倒”，再进入XOROUT处理。注意，这是将整个寄存器的值颠倒，由最高bit到最低bit
+进行颠倒。</p>
+<p>XorOut&nbsp; 这个值与经RefOut后的寄存器的值相XOR，得到的值就是最终正式的CRC值！</p>
+<p>Check&nbsp; 就是字符串"123456789"（就是16进制的0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39）经过这个CRC运算的结果作为一个标准，来帮助你检查你的算法是否正确的指标。</p>
+<p>常用的CRC model还有</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>Name&nbsp;&nbsp; : "CRC-16" <br>Width&nbsp; : 16 <br>Poly&nbsp;&nbsp; : 8005 <br>Init&nbsp;&nbsp; : 0000 <br>RefIn&nbsp; : True <br>RefOut : True <br>XorOut : 0000 <br>Check&nbsp; : BB3D<br><br>Name&nbsp;&nbsp; : "CRC-16/CCITT"<br>Width&nbsp; : 16<br>Poly&nbsp;&nbsp; : 1021<br>Init&nbsp;&nbsp; : FFFF<br>RefIn&nbsp; : False<br>RefOut : False<br>XorOut : 0000<br>Check&nbsp; : ?<br><br>Name&nbsp;&nbsp; : "XMODEM"<br>Width&nbsp; : 16<br>Poly&nbsp;&nbsp; : 8408<br>Init&nbsp;&nbsp; : 0000<br>RefIn&nbsp; : True<br>RefOut : True<br>XorOut : 0000<br>Check&nbsp; : ?<br><br>Name&nbsp;&nbsp; : "ARC"<br>Width&nbsp; : 16<br>Poly&nbsp;&nbsp; : 8005<br>Init&nbsp;&nbsp; : 0000<br>RefIn&nbsp; : True<br>RefOut : True<br>XorOut : 0000<br>Check&nbsp; : ?</pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>&nbsp;</p>
+<p>好，至此就介绍完了，C的全程代码后面附上，verilog的代码稍候带来。</p>
+<p>注：我编译的机器是64位的，如果是32位的话有的变量类型需要改变</p>
+<p>&nbsp;</p>
+<p>直接计算法</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>#include &lt;stdio.h&gt;
+<span style="color: #0000ff;">#define</span>     CRC_POLY    0x00011021
+<span style="color: #0000ff;">#define</span>     CRC_WIDTH   16
+<span style="color: #0000ff;">#define</span>     CRC_INIT    0x00000000
+<span style="color: #0000ff;">#define</span>     DATA_POLY   0x31323334L
+<span style="color: #0000ff;">#define</span>     DATA_WIDTH  32
+
+<span style="color: #0000ff;">void</span> print_regs(<span style="color: #0000ff;">int</span>, <span style="color: #0000ff;">int</span>, <span style="color: #0000ff;">int</span><span style="color: #000000;">);
+</span><span style="color: #0000ff;">int</span><span style="color: #000000;"> main()
+{
+    unsigned </span><span style="color: #0000ff;">long</span>   data =<span style="color: #000000;"> DATA_POLY;
+    unsigned </span><span style="color: #0000ff;">long</span>   regs =<span style="color: #000000;"> CRC_INIT;
+    </span><span style="color: #0000ff;">int</span><span style="color: #000000;"> shift_bit;
+    </span><span style="color: #0000ff;">int</span><span style="color: #000000;"> i;
+
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> append zeros to the data</span>
+    data &lt;&lt;=<span style="color: #000000;"> CRC_WIDTH;
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> print for debug</span>
+    printf(<span style="color: #800000;">"</span><span style="color: #800000;">data --&gt;\t0x%lx\t</span><span style="color: #800000;">"</span><span style="color: #000000;">, data);
+    </span><span style="color: #0000ff;">for</span>(i=DATA_WIDTH+CRC_WIDTH-<span style="color: #800080;">1</span>; i&gt;=<span style="color: #800080;">0</span>; i--<span style="color: #000000;">){
+        printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">%d </span><span style="color: #800000;">"</span>, (data&gt;&gt;i)&amp;<span style="color: #800080;">0x1</span><span style="color: #000000;">);
+    }
+    printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">\n</span><span style="color: #800000;">"</span><span style="color: #000000;">);
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> processing</span>
+    <span style="color: #0000ff;">for</span>(shift_bit=DATA_WIDTH+CRC_WIDTH; shift_bit&gt;<span style="color: #800080;">0</span>; shift_bit--<span style="color: #000000;">){
+    </span><span style="color: #008000;">//</span><span style="color: #008000;"> shift of 1 cycle</span>
+        regs = (regs&lt;&lt;<span style="color: #800080;">1</span>) | ((data&gt;&gt;(shift_bit-<span style="color: #800080;">1</span>))&amp;<span style="color: #800080;">0x1</span><span style="color: #000000;">);
+    </span><span style="color: #008000;">//</span><span style="color: #008000;"> xor of 1 cycle</span>
+        <span style="color: #0000ff;">if</span>(regs&gt;&gt;CRC_WIDTH)     regs = regs ^<span style="color: #000000;"> CRC_POLY;
+    </span><span style="color: #008000;">//</span><span style="color: #008000;"> result</span>
+        print_regs(DATA_WIDTH+CRC_WIDTH-shift_bit+<span style="color: #800080;">1</span><span style="color: #000000;">, CRC_WIDTH, regs);
+    }
+
+    </span><span style="color: #0000ff;">return</span> <span style="color: #800080;">0</span><span style="color: #000000;">;
+}
+
+</span><span style="color: #0000ff;">void</span> print_regs(<span style="color: #0000ff;">int</span> crc_step, <span style="color: #0000ff;">int</span> crc_width, <span style="color: #0000ff;">int</span><span style="color: #000000;"> crc_regs)
+{
+    </span><span style="color: #0000ff;">int</span><span style="color: #000000;"> i;
+    printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">Step %d\t\t</span><span style="color: #800000;">"</span><span style="color: #000000;">, crc_step);
+    </span><span style="color: #0000ff;">for</span>(i=crc_width; i&gt;<span style="color: #800080;">0</span>; i--<span style="color: #000000;">){
+        printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">%d </span><span style="color: #800000;">"</span>, (crc_regs&gt;&gt;(i-<span style="color: #800080;">1</span>)&amp;<span style="color: #800080;">0x1</span><span style="color: #000000;">));
+    }
+    printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">\n</span><span style="color: #800000;">"</span><span style="color: #000000;">);
+}</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>&nbsp;</p>
+<p>驱动表法</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>#include &lt;stdio.h&gt;
+<span style="color: #0000ff;">#define</span>     BYTE_L  8
+<span style="color: #008000;">//</span><span style="color: #008000;">#define     CRC32   </span><span style="color: #008000;">//</span><span style="color: #008000;"> default CRC16, unless define CRC32</span>
+<span style="color: #000000;">
+#ifdef  CRC32
+    </span><span style="color: #0000ff;">#define</span>     CRC_WIDTH   32
+    <span style="color: #0000ff;">#define</span>     CRC_POLY    0x04C11DB7
+    <span style="color: #0000ff;">#define</span>     CRC_INIT    0x00000000
+<span style="color: #0000ff;">#else</span>
+    <span style="color: #0000ff;">#define</span>     CRC_WIDTH   16
+    <span style="color: #0000ff;">#define</span>     CRC_POLY    0x1021
+    <span style="color: #0000ff;">#define</span>     CRC_INIT    0x0000
+<span style="color: #0000ff;">#endif</span>
+
+<span style="color: #0000ff;">void</span> print_regs(unsigned <span style="color: #0000ff;">int</span>, unsigned <span style="color: #0000ff;">int</span><span style="color: #000000;">);
+</span><span style="color: #0000ff;">int</span><span style="color: #000000;"> main()
+{
+    unsigned </span><span style="color: #0000ff;">char</span><span style="color: #000000;">   bit_cnt     ;
+    unsigned </span><span style="color: #0000ff;">short</span><span style="color: #000000;">  index       ;
+    unsigned </span><span style="color: #0000ff;">int</span>    table[<span style="color: #800080;">256</span><span style="color: #000000;">]  ;
+    unsigned </span><span style="color: #0000ff;">int</span><span style="color: #000000;">    temp        ;
+
+    unsigned </span><span style="color: #0000ff;">char</span>   buff[] = {<span style="color: #800080;">0x31</span>, <span style="color: #800080;">0x32</span>, <span style="color: #800080;">0x33</span>, <span style="color: #800080;">0x34</span>, <span style="color: #800080;">0x35</span>, <span style="color: #800080;">0x36</span>, <span style="color: #800080;">0x37</span>, <span style="color: #800080;">0x38</span>, <span style="color: #800080;">0x39</span><span style="color: #000000;">};
+    unsigned </span><span style="color: #0000ff;">int</span>    len  = <span style="color: #0000ff;">sizeof</span><span style="color: #000000;">(buff);
+    unsigned </span><span style="color: #0000ff;">char</span>   *<span style="color: #000000;">pointer    ;
+    unsigned </span><span style="color: #0000ff;">int</span><span style="color: #000000;">    regs        ;
+    unsigned </span><span style="color: #0000ff;">int</span><span style="color: #000000;">    i           ;
+
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> crc LUT generation</span>
+    <span style="color: #0000ff;">for</span>(index=<span style="color: #800080;">0</span>; index&lt;<span style="color: #800080;">256</span>; index++<span style="color: #000000;">){
+        temp </span>= <span style="color: #800080;">0</span><span style="color: #000000;">;
+        </span><span style="color: #0000ff;">for</span>(bit_cnt=BYTE_L; bit_cnt&gt;<span style="color: #800080;">0</span>; bit_cnt--<span style="color: #000000;">){
+            </span><span style="color: #0000ff;">if</span>((index&gt;&gt;(bit_cnt-<span style="color: #800080;">1</span>) ^ temp&gt;&gt;(CRC_WIDTH-<span style="color: #800080;">1</span>))&amp;<span style="color: #800080;">0x1</span>)  temp = (temp&lt;&lt;<span style="color: #800080;">1</span>) ^<span style="color: #000000;"> CRC_POLY;
+            </span><span style="color: #0000ff;">else</span>                                                temp &lt;&lt;= <span style="color: #800080;">1</span><span style="color: #000000;">;
+        }
+#ifdef  CRC32
+        table[index] </span>= (unsigned <span style="color: #0000ff;">int</span><span style="color: #000000;">)temp;
+</span><span style="color: #0000ff;">#else</span><span style="color: #000000;">
+        table[index] </span>= (unsigned <span style="color: #0000ff;">short</span><span style="color: #000000;">)temp;
+</span><span style="color: #0000ff;">#endif</span><span style="color: #000000;">
+    }
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> crc calculation</span>
+    pointer =<span style="color: #000000;"> buff;
+    regs </span>=<span style="color: #000000;"> CRC_INIT;
+    </span><span style="color: #0000ff;">while</span>(len--<span style="color: #000000;">){
+        print_regs(CRC_WIDTH, regs);
+        regs </span>= ((regs&lt;&lt;BYTE_L)|*pointer++) ^ table[(regs&gt;&gt;(CRC_WIDTH-BYTE_L))&amp;<span style="color: #800080;">0xFF</span><span style="color: #000000;">];
+    }
+    </span><span style="color: #0000ff;">for</span>(i=<span style="color: #800080;">0</span>; i&lt;CRC_WIDTH/BYTE_L; i++<span style="color: #000000;">){
+        print_regs(CRC_WIDTH, regs);
+        regs </span>= (regs&lt;&lt;BYTE_L) ^ table[(regs&gt;&gt;(CRC_WIDTH-BYTE_L))&amp;<span style="color: #800080;">0xFF</span><span style="color: #000000;">];
+    }
+#ifdef  CRC32
+    printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">result --&gt; 0x%Xh\n</span><span style="color: #800000;">"</span><span style="color: #000000;">, regs);
+</span><span style="color: #0000ff;">#else</span><span style="color: #000000;">
+    printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">result --&gt; 0x%Xh\n</span><span style="color: #800000;">"</span>, (unsigned <span style="color: #0000ff;">short</span><span style="color: #000000;">)regs);
+</span><span style="color: #0000ff;">#endif</span>
+
+    <span style="color: #0000ff;">return</span> <span style="color: #800080;">0</span><span style="color: #000000;">;
+}
+
+</span><span style="color: #0000ff;">void</span> print_regs(unsigned <span style="color: #0000ff;">int</span> crc_width, unsigned <span style="color: #0000ff;">int</span><span style="color: #000000;"> crc_regs)
+{
+    </span><span style="color: #0000ff;">int</span><span style="color: #000000;"> i;
+    </span><span style="color: #0000ff;">for</span>(i=crc_width; i&gt;<span style="color: #800080;">0</span>; i--<span style="color: #000000;">){
+        printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">%d </span><span style="color: #800000;">"</span>, (crc_regs&gt;&gt;(i-<span style="color: #800080;">1</span>)&amp;<span style="color: #800080;">0x1</span><span style="color: #000000;">));
+    }
+    printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">\n</span><span style="color: #800000;">"</span><span style="color: #000000;">);
+}</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>&nbsp;</p>
+<p>直驱表法</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>#include &lt;stdio.h&gt;
+<span style="color: #0000ff;">#define</span>     BYTE_L  8
+<span style="color: #008000;">//</span><span style="color: #008000;">#define     CRC32   </span><span style="color: #008000;">//</span><span style="color: #008000;"> default CRC16, unless define CRC32</span>
+<span style="color: #000000;">
+#ifdef  CRC32
+    </span><span style="color: #0000ff;">#define</span>     CRC_WIDTH   32
+    <span style="color: #0000ff;">#define</span>     CRC_POLY    0x04C11DB7
+    <span style="color: #0000ff;">#define</span>     CRC_INIT    0xFFFFFFFF
+<span style="color: #0000ff;">#else</span>
+    <span style="color: #0000ff;">#define</span>     CRC_WIDTH   16
+    <span style="color: #0000ff;">#define</span>     CRC_POLY    0x1021
+    <span style="color: #0000ff;">#define</span>     CRC_INIT    0x0000
+<span style="color: #0000ff;">#endif</span>
+
+<span style="color: #0000ff;">void</span> print_regs(unsigned <span style="color: #0000ff;">int</span>, unsigned <span style="color: #0000ff;">int</span><span style="color: #000000;">);
+</span><span style="color: #0000ff;">int</span><span style="color: #000000;"> main()
+{
+    unsigned </span><span style="color: #0000ff;">char</span><span style="color: #000000;">   bit_cnt     ;
+    unsigned </span><span style="color: #0000ff;">short</span><span style="color: #000000;">  index       ;
+    unsigned </span><span style="color: #0000ff;">int</span>    table[<span style="color: #800080;">256</span><span style="color: #000000;">]  ;
+    unsigned </span><span style="color: #0000ff;">int</span><span style="color: #000000;">    temp        ;
+
+    unsigned </span><span style="color: #0000ff;">char</span>   buff[] = {<span style="color: #800080;">0x31</span>, <span style="color: #800080;">0x32</span>, <span style="color: #800080;">0x33</span>, <span style="color: #800080;">0x34</span>, <span style="color: #800080;">0x35</span>, <span style="color: #800080;">0x36</span>, <span style="color: #800080;">0x37</span>, <span style="color: #800080;">0x38</span>, <span style="color: #800080;">0x39</span><span style="color: #000000;">};
+    unsigned </span><span style="color: #0000ff;">int</span>    len  = <span style="color: #0000ff;">sizeof</span><span style="color: #000000;">(buff);
+    unsigned </span><span style="color: #0000ff;">char</span>   *<span style="color: #000000;">pointer    ;
+    unsigned </span><span style="color: #0000ff;">int</span><span style="color: #000000;">    regs        ;
+    unsigned </span><span style="color: #0000ff;">int</span><span style="color: #000000;">    i           ;
+
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> crc LUT generation</span>
+    <span style="color: #0000ff;">for</span>(index=<span style="color: #800080;">0</span>; index&lt;<span style="color: #800080;">256</span>; index++<span style="color: #000000;">){
+        temp </span>= <span style="color: #800080;">0</span><span style="color: #000000;">;
+        </span><span style="color: #0000ff;">for</span>(bit_cnt=BYTE_L; bit_cnt&gt;<span style="color: #800080;">0</span>; bit_cnt--<span style="color: #000000;">){
+            </span><span style="color: #0000ff;">if</span>((index&gt;&gt;(bit_cnt-<span style="color: #800080;">1</span>) ^ temp&gt;&gt;(CRC_WIDTH-<span style="color: #800080;">1</span>))&amp;<span style="color: #800080;">0x1</span>)  temp = (temp&lt;&lt;<span style="color: #800080;">1</span>) ^<span style="color: #000000;"> CRC_POLY;
+            </span><span style="color: #0000ff;">else</span>                                                temp &lt;&lt;= <span style="color: #800080;">1</span><span style="color: #000000;">;
+        }
+#ifdef  CRC32
+        table[index] </span>= (unsigned <span style="color: #0000ff;">int</span><span style="color: #000000;">)temp;
+</span><span style="color: #0000ff;">#else</span><span style="color: #000000;">
+        table[index] </span>= (unsigned <span style="color: #0000ff;">short</span><span style="color: #000000;">)temp;
+</span><span style="color: #0000ff;">#endif</span><span style="color: #000000;">
+    }
+</span><span style="color: #008000;">//</span><span style="color: #008000;"> crc calculation</span>
+    pointer =<span style="color: #000000;"> buff;
+    regs </span>=<span style="color: #000000;"> CRC_INIT;
+    </span><span style="color: #0000ff;">for</span>(i=<span style="color: #800080;">0</span>; i&lt;len; i++<span style="color: #000000;">){
+        print_regs(CRC_WIDTH, regs);
+        regs </span>= (regs&lt;&lt;BYTE_L) ^ table[(regs&gt;&gt;(CRC_WIDTH-BYTE_L))&amp;<span style="color: #800080;">0xFF</span> ^ *pointer++<span style="color: #000000;">];
+    }
+#ifdef  CRC32
+    printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">result --&gt; 0x%Xh\n</span><span style="color: #800000;">"</span><span style="color: #000000;">, regs);
+</span><span style="color: #0000ff;">#else</span><span style="color: #000000;">
+    printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">result --&gt; 0x%Xh\n</span><span style="color: #800000;">"</span>, (unsigned <span style="color: #0000ff;">short</span><span style="color: #000000;">)regs);
+</span><span style="color: #0000ff;">#endif</span>
+
+    <span style="color: #0000ff;">return</span> <span style="color: #800080;">0</span><span style="color: #000000;">;
+}
+
+</span><span style="color: #0000ff;">void</span> print_regs(unsigned <span style="color: #0000ff;">int</span> crc_width, unsigned <span style="color: #0000ff;">int</span><span style="color: #000000;"> crc_regs)
+{
+    </span><span style="color: #0000ff;">int</span><span style="color: #000000;"> i;
+    </span><span style="color: #0000ff;">for</span>(i=crc_width; i&gt;<span style="color: #800080;">0</span>; i--<span style="color: #000000;">){
+        printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">%d </span><span style="color: #800000;">"</span>, (crc_regs&gt;&gt;(i-<span style="color: #800080;">1</span>)&amp;<span style="color: #800080;">0x1</span><span style="color: #000000;">));
+    }
+    printf(</span><span style="color: #800000;">"</span><span style="color: #800000;">\n</span><span style="color: #800000;">"</span><span style="color: #000000;">);
+}</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block"><div id="BlogPostCategory">
+    分类: 
+            <a href="https://www.cnblogs.com/poiu-elab/category/349073.html" target="_blank">Experience</a>,             <a href="https://www.cnblogs.com/poiu-elab/category/379655.html" target="_blank">software</a>,             <a href="https://www.cnblogs.com/poiu-elab/category/379654.html" target="_blank">verilog</a></div>
+
+
+    <div id="blog_post_info">
+<div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(2734715,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+        <a id="green_channel_follow" onclick="follow('acae1bb4-730f-e111-b422-842b2b196315');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/poiu-elab/" target="_blank"><img src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/u351062.png" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/poiu-elab/">poiu_elab</a><br>
+            <a href="https://home.cnblogs.com/u/poiu-elab/followees/">关注 - 3</a><br>
+            <a href="https://home.cnblogs.com/u/poiu-elab/followers/">粉丝 - 38</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('acae1bb4-730f-e111-b422-842b2b196315');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(2734715,'Digg')">
+        <span class="diggnum" id="digg_count">1</span>
+    </div>
+    <div class="buryit" onclick="votePost(2734715,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+    <div class="clear"></div>
+    <div id="post_next_prev">
+
+    <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/18/2728989.html" class="p_n_p_prefix">« </a> 上一篇：    <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/18/2728989.html" title="发布于 2012-10-18 10:17">【转】亚稳态分析</a>
+    <br>
+    <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/29/2744652.html" class="p_n_p_prefix">» </a> 下一篇：    <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/29/2744652.html" title="发布于 2012-10-29 14:08">task 与 function的区别</a>
+
+</div>
+</div>
+            </div>
+            <div class="postDesc">posted @ 
+<span id="post-date">2012-10-22 23:14</span>&nbsp;<a href="https://www.cnblogs.com/poiu-elab/">poiu_elab</a> 阅读(<span id="post_view_count">6394</span>) 评论(<span id="post_comment_count">4</span>) <a href="https://i.cnblogs.com/EditPosts.aspx?postid=2734715" rel="nofollow"> 编辑</a> <a href="javascript:void(0)" onclick="AddToWz(2734715); return false;">收藏</a>
+</div>
+        </div>
+	    
+	    
+    </div><!--end: topics 文章、评论容器-->
+</div>
+<script src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/highlight.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 106774, cb_blogApp = 'poiu-elab', cb_blogUserGuid = 'acae1bb4-730f-e111-b422-842b2b196315';
+    var cb_entryId = 2734715, cb_entryCreatedDate = '2012-10-22 23:14', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder">
+
+<div id="comment_pager_top">
+    
+</div>
+
+<br>
+<div class="feedback_area_title">评论列表</div>
+<div class="feedbackNoItems"><div class="feedbackNoItems"></div></div>	
+		<div class="feedbackItem">
+			<div class="feedbackListSubtitle">
+				<div class="feedbackManage">
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</div>
+				
+<a href="#2691401" class="layer">#1楼</a>
+<a name="2691401" id="comment_anchor_2691401"></a>
+
+ 
+<span class="comment_date">2013-05-28 09:49</span>
+
+ 
+
+            <a id="a_comment_author_2691401" href="https://www.cnblogs.com/OOY_009/" target="_blank">OOY_009</a>
+
+			</div>
+			<div class="feedbackCon">
+				
+<div id="comment_body_2691401" class="blog_comment_body">
+    写的很好，那个直驱表法（direct table)的困扰我两天.<br>如果能把regs = (regs&lt;&lt;8) ^ table[(regs&gt;&gt;8)&amp;0xFF ^ *pointer++];与你公式的关系写得更明白点就最好。我后面琢磨了半天才把与你的推导出来的公式真正的联系起来。
+</div>
+        <div class="comment_vote">
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment('2691401', 'Digg', this);">
+                支持(1)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment('2691401', 'Bury', this);">
+                反对(0)
+            </a>
+        </div>
+        <span id="comment_2691401_avatar" style="display:none">
+            https://pic.cnblogs.com/face/u57200.jpg
+        </span>
+
+			</div>
+		</div>
+		<div class="feedbackItem">
+			<div class="feedbackListSubtitle">
+				<div class="feedbackManage">
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</div>
+				
+<a href="#2693049" class="layer">#2楼</a>
+<a name="2693049" id="comment_anchor_2693049"></a>
+
+ 
+<span class="comment_date">2013-05-29 20:22</span>
+
+ 
+
+            <a id="a_comment_author_2693049" href="https://www.cnblogs.com/yurenchen/" target="_blank">愚人陈</a>
+
+			</div>
+			<div class="feedbackCon">
+				
+<div id="comment_body_2693049" class="blog_comment_body">
+    感谢博主分享,很有帮助
+</div>
+        <div class="comment_vote">
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment('2693049', 'Digg', this);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment('2693049', 'Bury', this);">
+                反对(0)
+            </a>
+        </div>
+        <span id="comment_2693049_avatar" style="display:none">
+            https://pic.cnblogs.com/face/u325083.png?id=18212938
+        </span>
+
+			</div>
+		</div>
+		<div class="feedbackItem">
+			<div class="feedbackListSubtitle">
+				<div class="feedbackManage">
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</div>
+				
+<a href="#3016172" class="layer">#3楼</a>
+<a name="3016172" id="comment_anchor_3016172"></a>
+
+ 
+<span class="comment_date">2014-08-25 14:48</span>
+
+ 
+
+            <a id="a_comment_author_3016172" href="https://home.cnblogs.com/u/666687/" target="_blank">wellsking</a>
+
+			</div>
+			<div class="feedbackCon">
+				
+<div id="comment_body_3016172" class="blog_comment_body">
+    regs = (regs&lt;&lt;8) ^ table[(regs&gt;&gt;8)&amp;0xFF ^ *pointer++];<br>楼主能不能把这个公式的过程解释一下。<br>没明白其中的数学原理<br>谢谢^_^
+</div>
+        <div class="comment_vote">
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment('3016172', 'Digg', this);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment('3016172', 'Bury', this);">
+                反对(0)
+            </a>
+        </div>
+        
+
+			</div>
+		</div>
+		<div class="feedbackItem">
+			<div class="feedbackListSubtitle">
+				<div class="feedbackManage">
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</div>
+				
+<a href="#3276181" class="layer">#4楼</a>
+<a name="3276181" id="comment_anchor_3276181"></a>
+
+        <span id="comment-maxId" style="display:none">3276181</span>
+        <span id="comment-maxDate" style="display:none">2015/9/28 下午11:40:13</span>
+ 
+<span class="comment_date">2015-09-28 23:40</span>
+
+ 
+
+            <a id="a_comment_author_3276181" href="https://www.cnblogs.com/bianjunjie/" target="_blank">bian</a>
+
+			</div>
+			<div class="feedbackCon">
+				
+<div id="comment_body_3276181" class="blog_comment_body">
+    写的不错，虽然那个驱动表法还是有点绕
+</div>
+        <div class="comment_vote">
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment('3276181', 'Digg', this);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment('3276181', 'Bury', this);">
+                反对(0)
+            </a>
+        </div>
+        <span id="comment_3276181_avatar" style="display:none">
+            https://pic.cnblogs.com/face/u118875.jpg
+        </span>
+
+			</div>
+		</div>
+
+<div id="comment_pager_bottom">
+    
+</div>
+
+
+</div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container"><div class="login_tips">
+    注册用户登录后才能发表评论，请 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a>
+     或 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，
+    <a href="https://www.cnblogs.com/">访问</a> 网站首页。
+</div></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万行VC++源码: 大型组态工控、电力仿真CAD与GIS源码库</a><br><a href="https://www.jdcloud.com/cn/activity/year-end?utm_source=DMT_cnblogs&amp;utm_medium=CH&amp;utm_campaign=q4vm&amp;utm_term=Virtual-Machines" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-京东云')">【活动】京东云服务器_云主机低于1折，低价高性能产品备战双11</a><br><a href="https://www.ctyun.cn/activity/#/enterprise2?hmsr=%E7%9C%8B%E7%9C%8B-%E5%8D%9A%E5%AE%A2%E5%9B%AD-1008-0%E5%85%83%E4%B8%8A%E4%BA%91&amp;hmpl=&amp;hmcu=&amp;hmkw=&amp;hmci=?track=|cp:cz_blog|tgdy:46860|ttjh:shouyedingbuyoucefenlan|key:czkk1|pf:pc" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-添加云')">【推荐】天翼云新用户专享，0元体验数十款云产品，立即开通</a><br><a href="https://www.cnblogs.com/cmt/p/11505603.html" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-华为云代金券')">【福利】git pull &amp;&amp; cherry-pick 博客园&amp;华为云百万代金券</a><br></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="%E3%80%90%E8%84%91%E5%86%BB%E7%BB%93%E3%80%91CRC%E6%88%91%E5%B0%B1%E6%8B%BF%E4%B8%8B%E4%BA%86%20-%20poiu_elab%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CJrf-q-2iuUCFUpuvQodc5EOHQ"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+    </div>
+    <div id="under_post_news"><div class="recomm-block"><b>相关博文：</b><br>·  <a title="CRC计算模型" href="https://www.cnblogs.com/zhanghankui/p/4617737.html" target="_blank" onclick="clickRecomItmem(4617737)">CRC计算模型</a><br>·  <a title="CRC校验8" href="https://www.cnblogs.com/developmental-t-xxg/p/9431124.html" target="_blank" onclick="clickRecomItmem(9431124)">CRC校验8</a><br>·  <a title="CRC校验" href="https://www.cnblogs.com/encode/p/3272877.html" target="_blank" onclick="clickRecomItmem(3272877)">CRC校验</a><br>·  <a title="CRC的校验原理" href="https://www.cnblogs.com/maxiaodoubao/p/4478502.html" target="_blank" onclick="clickRecomItmem(4478502)">CRC的校验原理</a><br>·  <a title="循环冗余校验CRC的算法分析和程序实现" href="https://www.cnblogs.com/F4ncy/archive/2005/01/11/89994.html" target="_blank" onclick="clickRecomItmem(89994)">循环冗余校验CRC的算法分析和程序实现</a><br></div></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CJvf-q-2iuUCFUpuvQodc5EOHQ">
+            
+        <div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+    </div>
+    <div id="under_post_kb">
+<div class="itnews c_ad_block">
+    <b>最新 IT 新闻</b>:
+    <br>
+ ·              <a href="https://news.cnblogs.com/n/641833/" target="_blank">传音控股公告回应被华为起诉：已立案 涉案金额2000万元</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/641832/" target="_blank">氧气的秘密！</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/641831/" target="_blank">印度拟规定移动支付份额上限，或影响阿里小米等服务商</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/641830/" target="_blank">诺贝尔遗嘱全文：三项科学奖；一项文学奖；一项和平奖</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/641829/" target="_blank">Google Cloud 值多少钱？</a>
+            <br>
+    » <a href="https://news.cnblogs.com/" title="IT 新闻" target="_blank">更多新闻...</a>
+</div></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div>
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<div id="sidebar_news" class="newsItem"><!--done-->
+<h3 class="catListTitle">公告</h3>
+
+<div id="blog-news">
+    
+    <div id="profile_block">
+        昵称：
+        <a href="https://home.cnblogs.com/u/poiu-elab/">
+            poiu_elab
+        </a>
+        <br>
+        园龄：
+        <a href="https://home.cnblogs.com/u/poiu-elab/" title="入园时间：2011-11-15">
+            7年10个月
+        </a>
+        <br>
+        粉丝：
+        <a href="https://home.cnblogs.com/u/poiu-elab/followers/">
+            38
+        </a>
+        <br>
+        关注：
+        <a href="https://home.cnblogs.com/u/poiu-elab/followees/">
+            3
+        </a>
+        <div id="p_b_follow">
+<a href="javascript:void(0)" onclick="follow('acae1bb4-730f-e111-b422-842b2b196315')">+加关注</a></div>
+        <script>getFollowStatus('acae1bb4-730f-e111-b422-842b2b196315');</script>
+    </div>
+</div>
+
+</div>
+
+			<div id="blog-calendar" style="">
+
+<table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0" border="0">
+    <tbody>
+        <tr>
+            <td colspan="7">
+                <table class="CalTitle" cellspacing="0" border="0">
+                    <tbody>
+                        <tr>
+                            <td class="CalNextPrev">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar('2012/09/22'); return false;">&lt;</a>
+                            </td>
+                            <td align="center">2012年10月</td>
+                            <td class="CalNextPrev" align="right">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar('2012/11/22'); return false;">&gt;</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+                    <th class="CalDayHeader" abbr="日" scope="col" align="center">日</th>
+                    <th class="CalDayHeader" abbr="一" scope="col" align="center">一</th>
+                    <th class="CalDayHeader" abbr="二" scope="col" align="center">二</th>
+                    <th class="CalDayHeader" abbr="三" scope="col" align="center">三</th>
+                    <th class="CalDayHeader" abbr="四" scope="col" align="center">四</th>
+                    <th class="CalDayHeader" abbr="五" scope="col" align="center">五</th>
+                    <th class="CalDayHeader" abbr="六" scope="col" align="center">六</th>
+        </tr>
+            <tr>
+                            <td class="CalOtherMonthDay" align="center">30</td>
+                        <td class="" align="center">
+                            1
+                        </td>
+                        <td class="" align="center">
+                            2
+                        </td>
+                        <td class="" align="center">
+                            3
+                        </td>
+                        <td class="" align="center">
+                            4
+                        </td>
+                        <td class="" align="center">
+                            <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/05.html"><u>5</u></a>
+                        </td>
+                    <td class="CalWeekendDay" align="center">
+                        6
+                    </td>
+            </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            7
+                        </td>
+                            <td class="" align="center">
+                                8
+                            </td>
+                            <td class="" align="center">
+                                9
+                            </td>
+                            <td class="" align="center">
+                                <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/10.html"><u>10</u></a>
+                            </td>
+                            <td class="" align="center">
+                                <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/11.html"><u>11</u></a>
+                            </td>
+                            <td class="" align="center">
+                                12
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            13
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            14
+                        </td>
+                            <td class="" align="center">
+                                15
+                            </td>
+                            <td class="" align="center">
+                                <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/16.html"><u>16</u></a>
+                            </td>
+                            <td class="" align="center">
+                                17
+                            </td>
+                            <td class="" align="center">
+                                <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/18.html"><u>18</u></a>
+                            </td>
+                            <td class="" align="center">
+                                19
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            20
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            21
+                        </td>
+                            <td class="" align="center">
+                                <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/22.html"><u>22</u></a>
+                            </td>
+                            <td class="" align="center">
+                                23
+                            </td>
+                            <td class="" align="center">
+                                24
+                            </td>
+                            <td class="" align="center">
+                                25
+                            </td>
+                            <td class="" align="center">
+                                26
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            27
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            28
+                        </td>
+                            <td class="" align="center">
+                                <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/29.html"><u>29</u></a>
+                            </td>
+                            <td class="" align="center">
+                                30
+                            </td>
+                            <td class="" align="center">
+                                31
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                1
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                2
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            3
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalOtherMonthDay" align="center">
+                            4
+                        </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                5
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                6
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                7
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                8
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                9
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            10
+                        </td>
+                </tr>
+    </tbody>
+</table></div><script>loadBlogDefaultCalendar();</script>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn">
+
+<!-- 搜索 -->
+<div id="sidebar_search" class="sidebar-block">
+    <div id="sidebar_search" class="mySearch">
+        <h3 class="catListTitle">搜索</h3>
+        <div id="sidebar_search_box">
+            <div id="widget_my_zzk" class="div_my_zzk">
+                <input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk">
+            </div>
+            <div id="widget_my_google" class="div_my_zzk">
+                <input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 常用链接 -->
+
+
+<!-- 最新随笔 -->
+
+
+
+<!-- 我的标签 -->
+<div id="sidebar_toptags" class="sidebar-block">
+    <div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+
+        <li>
+            <a href="https://www.cnblogs.com/poiu-elab/tag/summary/">summary</a>(7)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poiu-elab/tag/sky1301v05/">sky1301v05</a>(5)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poiu-elab/tag/svn/">svn</a>(3)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poiu-elab/tag/linux/">linux</a>(3)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poiu-elab/tag/verilog/">verilog</a>(2)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poiu-elab/tag/work/">work</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poiu-elab/tag/sky1301v06/">sky1301v06</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poiu-elab/tag/sky1301v07/">sky1301v07</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poiu-elab/tag/tag_915/">tag_915</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poiu-elab/tag/timing/">timing</a>(1)
+        </li>
+            <li>
+                <a href="https://www.cnblogs.com/poiu-elab/tag/">更多</a>
+            </li>
+
+</ul>
+</div>
+
+
+</div>
+
+<!-- 积分与排名 -->
+
+
+<!-- 随笔分类、随笔档案、文章分类、新闻分类、相册、链接 -->
+<div id="sidebar_categories">
+    
+        <div id="sidebar_postcategory" class="catListPostCategory sidebar-block">
+            <h3 class="catListTitle">
+                
+
+随笔分类
+
+
+
+            </h3>
+
+
+            <ul>
+
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/379656.html" rel="" target="">
+    board(11)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/380212.html" rel="" target="">
+    collection(2)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/349073.html" rel="" target="">
+    Experience(75)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/411729.html" rel="" target="">
+    linux(15)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/433321.html" rel="" target="">
+    modelsim(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/433352.html" rel="" target="">
+    nc
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/348864.html" rel="" target="">
+    ramble(8)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/367379.html" rel="" target="">
+    script(4)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/379655.html" rel="" target="">
+    software(11)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/379657.html" rel="" target="">
+    summary(30)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/379654.html" rel="" target="">
+    verilog(34)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/category/353439.html" rel="" target="">
+    vim(11)
+</a>
+ 
+
+                        </li>
+
+            </ul>
+
+
+        </div>
+        <div id="sidebar_postarchive" class="catListPostArchive sidebar-block">
+            <h3 class="catListTitle">
+                
+
+随笔档案
+
+
+
+            </h3>
+
+
+            <ul>
+
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2013/09.html" rel="" target="">
+    2013年9月(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2013/07.html" rel="" target="">
+    2013年7月(3)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2013/05.html" rel="" target="">
+    2013年5月(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2013/04.html" rel="" target="">
+    2013年4月(3)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2013/03.html" rel="" target="">
+    2013年3月(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/12.html" rel="" target="">
+    2012年12月(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/11.html" rel="" target="">
+    2012年11月(6)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/10.html" rel="" target="">
+    2012年10月(9)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/09.html" rel="" target="">
+    2012年9月(4)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/08.html" rel="" target="">
+    2012年8月(9)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/07.html" rel="" target="">
+    2012年7月(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/06.html" rel="" target="">
+    2012年6月(14)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/05.html" rel="" target="">
+    2012年5月(14)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/04.html" rel="" target="">
+    2012年4月(7)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/03.html" rel="" target="">
+    2012年3月(9)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/02.html" rel="" target="">
+    2012年2月(9)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/poiu-elab/archive/2012/01.html" rel="" target="">
+    2012年1月(5)
+</a>
+ 
+
+                        </li>
+
+            </ul>
+
+
+        </div>
+
+</div>
+
+<!-- 最新评论 -->
+<div id="sidebar_recentcomments" class="sidebar-block">
+    <div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div class="RecentCommentBlock">
+        <ul>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/poiu-elab/archive/2012/11/28/2793559.html#3837406">1. Re:【Mutavault】linux上成功安装modelsim 10.1C版本</a></li>
+                    <li class="recent_comment_body">请问楼主，本人Linux小白，这里有31个iOS镜像文件，这个在Linux怎么安装啊</li>
+                    <li class="recent_comment_author">--xingguangming</li>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/poiu-elab/archive/2012/06/07/2541040.html#3807771">2. Re:一个时钟异步切换无毛刺电路</a></li>
+                    <li class="recent_comment_body">Hi, 觉得你这个方法不能实现无毛刺，因为这句话else clk_a_en &lt;= ~sel &amp; ~clk_b_en ;在实际过程中这句话的赋值成功是有微小延时的，这就造成clk_a_en会在clk_a...</li>
+                    <li class="recent_comment_author">--fkl523</li>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/poiu-elab/archive/2012/11/28/2793559.html#3687493">3. Re:【Mutavault】linux上成功安装modelsim 10.1C版本</a></li>
+                    <li class="recent_comment_body">感谢楼主，在楼主英明指导下，终于安装成功了，非常感谢！</li>
+                    <li class="recent_comment_author">--miaoxuerong</li>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/poiu-elab/archive/2012/11/28/2793559.html#3417205">4. Re:【Mutavault】linux上成功安装modelsim 10.1C版本</a></li>
+                    <li class="recent_comment_body">楼主，我执行patch命令有错误。这个过程能详细说一下么，谢谢啦</li>
+                    <li class="recent_comment_author">--熊宝宝sunny</li>
+                    <li class="recent_comment_title"><a href="http://www.cnblogs.com/poiu-elab/archive/2012/10/22/2734715.html#3276181">5. Re:【脑冻结】CRC我就拿下了</a></li>
+                    <li class="recent_comment_body">写的不错，虽然那个驱动表法还是有点绕</li>
+                    <li class="recent_comment_author">--bian</li>
+        </ul>
+    </div>
+</div>
+
+
+</div>
+
+
+
+<!-- 阅读排行榜 -->
+<div id="sidebar_topviewedposts" class="sidebar-block">
+    <div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/poiu-elab/archive/2012/05/25/2518521.html">
+                            1. 关于latch的门控时钟(9916)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poiu-elab/archive/2012/11/28/2793559.html">
+                            2. 【Mutavault】linux上成功安装modelsim 10.1C版本(9105)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poiu-elab/archive/2012/06/07/2540285.html">
+                            3. 一个数字倍频电路(8919)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poiu-elab/archive/2012/06/06/2537940.html">
+                            4. 【转】IC的三个温度等级（商业级、工业级和军品级）(8873)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poiu-elab/archive/2012/11/02/2751323.html">
+                            5. 【Arcanis the Omnipotent】从今天起弄明白case/casez/casex(8597)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+
+
+</div>
+
+<!-- 评论排行榜 -->
+<div id="sidebar_topcommentedposts" class="sidebar-block">
+    <div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/poiu-elab/archive/2012/11/28/2793559.html">
+                            1. 【Mutavault】linux上成功安装modelsim 10.1C版本(4)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poiu-elab/archive/2012/10/22/2734715.html">
+                            2. 【脑冻结】CRC我就拿下了(4)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poiu-elab/archive/2013/05/08/3066711.html">
+                            3. 【Hunted Horror】mini_m8051w系统调试完成(2)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poiu-elab/archive/2012/08/27/2659224.html">
+                            4. 神马叫做时延(1)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poiu-elab/archive/2012/08/24/2654742.html">
+                            5. 观cliff cummings的《Async FIFO simulation &amp; synthesis》有感(1)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+
+
+</div>
+
+<!-- 推荐排行榜 -->
+</div>
+                    <script>loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		<!--done-->
+Copyright © 2019 poiu_elab
+<br><span id="poweredby">Powered by .NET Core 3.0.0 on Linux</span>
+
+
+
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+    
+
+
+</body></html>

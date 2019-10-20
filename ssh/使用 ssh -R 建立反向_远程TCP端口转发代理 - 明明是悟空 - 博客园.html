@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="never">
+    <title>使用 ssh -R 建立反向/远程TCP端口转发代理 - 明明是悟空 - 博客园</title>
+<meta property="og:description" content="转自：https://yq.aliyun.com/articles/8469 ssh是一个非常棒的工具, 不但能建立动态转发, 例如chrome的Switchy插件用到的就是这个技术.http://b">
+    <link type="text/css" rel="stylesheet" href="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-CodingLife.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-CodingLife-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/x_wukong/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/x_wukong/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/x_wukong/wlwmanifest.xml">
+    <script src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_2019051301.js"></script><script async="" src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script>var currentBlogId=128278;var currentBlogApp='x_wukong',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js" type="text/javascript"></script>
+<link rel="stylesheet" type="text/css" href="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/default.css"><link rel="preload" href="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2019051301.js" async=""></script></head>
+<body>
+<a name="top"></a>
+
+
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a id="lnkBlogLogo" href="https://www.cnblogs.com/x_wukong/"><img id="blogLogo" src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.gif" alt="返回主页"></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/x_wukong/">明明是悟空</a></h1>
+<h2>术到极致，几近于道！</h2>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+<li><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/x_wukong/">首页</a></li>
+<li><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+<li><a id="blog_nav_contact" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA">联系</a></li>
+<li><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/x_wukong/rss">订阅</a>
+<!--<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/x_wukong/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a>--></li>
+<li><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+</ul>
+		<div class="blogStats">
+			
+			<div id="blog_stats">
+<span id="stats_post_count">随笔 - 693&nbsp; </span>
+<span id="stats_article_count">文章 - 0&nbsp; </span>
+<span id="stats-comment_count">评论 - 42</span>
+</div>
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/x_wukong/p/7113854.html">使用 ssh -R 建立反向/远程TCP端口转发代理</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><p>转自：https://yq.aliyun.com/articles/8469</p>
+<p>&nbsp;</p>
+<p>ssh是一个非常棒的工具, 不但能建立动态转发, 例如chrome的Switchy插件用到的就是这个技术.<br><a href="http://blog.163.com/digoal@126/blog/static/163877040201141821810103/">http://blog.163.com/digoal@126/blog/static/163877040201141821810103/</a><br>还能建立TCP的转发隧道, 例如我以前写过的关于使用ssh 隧道加密和加速WAN传输的几个例子.<br><a href="http://blog.163.com/digoal@126/blog/static/163877040201342383123592/">http://blog.163.com/digoal@126/blog/static/163877040201342383123592/</a><br><a href="http://blog.163.com/digoal@126/blog/static/16387704020115294425540/">http://blog.163.com/digoal@126/blog/static/16387704020115294425540/</a><br>上
+面的例子可以理解为正向的TCP端口转发代理(如local$ ssh -L 7001:1.1.1.1:1000 remote_A), 
+即本地服务器local建立和远程服务器的SSH连接, 本地监听一个端口7001, 
+连接本地的监听端口7001相当于"通过远程服务器remote_A访问指定的IP 1.1.1.1和PORT 1000".<br><span style="color: #ff0000;">这种方法适用于本地网络中其他服务器想访问远程的服务器, 但是其他服务器没有直接访问远程服务器的权限, 通过本地网络中有权限的服务器做<span style="text-decoration: underline;"><strong>端口转发</strong></span>的场景.</span></p>
+<p><span style="color: #ff0000;">还有一种应用场景是这样的, 本地网络环境中没有任何一台服务器可以直接访问远程服务器, 但是远程服务器可以反过来访问本地的某台服务器(或者本地可以访问到的某台服务器), 这样的话也能实现本地服务器去访问远程服务器的目的. 这就是<span style="text-decoration: underline;"><strong>反向代理</strong></span>.</span><br>实际的应用场景如,<br>或者说A和B无法相互访问，但是A能访问C，B也能访问C。怎么通过C让AB能相互访问？<br>.1.
+ 家里的网络是动态拨号网络, 没有固定IP, 如果想在上班的时候控制家里的电脑怎么办呢? 如果公司有一台服务器是可以在家拨号过去访问的, 
+那么你可以在家里的电脑上建立和这台公司服务器的反向代理, 到公司后, 就可以连接这台服务器上的反向代理(监听)来连接家里的电脑了.<br>.2. 有的客户可能不希望提供VPN给你去访问他们的服务器, 但是又需要得到你的远程协助, 怎么办呢?<br>你
+可以提供一台服务器让客户主动来访问你的服务器, 客户建立这样的反向代理, 然后你通过这个反向代理来连接客户开放的端口如VNC桌面共享, 
+进行远程协助. (这种方法比QQ远程协助是更安全的, 因为客户和这台服务器之间的数据时加密的, QQ远程协助毕竟有一定的风险存在.)<br>以下是反向代理的图例, 如图1 :<br>箭头表示允许访问的方向, 也就是说Server C可以访问Server A和Server B以及Client A.<br>而Client B和Client C可以访问Client A.<br>我们的目的是要让Client 可以访问Server. 这里就要用到SSH的反向端口转发, 或远程端口转发.</p>
+<p><a target="_blank"><img title="1" src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/de857001910b1c78c80ce44e2709fe79a28cf595.png" alt="1"></a></p>
+<p>反向代理应用场景.<br>例如, 以下虚线表示Client C最终要访问Server A的22端口.<br>实现的步骤<br>1. Client A需要修改一下sshd_config, 开启GatewayPorts, 这样才能监听回环地址以外的地址, 如0.0.0.0, 这样的话其他服务器才能访问到这个端口.<br>2. Server C建立和Client A的反向端口转发, 让Client A在0.0.0.0上监听7001端口, 访问这个端口的数据转发到IP_SA的22端口.</p>
+<pre><code class="hljs css" data-language=""><span class="hljs-selector-tag"><span class="hljs-selector-tag">ssh</span> <span class="hljs-selector-tag"><span class="hljs-selector-tag">-CqTfnN</span> <span class="hljs-selector-tag"><span class="hljs-selector-tag">-R</span>  0<span class="hljs-selector-class"><span class="hljs-selector-class">.0</span><span class="hljs-selector-class"><span class="hljs-selector-class">.0</span><span class="hljs-selector-class"><span class="hljs-selector-class">.0</span><span class="hljs-selector-pseudo"><span class="hljs-selector-pseudo">:7001</span><span class="hljs-selector-pseudo"><span class="hljs-selector-pseudo">:IP_SA</span><span class="hljs-selector-pseudo"><span class="hljs-selector-pseudo">:22</span>   <span class="hljs-selector-tag"><span class="hljs-selector-tag">IP_CA</span>  
+</span></span></span></span></span></span></span></span></span></span></code></pre>
+<p>其实再深层次一点, 因为client c和server a已经可以建立ssh了, 那么通过client c和server a建立反向代理,
+ Server A也可以访问Client c. 这样需要经过了多层ssh隧道( IP_CA-&gt;IP_SC, IP_SA-&gt;IP_CC
+ )</p>
+<p><a target="_blank"><img title="2" src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/01d55fe55b3511bb5d936495c3b1126e60aecae8.png" alt="2"></a></p>
+<p>这种反向代理的用法很容易应用到实际的场景中, 例如前面提到的 :<br>有的客户可能不希望提供VPN给你去访问他们的服务器, 但是又需要得到你的远程协助, 怎么办呢?<br>你可以提供一台服务器让客户主动来访问你的服务器, 客户建立这样的反向代理, 然后你通过这个反向代理来连接客户开放的端口如VNC桌面共享, 进行远程协助.<br>如图 :<br>Public A是一台公用主机, 可以被客户和服务提供商同时访问.<br>当客户需要远程协助时.<br>1. 客户在SERVER C上开启一个VNC server<br>2. 客户将需要远程协助的窗口先登录好, 例如某些内网服务器(SERVER A , SERVER B)的telnet或ssh终端. 以供服务提供商使用.<br>3. 客户在SERVER C主动建立和这台公用主机的反向代理, 将端口转发到server c的vnc监听端口.<br>4. 服务提供商使用VNC客户端连接这台公共服务器的SSH代理监听端口, 相当于连接到了server c的vnc server. 以提供远程协助.<br>5. 客户可以在server c上观看, 录像, 控制这个VNC会话等.</p>
+<p><a target="_blank"><img title="3" src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/fb52cc8d857cf9b152cf0034e6eb2baa3625e287.png" alt="3"></a></p>
+<p>下面来举个例子 :<br>场景 :<br>家里有一台WINDOWS服务器, 通过VPN拨号到公司网络.<br>WINDOWS服务器上跑了两个VMWARE的虚拟机, 分别是FreeBSD和CentOS.<br>公司有1台主机172.16.3.150, 安装了CentOS,<br>拨号后, 家里的虚拟机FreeBSD可以访问172.16.3.150.<br>现在要让公司的其他服务器如172.16.3.167可以访问到家里的192.168.198.129虚拟机.</p>
+<p><a target="_blank"><img title="4" src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/19e9fa1f0df16819f57719fa6ab2eea345020685.png" alt="4"></a><br>简单步骤.<br>.1. 拨号, 略<br>.2. 172.16.3.150上需要修改sshd_config.</p>
+<pre><code class="hljs subunit coffeescript" data-language="">[root@db<span class="hljs-string"><span class="hljs-number">-172</span><span class="hljs-string"><span class="hljs-number">-16</span><span class="hljs-string"><span class="hljs-number">-3</span><span class="hljs-string"><span class="hljs-number">-150</span> ~]<span class="hljs-comment"># vi /etc/ssh/sshd_config  </span>
+GatewayPorts <span class="hljs-literal">yes</span>  
+[root@db<span class="hljs-string"><span class="hljs-number">-172</span><span class="hljs-string"><span class="hljs-number">-16</span><span class="hljs-string"><span class="hljs-number">-3</span><span class="hljs-string"><span class="hljs-number">-150</span> ~]<span class="hljs-comment"># service sshd reload  </span>
+Reloading sshd: [  OK  ]  
+</span></span></span></span></span></span></span></span></code></pre>
+<p>.3. 通过虚拟机192.168.198.130连接到172.16.3.150开启反向端口代理. (如果130不是LINUX是WINDOWS, 也可以用securecrt类似的软件进行代理配置.)</p>
+<pre><code class="hljs x86asm accesslog" data-language=""><span class="hljs-symbol">root@digoal:~ # ssh -CqTfnN -R <span class="hljs-number"><span class="hljs-number">0.0</span><span class="hljs-meta"><span class="hljs-number">.0</span><span class="hljs-meta"><span class="hljs-number">.0:</span><span class="hljs-number"><span class="hljs-number">7001</span>:<span class="hljs-number"><span class="hljs-number">192.168</span><span class="hljs-meta"><span class="hljs-number">.198</span><span class="hljs-meta"><span class="hljs-number">.129:</span><span class="hljs-number"><span class="hljs-number">22</span> <span class="hljs-number"><span class="hljs-number">172.16</span><span class="hljs-meta"><span class="hljs-number">.3</span><span class="hljs-meta"><span class="hljs-number">.150</span>  
+root@<span class="hljs-number"><span class="hljs-number">172.16</span><span class="hljs-meta"><span class="hljs-number">.3</span><span class="hljs-meta"><span class="hljs-number">.150</span><span class="hljs-string">'s password:   
+</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></code></pre>
+<p>.4. 在172.16.3.150上可以看到这个监听.</p>
+<pre><code class="hljs tap ruby" data-language="">[root@db-<span class="hljs-number">172</span>-<span class="hljs-number">16</span>-<span class="hljs-number">3</span>-<span class="hljs-number">150</span> ~]<span class="hljs-comment"><span class="hljs-comment"># netstat -anp|grep 7001  </span>
+tcp       <span class="hljs-number"> <span class="hljs-number">0</span>     <span class="hljs-number"> <span class="hljs-number">0</span> <span class="hljs-number">0</span>.<span class="hljs-number">0</span>.<span class="hljs-number">0</span>.<span class="hljs-number">0</span><span class="hljs-symbol">:</span><span class="hljs-number">7001</span>                <span class="hljs-number">0</span>.<span class="hljs-number">0</span>.<span class="hljs-number">0</span>.<span class="hljs-number">0</span><span class="hljs-symbol">:*</span>                   LISTEN      <span class="hljs-number">2392</span>/sshd    
+tcp       <span class="hljs-number"> <span class="hljs-number">0</span>     <span class="hljs-number"> <span class="hljs-number">0</span> <span class="hljs-symbol">:</span><span class="hljs-symbol">:</span><span class="hljs-symbol">:</span><span class="hljs-number">7001</span>                     <span class="hljs-symbol">:</span><span class="hljs-symbol">:</span><span class="hljs-symbol">:*</span>                        LISTEN      <span class="hljs-number">2392</span>/sshd     
+</span></span></span></span></span></code></pre>
+<p>.5. 现在到172.16.3.167上连接172.16.3.150的7001端口.</p>
+<pre><code class="hljs x86asm yaml" data-language=""><span class="hljs-string">[root@db5</span> <span class="hljs-string">~]#</span> <span class="hljs-string">ifconfig</span>  
+<span class="hljs-string">bond0</span>     <span class="hljs-string">Link</span> <span class="hljs-attr">encap:Ethernet</span>  <span class="hljs-string">HWaddr</span> <span class="hljs-number"><span class="hljs-number">00</span><span class="hljs-string">:</span><span class="hljs-number"><span class="hljs-string">23:</span><span class="hljs-number"><span class="hljs-string">7D:A3:F0:4E</span>    
+          <span class="hljs-string">inet</span> <span class="hljs-attr">addr:</span><span class="hljs-number"><span class="hljs-attr">172.16</span><span class="hljs-meta"><span class="hljs-attr">.3</span><span class="hljs-meta"><span class="hljs-attr">.176</span>  <span class="hljs-attr">Bcast:</span><span class="hljs-number"><span class="hljs-attr">172.16</span><span class="hljs-meta"><span class="hljs-attr">.3</span><span class="hljs-meta"><span class="hljs-attr">.255</span>  <span class="hljs-attr">Mask:</span><span class="hljs-number"><span class="hljs-attr">255.255</span><span class="hljs-meta"><span class="hljs-attr">.255</span><span class="hljs-meta"><span class="hljs-attr">.0</span>  
+          <span class="hljs-string">inet6</span> <span class="hljs-attr">addr:</span> <span class="hljs-attr">fe80::</span><span class="hljs-number"><span class="hljs-attr">223:7dff:fea3:f04e/</span><span class="hljs-number"><span class="hljs-attr">64</span> <span class="hljs-attr">Scope:Link</span>  
+          <span class="hljs-meta"><span class="hljs-string">UP</span> <span class="hljs-string">BROADCAST</span> <span class="hljs-string">RUNNING</span> <span class="hljs-string">MASTER</span> <span class="hljs-string">MULTICAST</span>  <span class="hljs-attr">MTU:</span><span class="hljs-number"><span class="hljs-attr">1500</span>  <span class="hljs-attr">Metric:</span><span class="hljs-number"><span class="hljs-attr">1</span>  
+          <span class="hljs-string">RX</span> <span class="hljs-attr">packets:</span><span class="hljs-number"><span class="hljs-attr">200422824</span> <span class="hljs-attr">errors:</span><span class="hljs-number"><span class="hljs-attr">0</span> <span class="hljs-attr">dropped:</span><span class="hljs-number"><span class="hljs-attr">0</span> <span class="hljs-attr">overruns:</span><span class="hljs-number"><span class="hljs-attr">0</span> <span class="hljs-attr">frame:</span><span class="hljs-number"><span class="hljs-attr">0</span>  
+          <span class="hljs-string">TX</span> <span class="hljs-attr">packets:</span><span class="hljs-number"><span class="hljs-attr">16849618</span> <span class="hljs-attr">errors:</span><span class="hljs-number"><span class="hljs-attr">0</span> <span class="hljs-attr">dropped:</span><span class="hljs-number"><span class="hljs-attr">0</span> <span class="hljs-attr">overruns:</span><span class="hljs-number"><span class="hljs-attr">0</span> <span class="hljs-attr">carrier:</span><span class="hljs-number"><span class="hljs-attr">0</span>  
+<span class="hljs-symbol"><span class="hljs-attr">          collisions:</span><span class="hljs-number"><span class="hljs-number">0</span> <span class="hljs-attr">txqueuelen:</span><span class="hljs-number"><span class="hljs-attr">0</span>   
+          <span class="hljs-string">RX</span> <span class="hljs-attr">bytes:</span><span class="hljs-number"><span class="hljs-attr">23012276676</span> <span class="hljs-string">(</span><span class="hljs-number"><span class="hljs-string">21.4</span> <span class="hljs-string">GiB)</span>  <span class="hljs-string">TX</span> <span class="hljs-attr">bytes:</span><span class="hljs-number"><span class="hljs-attr">3567071726</span> <span class="hljs-string">(</span><span class="hljs-number"><span class="hljs-string">3.3</span> <span class="hljs-string">GiB)</span>  
+<span class="hljs-string">[root@db5</span> <span class="hljs-string">~]#</span> <span class="hljs-string">ping</span> <span class="hljs-number"><span class="hljs-number">172.16</span><span class="hljs-meta"><span class="hljs-number">.3</span><span class="hljs-meta"><span class="hljs-number">.150</span>  
+<span class="hljs-string">PING</span> <span class="hljs-number"><span class="hljs-number">172.16</span><span class="hljs-meta"><span class="hljs-number">.3</span><span class="hljs-meta"><span class="hljs-number">.150</span> <span class="hljs-string">(</span><span class="hljs-number"><span class="hljs-string">172.16</span><span class="hljs-meta"><span class="hljs-string">.3</span><span class="hljs-meta"><span class="hljs-string">.150)</span> <span class="hljs-number"><span class="hljs-number">56</span><span class="hljs-string">(</span><span class="hljs-number"><span class="hljs-string">84)</span> <span class="hljs-string">bytes</span> <span class="hljs-string">of</span> <span class="hljs-string">data.</span>  
+<span class="hljs-number"><span class="hljs-number">64</span> <span class="hljs-string">bytes</span> <span class="hljs-string">from</span> <span class="hljs-number"><span class="hljs-number">172.16</span><span class="hljs-meta"><span class="hljs-number">.3</span><span class="hljs-meta"><span class="hljs-number">.150</span><span class="hljs-string">:</span> <span class="hljs-string">icmp_seq=</span><span class="hljs-number"><span class="hljs-string">1</span> <span class="hljs-string">ttl=</span><span class="hljs-number"><span class="hljs-string">64</span> <span class="hljs-string">time=</span><span class="hljs-number"><span class="hljs-string">0.337</span> <span class="hljs-string">ms</span>  
+
+<span class="hljs-bullet">-</span><span class="hljs-bullet">--</span> <span class="hljs-number"><span class="hljs-number">172.16</span><span class="hljs-meta"><span class="hljs-number">.3</span><span class="hljs-meta"><span class="hljs-number">.150</span> <span class="hljs-string">ping</span> <span class="hljs-string">statistics</span> <span class="hljs-meta">---</span>  
+<span class="hljs-number"><span class="hljs-number">1</span> <span class="hljs-string">packets</span> <span class="hljs-string">transmitted,</span> <span class="hljs-number"><span class="hljs-number">1</span> <span class="hljs-string">received,</span> <span class="hljs-number"><span class="hljs-number">0</span><span class="hljs-string">%</span> <span class="hljs-string">packet</span> <span class="hljs-string">loss,</span> <span class="hljs-string">time</span> <span class="hljs-number">0</span><span class="hljs-string">ms</span>  
+<span class="hljs-string">rtt</span> <span class="hljs-string">min/avg/max/mdev</span> <span class="hljs-string">=</span> <span class="hljs-number"><span class="hljs-number">0.337</span><span class="hljs-string">/</span><span class="hljs-number"><span class="hljs-string">0.337/</span><span class="hljs-number"><span class="hljs-string">0.337/</span><span class="hljs-number"><span class="hljs-string">0.000</span> <span class="hljs-string">ms</span>  
+
+<span class="hljs-string">[root@db5</span> <span class="hljs-string">~]#</span> <span class="hljs-string">ssh</span> <span class="hljs-bullet">-p</span> <span class="hljs-number"><span class="hljs-number">7001</span> <span class="hljs-number"><span class="hljs-number">172.16</span><span class="hljs-meta"><span class="hljs-number">.3</span><span class="hljs-meta"><span class="hljs-number">.150</span>  
+<span class="hljs-string">Password</span> <span class="hljs-string">for</span> <span class="hljs-string">root@digoal.org:</span>  
+<span class="hljs-symbol"><span class="hljs-string">root@digoal:~</span> <span class="hljs-comment"># ifconfig  </span>
+<span class="hljs-symbol"><span class="hljs-attr">em0:</span> <span class="hljs-string">flags=</span><span class="hljs-number"><span class="hljs-string">8843&lt;</span><span class="hljs-meta"><span class="hljs-string">UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST&gt;</span> <span class="hljs-string">metric</span> <span class="hljs-number"><span class="hljs-number">0</span> <span class="hljs-string">mtu</span> <span class="hljs-number"><span class="hljs-number">1500</span>  
+        <span class="hljs-string">options=9b&lt;RXCSUM,TXCSUM,VLAN_MTU,VLAN_HWTAGGING,VLAN_HWCSUM&gt;</span>  
+        <span class="hljs-string">ether</span> <span class="hljs-number"><span class="hljs-number">00</span><span class="hljs-string">:0c:</span><span class="hljs-number"><span class="hljs-string">29:c0:4b:</span><span class="hljs-number"><span class="hljs-string">65</span>  
+        <span class="hljs-string">inet</span> <span class="hljs-number"><span class="hljs-number">192.168</span><span class="hljs-meta"><span class="hljs-number">.198</span><span class="hljs-meta"><span class="hljs-number">.129</span> <span class="hljs-string">netmask</span> <span class="hljs-number"><span class="hljs-number">0xffffff00</span> <span class="hljs-string">broadcast</span> <span class="hljs-number"><span class="hljs-number">192.168</span><span class="hljs-meta"><span class="hljs-number">.198</span><span class="hljs-meta"><span class="hljs-number">.255</span>   
+        <span class="hljs-string">nd6</span> <span class="hljs-string">options=</span><span class="hljs-number"><span class="hljs-string">29&lt;PERFORMNUD,IFDISABLED,AUTO_LINKLOCAL&gt;</span>  
+<span class="hljs-symbol"><span class="hljs-attr">        media:</span> <span class="hljs-string">Ethernet</span> <span class="hljs-string">autoselect</span> <span class="hljs-string">(1000baseT</span> <span class="hljs-string">&lt;full-duplex&gt;)</span>  
+<span class="hljs-symbol"><span class="hljs-attr">        status:</span> <span class="hljs-string">active</span>  
+</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></code></pre>
+<p>到这里反向代理的测试完成.</p>
+<p>接下来我们看看如何在反向代理的基础上, 再做一层反向代理.<br>例如我要在172.16.3.167建立和192.168.198.129的反向代理, 让192.168.198.130通过192.168.198.129来访问172.16.3.150.<br>.1. 首先要修改192.168.198.129的sshd_config</p>
+<pre><code class="hljs smali ruby" data-language="">root@digoal<span class="hljs-symbol">:~</span> <span class="hljs-comment"><span class="hljs-comment"># vi /etc/ssh/sshd_config  </span>
+GatewayPorts yes   
+root@digoal<span class="hljs-symbol">:~</span> <span class="hljs-comment"><span class="hljs-comment"># service sshd reload  </span>
+Performing sanity<span class="hljs-built_in"> check on sshd configuration.  
+root@digoal<span class="hljs-symbol">:~</span> <span class="hljs-comment"><span class="hljs-comment"># exit  </span>
+logout  
+Connection to <span class="hljs-number">172.16</span>.<span class="hljs-number">3.150</span> closed.  
+</span></span></span></span></code></pre>
+<p>.2. 在172.16.3.167建立和192.168.198.129的反向代理</p>
+<pre><code class="hljs x86asm less" data-language=""><span class="hljs-selector-attr">[root@db5 ~]</span># <span class="hljs-selector-tag">ssh</span> <span class="hljs-selector-tag">-CqTfnN</span> <span class="hljs-selector-tag">-p</span> <span class="hljs-number"><span class="hljs-selector-tag">7001</span> <span class="hljs-selector-tag">-R</span> <span class="hljs-number"><span class="hljs-selector-tag">0</span><span class="hljs-selector-class">.0</span><span class="hljs-meta"><span class="hljs-selector-class">.0</span><span class="hljs-meta"><span class="hljs-selector-class">.0</span><span class="hljs-selector-pseudo">:</span><span class="hljs-number"><span class="hljs-selector-pseudo">7001</span><span class="hljs-selector-pseudo">:</span><span class="hljs-number"><span class="hljs-selector-pseudo">172.16</span><span class="hljs-meta"><span class="hljs-selector-pseudo">.3</span><span class="hljs-meta"><span class="hljs-selector-pseudo">.150</span><span class="hljs-selector-pseudo">:</span><span class="hljs-number"><span class="hljs-selector-pseudo">22</span> <span class="hljs-number"><span class="hljs-selector-tag">172</span><span class="hljs-selector-class">.16</span><span class="hljs-meta"><span class="hljs-selector-class">.3</span><span class="hljs-meta"><span class="hljs-selector-class">.150</span>  
+<span class="hljs-selector-tag">Password</span> <span class="hljs-selector-tag">for</span> <span class="hljs-selector-tag">root</span>@<span class="hljs-selector-tag">digoal</span><span class="hljs-selector-class">.org</span>:  
+</span></span></span></span></span></span></span></span></span></span></span></span></code></pre>
+<p>.3. 在192.168.198.129上查看监听.</p>
+<pre><code class="hljs autoit perl" data-language="">root<span class="hljs-symbol">@digoal:~ <span class="hljs-meta"><span class="hljs-comment"># netstat -AaLnSTW  </span>
+Current <span class="hljs-keyword">listen</span> queue sizes (qlen/incqlen/maxqlen)  
+Tcpcb            Proto Listen         <span class="hljs-keyword">Local Address           
+fffff800076ce80<span class="hljs-number">0</span> tcp4  <span class="hljs-number"><span class="hljs-number">0</span>/<span class="hljs-number"><span class="hljs-number">0</span>/<span class="hljs-number"><span class="hljs-number">128</span>        *<span class="hljs-number">.<span class="hljs-number">7001</span>   
+</span></span></span></span></span></span></span></code></pre>
+<p>.4. 在192.168.198.130上通过192.168.198.129:7001来访问172.16.3.150:22.</p>
+<pre><code class="hljs scheme vbnet" data-language="">[<span class="hljs-name">root@digoal ~]<span class="hljs-meta"># ssh -p </span><span class="hljs-number"><span class="hljs-meta">7001 </span><span class="hljs-number"><span class="hljs-meta">192.168.198.129  </span>
+The authenticity <span class="hljs-keyword">of</span> host <span class="hljs-comment">'[</span><span class="hljs-name"><span class="hljs-comment">192.168.198.129]:7001 ([</span><span class="hljs-name"><span class="hljs-comment">192.168.198.129]:7001)' can</span><span class="hljs-symbol"><span class="hljs-comment">'t be established.  </span>
+RSA <span class="hljs-keyword">key</span> fingerprint <span class="hljs-keyword">is</span> <span class="hljs-number"><span class="hljs-number">01</span>:<span class="hljs-number">0</span>b:<span class="hljs-number">96</span>:e1:a8:be:a3:a3:<span class="hljs-number">69</span>:a4:<span class="hljs-number">0</span>a:<span class="hljs-number">11</span>:<span class="hljs-number">5</span>d:<span class="hljs-number">2</span>a:<span class="hljs-number">6</span>f:c2.  
+Are you sure you want <span class="hljs-keyword">to</span> <span class="hljs-keyword">continue</span> connecting (<span class="hljs-name">yes/no)? yes  
+Warning: Permanently added <span class="hljs-comment">'[</span><span class="hljs-name"><span class="hljs-comment">192.168.198.129]:7001' (</span><span class="hljs-name"><span class="hljs-comment">RSA) to the list of known hosts.  </span>
+root@<span class="hljs-number">192.168</span><span class="hljs-number">.198</span><span class="hljs-number">.129</span><span class="hljs-symbol"><span class="hljs-comment">'s password:   </span>
+Last login: Sat Jun <span class="hljs-number"><span class="hljs-number">14</span> <span class="hljs-number"><span class="hljs-number">18</span>:<span class="hljs-number">20</span>:<span class="hljs-number">23</span> <span class="hljs-number"><span class="hljs-number">2014</span> <span class="hljs-keyword">from</span> <span class="hljs-number"><span class="hljs-number">10.0</span><span class="hljs-number">.0</span><span class="hljs-number">.60</span>  
+[<span class="hljs-name">root@db<span class="hljs-number">-172</span><span class="hljs-number">-16</span><span class="hljs-number">-3</span><span class="hljs-number">-150</span> ~]<span class="hljs-meta">#   </span>
+</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></code></pre>
+<p>[注意]<br>.1. 当使用vncserver共享桌面时, 有几点需要注意, 需要使用或勾选Shared connection选项, 否则一个连上来, 其他的就会断掉.<br>.2. 使用vncserver共享桌面, 只要把5901端口共享出来就可以了.<br>例如<br>在172.16.3.150建立和172.16.3.221的反向隧道, 代理VNCSERVER端口的反向转发.</p>
+<pre><code class="hljs css" data-language=""># <span class="hljs-selector-tag"><span class="hljs-selector-tag">ssh</span> <span class="hljs-selector-tag"><span class="hljs-selector-tag">-CqTfnN</span> <span class="hljs-selector-tag"><span class="hljs-selector-tag">-p</span> 22 <span class="hljs-selector-tag"><span class="hljs-selector-tag">-R</span> 0<span class="hljs-selector-class"><span class="hljs-selector-class">.0</span><span class="hljs-selector-class"><span class="hljs-selector-class">.0</span><span class="hljs-selector-class"><span class="hljs-selector-class">.0</span><span class="hljs-selector-pseudo"><span class="hljs-selector-pseudo">:5901</span><span class="hljs-selector-pseudo"><span class="hljs-selector-pseudo">:172.16.3.150</span><span class="hljs-selector-pseudo"><span class="hljs-selector-pseudo">:5901</span> 172<span class="hljs-selector-class"><span class="hljs-selector-class">.16</span><span class="hljs-selector-class"><span class="hljs-selector-class">.3</span><span class="hljs-selector-class"><span class="hljs-selector-class">.221</span>  
+</span></span></span></span></span></span></span></span></span></span></span></span></span></code></pre>
+<p>这个使用的是172.16.3.221:5901来代理172.16.3.150:5901<br>在172.16.3.150开启一个vncserver, 让A主机可以连到这个vncserver.<br>在A主机开启一个vncviewer, 并打开共享连接, 连接到172.16.3.150:5901<br>在B主机开启一个vncviewer, 并打开共享连接, 连接到172.16.3.221:5901<br>最终, A变成了监控机, B是操作方.<br>B的操作, A可以在VNCVIEWER观看到.<br>使用完成后, 断开172.16.3.150和172.16.3.221的连接即可, 或者关闭172.16.3.150的vncserver服务即可. vncserver -kill :?.<br>.3. 如果是跨广域网的隧道, 中间经过的某些网络设备可能会有会话空闲自动断开机制, 为了确保隧道不会被这种机制自动干掉, 我们可以设置一下SSH连接的心跳.</p>
+<pre><code class="hljs x86asm shell" data-language=""><span class="hljs-meta">#</span><span class="bash"> sysctl -w net.ipv4.tcp_keepalive_time=</span><span class="hljs-number"><span class="bash">30  </span>
+net.ipv4.tcp_keepalive_time = <span class="hljs-number">30  
+<span class="hljs-meta">#</span><span class="bash"> ssh -CqTfnN -o TCPKeepAlive=yes -o ServerAliveInterval=</span><span class="hljs-number"><span class="bash">10 -o ServerAliveCountMax=</span><span class="hljs-number"><span class="bash">10 -p </span><span class="hljs-number"><span class="bash">22 -R </span><span class="hljs-number"><span class="bash">0.0</span><span class="hljs-meta"><span class="bash">.0</span><span class="hljs-meta"><span class="bash">.0:</span><span class="hljs-number"><span class="bash">5901:</span><span class="hljs-number"><span class="bash">172.16</span><span class="hljs-meta"><span class="bash">.3</span><span class="hljs-meta"><span class="bash">.150:</span><span class="hljs-number"><span class="bash">5901 目标</span><span class="hljs-built_in"><span class="bash">IP  </span>
+</span></span></span></span></span></span></span></span></span></span></span></span></span></span></code></pre>
+<p>现在TCP的心跳时间缩短了, 空闲会自动发送TCP心跳包.</p>
+<pre><code class="hljs x86asm less" data-language=""><span class="hljs-selector-attr">[root@</span><span class="hljs-number"><span class="hljs-selector-attr">150 ~]</span># <span class="hljs-selector-tag">netstat</span> <span class="hljs-selector-tag">-anpo</span>|<span class="hljs-selector-tag">grep</span> <span class="hljs-selector-tag">ssh</span>  
+<span class="hljs-selector-tag">tcp</span>        <span class="hljs-number"><span class="hljs-selector-tag">0</span>      <span class="hljs-number"><span class="hljs-selector-tag">0</span> <span class="hljs-number"><span class="hljs-selector-tag">0</span><span class="hljs-selector-class">.0</span><span class="hljs-meta"><span class="hljs-selector-class">.0</span><span class="hljs-meta"><span class="hljs-selector-class">.0</span><span class="hljs-selector-pseudo">:</span><span class="hljs-number"><span class="hljs-selector-pseudo">22</span>                  <span class="hljs-number"><span class="hljs-selector-tag">0</span><span class="hljs-selector-class">.0</span><span class="hljs-meta"><span class="hljs-selector-class">.0</span><span class="hljs-meta"><span class="hljs-selector-class">.0</span>:*                   <span class="hljs-selector-tag">LISTEN</span>      <span class="hljs-number"><span class="hljs-selector-tag">2699</span>/<span class="hljs-selector-tag">sshd</span>           <span class="hljs-selector-tag">off</span> (<span class="hljs-number"><span class="hljs-number">0.00</span>/<span class="hljs-number"><span class="hljs-number">0</span>/<span class="hljs-number"><span class="hljs-number">0</span>)  
+<span class="hljs-selector-tag">tcp</span>        <span class="hljs-number"><span class="hljs-selector-tag">0</span>      <span class="hljs-number"><span class="hljs-selector-tag">0</span> <span class="hljs-number"><span class="hljs-selector-tag">172</span><span class="hljs-selector-class">.16</span><span class="hljs-meta"><span class="hljs-selector-class">.3</span><span class="hljs-meta"><span class="hljs-selector-class">.150</span><span class="hljs-selector-pseudo">:</span><span class="hljs-number"><span class="hljs-selector-pseudo">62230</span>          目标<span class="hljs-built_in"><span class="hljs-selector-tag">IP</span><span class="hljs-selector-pseudo">:</span><span class="hljs-number"><span class="hljs-selector-pseudo">22</span>          <span class="hljs-selector-tag">ESTABLISHED</span> <span class="hljs-number"><span class="hljs-selector-tag">21721</span>/<span class="hljs-selector-tag">ssh</span>           <span class="hljs-selector-tag">keepalive</span> (<span class="hljs-number"><span class="hljs-number">21.48</span>/<span class="hljs-number"><span class="hljs-number">0</span>/<span class="hljs-number"><span class="hljs-number">0</span>)  
+</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></code></pre>
+<p>.4. 如果目标机的5901端口监听被占用了, 可以换个端口, 那么使用vncviewer或者其他客户端连接时, 需要使用::port指定端口.<br>例如172.16.3.150::6666<br>.5. 考虑到跨广域网的带宽有限问题, vncserver启动时, 最好设置一下位宽, 因为大多数操作不需要那么好的色彩, 例如 :</p>
+<pre><code class="hljs vala shell" data-language=""><span class="hljs-meta"><span class="hljs-meta">#</span><span class="bash"> vncserver :1 -geometry 1200x700 -depth 8 -cc 3   </span>
+</span></code></pre>
+<p>初次配置时, 输入密码</p>
+<pre><code class="hljs vala shell" data-language=""><span class="hljs-meta"><span class="hljs-meta">#</span><span class="bash"> vi ~/.vnc/xstartup   </span>
+<span class="hljs-meta"><span class="hljs-meta">#</span><span class="bash">twm &amp;  </span>
+gnome-session &amp;  
+<span class="hljs-meta">
+</span><span class="hljs-meta"><span class="hljs-meta">#</span><span class="bash"> vncserver -<span class="hljs-built_in">kill</span> :1  </span>
+<span class="hljs-meta"><span class="hljs-meta">#</span><span class="bash"> vncserver :1 -geometry 1200x700 -depth 8 -cc 3   </span>
+</span></span></span></span></code></pre>
+<p>参考<br>man vncserver</p>
+<p>[参考]<br>.1.&nbsp;<a href="http://blog.163.com/digoal@126/blog/static/163877040201141821810103/">http://blog.163.com/digoal@126/blog/static/163877040201141821810103/</a><br>.2.&nbsp;<a href="http://blog.163.com/digoal@126/blog/static/16387704020115294425540/">http://blog.163.com/digoal@126/blog/static/16387704020115294425540/</a><br>.3.&nbsp;<a href="http://blog.163.com/digoal@126/blog/static/163877040201342383123592/">http://blog.163.com/digoal@126/blog/static/163877040201342383123592/</a><br>.4. man ssh</p>
+<pre><code class="hljs applescript vhdl" data-language="">     -R [bind_address:]<span class="hljs-keyword">port</span>:host:hostport  
+             Specifies <span class="hljs-keyword">that <span class="hljs-keyword">the <span class="hljs-keyword">given <span class="hljs-keyword">port</span> <span class="hljs-keyword"><span class="hljs-keyword">on</span> <span class="hljs-keyword">the remote (server) host <span class="hljs-keyword"><span class="hljs-keyword">is</span> <span class="hljs-keyword"><span class="hljs-keyword">to</span> be forwarded <span class="hljs-keyword"><span class="hljs-keyword">to</span> <span class="hljs-keyword">the <span class="hljs-keyword">given host <span class="hljs-keyword"><span class="hljs-keyword">and</span> <span class="hljs-keyword">port</span>  
+             <span class="hljs-keyword"><span class="hljs-keyword">on</span> <span class="hljs-keyword">the <span class="hljs-keyword">local <span class="hljs-literal">side</span>.  This works <span class="hljs-keyword">by allocating a socket <span class="hljs-keyword"><span class="hljs-keyword">to</span> listen <span class="hljs-keyword"><span class="hljs-keyword">to</span> <span class="hljs-keyword">port</span> <span class="hljs-keyword"><span class="hljs-keyword">on</span> <span class="hljs-keyword">the remote <span class="hljs-literal">side</span>, <span class="hljs-keyword"><span class="hljs-keyword">and</span> whenever  
+             a connection <span class="hljs-keyword"><span class="hljs-keyword">is</span> made <span class="hljs-keyword"><span class="hljs-keyword">to</span> this <span class="hljs-keyword">port</span>, <span class="hljs-keyword">the connection <span class="hljs-keyword"><span class="hljs-keyword">is</span> forwarded <span class="hljs-keyword">over <span class="hljs-keyword">the secure channel, <span class="hljs-keyword"><span class="hljs-keyword">and</span> a connection  
+             <span class="hljs-keyword"><span class="hljs-keyword">is</span> made <span class="hljs-keyword"><span class="hljs-keyword">to</span> host <span class="hljs-keyword">port</span> hostport <span class="hljs-keyword">from <span class="hljs-keyword">the <span class="hljs-keyword">local machine.  
+
+             <span class="hljs-keyword">Port</span> forwardings can also be specified <span class="hljs-keyword"><span class="hljs-keyword">in</span> <span class="hljs-keyword">the <span class="hljs-keyword">configuration</span> <span class="hljs-built_in"><span class="hljs-keyword">file</span>.  Privileged ports can be forwarded only  
+             <span class="hljs-keyword">when</span> logging <span class="hljs-keyword"><span class="hljs-keyword">in</span> <span class="hljs-keyword">as root <span class="hljs-keyword"><span class="hljs-keyword">on</span> <span class="hljs-keyword">the remote machine.  IPv6 addresses can be specified <span class="hljs-keyword">by enclosing <span class="hljs-keyword">the address  
+             <span class="hljs-keyword"><span class="hljs-keyword">in</span> square braces <span class="hljs-keyword"><span class="hljs-keyword">or</span> using an alternative syntax: [bind_address/]host/<span class="hljs-keyword">port</span>/hostport.  
+
+             By <span class="hljs-keyword">default</span>, <span class="hljs-keyword">the listening socket <span class="hljs-keyword"><span class="hljs-keyword">on</span> <span class="hljs-keyword">the server will be bound <span class="hljs-keyword"><span class="hljs-keyword">to</span> <span class="hljs-keyword">the loopback interface only.  This may be  
+             overridden <span class="hljs-keyword">by specifying a bind_address.  An empty bind_address, <span class="hljs-keyword"><span class="hljs-keyword">or</span> <span class="hljs-keyword">the address ‘*’, indicates <span class="hljs-keyword">that <span class="hljs-keyword">the  
+             remote socket should listen <span class="hljs-keyword"><span class="hljs-keyword">on</span> <span class="hljs-keyword">all</span> interfaces.  Specifying a remote bind_address will only succeed <span class="hljs-keyword"><span class="hljs-keyword">if</span> <span class="hljs-keyword">the  
+             server’s GatewayPorts option <span class="hljs-keyword"><span class="hljs-keyword">is</span> enabled (see sshd_config(<span class="hljs-number"><span class="hljs-number">5</span>)).  
+
+             <span class="hljs-keyword">If</span> <span class="hljs-keyword">the <span class="hljs-keyword">port</span> argument <span class="hljs-keyword"><span class="hljs-keyword">is</span> ‘<span class="hljs-number"><span class="hljs-number">0</span>’, <span class="hljs-keyword">the listen <span class="hljs-keyword">port</span> will be dynamically allocated <span class="hljs-keyword"><span class="hljs-keyword">on</span> <span class="hljs-keyword">the server <span class="hljs-keyword"><span class="hljs-keyword">and</span> reported <span class="hljs-keyword"><span class="hljs-keyword">to</span>  
+             <span class="hljs-keyword">the client <span class="hljs-keyword">at <span class="hljs-built_in">run <span class="hljs-built_in"><span class="hljs-built_in">time</span>.  
+</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></code></pre>
+<p>.5.&nbsp;<br>linux 通过ssh代理上网<br>本网段上网需计费,想到通过另一网段的linux服务器做代理免费上网<br>前提是你有那台linux主机的帐户<br>然后打开终端输入</p>
+<pre><code class="hljs nginx" data-language=""><span class="hljs-attribute"><span class="hljs-attribute">ssh</span> -qTfnN -D <span class="hljs-number"><span class="hljs-number">7070</span> user<span class="hljs-variable"><span class="hljs-variable">@host</span>
+</span></span></span></code></pre>
+<p>说明: user是你的帐号,host指对方linux主机的ip</p>
+<pre><code class="hljs livecodeserver vbscript" data-language="">-q Quiet mode. 安静模式，忽略一切对话和错误提示。
+-T Disable pseudo-tty allocation. 不占用 <span class="hljs-built_in">shell 了。
+-f Requests ssh <span class="hljs-built_in"><span class="hljs-keyword">to</span> go <span class="hljs-built_in"><span class="hljs-keyword">to</span> background just <span class="hljs-keyword">before <span class="hljs-keyword">command <span class="hljs-title">execution. 后台运行，并推荐加上 -<span class="hljs-title">n 参数。
+-n Redirects <span class="hljs-keyword">stdin <span class="hljs-built_in">from /dev/<span class="hljs-literal"><span class="hljs-literal">null</span> (actually, prevents reading <span class="hljs-built_in">from <span class="hljs-keyword">stdin). -f 推荐的，不加这条参数应该也行。
+-N <span class="hljs-keyword">Do</span> <span class="hljs-keyword"><span class="hljs-keyword">not</span> <span class="hljs-keyword">execute</span> <span class="hljs-keyword">a remote <span class="hljs-keyword">command. 不执行远程命令，专为端口转发度身打造。
+</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></code></pre>
+<p>然后在浏览器中<br>如果是firefox:安装autoproxy插件，在代理中选择SSH -D即可。默认情况下的配置就是7070端口，所以可以不用修改配置，否则在首选项中更改服务器设置。<br>如果是Chrome:安装proxy switchy扩展，添加Proxy Profile，在右侧的socks host中输入127.0.0.1和7070，下方选中socks v5，保存，然后切换至该profile即可。</p></div><div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag">标签: <a href="https://www.cnblogs.com/x_wukong/tag/Linux/">Linux</a></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(7113854,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow('6600e358-9c8f-e111-aa3f-842b2b196315');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/x_wukong/" target="_blank"><img src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/20130827155958.png" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/x_wukong/">明明是悟空</a><br>
+            <a href="http://home.cnblogs.com/u/x_wukong/followees">关注 - 4</a><br>
+            <a href="http://home.cnblogs.com/u/x_wukong/followers">粉丝 - 129</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('6600e358-9c8f-e111-aa3f-842b2b196315');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(7113854,'Digg')">
+        <span class="diggnum" id="digg_count">1</span>
+    </div>
+    <div class="buryit" onclick="votePost(7113854,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/x_wukong/p/7077874.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/x_wukong/p/7077874.html" title="发布于2017-06-25 20:48">爬虫与反爬虫</a><br><a href="https://www.cnblogs.com/x_wukong/p/7215543.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/x_wukong/p/7215543.html" title="发布于2017-07-21 00:48">webrtc在ubuntu14.04上的编译过程(12.04亦可)</a><br></div>
+</div>
+
+
+		</div>
+		<div class="postDesc">posted @ <span id="post-date">2017-07-04 00:55</span> <a href="https://www.cnblogs.com/x_wukong/">明明是悟空</a> 阅读(<span id="post_view_count">6589</span>) 评论(<span id="post_comment_count">0</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=7113854" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(7113854);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=128278,cb_entryId=7113854,cb_blogApp=currentBlogApp,cb_blogUserGuid='6600e358-9c8f-e111-aa3f-842b2b196315',cb_entryCreatedDate='2017/7/4 0:55:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="https://www.bagevent.com/event/2195041?bag_track=13072958" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-看雪')">【活动】看雪2019安全开发者峰会，共话安全领域焦点</a><br><a href="https://ke.qq.com/adActivity.html?name=xiangxueketang2" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-享学')">【培训】Java程序员年薪40W，他1年走了别人5年的路</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="%E4%BD%BF%E7%94%A8%20ssh%20-R%20%E5%BB%BA%E7%AB%8B%E5%8F%8D%E5%90%91_%E8%BF%9C%E7%A8%8BTCP%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%A3%E7%90%86%20-%20%E6%98%8E%E6%98%8E%E6%98%AF%E6%82%9F%E7%A9%BA%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CM6l45nZm-ICFUEhKgod-04NHw"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>相关博文：</b><br>·  <a href="https://www.cnblogs.com/weishun/p/5189339.html" target="_blank" onclick="clickRecomItmem(5189339)">ssh命令：隧道代理+本地端口转发+远程端口转发</a><br>·  <a href="https://www.cnblogs.com/xinggg/p/8043227.html" target="_blank" onclick="clickRecomItmem(8043227)">ssh端口转发笔记：ssh反向代理(隧道)、动态代理、本地代理</a><br>·  <a href="https://www.cnblogs.com/bailandecheng/p/9609316.html" target="_blank" onclick="clickRecomItmem(9609316)">ssh的端口转发</a><br>·  <a href="https://www.cnblogs.com/momenglin/p/8486080.html" target="_blank" onclick="clickRecomItmem(8486080)">SSH的端口转发</a><br>·  <a href="https://www.cnblogs.com/sparkdev/p/7497388.html" target="_blank" onclick="clickRecomItmem(7497388)">SSH 端口转发</a><br></div></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CM-l45nZm-ICFUEhKgod-04NHw"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/625287/" target="_blank">谷歌打造“野生字幕君”：不用联网 支持所有应用</a><br> ·  <a href="https://news.cnblogs.com/n/625286/" target="_blank">腾讯天幕：“3+2+N”助力政企云网络安全治理</a><br> ·  <a href="https://news.cnblogs.com/n/625285/" target="_blank">惠普被骗致巨亏88亿案件：Autonomy CFO被判五年牢狱</a><br> ·  <a href="https://news.cnblogs.com/n/625284/" target="_blank">科学家最新发现：月球的体积正在不断变小</a><br> ·  <a href="https://news.cnblogs.com/n/625283/" target="_blank">多名中国开发者入选 FFmpeg 决策委员会</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"><b>历史上的今天:</b><br>2014-07-04 <a href="https://www.cnblogs.com/x_wukong/p/3824991.html">数据库（第一范式，第二范式，第三范式）</a><br></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/x_wukong/">明明是悟空</a><br>园龄：<a href="https://home.cnblogs.com/u/x_wukong/" title="入园时间：2012-04-26">7年</a><br>粉丝：<a href="https://home.cnblogs.com/u/x_wukong/followers/">129</a><br>关注：<a href="https://home.cnblogs.com/u/x_wukong/followees/">4</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow('6600e358-9c8f-e111-aa3f-842b2b196315')">+加关注</a></div><script>getFollowStatus('6600e358-9c8f-e111-aa3f-842b2b196315')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/04/01');return false;">&lt;</a></td><td align="center">2019年5月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/06/01');return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" abbr="日" scope="col" align="center">日</th><th class="CalDayHeader" abbr="一" scope="col" align="center">一</th><th class="CalDayHeader" abbr="二" scope="col" align="center">二</th><th class="CalDayHeader" abbr="三" scope="col" align="center">三</th><th class="CalDayHeader" abbr="四" scope="col" align="center">四</th><th class="CalDayHeader" abbr="五" scope="col" align="center">五</th><th class="CalDayHeader" abbr="六" scope="col" align="center">六</th></tr><tr><td class="CalOtherMonthDay" align="center">28</td><td class="CalOtherMonthDay" align="center">29</td><td class="CalOtherMonthDay" align="center">30</td><td align="center">1</td><td align="center">2</td><td align="center">3</td><td class="CalWeekendDay" align="center">4</td></tr><tr><td class="CalWeekendDay" align="center">5</td><td align="center">6</td><td align="center">7</td><td align="center">8</td><td align="center">9</td><td align="center">10</td><td class="CalWeekendDay" align="center"><a href="https://www.cnblogs.com/x_wukong/archive/2019/05/11.html"><u>11</u></a></td></tr><tr><td class="CalWeekendDay" align="center">12</td><td align="center">13</td><td align="center">14</td><td class="CalTodayDay" align="center">15</td><td align="center">16</td><td align="center">17</td><td class="CalWeekendDay" align="center">18</td></tr><tr><td class="CalWeekendDay" align="center">19</td><td align="center">20</td><td align="center">21</td><td align="center">22</td><td align="center">23</td><td align="center">24</td><td class="CalWeekendDay" align="center">25</td></tr><tr><td class="CalWeekendDay" align="center">26</td><td align="center">27</td><td align="center">28</td><td align="center">29</td><td align="center">30</td><td align="center">31</td><td class="CalOtherMonthDay" align="center">1</td></tr><tr><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td><td class="CalOtherMonthDay" align="center">7</td><td class="CalOtherMonthDay" align="center">8</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<div class="catListLink">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/x_wukong/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/x_wukong/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/x_wukong/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/x_wukong/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/x_wukong/tag/" title="我的博客的标签列表">我的标签</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div></div><div id="sidebar_toptags" class="sidebar-block">
+<div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/x_wukong/tag/Linux/">Linux</a>(133)</li><li><a href="https://www.cnblogs.com/x_wukong/tag/web%E5%BC%80%E5%8F%91/">web开发</a>(84)</li><li><a href="https://www.cnblogs.com/x_wukong/tag/java/">java</a>(63)</li><li><a href="https://www.cnblogs.com/x_wukong/tag/c%2Fc%2B%2B/">c/c++</a>(59)</li><li><a href="https://www.cnblogs.com/x_wukong/tag/android/">android</a>(46)</li><li><a href="https://www.cnblogs.com/x_wukong/tag/Linux%E5%86%85%E6%A0%B8/">Linux内核</a>(38)</li><li><a href="https://www.cnblogs.com/x_wukong/tag/chromium/">chromium</a>(29)</li><li><a href="https://www.cnblogs.com/x_wukong/tag/webrtc/">webrtc</a>(23)</li><li><a href="https://www.cnblogs.com/x_wukong/tag/H264/">H264</a>(17)</li><li><a href="https://www.cnblogs.com/x_wukong/tag/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>(16)</li><li><a href="https://www.cnblogs.com/x_wukong/tag/">更多</a></li>
+</ul>
+</div></div><div id="sidebar_categories">
+<div id="sidebar_postarchive" class="catListPostArchive sidebar-block">
+<h3 class="catListTitle">随笔档案</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/x_wukong/archive/2019/05.html">2019年5月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/x_wukong/archive/2019/04.html">2019年4月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/x_wukong/archive/2019/01.html">2019年1月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/x_wukong/archive/2018/12.html">2018年12月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_4" href="https://www.cnblogs.com/x_wukong/archive/2018/11.html">2018年11月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_5" href="https://www.cnblogs.com/x_wukong/archive/2018/10.html">2018年10月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_6" href="https://www.cnblogs.com/x_wukong/archive/2018/09.html">2018年9月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_7" href="https://www.cnblogs.com/x_wukong/archive/2018/08.html">2018年8月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_8" href="https://www.cnblogs.com/x_wukong/archive/2018/07.html">2018年7月 (9)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_9" href="https://www.cnblogs.com/x_wukong/archive/2018/06.html">2018年6月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_10" href="https://www.cnblogs.com/x_wukong/archive/2018/05.html">2018年5月 (8)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_11" href="https://www.cnblogs.com/x_wukong/archive/2018/04.html">2018年4月 (8)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_12" href="https://www.cnblogs.com/x_wukong/archive/2018/03.html">2018年3月 (18)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_13" href="https://www.cnblogs.com/x_wukong/archive/2018/02.html">2018年2月 (6)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_14" href="https://www.cnblogs.com/x_wukong/archive/2018/01.html">2018年1月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_15" href="https://www.cnblogs.com/x_wukong/archive/2017/12.html">2017年12月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_16" href="https://www.cnblogs.com/x_wukong/archive/2017/11.html">2017年11月 (7)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_17" href="https://www.cnblogs.com/x_wukong/archive/2017/10.html">2017年10月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_18" href="https://www.cnblogs.com/x_wukong/archive/2017/09.html">2017年9月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_19" href="https://www.cnblogs.com/x_wukong/archive/2017/08.html">2017年8月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_20" href="https://www.cnblogs.com/x_wukong/archive/2017/07.html">2017年7月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_21" href="https://www.cnblogs.com/x_wukong/archive/2017/06.html">2017年6月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_22" href="https://www.cnblogs.com/x_wukong/archive/2017/05.html">2017年5月 (8)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_23" href="https://www.cnblogs.com/x_wukong/archive/2017/04.html">2017年4月 (13)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_24" href="https://www.cnblogs.com/x_wukong/archive/2017/03.html">2017年3月 (11)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_25" href="https://www.cnblogs.com/x_wukong/archive/2017/02.html">2017年2月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_26" href="https://www.cnblogs.com/x_wukong/archive/2017/01.html">2017年1月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_27" href="https://www.cnblogs.com/x_wukong/archive/2016/12.html">2016年12月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_28" href="https://www.cnblogs.com/x_wukong/archive/2016/11.html">2016年11月 (10)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_29" href="https://www.cnblogs.com/x_wukong/archive/2016/10.html">2016年10月 (7)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_30" href="https://www.cnblogs.com/x_wukong/archive/2016/09.html">2016年9月 (27)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_31" href="https://www.cnblogs.com/x_wukong/archive/2016/08.html">2016年8月 (23)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_32" href="https://www.cnblogs.com/x_wukong/archive/2016/07.html">2016年7月 (28)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_33" href="https://www.cnblogs.com/x_wukong/archive/2016/06.html">2016年6月 (13)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_34" href="https://www.cnblogs.com/x_wukong/archive/2016/05.html">2016年5月 (7)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_35" href="https://www.cnblogs.com/x_wukong/archive/2016/04.html">2016年4月 (9)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_36" href="https://www.cnblogs.com/x_wukong/archive/2016/03.html">2016年3月 (26)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_37" href="https://www.cnblogs.com/x_wukong/archive/2016/02.html">2016年2月 (9)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_38" href="https://www.cnblogs.com/x_wukong/archive/2016/01.html">2016年1月 (8)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_39" href="https://www.cnblogs.com/x_wukong/archive/2015/12.html">2015年12月 (13)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_40" href="https://www.cnblogs.com/x_wukong/archive/2015/11.html">2015年11月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_41" href="https://www.cnblogs.com/x_wukong/archive/2015/10.html">2015年10月 (14)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_42" href="https://www.cnblogs.com/x_wukong/archive/2015/09.html">2015年9月 (22)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_43" href="https://www.cnblogs.com/x_wukong/archive/2015/08.html">2015年8月 (12)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_44" href="https://www.cnblogs.com/x_wukong/archive/2015/07.html">2015年7月 (9)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_45" href="https://www.cnblogs.com/x_wukong/archive/2015/06.html">2015年6月 (9)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_46" href="https://www.cnblogs.com/x_wukong/archive/2015/05.html">2015年5月 (26)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_47" href="https://www.cnblogs.com/x_wukong/archive/2015/04.html">2015年4月 (27)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_48" href="https://www.cnblogs.com/x_wukong/archive/2015/03.html">2015年3月 (27)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_49" href="https://www.cnblogs.com/x_wukong/archive/2015/02.html">2015年2月 (18)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_50" href="https://www.cnblogs.com/x_wukong/archive/2015/01.html">2015年1月 (8)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_51" href="https://www.cnblogs.com/x_wukong/archive/2014/12.html">2014年12月 (8)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_52" href="https://www.cnblogs.com/x_wukong/archive/2014/11.html">2014年11月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_53" href="https://www.cnblogs.com/x_wukong/archive/2014/10.html">2014年10月 (13)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_54" href="https://www.cnblogs.com/x_wukong/archive/2014/09.html">2014年9月 (15)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_55" href="https://www.cnblogs.com/x_wukong/archive/2014/08.html">2014年8月 (37)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_56" href="https://www.cnblogs.com/x_wukong/archive/2014/07.html">2014年7月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_57" href="https://www.cnblogs.com/x_wukong/archive/2014/06.html">2014年6月 (3)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_58" href="https://www.cnblogs.com/x_wukong/archive/2014/05.html">2014年5月 (26)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_59" href="https://www.cnblogs.com/x_wukong/archive/2014/04.html">2014年4月 (17)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_60" href="https://www.cnblogs.com/x_wukong/archive/2014/03.html">2014年3月 (11)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_61" href="https://www.cnblogs.com/x_wukong/archive/2014/02.html">2014年2月 (7)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_62" href="https://www.cnblogs.com/x_wukong/archive/2014/01.html">2014年1月 (6)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_63" href="https://www.cnblogs.com/x_wukong/archive/2013/11.html">2013年11月 (14)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_64" href="https://www.cnblogs.com/x_wukong/archive/2013/10.html">2013年10月 (8)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_65" href="https://www.cnblogs.com/x_wukong/archive/2013/09.html">2013年9月 (12)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_66" href="https://www.cnblogs.com/x_wukong/archive/2013/08.html">2013年8月 (20)</a> </li>
+
+</ul>
+
+</div>
+
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/x_wukong/p/5827492.html#4235758">1. Re:RTP RTCP在音视频传输与同步方面的使用</a></li>
+        <li class="recent_comment_body">Video_TRUERTP是啥意思</li>
+        <li class="recent_comment_author">--wsygyb</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/x_wukong/p/5148152.html#4216617">2. Re:如何在java程序中调用linux命令或者shell脚本</a></li>
+        <li class="recent_comment_body">@Sunzz 方案一：linux上命令重命名，这个是针对所有客户端的，不仅仅java方案二：仅针对java，你把runtime。exec方法封装一下，内部处理一下...</li>
+        <li class="recent_comment_author">--破石</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/x_wukong/p/5653253.html#4203654">3. Re:C++中引用（&amp;）的用法和应用实例</a></li>
+        <li class="recent_comment_body">还有Lambda表达式的没有写</li>
+        <li class="recent_comment_author">--天之骄子'</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/x_wukong/p/5653253.html#4203650">4. Re:C++中引用（&amp;）的用法和应用实例</a></li>
+        <li class="recent_comment_body">不错，比较详细。</li>
+        <li class="recent_comment_author">--天之骄子'</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/x_wukong/p/5582559.html#4200739">5. Re:linux下搭建属于自己的博客（WordPress安装）</a></li>
+        <li class="recent_comment_body">Linux系统各种版本ISO镜像下载地址：<br><a href="" target="_blank"></a></li>
+        <li class="recent_comment_author">--风爷</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/x_wukong/p/5148152.html">1. 如何在java程序中调用linux命令或者shell脚本(55900)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/5837346.html">2. linux mysql 操作命令(46481)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/4679116.html">3. java写入文件的几种方法分享(46186)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/5653253.html">4. C++中引用（&amp;）的用法和应用实例(35695)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/5842138.html">5. 1080P、720P、4CIF、CIF所需要的理论带宽(32257)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/x_wukong/p/3292664.html">1. JSP/Servlet的编码原理(2)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/3703017.html">2. struts2文件下载及 &lt;param name="inputName"&gt;inputStream&lt;/param&gt;的理解(2)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/3952688.html">3. 二进制的计算（计算机为什么采用补码存储数据）(2)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/3969114.html">4. jsp放在web-inf下的注意事项(2)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/5712345.html">5. 传指针和传指针引用的区别/指针和引用的区别（本质）(2)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/x_wukong/p/3962315.html">1. 线程安全的单例模式(5)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/4009709.html">2. JAVA 的wait(), notify()与synchronized同步机制(4)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/3929654.html">3. 理解HTTP session原理及应用(3)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/3969114.html">4. jsp放在web-inf下的注意事项(3)</a></li><li><a href="https://www.cnblogs.com/x_wukong/p/5743369.html">5. C语言中结构体的位域（bit-fields）(2)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright ©2019 明明是悟空
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+</body></html>

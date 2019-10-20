@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="origin">
+    <title>远程操作与端口转发   SSH原理与运用 - D_R_Y - 博客园</title>
+<meta property="og:description" content="SSH不仅可以用于远程主机登录，还可以直接在远程主机上执行操作。 上一节的操作，就是一个例子： $ ssh user@host&nbsp;'mkdir -p .ssh &amp;&amp; c">
+    <link type="text/css" rel="stylesheet" href="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-CodingLife.css">
+<link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-CodingLife-mobile.css">
+    <link title="RSS" type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/qiaoyanlin/rss">
+    <link title="RSD" type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/qiaoyanlin/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/qiaoyanlin/wlwmanifest.xml">
+    <script src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_rendering_2019050701.js"></script><script async="" src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script>var currentBlogId=300743;var currentBlogApp='qiaoyanlin',cb_enable_mathjax=false;var isLogined=false;</script>
+    <script src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js" type="text/javascript"></script>
+<link rel="preload" href="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2019050701.js" async=""></script></head>
+<body>
+<a name="top"></a>
+
+
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a id="lnkBlogLogo" href="https://www.cnblogs.com/qiaoyanlin/"><img id="blogLogo" src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.gif" alt="返回主页"></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="https://www.cnblogs.com/qiaoyanlin/">D R Y !    -geek~</a></h1>
+<h2>Don't Repeat Yourself !Don't Repeat Yourself !Don't Repeat Yourself!</h2>
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">博客园</a></li>
+<li><a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/qiaoyanlin/">首页</a></li>
+<li><a id="blog_nav_newpost" class="menu" rel="nofollow" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+<li><a id="blog_nav_contact" class="menu" rel="nofollow" href="https://msg.cnblogs.com/send/D_R_Y">联系</a></li>
+<li><a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/qiaoyanlin/rss">订阅</a>
+<!--<a id="blog_nav_rss_image" class="aHeaderXML" href="https://www.cnblogs.com/qiaoyanlin/rss"><img src="//www.cnblogs.com/images/xml.gif" alt="订阅" /></a>--></li>
+<li><a id="blog_nav_admin" class="menu" rel="nofollow" href="https://i.cnblogs.com/">管理</a></li>
+</ul>
+		<div class="blogStats">
+			
+			<div id="blog_stats">
+<span id="stats_post_count">随笔 - 321&nbsp; </span>
+<span id="stats_article_count">文章 - 5&nbsp; </span>
+<span id="stats-comment_count">评论 - 4</span>
+</div>
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		
+        <div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/qiaoyanlin/p/7765025.html">远程操作与端口转发   SSH原理与运用</a>
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			<div id="cnblogs_post_body" class="blogpost-body"><p>SSH不仅可以用于远程主机登录，还可以直接在远程主机上执行操作。</p>
+<p>上一节的操作，就是一个例子：</p>
+<p>　　$ ssh user<a href="http://3ms.huawei.com/doc3ms/unionSearch/unionSearch.do?method=doSearch&amp;doctype=HW3MS_CONNECT_PROFILE_MKTG&amp;searchtext=host" target="_blank">@host</a>&nbsp;'mkdir -p .ssh &amp;&amp; cat &gt;&gt; .ssh/authorized_keys' &lt; ~/.ssh/id_rsa.pub</p>
+<p>单引号中间的部分，表示在远程主机上执行的操作；后面的输入重定向，表示数据通过SSH传向远程主机。</p>
+<p>这就是说，SSH可以在用户和远程主机之间，建立命令和数据的传输通道，因此很多事情都可以通过SSH来完成。</p>
+<p>下面看几个例子。</p>
+<p>【例1】</p>
+<p>将$HOME/src/目录下面的所有文件，复制到远程主机的$HOME/src/目录。</p>
+<p>　　$ cd &amp;&amp; tar czv src | ssh user<a href="http://3ms.huawei.com/doc3ms/unionSearch/unionSearch.do?method=doSearch&amp;doctype=HW3MS_CONNECT_PROFILE_MKTG&amp;searchtext=host" target="_blank">@host</a>&nbsp;'tar xz'</p>
+<p>【例2】</p>
+<p>将远程主机$HOME/src/目录下面的所有文件，复制到用户的当前目录。</p>
+<p>　　$ ssh user<a href="http://3ms.huawei.com/doc3ms/unionSearch/unionSearch.do?method=doSearch&amp;doctype=HW3MS_CONNECT_PROFILE_MKTG&amp;searchtext=host" target="_blank">@host</a>&nbsp;'tar cz src' | tar xzv</p>
+<p>【例3】</p>
+<p>查看远程主机是否运行进程httpd。</p>
+<p>　　$ ssh user<a href="http://3ms.huawei.com/doc3ms/unionSearch/unionSearch.do?method=doSearch&amp;doctype=HW3MS_CONNECT_PROFILE_MKTG&amp;searchtext=host" target="_blank">@host</a>&nbsp;'ps ax | grep [h]ttpd'</p>
+<p><strong>八、绑定本地端口</strong></p>
+<p>既然SSH可以传送数据，那么我们可以让那些不加密的网络连接，全部改走SSH连接，从而提高安全性。</p>
+<p>假定我们要让8080端口的数据，都通过SSH传向远程主机，命令就这样写：</p>
+<p>　　$ ssh -D 8080 user<a href="http://3ms.huawei.com/doc3ms/unionSearch/unionSearch.do?method=doSearch&amp;doctype=HW3MS_CONNECT_PROFILE_MKTG&amp;searchtext=host" target="_blank">@host</a></p>
+<p>SSH会建立一个socket，去监听本地的8080端口。一旦有数据传向那个端口，就自动把它转移到SSH连接上面，发往远程主机。可以想象，如果8080端口原来是一个不加密端口，现在将变成一个加密端口。</p>
+<p><strong>九、本地端口转发</strong></p>
+<p>有时，绑定本地端口还不够，还必须指定数据传送的目标主机，从而形成点对点的"端口转发"。为了区别后文的"远程端口转发"，我们把这种情况称为"本地端口转发"（Local forwarding）。</p>
+<p>假定host1是本地主机，host2是远程主机。由于种种原因，这两台主机之间无法连通。但是，另外还有一台host3，可以同时连通前面两台主机。因此，很自然的想法就是，通过host3，将host1连上host2。</p>
+<p>我们在host1执行下面的命令：</p>
+<p>　　$ ssh -L 2121:host2:21 host3</p>
+<p>命令中的L参数一共接受三个值，分别是"本地端口:目标主机:目标主机端口"，它们之间用冒号分隔。这条命令的意思，就是指定SSH绑定本地端口
+2121，然后指定host3将所有的数据，转发到目标主机host2的21端口（假定host2运行FTP，默认端口为21）。</p>
+<p>这样一来，我们只要连接host1的2121端口，就等于连上了host2的21端口。</p>
+<p>　　$ ftp localhost:2121</p>
+<p>"本地端口转发"使得host1和host3之间仿佛形成一个数据传输的秘密隧道，因此又被称为"SSH隧道"。</p>
+<p><strong>十、远程端口转发</strong></p>
+<p>既然"本地端口转发"是指绑定本地端口的转发，那么"远程端口转发"（remote forwarding）当然是指绑定远程端口的转发。</p>
+<p>还是接着看上面那个例子，host1与host2之间无法连通，必须借助host3转发。但是，特殊情况出现了，host3是一台内网机器，它可以
+连接外网的host1，但是反过来就不行，外网的host1连不上内网的host3。这时，"本地端口转发"就不能用了，怎么办？</p>
+<p>解决办法是，既然host3可以连host1，那么就从host3上建立与host1的SSH连接，然后在host1上使用这条连接就可以了。</p>
+<p>我们在host3执行下面的命令：</p>
+<p>　　$ ssh -R 2121:host2:21 host1</p>
+<p>R参数也是接受三个值，分别是"远程主机端口:目标主机:目标主机端口"。这条命令的意思，就是让host1监听它自己的2121端口，然后将所有
+数据经由host3，转发到host2的21端口。由于对于host3来说，host1是远程主机，所以这种情况就被称为"远程端口绑定"。</p>
+<p>绑定之后，我们在host1就可以连接host2了：</p>
+<p>　　$ ftp localhost:2121</p>
+<p>这里必须指出，"远程端口转发"的前提条件是，host1和host3两台主机都有sshD和ssh客户端。</p>
+<p><strong>十一、</strong><strong>SSH</strong><strong>的其他参数</strong></p>
+<p>SSH还有一些别的参数，也值得介绍。</p>
+<p>N参数，表示只连接远程主机，不打开远程shell；T参数，表示不为这个连接分配TTY。这个两个参数可以放在一起用，代表这个SSH连接只用来传数据，不执行远程操作。</p>
+<p>　　$ ssh -NT -D 8080 host</p>
+<p>f参数，表示SSH连接成功后，转入后台运行。这样一来，你就可以在不中断SSH连接的情况下，在本地shell中执行其他操作。</p>
+<p>　　$ ssh -f -D 8080 host</p>
+<p>要关闭这个后台连接，就只有用kill命令去杀掉进程。</p></div><div id="MySignature" style="display: block;">Don't Repeat Yourself !</div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory"></div>
+<div id="EntryTag"></div>
+<div id="blog_post_info"><div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(7765025,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+            <a id="green_channel_follow" onclick="follow('fd6b5a29-6c67-e611-9fc1-ac853d9f53cc');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/qiaoyanlin/" target="_blank"><img src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/20160821151237.png" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="http://home.cnblogs.com/u/qiaoyanlin/">D_R_Y</a><br>
+            <a href="http://home.cnblogs.com/u/qiaoyanlin/followees">关注 - 0</a><br>
+            <a href="http://home.cnblogs.com/u/qiaoyanlin/followers">粉丝 - 14</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('fd6b5a29-6c67-e611-9fc1-ac853d9f53cc');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(7765025,'Digg')">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(7765025,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="https://www.cnblogs.com/qiaoyanlin/p/7717919.html" class="p_n_p_prefix">« </a> 上一篇：<a href="https://www.cnblogs.com/qiaoyanlin/p/7717919.html" title="发布于2017-10-23 17:28">关于漫游 （二三层漫游）</a><br><a href="https://www.cnblogs.com/qiaoyanlin/p/7765118.html" class="p_n_p_prefix">» </a> 下一篇：<a href="https://www.cnblogs.com/qiaoyanlin/p/7765118.html" title="发布于2017-11-01 10:09">Linux下面makefile编写</a><br></div>
+</div>
+
+
+		</div>
+		<div class="postDesc">posted @ <span id="post-date">2017-11-01 09:53</span> <a href="https://www.cnblogs.com/qiaoyanlin/">D_R_Y</a> 阅读(<span id="post_view_count">4921</span>) 评论(<span id="post_comment_count">0</span>)  <a href="https://i.cnblogs.com/EditPosts.aspx?postid=7765025" rel="nofollow">编辑</a> <a href="#" onclick="AddToWz(7765025);return false;">收藏</a></div>
+	</div>
+	<script type="text/javascript">var allowComments=true,cb_blogId=300743,cb_entryId=7765025,cb_blogApp=currentBlogApp,cb_blogUserGuid='fd6b5a29-6c67-e611-9fc1-ac853d9f53cc',cb_entryCreatedDate='2017/11/1 9:53:00';loadViewCount(cb_entryId);var cb_postType=1;var isMarkdown=false;</script>
+	
+</div><!--end: topics 文章、评论容器-->
+</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-工控')">【推荐】超50万C++/C#源码: 大型实时仿真组态图形源码</a><br><a href="https://www.bagevent.com/event/2195041?bag_track=13072958" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-看雪')">【活动】看雪2019安全开发者峰会，共话安全领域焦点</a><br></div>
+<div id="opt_under_post"></div>
+<script async="async" src="%E8%BF%9C%E7%A8%8B%E6%93%8D%E4%BD%9C%E4%B8%8E%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%20SSH%E5%8E%9F%E7%90%86%E4%B8%8E%E8%BF%90%E7%94%A8%20-%20D_R_Y%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+<script>
+  var googletag = googletag || {};
+  googletag.cmd = googletag.cmd || [];
+</script>
+<script>
+  googletag.cmd.push(function() {
+        googletag.defineSlot('/1090369/C1', [300, 250], 'div-gpt-ad-1546353474406-0').addService(googletag.pubads());
+        googletag.defineSlot('/1090369/C2', [468, 60], 'div-gpt-ad-1539008685004-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+  });
+</script>
+<div id="cnblogs_c1" class="c_ad_block">
+    <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CNHi3YifluICFRkfKgodaa4AgA"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>相关博文：</b><br>·  <a href="https://www.cnblogs.com/regit/p/9358710.html" target="_blank" onclick="clickRecomItmem(9358710)">SSH端口转发</a><br>·  <a href="https://www.cnblogs.com/welhzh/p/7112179.html" target="_blank" onclick="clickRecomItmem(7112179)">SSH secure shell 原理与运用</a><br>·  <a href="https://www.cnblogs.com/shishupeng/p/5479375.html" target="_blank" onclick="clickRecomItmem(5479375)">SSH原理与运用（二）：远程操作与端口转发</a><br>·  <a href="https://www.cnblogs.com/wukaikk/p/7791561.html" target="_blank" onclick="clickRecomItmem(7791561)">ssh用法总结</a><br>·  <a href="https://www.cnblogs.com/liferecord/p/6802415.html" target="_blank" onclick="clickRecomItmem(6802415)">SSH原理记录</a><br></div></div>
+<div id="cnblogs_c2" class="c_ad_block">
+    <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CNLi3YifluICFRkfKgodaa4AgA"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+</div>
+<div id="under_post_kb"><div class="itnews c_ad_block"><b>最新新闻</b>：<br> ·  <a href="https://news.cnblogs.com/n/625158/" target="_blank">谷歌"羞辱"苹果：iPhone XS贵 夜拍还没Pixel 3a好</a><br> ·  <a href="https://news.cnblogs.com/n/625157/" target="_blank">超高ppi警告：剑桥大学研究出了像素仅有主流百万分之一大的柔性彩色显示屏</a><br> ·  <a href="https://news.cnblogs.com/n/625156/" target="_blank">腾讯最新手游《和平精英》上线吸金 3天狂揽近亿</a><br> ·  <a href="https://news.cnblogs.com/n/625155/" target="_blank">ICML 2019论文录取Top100：谷歌霸榜</a><br> ·  <a href="https://news.cnblogs.com/n/625154/" target="_blank">女子买18件衣服旅游后退货引热议 淘宝官方回应：相信人性的美好</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+ if(enablePostBottom()) {
+    codeHighlight();
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverT2();
+    deliverC1();
+    deliverC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);  
+}
+</script>
+</div>
+
+    
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	<div id="blog-news"><div id="profile_block">昵称：<a href="https://home.cnblogs.com/u/qiaoyanlin/">D_R_Y</a><br>园龄：<a href="https://home.cnblogs.com/u/qiaoyanlin/" title="入园时间：2016-08-21">2年8个月</a><br>粉丝：<a href="https://home.cnblogs.com/u/qiaoyanlin/followers/">14</a><br>关注：<a href="https://home.cnblogs.com/u/qiaoyanlin/followees/">0</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="follow('fd6b5a29-6c67-e611-9fc1-ac853d9f53cc')">+加关注</a></div><script>getFollowStatus('fd6b5a29-6c67-e611-9fc1-ac853d9f53cc')</script></div></div><script type="text/javascript">loadBlogNews();</script>
+</div>
+
+			<div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/04/01');return false;">&lt;</a></td><td align="center">2019年5月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar('2019/06/01');return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" abbr="日" scope="col" align="center">日</th><th class="CalDayHeader" abbr="一" scope="col" align="center">一</th><th class="CalDayHeader" abbr="二" scope="col" align="center">二</th><th class="CalDayHeader" abbr="三" scope="col" align="center">三</th><th class="CalDayHeader" abbr="四" scope="col" align="center">四</th><th class="CalDayHeader" abbr="五" scope="col" align="center">五</th><th class="CalDayHeader" abbr="六" scope="col" align="center">六</th></tr><tr><td class="CalOtherMonthDay" align="center">28</td><td class="CalOtherMonthDay" align="center">29</td><td class="CalOtherMonthDay" align="center">30</td><td align="center">1</td><td align="center">2</td><td align="center">3</td><td class="CalWeekendDay" align="center">4</td></tr><tr><td class="CalWeekendDay" align="center">5</td><td align="center">6</td><td align="center">7</td><td align="center">8</td><td align="center">9</td><td align="center">10</td><td class="CalWeekendDay" align="center">11</td></tr><tr><td class="CalTodayDay" align="center">12</td><td align="center">13</td><td align="center">14</td><td align="center">15</td><td align="center">16</td><td align="center">17</td><td class="CalWeekendDay" align="center">18</td></tr><tr><td class="CalWeekendDay" align="center">19</td><td align="center">20</td><td align="center">21</td><td align="center">22</td><td align="center">23</td><td align="center">24</td><td class="CalWeekendDay" align="center">25</td></tr><tr><td class="CalWeekendDay" align="center">26</td><td align="center">27</td><td align="center">28</td><td align="center">29</td><td align="center">30</td><td align="center">31</td><td class="CalOtherMonthDay" align="center">1</td></tr><tr><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td><td class="CalOtherMonthDay" align="center">7</td><td class="CalOtherMonthDay" align="center">8</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<div class="catListLink">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/qiaoyanlin/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/tag/" title="我的博客的标签列表">我的标签</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div></div><div id="sidebar_recentposts" class="sidebar-block">
+<div class="catListEssay">
+<h3 class="catListTitle">最新随笔</h3>
+<ul>
+<li><a href="https://www.cnblogs.com/qiaoyanlin/p/10224511.html">1. acl &amp;&amp; prefix list</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/10224474.html">2. diff  -&gt;&gt; acl &amp; prefix list</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/10157342.html">3. 分享一下用终端的命令来恢复丢失的硬盘分区表 （转）</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/10131446.html">4. Smart Link</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/10130915.html">5. underrun || overrun</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/10129971.html">6. mtr命令详解诊断网络路由</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/10000129.html">7. tracert traceroute</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/9916624.html">8. OE1、OE2、ON1、ON2路由有什么区别?</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/9869814.html">9. GRE tunnel 2</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/9869695.html">10. GRE封装解封装过程</a></li>
+</ul>
+</div>
+</div><div id="sidebar_toptags" class="sidebar-block"></div><div id="sidebar_categories">
+<div id="sidebar_postarchive" class="catListPostArchive sidebar-block">
+<h3 class="catListTitle">随笔档案</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_0_Link_0" href="https://www.cnblogs.com/qiaoyanlin/archive/2019/01.html">2019年1月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_1" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/12.html">2018年12月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_2" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/11.html">2018年11月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_3" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/10.html">2018年10月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_4" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/09.html">2018年9月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_5" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/08.html">2018年8月 (25)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_6" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/07.html">2018年7月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_7" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/05.html">2018年5月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_8" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/04.html">2018年4月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_9" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/03.html">2018年3月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_10" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/02.html">2018年2月 (10)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_11" href="https://www.cnblogs.com/qiaoyanlin/archive/2018/01.html">2018年1月 (1)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_12" href="https://www.cnblogs.com/qiaoyanlin/archive/2017/12.html">2017年12月 (17)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_13" href="https://www.cnblogs.com/qiaoyanlin/archive/2017/11.html">2017年11月 (10)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_14" href="https://www.cnblogs.com/qiaoyanlin/archive/2017/10.html">2017年10月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_15" href="https://www.cnblogs.com/qiaoyanlin/archive/2017/09.html">2017年9月 (4)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_16" href="https://www.cnblogs.com/qiaoyanlin/archive/2017/06.html">2017年6月 (20)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_17" href="https://www.cnblogs.com/qiaoyanlin/archive/2017/05.html">2017年5月 (122)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_18" href="https://www.cnblogs.com/qiaoyanlin/archive/2017/04.html">2017年4月 (58)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_19" href="https://www.cnblogs.com/qiaoyanlin/archive/2017/03.html">2017年3月 (11)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_20" href="https://www.cnblogs.com/qiaoyanlin/archive/2016/10.html">2016年10月 (2)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_21" href="https://www.cnblogs.com/qiaoyanlin/archive/2016/09.html">2016年9月 (5)</a> </li>
+
+<li><a id="CatList_LinkList_0_Link_22" href="https://www.cnblogs.com/qiaoyanlin/archive/2016/08.html">2016年8月 (2)</a> </li>
+
+</ul>
+
+</div>
+
+<div id="sidebar_articlearchive" class="catListArticleArchive sidebar-block">
+<h3 class="catListTitle">文章档案</h3>
+
+<ul>
+
+<li><a id="CatList_LinkList_1_Link_0" href="https://www.cnblogs.com/qiaoyanlin/archives/2017/09.html" rel="nofollow">2017年9月 (5)</a> </li>
+
+</ul>
+
+</div>
+
+</div><div id="sidebar_scorerank" class="sidebar-block">
+<div class="catListBlogRank">
+<h3 class="catListTitle">积分与排名</h3>
+<ul>
+	<li class="liScore">
+		积分 -	186163
+	</li>
+	<li class="liRank">
+		排名 -	1952
+	</li>
+</ul>
+</div>
+
+
+</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/qiaoyanlin/p/6891437.html#4245711">1. Re:基于情感词典的情感打分</a></li>
+        <li class="recent_comment_body">博主你好，能不能给一个数据文件的下载地址？</li>
+        <li class="recent_comment_author">--追梦·之旅</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/qiaoyanlin/p/10157342.html#4207254">2. Re:分享一下用终端的命令来恢复丢失的硬盘分区表 （转）</a></li>
+        <li class="recent_comment_body">附件在哪呢？</li>
+        <li class="recent_comment_author">--zhangmingda</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/qiaoyanlin/p/10157342.html#4207252">3. Re:分享一下用终端的命令来恢复丢失的硬盘分区表 （转）</a></li>
+        <li class="recent_comment_body">四方达释放的</li>
+        <li class="recent_comment_author">--zhangmingda</li>
+        <li class="recent_comment_title"><a href="https://www.cnblogs.com/qiaoyanlin/p/6746791.html#4160615">4. Re:Linux中Buffer和Cache的区别</a></li>
+        <li class="recent_comment_body">终于理解了 感谢</li>
+        <li class="recent_comment_author">--奇谋只在绝境中诞生</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock"><ul><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6706085.html">1. Linux如何通过命令查看日志文件的某几行(中间几行或最后几行)(43840)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6904759.html">2. Android Studio错误提示：Gradle project sync failed. Basic functionality (eg. editing, debugging) will not work properly(17024)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6901177.html">3. 关于在ubuntu下配置AMD显卡驱动的总结(13801)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6926981.html">4. ubuntu下设置开机自启动项(13801)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6877628.html">5. String直接赋值和使用new的区别(13100)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6746791.html">6. Linux中Buffer和Cache的区别(11639)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/5906148.html">7. 树莓派 NOOBS 安装系统(10178)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6959271.html">8. 树莓派3 U盘启动 配置 &amp; 即 MSD启动 总结(9270)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6914530.html">9. 使用x11vnc作为vncserver端(8411)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6746867.html">10. Python中元组，列表，字典的区别(7552)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6835107.html">11. linux 进程 ctrl-c,ctrl-z,ctrl-d(7449)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6706099.html">12. Linux命令 cat命令(6926)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6883475.html">13. Ubuntu下允许Root用户的操作 （图形界面登录、su切换……）(6901)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6901242.html">14. 使用VMware将Linux装在物理硬盘上，开机即可进入Linux(6848)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6837347.html">15. 链接克隆、完整克隆 vmware 快照和克隆(6687)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6606957.html">16. 明明想在学校中请一些同学一起做一项问卷调查，为了实验的客观性，他先用计算机生成了N个1到1000之间的随机整数（N≤1000），对于其中重复的数字，只保留一个，把其余相同的数去掉，不同的数对应着不同的学生的学号。然后再把这些数从(6245)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/8745478.html">17. 路由策略和策略路由 &amp; route-map(5432)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6837336.html">18. VMWare链接克隆 和 完整克隆(5233)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/7765025.html">19. 远程操作与端口转发   SSH原理与运用(4921)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6914236.html">20. 慎用 apt-get autoremove !(4814)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="https://www.cnblogs.com/qiaoyanlin/p/10157342.html">1. 分享一下用终端的命令来恢复丢失的硬盘分区表 （转）(2)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6746791.html">2. Linux中Buffer和Cache的区别(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6891437.html">3. 基于情感词典的情感打分(1)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<div class="catListView">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div id="TopDiggPostsBlock"><ul><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6746791.html">1. Linux中Buffer和Cache的区别(4)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6891437.html">2. 基于情感词典的情感打分(2)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6743010.html">3. JAVA虚拟机、Dalvik虚拟机和ART虚拟机简要对比(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6888408.html">4. 深入浅出 kvm qemu libvirt(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6883487.html">5. vmrun命令(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6877628.html">6. String直接赋值和使用new的区别(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6837347.html">7. 链接克隆、完整克隆 vmware 快照和克隆(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/9847538.html">8. OSPF进程号的意义及多进程OSPF(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/8935147.html">9. eBGP&amp;iBGP 总结(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/8005187.html">10. share a story on OSPF &amp; BGP(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/7069621.html">11. dd 命令 sd卡系统迁移(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6959271.html">12. 树莓派3 U盘启动 配置 &amp; 即 MSD启动 总结(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6926981.html">13. ubuntu下设置开机自启动项(1)</a></li><li><a href="https://www.cnblogs.com/qiaoyanlin/p/6901242.html">14. 使用VMware将Linux装在物理硬盘上，开机即可进入Linux(1)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		
+<!--done-->
+Copyright ©2019 D_R_Y
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+</body></html>

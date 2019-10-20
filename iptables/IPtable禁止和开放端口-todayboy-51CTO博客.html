@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="https://blog.51cto.com/favicon.ico">
+        <title>IPtable禁止和开放端口-todayboy-51CTO博客</title>
+    <meta name="keywords" content="IPtable,禁止和开放端口">
+<meta name="description" content="1、关闭所有的 INPUT FORWARD OUTPUT 只对某些端口开放。下面是命令实现：iptables -P INPUT DROPiptables -P FORWARD DROPiptables -P OUTPUT DROP再用命令 iptables -L -n 查看 是否设置好， 好看到全部 DROP 了这样的设置好了，我们只是临时的， 重启服务器还是会恢复原来没有设置的状态还要使用 se">    <link href="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/header.css" rel="stylesheet"><link href="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/other.css" rel="stylesheet"><link href="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/right.css" rel="stylesheet"><link href="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/blog_details.css" rel="stylesheet"><link href="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/highlight.css" rel="stylesheet">
+    <script type="text/javascript" async="" src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/vds.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/push.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/hm.js"></script><script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/jquery_002.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/cookie.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/login.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/common.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/mbox.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/follow.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/vip.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/window.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/share.js"></script><link rel="stylesheet" href="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/share_style0_16.css"><style></style></head>
+<body>
+<img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/share_default.jpg" style="width:0; height:0; position:absolute;" border="0">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201905/09/35b614858be88dc3aa22df9d911acb79.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url('https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png') 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=9&amp;pc" target="_blank">
+  <img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/d82b6251b6923be0ee6899d541dd5013.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li><a href="https://blog.51cto.com/">首页</a></li>
+      <li><a href="https://blog.51cto.com/original">文章</a></li>
+      <li><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+      
+    </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com/" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com/" target="_blank">WOT</a>
+            <a href="http://www.51cto.com/" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fcomtv%2F1347296&amp;logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fcomtv%2F1347296" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index" target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onclick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=8" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201905/10/f03e83cf3ff05f0ad357127c73d9c748.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog62',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/entrance.js" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box" style="min-height: 1222px;">
+      <link rel="stylesheet" href="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/mdeShow.css">
+  <link rel="stylesheet" href="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/prism.css">
+  <script type="text/javascript" charset="utf-8" src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/prism.js"></script>
+<link rel="stylesheet" href="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/tinyscrollbar.css">
+<script type="text/javascript" src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/jquery.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name reprint">转载</a>
+							</div>
+			<h1 class="artical-title">IPtable禁止和开放端口</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/comtv" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="17037" src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/noavatar_middle.gif"></a>
+				</div>
+				<a href="https://blog.51cto.com/comtv" class="name fl" target="_blank" style="margin-right:0;">todayboy</a>
+									                	                    <a id="checkFollow1_17037" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">1240人阅读</a>
+				<a href="javascript:;" class="time fr">2013-12-31 23:08:41</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><p>1、关闭所有的 INPUT FORWARD OUTPUT 只对某些端口开放。<br>下面是命令实现：</p><p>iptables -P INPUT DROP<br>iptables -P FORWARD DROP<br>iptables -P OUTPUT DROP</p><p>再用命令 iptables -L -n 查看 是否设置好， 好看到全部 DROP 了<br>这样的设置好了，我们只是临时的， 重启服务器还是会恢复原来没有设置的状态<br>还要使用 service iptables save 进行保存<br>看到信息 firewall rules 防火墙的规则 其实就是保存在 /etc/sysconfig/iptables<br>可以打开文件查看 vi /etc/sysconfig/iptables<br>2、<br>下面我只打开22端口，看我是如何操作的，就是下面2个语句</p><p>iptables -A INPUT -p tcp --dport 22 -j ACCEPT<br>iptables -A OUTPUT -p tcp --sport 22 -j ACCEPT</p><p>再查看下 iptables -L -n 是否添加上去, 看到添加了</p><p>Chain INPUT (policy DROP)<br>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br>ACCEPT
+ &nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:22</p><p>Chain FORWARD (policy DROP)<br>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination</p><p>Chain OUTPUT (policy DROP)<br>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br>ACCEPT
+ &nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp spt:22</p><p>现在Linux服务器只打开了22端口，用putty.exe测试一下是否可以链接上去。<br>可以链接上去了，说明没有问题。</p><p>最后别忘记了保存 对防火墙的设置<br>通过命令：service iptables save 进行保存</p><p>iptables -A INPUT -p tcp --dport 22 -j ACCEPT<br>iptables -A OUTPUT -p tcp --sport 22 -j ACCEPT<br>针对这2条命令进行一些讲解吧<br>-A 参数就看成是添加一条 INPUT 的规则<br>-p 指定是什么协议 我们常用的tcp 协议，当然也有udp 例如53端口的DNS<br>到时我们要配置DNS用到53端口 大家就会发现使用udp协议的</p><p>而 --dport 就是目标端口 当数据从外部进入服务器为目标端口<br>反之 数据从服务器出去 则为数据源端口 使用 --sport</p><p>-j 就是指定是 ACCEPT 接收 或者 DROP 不接收<br>3、禁止某个IP访问<br>1台Linux服务器,2台windows xp 操作系统进行访问<br>Linux服务器ip 192.168.1.99<br>xp1 ip: 192.168.1.2<br>xp2 ip: 192.168.1.8</p><p>下面看看我2台xp 都可以访问的</p><p>192.168.1.2 这是 xp1 可以访问的，<br>192.168.1.8 xp2 也是可以正常访问的。</p><p>那么现在我要禁止 192.168.1.2 xp1 访问， xp2 正常访问， <br>下面看看演示</p><p>通过命令 iptables -A INPUT -p tcp -s 192.168.1.2 -j DROP<br>这里意思就是 -A 就是添加新的规则， 怎样的规则呢？ 由于我们访问网站使用tcp的，<br>我们就用 -p tcp , 如果是 udp 就写udp，这里就用tcp了， -s就是 来源的意思，<br>ip来源于 192.168.1.2 ，-j 怎么做 我们拒绝它 这里应该是 DROP</p><p>好，看看效果。好添加成功。下面进行验证 一下是否生效</p><p>一直出现等待状态 最后 该页无法显示 ，这是 192.168.1.2 xp1 的访问被拒绝了。</p><p>再看看另外一台 xp 是否可以访问， 是可以正常访问的 192.168.1.8 是可以正常访问的<br>4、如何删除规则<br>首先我们要知道 这条规则的编号，每条规则都有一个编号</p><p>通过 iptables -L -n --line-number 可以显示规则和相对应的编号<br>num target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br>1
+ &nbsp; &nbsp;DROP &nbsp; &nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+tcp dpt:3306<br>2 &nbsp; &nbsp;DROP &nbsp; &nbsp; &nbsp; tcp -- 
+0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0/0 &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:21<br>3 &nbsp; &nbsp;DROP &nbsp; 
+&nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:80<br>多了 num 这一列， 这样我们就可以 看到刚才的规则对应的是 编号2</p><p>那么我们就可以进行删除了<br>iptables -D INPUT 2<br>删除INPUT链编号为2的规则。</p><p>再 iptables -L -n 查看一下 已经被清除了。<br>5、过滤无效的数据包<br>假设有人进入了服务器，或者有病毒木马程序，它可以通过22，80端口像服务器外传送数据。<br>它的这种方式就和我们正常访问22，80端口区别。它发向外发的数据不是我们通过访问网页请求<br>而回应的数据包。</p><p>下面我们要禁止这些没有通过请求回应的数据包，统统把它们堵住掉。</p><p>iptables 提供了一个参数 是检查状态的，下面我们来配置下 22 和 80 端口，防止无效的数据包。</p><p>iptables -A OUTPUT -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT</p><p>可以看到和我们以前使用的：<br>iptables -A OUTPUT -p tcp --sport 22 -j ACCEPT<br>多了一个状态判断。</p><p>同样80端口也一样， 现在删掉原来的2条规则，<br>iptables -L -n --line-number &nbsp; &nbsp;这个是查看规则而且带上编号。我们看到编号就可以<br>删除对应的规则了。</p><p>iptables -D OUTPUT 1 &nbsp; &nbsp; 这里的1表示第一条规则。</p><p>当你删除了前面的规则， 编号也会随之改变。看到了吧。</p><p>好，我们删除了前面2个规则，22端口还可以正常使用，说明没问题了</p><p>下面进行保存，别忘记了，不然的话重启就会还原到原来的样子。</p><p>service iptables save &nbsp; &nbsp;进行保存。</p><p>Saving firewall rules to /etc/sysconfig/iptables: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[ OK ]<br>其实就是把刚才设置的规则写入到 /etc/sysconfig/iptables 文件中。<br>6、DNS端口53设置<br>下面我们来看看如何设置iptables来打开DNS端口，DNS端口对应的是53</p><p>大家看到我现在的情况了吧，只开放22和80端口， 我现在看看能不能解析域名。</p><p>host <a href="http://www.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.google.com</a> &nbsp; &nbsp;输入这个命令后，一直等待，说明DNS不通</p><p>出现下面提示 ：<br>;; connection timed out; no servers could be reached</p><p>ping 一下域名也是不通<br>[root@localhost ~ping <a href="http://www.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.google.com</a><br>ping: unknown host <a href="http://www.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.google.com</a></p><p>我这里的原因就是 iptables 限制了53端口。</p><p>有些服务器，特别是Web服务器减慢，DNS其实也有关系的，无法发送包到DNS服务器导致的。</p><p>下面演示下如何使用 iptables 来设置DNS 53这个端口，如果你不知道 域名服务端口号，你</p><p>可以用命令 : grep domain /etc/services</p><p>[root@localhost ~grep domain /etc/services<br>domain
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;53/tcp &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;# 
+name-domain server<br>domain &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;53/udp<br>domaintime
+ &nbsp; &nbsp; &nbsp;9909/tcp &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;# domaintime<br>domaintime 
+&nbsp; &nbsp; &nbsp;9909/udp &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;# domaintime</p><p>看到了吧， 我们一般使用 udp 协议。</p><p>好了， 开始设置。。。</p><p>iptables -A OUTPUT -p udp --dport 53 -j ACCEPT <br>这是我们 ping 一个域名，数据就是从本机出去，所以我们先设置 OUTPUT，<br>我们按照ping这个流程来设置。</p><p>然后 DNS 服务器收到我们发出去的包，就回应一个回来<br>iptables -A INPUT -p udp --sport 53 -j ACCEPT</p><p>同时还要设置 <br>iptables -A INPUT -p udp --dport 53 -j ACCEPT<br>iptables -A OUTPUT -p udp --sport 53 -j ACCEPT</p><p>好了， 下面开始测试下， 可以用 iptables -L -n 查看设置情况，确定没有问题就可以测试了</p><p>[root@localhost ~iptables -L -n<br>Chain INPUT (policy DROP)<br>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br>ACCEPT
+ &nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:22<br>ACCEPT 
+&nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:80<br>ACCEPT 
+&nbsp; &nbsp; udp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; udp spt:53<br>ACCEPT 
+&nbsp; &nbsp; udp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; udp dpt:53</p><p>Chain FORWARD (policy DROP)<br>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination</p><p>Chain OUTPUT (policy DROP)<br>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br>ACCEPT
+ &nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp spt:22 state 
+ESTABLISHED<br>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+tcp spt:80 state ESTABLISHED<br>ACCEPT &nbsp; &nbsp; udp -- 0.0.0.0/0 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; udp dpt:53<br>ACCEPT &nbsp; &nbsp; udp -- 0.0.0.0/0 &nbsp;
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp;
+ &nbsp; udp spt:53</p><p>可以测试一下 是否 DNS 可以通过iptables 了。</p><p>[root@localhost ~host <a href="http://www.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.google.com</a><br><a href="http://www.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.google.com</a> is an alias for <a href="http://www.l.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.l.google.com</a>.<br><a href="http://www.l.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.l.google.com</a> is an alias for www-china.l.google.com.<br>www-china.l.google.com has address 64.233.189.104<br>www-china.l.google.com has address 64.233.189.147<br>www-china.l.google.com has address 64.233.189.99</p><p>正常可以解析 google 域名。</p><p>ping 方面可能还要设置些东西。</p><p>用 nslookup 看看吧</p><p>[root@localhost ~nslookup<br>&gt; <a href="http://www.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.google.com</a><br>Server: &nbsp; &nbsp; &nbsp; &nbsp; 192.168.1.1<br>Address: &nbsp; &nbsp; &nbsp; &nbsp;192.168.1.1#53</p><p>Non-authoritative answer:<br><a href="http://www.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.google.com</a> canonical name = <a href="http://www.l.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.l.google.com</a>.<br><a href="http://www.l.google.com/" target="_blank" style="color: rgb(66, 133, 244);">www.l.google.com</a> &nbsp; &nbsp; &nbsp; &nbsp;canonical name = www-china.l.google.com.<br>Name: &nbsp; www-china.l.google.com<br>Address: 64.233.189.147<br>Name: &nbsp; www-china.l.google.com<br>Address: 64.233.189.99<br>Name: &nbsp; www-china.l.google.com<br>Address: 64.233.189.104</p><p>说明本机DNS正常， iptables 允许53这个端口的访问。<br>7、iptables对ftp的设置<br>现在我开始对ftp端口的设置，按照我们以前的视频，添加需要开放的端口<br>ftp连接端口有2个 21 和 20 端口，我现在添加对应的规则。</p><p>[root@localhost rootiptables -A INPUT -p tcp --dport 21 -j ACCEPT<br>[root@localhost rootiptables -A INPUT -p tcp --dport 20 -j ACCEPT<br>[root@localhost rootiptables -A OUTPUT -p tcp --sport 21 -j ACCEPT<br>[root@localhost rootiptables -A OUTPUT -p tcp --sport 20 -j ACCEPT</p><p>好，这样就添加完了，我们用浏览器访问一下ftp,出现超时。</p><p>所以我刚才说 ftp 是比较特殊的端口，它还有一些端口是 数据传输端口，<br>例如目录列表， 上传 ，下载 文件都要用到这些端口。</p><p>而这些端口是 任意 端口。。。 这个 任意 真的比较特殊。</p><p>如果不指定什么一个端口范围， iptables 很难对任意端口开放的，<br>如果iptables允许任意端口访问， 那和不设置防火墙没什么区别，所以不现实的。</p><p>那么我们的解决办法就是 指定这个数据传输端口的一个范围。</p><p>下面我们修改一下ftp配置文件。</p><p>我这里使用vsftpd来修改演示，其他ftp我不知道哪里修改，大家可以找找资料。</p><p>[root@localhost rootvi /etc/vsftpd.conf</p><p>在配置文件的最下面 加入</p><p>pasv_min_port=30001<br>pasv_max_port=31000</p><p>然后保存退出。</p><p>这两句话的意思告诉vsftpd, 要传输数据的端口范围就在30001到31000 这个范围内传送。</p><p>这样我们使用 iptables 就好办多了，我们就打开 30001到31000 这些端口。</p><p>[root@localhost rootiptables -A INPUT -p tcp --dport 30001:31000 -j ACCEPT<br>[root@localhost rootiptables -A OUTPUT -p tcp --sport 30001:31000 -j ACCEPT</p><p>[root@localhost rootservice iptables save</p><p>最后进行保存， 然后我们再用浏览器范围下 ftp。可以正常访问</p><p>用个账号登陆上去，也没有问题，上传一些文件上去看看。</p><p>看到了吧，上传和下载都正常。。 再查看下 iptables 的设置</p><p>[root@localhost rootiptables -L -n<br>Chain INPUT (policy DROP)<br>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br>ACCEPT
+ &nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp dpt:22<br>ACCEPT 
+&nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp dpt:21<br>ACCEPT 
+&nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp dpt:20<br>ACCEPT 
+&nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp dpts:30001:31000</p><p>Chain FORWARD (policy DROP)<br>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination</p><p>Chain OUTPUT (policy DROP)<br>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br>ACCEPT
+ &nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp spt:22<br>ACCEPT 
+&nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp spt:21<br>ACCEPT 
+&nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp spt:20<br>ACCEPT 
+&nbsp; &nbsp; tcp -- 0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;0.0.0.0/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp spts:30001:31000</p><p>这是我为了演示ftp特殊端口做的简单规则，大家可以添加一些对数据包的验证<br>例如 -m state --state ESTABLISHED,RELATED 等等要求更加高的验证</p><p><br></p><p><br></p><p>source:http://hi.baidu.com/zplllm/item/f910cb26b621db57c38d5983</p><p><br></p></div>
+				</div>
+															<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=IPtable" target="_blank">IPtable</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3" target="_blank">禁止和开放端口</a>
+															                				<a class="last" href="https://blog.51cto.com/comtv/category1.html" target="_blank"><i></i>linux  </a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="1347296" userid="17037">0</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1557658186048">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina">微博</a>
+					  <a class="bds_sqq" data-cmd="sqq">QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin">微信</a>
+					  <img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/qr-url.png">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/comtv/1314453" title="Subversion 1.8.1编译安装（self）">
+						上一篇：Subversion 1.8.1...</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/comtv/1388390" title="Linux系统下Tomcat6.0配置SSL加密传输 ">
+						下一篇：Linux系统下Tomcat6....</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/comtv" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="17037" src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/comtv" target="_blank" style="display:inline-block;">todayboy</a>
+										<h3>182篇文章，48W+人气，0粉丝</h3>
+									</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_17037" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/comtv" class="header-img" target="_blank">
+						<img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可" maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="17037">
+					<input type="hidden" class="reply_id" value="1347296">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList"></div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog" style="display: none;"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);" style="display: block;"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="https://blog.51cto.com/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/8" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/5366d1f50328a62facbf5db1d91c319a.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/8" target="_blank"> VMware vSAN中小企业应用案例</a>
+									<h3 class="white-space">掌握VMware超融合技术</h3>
+									<h4 class="white-space">共41章&nbsp;|&nbsp;<a href="https://blog.51cto.com/wangchunhai" target="_blank">王春海</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>330人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="8" href="https://blog.51cto.com/cloumn/detail/8" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/10" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/9d82eccb4e3c371eaeac41193bbef757.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/10" target="_blank"> 基于Kubernetes企业级容器云平台落地与实践</a>
+									<h3 class="white-space">容器私有云平台实践之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/lizhenliang" target="_blank">李振良OK</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>573人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="10" href="https://blog.51cto.com/cloumn/detail/10" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>494人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="6" href="https://blog.51cto.com/cloumn/detail/6" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1503人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="18" href="https://blog.51cto.com/cloumn/detail/18" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>453人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe left-list" cid="5" href="https://blog.51cto.com/cloumn/detail/5" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/comtv/1985768?source=dra" target="_blank">我的友情链接</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/comtv/1793671?source=dra" target="_blank">CentOS 7.0编译安装Nginx1.6.0+MySQL5.6.19+PHP5.5.14</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2354375?source=drh" target="_blank">解析DELL R710服务器迁移操作内容</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sun510/2166076?source=drh" target="_blank">开学季出大事：某教育局丢失3台虚拟机</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2164979?source=drh" target="_blank">EVA4400存储虚拟机+数据库数据恢复成功案例</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sun510/2159782?source=drh" target="_blank">服务器数据恢复通用方法+服务器分区丢失恢复案例</a>
+															<a class="white-space" href="https://blog.51cto.com/13642258/2151655?source=drh" target="_blank">在CentOS7上部署squid缓存服务器及代理功能</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sun510/2149069?source=drh" target="_blank">EMC 5400服务器raid阵列瘫痪数据恢复成功案例</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2146600?source=drh" target="_blank">服务器数据恢复案例 / raid5阵列多块硬盘离线处理方法</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sun510/2144160?source=drh" target="_blank">华为存储服务器卷丢失数据恢复成功案例</a>
+															<a class="white-space" href="https://blog.51cto.com/4553542/2143277?source=drh" target="_blank">斐讯K3C路由器无需刷机用vlmcsd搭建KMS服务器激活Windows&amp;office</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sky9896/2142629?source=drh" target="_blank">高校服务器虚拟化——高校数据中心建设</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2136124?source=drh" target="_blank">【长文+图片】HP FC MSA2000服务器瘫痪数据恢复过程</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sun510/2133673?source=drh" target="_blank">服务器断电瘫痪数据丢失后恢复数据的过程</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2133289?source=drh" target="_blank">华为5800服务器raid阵列数据恢复成功案例</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sun510/2132865?source=drh" target="_blank">【长文慎点】IBM X3850服务器删除并重建虚拟机恢复过程</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2132487?source=drh" target="_blank">HP EVA4400服务器RAID信息丢失数据恢复方法</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/13630803/2128584?source=drh" target="_blank">Apache 工作模式的优化深入</a>
+															<a class="white-space" href="https://blog.51cto.com/13630803/2116675?source=drh" target="_blank">部署PXE远程安装服务 并实现Kickstart无人值守安装</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/13630803/2116293?source=drh" target="_blank">linux redhat6.5中 搭建NFS服务</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/f92360e227f9d91cdff7ea95120630ef.png" style="width:70px;height:70px;"> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg" style="display: none;">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="1347296" userid="17037"></span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>0</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1557658186048">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/qr-url.png"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_17037" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a href="https://blog.51cto.com/comtv" class="b-name fr">todayboy</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/comtv" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="17037" src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/noavatar_middle.gif"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/shCores.js"></script>
+<script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '1347296'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'17037',
+            'blog_id':'1347296'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/comtv';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='17037'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/comtv'
+    	nickname = 'todayboy'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_17037'),'17037','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_17037'),'17037','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_17037'),'17037','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<p>1\u3001\u5173\u95ed\u6240\u6709\u7684 INPUT FORWARD OUTPUT \u53ea\u5bf9\u67d0\u4e9b\u7aef\u53e3\u5f00\u653e\u3002<br \/>\u4e0b\u9762\u662f\u547d\u4ee4\u5b9e\u73b0\uff1a<\/p><p>iptables -P INPUT DROP<br \/>iptables -P FORWARD DROP<br \/>iptables -P OUTPUT DROP<\/p><p>\u518d\u7528\u547d\u4ee4 iptables -L -n \u67e5\u770b \u662f\u5426\u8bbe\u7f6e\u597d\uff0c \u597d\u770b\u5230\u5168\u90e8 DROP \u4e86<br \/>\u8fd9\u6837\u7684\u8bbe\u7f6e\u597d\u4e86\uff0c\u6211\u4eec\u53ea\u662f\u4e34\u65f6\u7684\uff0c \u91cd\u542f\u670d\u52a1\u5668\u8fd8\u662f\u4f1a\u6062\u590d\u539f\u6765\u6ca1\u6709\u8bbe\u7f6e\u7684\u72b6\u6001<br \/>\u8fd8\u8981\u4f7f\u7528 service iptables save \u8fdb\u884c\u4fdd\u5b58<br \/>\u770b\u5230\u4fe1\u606f firewall rules \u9632\u706b\u5899\u7684\u89c4\u5219 \u5176\u5b9e\u5c31\u662f\u4fdd\u5b58\u5728 \/etc\/sysconfig\/iptables<br \/>\u53ef\u4ee5\u6253\u5f00\u6587\u4ef6\u67e5\u770b vi \/etc\/sysconfig\/iptables<br \/>2\u3001<br \/>\u4e0b\u9762\u6211\u53ea\u6253\u5f0022\u7aef\u53e3\uff0c\u770b\u6211\u662f\u5982\u4f55\u64cd\u4f5c\u7684\uff0c\u5c31\u662f\u4e0b\u97622\u4e2a\u8bed\u53e5<\/p><p>iptables -A INPUT -p tcp --dport 22 -j ACCEPT<br \/>iptables -A OUTPUT -p tcp --sport 22 -j ACCEPT<\/p><p>\u518d\u67e5\u770b\u4e0b iptables -L -n \u662f\u5426\u6dfb\u52a0\u4e0a\u53bb, \u770b\u5230\u6dfb\u52a0\u4e86<\/p><p>Chain INPUT (policy DROP)<br \/>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:22<\/p><p>Chain FORWARD (policy DROP)<br \/>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<\/p><p>Chain OUTPUT (policy DROP)<br \/>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp spt:22<\/p><p>\u73b0\u5728Linux\u670d\u52a1\u5668\u53ea\u6253\u5f00\u4e8622\u7aef\u53e3\uff0c\u7528putty.exe\u6d4b\u8bd5\u4e00\u4e0b\u662f\u5426\u53ef\u4ee5\u94fe\u63a5\u4e0a\u53bb\u3002<br \/>\u53ef\u4ee5\u94fe\u63a5\u4e0a\u53bb\u4e86\uff0c\u8bf4\u660e\u6ca1\u6709\u95ee\u9898\u3002<\/p><p>\u6700\u540e\u522b\u5fd8\u8bb0\u4e86\u4fdd\u5b58 \u5bf9\u9632\u706b\u5899\u7684\u8bbe\u7f6e<br \/>\u901a\u8fc7\u547d\u4ee4\uff1aservice iptables save \u8fdb\u884c\u4fdd\u5b58<\/p><p>iptables -A INPUT -p tcp --dport 22 -j ACCEPT<br \/>iptables -A OUTPUT -p tcp --sport 22 -j ACCEPT<br \/>\u9488\u5bf9\u8fd92\u6761\u547d\u4ee4\u8fdb\u884c\u4e00\u4e9b\u8bb2\u89e3\u5427<br \/>-A \u53c2\u6570\u5c31\u770b\u6210\u662f\u6dfb\u52a0\u4e00\u6761 INPUT \u7684\u89c4\u5219<br \/>-p \u6307\u5b9a\u662f\u4ec0\u4e48\u534f\u8bae \u6211\u4eec\u5e38\u7528\u7684tcp \u534f\u8bae\uff0c\u5f53\u7136\u4e5f\u6709udp \u4f8b\u598253\u7aef\u53e3\u7684DNS<br \/>\u5230\u65f6\u6211\u4eec\u8981\u914d\u7f6eDNS\u7528\u523053\u7aef\u53e3 \u5927\u5bb6\u5c31\u4f1a\u53d1\u73b0\u4f7f\u7528udp\u534f\u8bae\u7684<\/p><p>\u800c --dport \u5c31\u662f\u76ee\u6807\u7aef\u53e3 \u5f53\u6570\u636e\u4ece\u5916\u90e8\u8fdb\u5165\u670d\u52a1\u5668\u4e3a\u76ee\u6807\u7aef\u53e3<br \/>\u53cd\u4e4b \u6570\u636e\u4ece\u670d\u52a1\u5668\u51fa\u53bb \u5219\u4e3a\u6570\u636e\u6e90\u7aef\u53e3 \u4f7f\u7528 --sport<\/p><p>-j \u5c31\u662f\u6307\u5b9a\u662f ACCEPT \u63a5\u6536 \u6216\u8005 DROP \u4e0d\u63a5\u6536<br \/>3\u3001\u7981\u6b62\u67d0\u4e2aIP\u8bbf\u95ee<br \/>1\u53f0Linux\u670d\u52a1\u5668,2\u53f0windows xp \u64cd\u4f5c\u7cfb\u7edf\u8fdb\u884c\u8bbf\u95ee<br \/>Linux\u670d\u52a1\u5668ip 192.168.1.99<br \/>xp1 ip: 192.168.1.2<br \/>xp2 ip: 192.168.1.8<\/p><p>\u4e0b\u9762\u770b\u770b\u62112\u53f0xp \u90fd\u53ef\u4ee5\u8bbf\u95ee\u7684<\/p><p>192.168.1.2 \u8fd9\u662f xp1 \u53ef\u4ee5\u8bbf\u95ee\u7684\uff0c<br \/>192.168.1.8 xp2 \u4e5f\u662f\u53ef\u4ee5\u6b63\u5e38\u8bbf\u95ee\u7684\u3002<\/p><p>\u90a3\u4e48\u73b0\u5728\u6211\u8981\u7981\u6b62 192.168.1.2 xp1 \u8bbf\u95ee\uff0c xp2 \u6b63\u5e38\u8bbf\u95ee\uff0c <br \/>\u4e0b\u9762\u770b\u770b\u6f14\u793a<\/p><p>\u901a\u8fc7\u547d\u4ee4 iptables -A INPUT -p tcp -s 192.168.1.2 -j DROP<br \/>\u8fd9\u91cc\u610f\u601d\u5c31\u662f -A \u5c31\u662f\u6dfb\u52a0\u65b0\u7684\u89c4\u5219\uff0c \u600e\u6837\u7684\u89c4\u5219\u5462\uff1f \u7531\u4e8e\u6211\u4eec\u8bbf\u95ee\u7f51\u7ad9\u4f7f\u7528tcp\u7684\uff0c<br \/>\u6211\u4eec\u5c31\u7528 -p tcp , \u5982\u679c\u662f udp \u5c31\u5199udp\uff0c\u8fd9\u91cc\u5c31\u7528tcp\u4e86\uff0c -s\u5c31\u662f \u6765\u6e90\u7684\u610f\u601d\uff0c<br \/>ip\u6765\u6e90\u4e8e 192.168.1.2 \uff0c-j \u600e\u4e48\u505a \u6211\u4eec\u62d2\u7edd\u5b83 \u8fd9\u91cc\u5e94\u8be5\u662f DROP<\/p><p>\u597d\uff0c\u770b\u770b\u6548\u679c\u3002\u597d\u6dfb\u52a0\u6210\u529f\u3002\u4e0b\u9762\u8fdb\u884c\u9a8c\u8bc1 \u4e00\u4e0b\u662f\u5426\u751f\u6548<\/p><p>\u4e00\u76f4\u51fa\u73b0\u7b49\u5f85\u72b6\u6001 \u6700\u540e \u8be5\u9875\u65e0\u6cd5\u663e\u793a \uff0c\u8fd9\u662f 192.168.1.2 xp1 \u7684\u8bbf\u95ee\u88ab\u62d2\u7edd\u4e86\u3002<\/p><p>\u518d\u770b\u770b\u53e6\u5916\u4e00\u53f0 xp \u662f\u5426\u53ef\u4ee5\u8bbf\u95ee\uff0c \u662f\u53ef\u4ee5\u6b63\u5e38\u8bbf\u95ee\u7684 192.168.1.8 \u662f\u53ef\u4ee5\u6b63\u5e38\u8bbf\u95ee\u7684<br \/>4\u3001\u5982\u4f55\u5220\u9664\u89c4\u5219<br \/>\u9996\u5148\u6211\u4eec\u8981\u77e5\u9053 \u8fd9\u6761\u89c4\u5219\u7684\u7f16\u53f7\uff0c\u6bcf\u6761\u89c4\u5219\u90fd\u6709\u4e00\u4e2a\u7f16\u53f7<\/p><p>\u901a\u8fc7 iptables -L -n --line-number \u53ef\u4ee5\u663e\u793a\u89c4\u5219\u548c\u76f8\u5bf9\u5e94\u7684\u7f16\u53f7<br \/>num target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br \/>1 &nbsp; &nbsp;DROP &nbsp; &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:3306<br \/>2 &nbsp; &nbsp;DROP &nbsp; &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:21<br \/>3 &nbsp; &nbsp;DROP &nbsp; &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:80<br \/>\u591a\u4e86 num \u8fd9\u4e00\u5217\uff0c \u8fd9\u6837\u6211\u4eec\u5c31\u53ef\u4ee5 \u770b\u5230\u521a\u624d\u7684\u89c4\u5219\u5bf9\u5e94\u7684\u662f \u7f16\u53f72<\/p><p>\u90a3\u4e48\u6211\u4eec\u5c31\u53ef\u4ee5\u8fdb\u884c\u5220\u9664\u4e86<br \/>iptables -D INPUT 2<br \/>\u5220\u9664INPUT\u94fe\u7f16\u53f7\u4e3a2\u7684\u89c4\u5219\u3002<\/p><p>\u518d iptables -L -n \u67e5\u770b\u4e00\u4e0b \u5df2\u7ecf\u88ab\u6e05\u9664\u4e86\u3002<br \/>5\u3001\u8fc7\u6ee4\u65e0\u6548\u7684\u6570\u636e\u5305<br \/>\u5047\u8bbe\u6709\u4eba\u8fdb\u5165\u4e86\u670d\u52a1\u5668\uff0c\u6216\u8005\u6709\u75c5\u6bd2\u6728\u9a6c\u7a0b\u5e8f\uff0c\u5b83\u53ef\u4ee5\u901a\u8fc722\uff0c80\u7aef\u53e3\u50cf\u670d\u52a1\u5668\u5916\u4f20\u9001\u6570\u636e\u3002<br \/>\u5b83\u7684\u8fd9\u79cd\u65b9\u5f0f\u5c31\u548c\u6211\u4eec\u6b63\u5e38\u8bbf\u95ee22\uff0c80\u7aef\u53e3\u533a\u522b\u3002\u5b83\u53d1\u5411\u5916\u53d1\u7684\u6570\u636e\u4e0d\u662f\u6211\u4eec\u901a\u8fc7\u8bbf\u95ee\u7f51\u9875\u8bf7\u6c42<br \/>\u800c\u56de\u5e94\u7684\u6570\u636e\u5305\u3002<\/p><p>\u4e0b\u9762\u6211\u4eec\u8981\u7981\u6b62\u8fd9\u4e9b\u6ca1\u6709\u901a\u8fc7\u8bf7\u6c42\u56de\u5e94\u7684\u6570\u636e\u5305\uff0c\u7edf\u7edf\u628a\u5b83\u4eec\u5835\u4f4f\u6389\u3002<\/p><p>iptables \u63d0\u4f9b\u4e86\u4e00\u4e2a\u53c2\u6570 \u662f\u68c0\u67e5\u72b6\u6001\u7684\uff0c\u4e0b\u9762\u6211\u4eec\u6765\u914d\u7f6e\u4e0b 22 \u548c 80 \u7aef\u53e3\uff0c\u9632\u6b62\u65e0\u6548\u7684\u6570\u636e\u5305\u3002<\/p><p>iptables -A OUTPUT -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT<\/p><p>\u53ef\u4ee5\u770b\u5230\u548c\u6211\u4eec\u4ee5\u524d\u4f7f\u7528\u7684\uff1a<br \/>iptables -A OUTPUT -p tcp --sport 22 -j ACCEPT<br \/>\u591a\u4e86\u4e00\u4e2a\u72b6\u6001\u5224\u65ad\u3002<\/p><p>\u540c\u683780\u7aef\u53e3\u4e5f\u4e00\u6837\uff0c \u73b0\u5728\u5220\u6389\u539f\u6765\u76842\u6761\u89c4\u5219\uff0c<br \/>iptables -L -n --line-number &nbsp; &nbsp;\u8fd9\u4e2a\u662f\u67e5\u770b\u89c4\u5219\u800c\u4e14\u5e26\u4e0a\u7f16\u53f7\u3002\u6211\u4eec\u770b\u5230\u7f16\u53f7\u5c31\u53ef\u4ee5<br \/>\u5220\u9664\u5bf9\u5e94\u7684\u89c4\u5219\u4e86\u3002<\/p><p>iptables -D OUTPUT 1 &nbsp; &nbsp; \u8fd9\u91cc\u76841\u8868\u793a\u7b2c\u4e00\u6761\u89c4\u5219\u3002<\/p><p>\u5f53\u4f60\u5220\u9664\u4e86\u524d\u9762\u7684\u89c4\u5219\uff0c \u7f16\u53f7\u4e5f\u4f1a\u968f\u4e4b\u6539\u53d8\u3002\u770b\u5230\u4e86\u5427\u3002<\/p><p>\u597d\uff0c\u6211\u4eec\u5220\u9664\u4e86\u524d\u97622\u4e2a\u89c4\u5219\uff0c22\u7aef\u53e3\u8fd8\u53ef\u4ee5\u6b63\u5e38\u4f7f\u7528\uff0c\u8bf4\u660e\u6ca1\u95ee\u9898\u4e86<\/p><p>\u4e0b\u9762\u8fdb\u884c\u4fdd\u5b58\uff0c\u522b\u5fd8\u8bb0\u4e86\uff0c\u4e0d\u7136\u7684\u8bdd\u91cd\u542f\u5c31\u4f1a\u8fd8\u539f\u5230\u539f\u6765\u7684\u6837\u5b50\u3002<\/p><p>service iptables save &nbsp; &nbsp;\u8fdb\u884c\u4fdd\u5b58\u3002<\/p><p>Saving firewall rules to \/etc\/sysconfig\/iptables: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[ OK ]<br \/>\u5176\u5b9e\u5c31\u662f\u628a\u521a\u624d\u8bbe\u7f6e\u7684\u89c4\u5219\u5199\u5165\u5230 \/etc\/sysconfig\/iptables \u6587\u4ef6\u4e2d\u3002<br \/>6\u3001DNS\u7aef\u53e353\u8bbe\u7f6e<br \/>\u4e0b\u9762\u6211\u4eec\u6765\u770b\u770b\u5982\u4f55\u8bbe\u7f6eiptables\u6765\u6253\u5f00DNS\u7aef\u53e3\uff0cDNS\u7aef\u53e3\u5bf9\u5e94\u7684\u662f53<\/p><p>\u5927\u5bb6\u770b\u5230\u6211\u73b0\u5728\u7684\u60c5\u51b5\u4e86\u5427\uff0c\u53ea\u5f00\u653e22\u548c80\u7aef\u53e3\uff0c \u6211\u73b0\u5728\u770b\u770b\u80fd\u4e0d\u80fd\u89e3\u6790\u57df\u540d\u3002<\/p><p>host <a href=\"http:\/\/www.google.com\/\" target=\"_blank\">www.google.com<\/a> &nbsp; &nbsp;\u8f93\u5165\u8fd9\u4e2a\u547d\u4ee4\u540e\uff0c\u4e00\u76f4\u7b49\u5f85\uff0c\u8bf4\u660eDNS\u4e0d\u901a<\/p><p>\u51fa\u73b0\u4e0b\u9762\u63d0\u793a \uff1a<br \/>;; connection timed out; no servers could be reached<\/p><p>ping \u4e00\u4e0b\u57df\u540d\u4e5f\u662f\u4e0d\u901a<br \/>[root@localhost ~ping <a href=\"http:\/\/www.google.com\/\" target=\"_blank\">www.google.com<\/a><br \/>ping: unknown host <a href=\"http:\/\/www.google.com\/\" target=\"_blank\">www.google.com<\/a><\/p><p>\u6211\u8fd9\u91cc\u7684\u539f\u56e0\u5c31\u662f iptables \u9650\u5236\u4e8653\u7aef\u53e3\u3002<\/p><p>\u6709\u4e9b\u670d\u52a1\u5668\uff0c\u7279\u522b\u662fWeb\u670d\u52a1\u5668\u51cf\u6162\uff0cDNS\u5176\u5b9e\u4e5f\u6709\u5173\u7cfb\u7684\uff0c\u65e0\u6cd5\u53d1\u9001\u5305\u5230DNS\u670d\u52a1\u5668\u5bfc\u81f4\u7684\u3002<\/p><p>\u4e0b\u9762\u6f14\u793a\u4e0b\u5982\u4f55\u4f7f\u7528 iptables \u6765\u8bbe\u7f6eDNS 53\u8fd9\u4e2a\u7aef\u53e3\uff0c\u5982\u679c\u4f60\u4e0d\u77e5\u9053 \u57df\u540d\u670d\u52a1\u7aef\u53e3\u53f7\uff0c\u4f60<\/p><p>\u53ef\u4ee5\u7528\u547d\u4ee4 : grep domain \/etc\/services<\/p><p>[root@localhost ~grep domain \/etc\/services<br \/>domain &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;53\/tcp &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;# name-domain server<br \/>domain &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;53\/udp<br \/>domaintime &nbsp; &nbsp; &nbsp;9909\/tcp &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;# domaintime<br \/>domaintime &nbsp; &nbsp; &nbsp;9909\/udp &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;# domaintime<\/p><p>\u770b\u5230\u4e86\u5427\uff0c \u6211\u4eec\u4e00\u822c\u4f7f\u7528 udp \u534f\u8bae\u3002<\/p><p>\u597d\u4e86\uff0c \u5f00\u59cb\u8bbe\u7f6e\u3002\u3002\u3002<\/p><p>iptables -A OUTPUT -p udp --dport 53 -j ACCEPT <br \/>\u8fd9\u662f\u6211\u4eec ping \u4e00\u4e2a\u57df\u540d\uff0c\u6570\u636e\u5c31\u662f\u4ece\u672c\u673a\u51fa\u53bb\uff0c\u6240\u4ee5\u6211\u4eec\u5148\u8bbe\u7f6e OUTPUT\uff0c<br \/>\u6211\u4eec\u6309\u7167ping\u8fd9\u4e2a\u6d41\u7a0b\u6765\u8bbe\u7f6e\u3002<\/p><p>\u7136\u540e DNS \u670d\u52a1\u5668\u6536\u5230\u6211\u4eec\u53d1\u51fa\u53bb\u7684\u5305\uff0c\u5c31\u56de\u5e94\u4e00\u4e2a\u56de\u6765<br \/>iptables -A INPUT -p udp --sport 53 -j ACCEPT<\/p><p>\u540c\u65f6\u8fd8\u8981\u8bbe\u7f6e <br \/>iptables -A INPUT -p udp --dport 53 -j ACCEPT<br \/>iptables -A OUTPUT -p udp --sport 53 -j ACCEPT<\/p><p>\u597d\u4e86\uff0c \u4e0b\u9762\u5f00\u59cb\u6d4b\u8bd5\u4e0b\uff0c \u53ef\u4ee5\u7528 iptables -L -n \u67e5\u770b\u8bbe\u7f6e\u60c5\u51b5\uff0c\u786e\u5b9a\u6ca1\u6709\u95ee\u9898\u5c31\u53ef\u4ee5\u6d4b\u8bd5\u4e86<\/p><p>[root@localhost ~iptables -L -n<br \/>Chain INPUT (policy DROP)<br \/>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:22<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp dpt:80<br \/>ACCEPT &nbsp; &nbsp; udp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; udp spt:53<br \/>ACCEPT &nbsp; &nbsp; udp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; udp dpt:53<\/p><p>Chain FORWARD (policy DROP)<br \/>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<\/p><p>Chain OUTPUT (policy DROP)<br \/>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp spt:22 state ESTABLISHED<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; tcp spt:80 state ESTABLISHED<br \/>ACCEPT &nbsp; &nbsp; udp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; udp dpt:53<br \/>ACCEPT &nbsp; &nbsp; udp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; udp spt:53<\/p><p>\u53ef\u4ee5\u6d4b\u8bd5\u4e00\u4e0b \u662f\u5426 DNS \u53ef\u4ee5\u901a\u8fc7iptables \u4e86\u3002<\/p><p>[root@localhost ~host <a href=\"http:\/\/www.google.com\/\" target=\"_blank\">www.google.com<\/a><br \/><a href=\"http:\/\/www.google.com\/\" target=\"_blank\">www.google.com<\/a> is an alias for <a href=\"http:\/\/www.l.google.com\/\" target=\"_blank\">www.l.google.com<\/a>.<br \/><a href=\"http:\/\/www.l.google.com\/\" target=\"_blank\">www.l.google.com<\/a> is an alias for www-china.l.google.com.<br \/>www-china.l.google.com has address 64.233.189.104<br \/>www-china.l.google.com has address 64.233.189.147<br \/>www-china.l.google.com has address 64.233.189.99<\/p><p>\u6b63\u5e38\u53ef\u4ee5\u89e3\u6790 google \u57df\u540d\u3002<\/p><p>ping \u65b9\u9762\u53ef\u80fd\u8fd8\u8981\u8bbe\u7f6e\u4e9b\u4e1c\u897f\u3002<\/p><p>\u7528 nslookup \u770b\u770b\u5427<\/p><p>[root@localhost ~nslookup<br \/>&gt; <a href=\"http:\/\/www.google.com\/\" target=\"_blank\">www.google.com<\/a><br \/>Server: &nbsp; &nbsp; &nbsp; &nbsp; 192.168.1.1<br \/>Address: &nbsp; &nbsp; &nbsp; &nbsp;192.168.1.1#53<\/p><p>Non-authoritative answer:<br \/><a href=\"http:\/\/www.google.com\/\" target=\"_blank\">www.google.com<\/a> canonical name = <a href=\"http:\/\/www.l.google.com\/\" target=\"_blank\">www.l.google.com<\/a>.<br \/><a href=\"http:\/\/www.l.google.com\/\" target=\"_blank\">www.l.google.com<\/a> &nbsp; &nbsp; &nbsp; &nbsp;canonical name = www-china.l.google.com.<br \/>Name: &nbsp; www-china.l.google.com<br \/>Address: 64.233.189.147<br \/>Name: &nbsp; www-china.l.google.com<br \/>Address: 64.233.189.99<br \/>Name: &nbsp; www-china.l.google.com<br \/>Address: 64.233.189.104<\/p><p>\u8bf4\u660e\u672c\u673aDNS\u6b63\u5e38\uff0c iptables \u5141\u8bb853\u8fd9\u4e2a\u7aef\u53e3\u7684\u8bbf\u95ee\u3002<br \/>7\u3001iptables\u5bf9ftp\u7684\u8bbe\u7f6e<br \/>\u73b0\u5728\u6211\u5f00\u59cb\u5bf9ftp\u7aef\u53e3\u7684\u8bbe\u7f6e\uff0c\u6309\u7167\u6211\u4eec\u4ee5\u524d\u7684\u89c6\u9891\uff0c\u6dfb\u52a0\u9700\u8981\u5f00\u653e\u7684\u7aef\u53e3<br \/>ftp\u8fde\u63a5\u7aef\u53e3\u67092\u4e2a 21 \u548c 20 \u7aef\u53e3\uff0c\u6211\u73b0\u5728\u6dfb\u52a0\u5bf9\u5e94\u7684\u89c4\u5219\u3002<\/p><p>[root@localhost rootiptables -A INPUT -p tcp --dport 21 -j ACCEPT<br \/>[root@localhost rootiptables -A INPUT -p tcp --dport 20 -j ACCEPT<br \/>[root@localhost rootiptables -A OUTPUT -p tcp --sport 21 -j ACCEPT<br \/>[root@localhost rootiptables -A OUTPUT -p tcp --sport 20 -j ACCEPT<\/p><p>\u597d\uff0c\u8fd9\u6837\u5c31\u6dfb\u52a0\u5b8c\u4e86\uff0c\u6211\u4eec\u7528\u6d4f\u89c8\u5668\u8bbf\u95ee\u4e00\u4e0bftp,\u51fa\u73b0\u8d85\u65f6\u3002<\/p><p>\u6240\u4ee5\u6211\u521a\u624d\u8bf4 ftp \u662f\u6bd4\u8f83\u7279\u6b8a\u7684\u7aef\u53e3\uff0c\u5b83\u8fd8\u6709\u4e00\u4e9b\u7aef\u53e3\u662f \u6570\u636e\u4f20\u8f93\u7aef\u53e3\uff0c<br \/>\u4f8b\u5982\u76ee\u5f55\u5217\u8868\uff0c \u4e0a\u4f20 \uff0c\u4e0b\u8f7d \u6587\u4ef6\u90fd\u8981\u7528\u5230\u8fd9\u4e9b\u7aef\u53e3\u3002<\/p><p>\u800c\u8fd9\u4e9b\u7aef\u53e3\u662f \u4efb\u610f \u7aef\u53e3\u3002\u3002\u3002 \u8fd9\u4e2a \u4efb\u610f \u771f\u7684\u6bd4\u8f83\u7279\u6b8a\u3002<\/p><p>\u5982\u679c\u4e0d\u6307\u5b9a\u4ec0\u4e48\u4e00\u4e2a\u7aef\u53e3\u8303\u56f4\uff0c iptables \u5f88\u96be\u5bf9\u4efb\u610f\u7aef\u53e3\u5f00\u653e\u7684\uff0c<br \/>\u5982\u679ciptables\u5141\u8bb8\u4efb\u610f\u7aef\u53e3\u8bbf\u95ee\uff0c \u90a3\u548c\u4e0d\u8bbe\u7f6e\u9632\u706b\u5899\u6ca1\u4ec0\u4e48\u533a\u522b\uff0c\u6240\u4ee5\u4e0d\u73b0\u5b9e\u7684\u3002<\/p><p>\u90a3\u4e48\u6211\u4eec\u7684\u89e3\u51b3\u529e\u6cd5\u5c31\u662f \u6307\u5b9a\u8fd9\u4e2a\u6570\u636e\u4f20\u8f93\u7aef\u53e3\u7684\u4e00\u4e2a\u8303\u56f4\u3002<\/p><p>\u4e0b\u9762\u6211\u4eec\u4fee\u6539\u4e00\u4e0bftp\u914d\u7f6e\u6587\u4ef6\u3002<\/p><p>\u6211\u8fd9\u91cc\u4f7f\u7528vsftpd\u6765\u4fee\u6539\u6f14\u793a\uff0c\u5176\u4ed6ftp\u6211\u4e0d\u77e5\u9053\u54ea\u91cc\u4fee\u6539\uff0c\u5927\u5bb6\u53ef\u4ee5\u627e\u627e\u8d44\u6599\u3002<\/p><p>[root@localhost rootvi \/etc\/vsftpd.conf<\/p><p>\u5728\u914d\u7f6e\u6587\u4ef6\u7684\u6700\u4e0b\u9762 \u52a0\u5165<\/p><p>pasv_min_port=30001<br \/>pasv_max_port=31000<\/p><p>\u7136\u540e\u4fdd\u5b58\u9000\u51fa\u3002<\/p><p>\u8fd9\u4e24\u53e5\u8bdd\u7684\u610f\u601d\u544a\u8bc9vsftpd, \u8981\u4f20\u8f93\u6570\u636e\u7684\u7aef\u53e3\u8303\u56f4\u5c31\u572830001\u523031000 \u8fd9\u4e2a\u8303\u56f4\u5185\u4f20\u9001\u3002<\/p><p>\u8fd9\u6837\u6211\u4eec\u4f7f\u7528 iptables \u5c31\u597d\u529e\u591a\u4e86\uff0c\u6211\u4eec\u5c31\u6253\u5f00 30001\u523031000 \u8fd9\u4e9b\u7aef\u53e3\u3002<\/p><p>[root@localhost rootiptables -A INPUT -p tcp --dport 30001:31000 -j ACCEPT<br \/>[root@localhost rootiptables -A OUTPUT -p tcp --sport 30001:31000 -j ACCEPT<\/p><p>[root@localhost rootservice iptables save<\/p><p>\u6700\u540e\u8fdb\u884c\u4fdd\u5b58\uff0c \u7136\u540e\u6211\u4eec\u518d\u7528\u6d4f\u89c8\u5668\u8303\u56f4\u4e0b ftp\u3002\u53ef\u4ee5\u6b63\u5e38\u8bbf\u95ee<\/p><p>\u7528\u4e2a\u8d26\u53f7\u767b\u9646\u4e0a\u53bb\uff0c\u4e5f\u6ca1\u6709\u95ee\u9898\uff0c\u4e0a\u4f20\u4e00\u4e9b\u6587\u4ef6\u4e0a\u53bb\u770b\u770b\u3002<\/p><p>\u770b\u5230\u4e86\u5427\uff0c\u4e0a\u4f20\u548c\u4e0b\u8f7d\u90fd\u6b63\u5e38\u3002\u3002 \u518d\u67e5\u770b\u4e0b iptables \u7684\u8bbe\u7f6e<\/p><p>[root@localhost rootiptables -L -n<br \/>Chain INPUT (policy DROP)<br \/>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp dpt:22<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp dpt:21<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp dpt:20<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp dpts:30001:31000<\/p><p>Chain FORWARD (policy DROP)<br \/>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<\/p><p>Chain OUTPUT (policy DROP)<br \/>target &nbsp; &nbsp; prot opt source &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; destination<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp spt:22<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp spt:21<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp spt:20<br \/>ACCEPT &nbsp; &nbsp; tcp -- 0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0.0.0.0\/0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;tcp spts:30001:31000<\/p><p>\u8fd9\u662f\u6211\u4e3a\u4e86\u6f14\u793aftp\u7279\u6b8a\u7aef\u53e3\u505a\u7684\u7b80\u5355\u89c4\u5219\uff0c\u5927\u5bb6\u53ef\u4ee5\u6dfb\u52a0\u4e00\u4e9b\u5bf9\u6570\u636e\u5305\u7684\u9a8c\u8bc1<br \/>\u4f8b\u5982 -m state --state ESTABLISHED,RELATED \u7b49\u7b49\u8981\u6c42\u66f4\u52a0\u9ad8\u7684\u9a8c\u8bc1<\/p><p><br \/><\/p><p><br \/><\/p><p>source:http:\/\/hi.baidu.com\/zplllm\/item\/f910cb26b621db57c38d5983<\/p><p><br \/><\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"IPtable禁止和开放端口",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1557658184; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/marked.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/highlight.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/detail_mp.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/detail.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/details_new.js"></script><script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/copy.js"></script>    
+<div style="display:none">
+    <iframe scrolling="no" src="http://log.51cto.com/pageview.php?frompos=blog_art" width="0" height="0" frameborder="0"></iframe>
+</div>
+
+<script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type="text/javascript">
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/jquery_003.js"></script>
+<script src="IPtable%E7%A6%81%E6%AD%A2%E5%92%8C%E5%BC%80%E6%94%BE%E7%AB%AF%E5%8F%A3-todayboy-51CTO%E5%8D%9A%E5%AE%A2_files/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+
+
+<div id="zhichiBtnBox" style="position: fixed; z-index: 2147483583; box-shadow: rgba(15, 66, 76, 0.25) 0px 0px 14px 0px; width: 60px; height: 60px; border-radius: 50%; background-color: rgb(66, 133, 244); background-image: url(&quot;//www.sobot.com/chat/frame/imgs/icon.png&quot;); background-repeat: no-repeat; background-position: 18px -58px; right: 40px; bottom: 90px; display: none;"><a hidefocus="" id="zhichiBtn" style="position:relative;text-decoration: none; outline: none; font-family: Microsoft Yahei, Arial, Helvetica; color: #fff; font-size: 16px; display: inline-block; margin: 0; padding: 0; border: none; line-height:43px; float:none;width:100%;height:100%;border-radius:50%;"><span class="zc-advice-icon-btn-title" style="box-shadow: rgba(107, 113, 114, 0.15) 0px 2px 4px 0px; border: 1px solid rgb(235, 239, 240); font-family: Microsoft Yahei, Arial, Helvetica; color: rgb(85, 85, 86); font-size: 13px; margin: 0px; text-align: right; background: rgb(255, 255, 255) none repeat scroll 0% 0%; position: absolute; top: 15px; right: 70px; text-overflow: ellipsis; white-space: nowrap; word-break: normal; display: none; border-radius: 3px; padding: 0px 5px; height: 30px; line-height: 30px;">咨询在线客服</span></a><i style="position:absolute;top:0px;right:0px;padding:1px;line-height:20px;text-align:center;color:#fff;font-weight:bold;height:18px;min-width:18px;background-color:#ed5c5c;border-radius:18px;font-size:12px;display:none;font-style:normal;" id="zhichiCount"></i></div></body></html>

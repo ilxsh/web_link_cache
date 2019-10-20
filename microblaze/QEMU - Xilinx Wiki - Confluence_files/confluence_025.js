@@ -1,0 +1,9 @@
+WRMCB=function(e){var c=console;if(c&&c.log&&c.error){c.log('Error running batched script.');c.error(e);}}
+;
+try {
+/* module-key = 'confluence.web.resources:navigator-context', location = 'includes/js/api/navigator-context.js' */
+define("confluence/api/navigator-context",["confluence/meta","confluence/api/querystring","document","window"],function(c,p,b,h){var k=function(a){a=e(a);return"undefined"!==typeof a&&0!==a},e=function(a){a=c.get(a);if(!isNaN(a))return Number(a)},l=function(a){return(a=a.match(/[^/?#]*\/plugins\/servlet\/ac\/([^/?#]*)\/([^/?#]*)$/))?{addonKey:a[1],moduleKey:a[2]}:null},m=function(){return 0<b.querySelectorAll("[data-fabric-mode]").length},n=function(){return!!b.querySelector(".page.view")||!!b.querySelector(".blogpost.view")},
+f=function(){return!!b.querySelector(".page.edit")||!!b.querySelector(".blogpost.edit")||m()},g=function(){return c.get("content-type")},d=function(){return e("page-id")},q=function(a){var b=l(a.pathname),c=p.parse(a.search);a=Object.keys(c).reduce(function(a,b){a[decodeURIComponent(b).replace(/^ac\./g,"")]=c[b].map(decodeURIComponent);return a},{});return{target:"addonmodule",context:{addonKey:decodeURIComponent(b.addonKey),moduleKey:decodeURIComponent(b.moduleKey),context:a}}};return{getCurrent:function(){return f()&&
+0===d()&&k("draft-id")||0<b.querySelectorAll("[data-fabric-mode\x3d'create']").length?{target:"contentcreate",context:{contentId:m()?d():e("draft-id"),contentType:g(),spaceKey:c.get("space-key")}}:f()&&!n()&&0!==d()||0<b.querySelectorAll("[data-fabric-mode\x3d'edit']").length?{target:"contentedit",context:{contentId:d(),contentType:g(),spaceKey:c.get("space-key")}}:!f()&&n()&&k("page-id")?{target:"contentview",context:{contentId:d(),contentType:g(),spaceKey:c.get("space-key")}}:null!=l(h.location.pathname)?
+q(h.location):{target:"unknown",context:{}}}}});
+}catch(e){WRMCB(e)};

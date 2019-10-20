@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=11,IE=10,IE=9,IE=8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+<title>如何使用 fail2ban 防御 SSH 服务器的暴力破解攻击-Linux运维日志</title>
+<link rel="dns-prefetch" href="https://www.centos.bz/">
+<link rel="dns-prefetch" href="https://s.w.org/">
+<link rel="alternate" type="application/rss+xml" title="Linux运维日志 » 如何使用 fail2ban 防御 SSH 服务器的暴力破解攻击评论Feed" href="https://www.centos.bz/2018/04/%e5%a6%82%e4%bd%95%e4%bd%bf%e7%94%a8-fail2ban-%e9%98%b2%e5%be%a1-ssh-%e6%9c%8d%e5%8a%a1%e5%99%a8%e7%9a%84%e6%9a%b4%e5%8a%9b%e7%a0%b4%e8%a7%a3%e6%94%bb%e5%87%bb/feed/">
+<link rel="stylesheet" id="dwqa-style-css" href="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/style.css" type="text/css" media="all">
+<link rel="stylesheet" id="dwqa-rtl-css" href="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/rtl.css" type="text/css" media="all">
+<link rel="stylesheet" id="main-css" href="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/style_002.css" type="text/css" media="all">
+<script src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/osd.js"></script><script src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/ca-pub-7207924189700482.js"></script><script src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/show_ads_impl.js" id="google_shimpl"></script><script src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/hm.js"></script><script type="text/javascript" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/jquery.js"></script>
+<link rel="https://api.w.org/" href="https://www.centos.bz/wp-json/">
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://www.centos.bz/xmlrpc.php?rsd">
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="https://www.centos.bz/wp-includes/wlwmanifest.xml"> 
+<link rel="prev" title="Mysql/Mariadb备份(xtrabackup)还原实战" href="https://www.centos.bz/2018/04/mysql-mariadb%e5%a4%87%e4%bb%bdxtrabackup%e8%bf%98%e5%8e%9f%e5%ae%9e%e6%88%98/">
+<link rel="next" title="Nginx访问频率控制" href="https://www.centos.bz/2018/04/nginx%e8%ae%bf%e9%97%ae%e9%a2%91%e7%8e%87%e6%8e%a7%e5%88%b6/">
+<meta name="generator" content="WordPress 4.9">
+<link rel="canonical" href="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/a_002.html">
+<link rel="shortlink" href="https://www.centos.bz/?p=19472">
+<link rel="alternate" type="application/json+oembed" href="https://www.centos.bz/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.centos.bz%2F2018%2F04%2F%25e5%25a6%2582%25e4%25bd%2595%25e4%25bd%25bf%25e7%2594%25a8-fail2ban-%25e9%2598%25b2%25e5%25be%25a1-ssh-%25e6%259c%258d%25e5%258a%25a1%25e5%2599%25a8%25e7%259a%2584%25e6%259a%25b4%25e5%258a%259b%25e7%25a0%25b4%25e8%25a7%25a3%25e6%2594%25bb%25e5%2587%25bb%2F">
+<link rel="alternate" type="text/xml+oembed" href="https://www.centos.bz/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.centos.bz%2F2018%2F04%2F%25e5%25a6%2582%25e4%25bd%2595%25e4%25bd%25bf%25e7%2594%25a8-fail2ban-%25e9%2598%25b2%25e5%25be%25a1-ssh-%25e6%259c%258d%25e5%258a%25a1%25e5%2599%25a8%25e7%259a%2584%25e6%259a%25b4%25e5%258a%259b%25e7%25a0%25b4%25e8%25a7%25a3%25e6%2594%25bb%25e5%2587%25bb%2F&amp;format=xml">
+<link rel="stylesheet" href="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/coolcode.css">
+<script type="text/javascript" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/coolcode.js"></script>
+<link rel="stylesheet" href="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/style_003.css" type="text/css" media="all">
+<meta name="keywords" content="fail2ban, SSH, 未分类">
+<meta name="description" content="对于SSH服务的常见的攻击就是暴力破解攻击——远程攻击者通过不同的密码来无限次地进行登录尝试。当然SSH可以设置使用非密码验证验证方式来对抗这种攻击，例如公钥验">
+<link rel="shortcut icon" href="https://www.centos.bz/favicon.ico">
+<!--[if lt IE 9]><script src="https://www.centos.bz/wp-content/themes/xiu/js/html5.js"></script><![endif]-->
+<link rel="preload" href="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/integrator.js" as="script"><script type="text/javascript" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/integrator.js"></script><link rel="preload" href="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/show_ads_impl.js" as="script"></head>
+<body class="post-template-default single single-post postid-19472 single-format-standard post_p_indent excerpt_thumb_left ui-navtop">
+<header class="header">
+<div class="container">
+	<div class="logo"><a href="https://www.centos.bz/" title="Linux运维日志-关于CentOS和Ubuntu等系统的运维"><img src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/logo.png" alt="Linux运维日志">Linux运维日志</a></div>	<ul class="nav"><li class="navmore"></li><li id="menu-item-16868" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16868"><a href="https://www.centos.bz/tag/docker/">Docker</a></li>
+<li id="menu-item-16869" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16869"><a href="https://www.centos.bz/tag/nginx-2/">Nginx</a></li>
+<li id="menu-item-17892" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-17892"><a href="https://www.centos.bz/tag/apache/">Apache</a></li>
+<li id="menu-item-16870" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16870"><a href="https://www.centos.bz/tag/mysql-2/">MySQL</a></li>
+<li id="menu-item-16871" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16871"><a href="https://www.centos.bz/tag/zabbix/">Zabbix</a></li>
+<li id="menu-item-16872" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16872"><a href="https://www.centos.bz/tag/saltstack/">SaltStack</a></li>
+<li id="menu-item-16873" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16873"><a href="https://www.centos.bz/tag/kubernetes/">K8S</a></li>
+<li id="menu-item-16876" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16876"><a href="https://www.centos.bz/tag/openresty/">OpenResty</a></li>
+<li id="menu-item-17893" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-17893"><a href="https://www.centos.bz/tag/wordpress/">WordPress</a></li>
+</ul>	<form method="get" class="search-form" action="https://www.centos.bz/"><input class="form-control" name="s" type="text" placeholder="输入关键字"><input class="btn" type="submit" value="搜索"></form>		<div class="feeds">
+			</div>
+	<div class="slinks">
+			</div>
+
+	</div>
+</header>
+<section class="container">
+<div class="content-wrap">
+	<div class="content">
+				<header class="article-header">
+						<div class="breadcrumbs"><span class="text-muted">当前位置：</span><a href="https://www.centos.bz/">Linux运维日志</a> <small>&gt;</small> <a href="https://www.centos.bz/category/undefine/">未分类</a> <small>&gt;</small> <span class="text-muted">正文</span></div>
+						<h1 class="article-title"><a href="https://www.centos.bz/2018/04/%e5%a6%82%e4%bd%95%e4%bd%bf%e7%94%a8-fail2ban-%e9%98%b2%e5%be%a1-ssh-%e6%9c%8d%e5%8a%a1%e5%99%a8%e7%9a%84%e6%9a%b4%e5%8a%9b%e7%a0%b4%e8%a7%a3%e6%94%bb%e5%87%bb/">如何使用 fail2ban 防御 SSH 服务器的暴力破解攻击</a></h1>
+			<ul class="article-meta">
+								<li>sa 发布于 2018-04-13</li>
+				<li>分类：<a href="https://www.centos.bz/category/undefine/" rel="category tag" data-original-title="" title="">未分类</a></li>
+				<li><span class="post-views">阅读(1909)</span></li>
+				<li>评论(0)</li>
+				<li></li>
+			</ul>
+		</header>
+				<article class="article-content">
+		<!-- <blockquote><p>有运维或运维开发方面的需求，可以联系博主QQ 452336092或Email:admin#centos.bz(收费)</p></blockquote> -->
+
+			<div id="content-index" class="content-index" style="margin:0 0 10px 10px;float:right;"><div class="content-index-title">文章目录</div><span class="content-index-toctoggle">[<a id="content-index-togglelink" href="javascript:content_index_toggleToc()">隐藏</a>]</span>
+<script type="text/javascript" language="javascript">
+window.content_index_showTocToggle=true;function content_index_toggleToc(){var tts="显示";var tth="隐藏";if(window.content_index_showTocToggle){window.content_index_showTocToggle=false;document.getElementById("content-index-contents").style.display="none";document.getElementById("content-index-togglelink").innerHTML=tts}else{window.content_index_showTocToggle=true;document.getElementById("content-index-contents").style.display="block";document.getElementById("content-index-togglelink").innerHTML=tth}}
+</script>
+<ul id="content-index-contents"><li class="content-index-level-1"><a href="https://www.centos.bz/2018/04/%e5%a6%82%e4%bd%95%e4%bd%bf%e7%94%a8-fail2ban-%e9%98%b2%e5%be%a1-ssh-%e6%9c%8d%e5%8a%a1%e5%99%a8%e7%9a%84%e6%9a%b4%e5%8a%9b%e7%a0%b4%e8%a7%a3%e6%94%bb%e5%87%bb/#%E5%9C%A8linux%E4%B8%8A%E5%AE%89%E8%A3%85Fail2ban" title="在linux上安装Fail2ban"><span>在linux上安装Fail2ban</span></a></li><li class="content-index-level-1"><a href="https://www.centos.bz/2018/04/%e5%a6%82%e4%bd%95%e4%bd%bf%e7%94%a8-fail2ban-%e9%98%b2%e5%be%a1-ssh-%e6%9c%8d%e5%8a%a1%e5%99%a8%e7%9a%84%e6%9a%b4%e5%8a%9b%e7%a0%b4%e8%a7%a3%e6%94%bb%e5%87%bb/#%E4%B8%BASSH%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AEFail2ban" title="为SSH服务器配置Fail2ban"><span>为SSH服务器配置Fail2ban</span></a></li><li class="content-index-level-1"><a href="https://www.centos.bz/2018/04/%e5%a6%82%e4%bd%95%e4%bd%bf%e7%94%a8-fail2ban-%e9%98%b2%e5%be%a1-ssh-%e6%9c%8d%e5%8a%a1%e5%99%a8%e7%9a%84%e6%9a%b4%e5%8a%9b%e7%a0%b4%e8%a7%a3%e6%94%bb%e5%87%bb/#%E6%B5%8B%E8%AF%95%20fail2ban%20%E4%BF%9D%E6%8A%A4SSH%E5%85%8D%E9%81%AD%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB" title="测试 fail2ban 保护SSH免遭暴力破解攻击"><span>测试 fail2ban 保护SSH免遭暴力破解攻击</span></a></li><li class="content-index-level-1"><a href="https://www.centos.bz/2018/04/%e5%a6%82%e4%bd%95%e4%bd%bf%e7%94%a8-fail2ban-%e9%98%b2%e5%be%a1-ssh-%e6%9c%8d%e5%8a%a1%e5%99%a8%e7%9a%84%e6%9a%b4%e5%8a%9b%e7%a0%b4%e8%a7%a3%e6%94%bb%e5%87%bb/#%E6%A3%80%E6%9F%A5fail2ban%E7%8A%B6%E6%80%81%E5%B9%B6%E8%A7%A3%E7%A6%81%E8%A2%AB%E9%94%81%E4%BD%8F%E7%9A%84IP%E5%9C%B0%E5%9D%80" title="检查fail2ban状态并解禁被锁住的IP地址"><span>检查fail2ban状态并解禁被锁住的IP地址</span></a></li><li class="content-index-level-1"><a href="https://www.centos.bz/2018/04/%e5%a6%82%e4%bd%95%e4%bd%bf%e7%94%a8-fail2ban-%e9%98%b2%e5%be%a1-ssh-%e6%9c%8d%e5%8a%a1%e5%99%a8%e7%9a%84%e6%9a%b4%e5%8a%9b%e7%a0%b4%e8%a7%a3%e6%94%bb%e5%87%bb/#%E8%AE%BE%E7%BD%AE%20Fail2ban%20%E8%87%AA%E5%8A%A8%E5%90%AF%E5%8A%A8" title="设置 Fail2ban 自动启动"><span>设置 Fail2ban 自动启动</span></a></li><li class="content-index-level-1"><a href="https://www.centos.bz/2018/04/%e5%a6%82%e4%bd%95%e4%bd%bf%e7%94%a8-fail2ban-%e9%98%b2%e5%be%a1-ssh-%e6%9c%8d%e5%8a%a1%e5%99%a8%e7%9a%84%e6%9a%b4%e5%8a%9b%e7%a0%b4%e8%a7%a3%e6%94%bb%e5%87%bb/#%E6%80%BB%E7%BB%93" title="总结"><span>总结</span></a></li></ul></div>
+<p>对于SSH服务的常见的攻击就是暴力破解攻击——远程攻击者通过不同的密码来无限次地进行登录尝试。当然SSH可以设置使用非密码验证验证方式来对
+抗这种攻击，例如公钥验证或者双重验证。将不同的验证方法的优劣处先放在一边，如果我们必须使用密码验证方式怎么办？你是如何保护你的 SSH 
+服务器免遭暴力破解攻击的呢？</p>
+<p><img src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/1-6.jpg" alt="" class="alignnone size-full wp-image-19473" data-tag="bdshare" width="475" height="375"></p>
+<p>fail2ban 是 <a href="https://www.centos.bz/tag/linux/">Linux</a> 
+上的一个著名的入侵保护的开源框架，它会监控多个系统的日志文件（例如：/var/log/auth.log 或者 
+/var/log/secure）并根据检测到的任何可疑的行为自动触发不同的防御动作。事实上，fail2ban 
+在防御对SSH服务器的暴力密码破解上非常有用。</p>
+<p>在这篇指导教程中，我会演示如何安装并配置 fail2ban 来保护 SSH 服务器以避免来自远程IP地址的暴力攻击。</p>
+<h2 id="在linux上安装Fail2ban">在linux上安装Fail2ban</h2>
+<p>为了在<a href="https://www.centos.bz/tag/centos/">CentOS</a> 或 RHEL上安装fail2ban,首先设置EPEL仓库，然后运行以下命令。</p>
+<pre><code>$ sudo yum install fail2ban
+</code></pre>
+<p>在Fedora上安装fail2ban，简单地运行以下命令：</p>
+<pre><code>$ sudo yum install fail2ban
+</code></pre>
+<p>在<a href="https://www.centos.bz/category/other-system/ubuntu/">ubuntu</a>，<a href="https://www.centos.bz/tag/debian/">Debian</a> 或 Linux Mint上安装fail2ban：</p>
+<pre><code>$ sudo apt-get install fail2ban
+</code></pre>
+<h2 id="为SSH服务器配置Fail2ban">为SSH服务器配置Fail2ban</h2>
+<p>现在你已经准备好了通过配置 fail2ban 来加强你的SSH服务器。你需要编辑其配置文件 
+/etc/fail2ban/jail.conf。 
+在配置文件的“[DEFAULT]”区，你可以在此定义所有受监控的服务的默认参数，另外在特定服务的配置部分，你可以为每个服务（例如SSH，<a href="https://www.centos.bz/category/web-server/apache/">Apache</a>等）设置特定的配置来覆盖默认的参数配置。</p>
+<p>在针对服务的监狱区（在[DEFAULT]区后面的地方），你需要定义一个[ssh-iptables]区，这里用来定义SSH相关的监狱配置。真正的禁止IP地址的操作是通过iptables完成的。</p>
+<p>下面是一个包含“ssh-iptables”监狱配置的/etc/fail2ban/jail.conf的文件样例。当然根据你的需要，你也可以指定其他的应用监狱。</p>
+<pre><code>$ sudo vi /etc/fail2ban/jail.local
+</code></pre>
+<pre><code>[DEFAULT]
+# 以空格分隔的列表，可以是 IP 地址、CIDR 前缀或者 DNS 主机名
+# 用于指定哪些地址可以忽略 fail2ban 防御
+ignoreip = 127.0.0.1 172.31.0.0/24 10.10.0.0/24 192.168.0.0/24
+
+# 客户端主机被禁止的时长（秒）
+bantime = 86400
+
+# 客户端主机被禁止前允许失败的次数 
+maxretry = 5
+
+# 查找失败次数的时长（秒）
+findtime = 600
+
+mta = <a href="https://www.centos.bz/category/email/sendmail/">sendmail</a>
+
+[ssh-iptables]
+enabled = true
+filter = sshd
+action = iptables[name=SSH, port=ssh, protocol=tcp]
+sendmail-whois[name=SSH, dest=your@email.com, sender=fail2ban@email.com]
+# Debian 系的发行版 
+logpath = /var/log/auth.log
+# Red Hat 系的发行版
+logpath = /var/log/secure
+# ssh 服务的最大尝试次数 
+maxretry = 3
+</code></pre>
+<p>根据上述配置，fail2ban会自动禁止在最近10分钟内有超过3次访问尝试失败的任意IP地址。一旦被禁，这个IP地址将会在24小时内一直被禁止访问 SSH 服务。这个事件也会通过sendemail发送邮件通知。</p>
+<p>一旦配置文件准备就绪，按照以下方式重启fail2ban服务。</p>
+<p>在 Debian, <a href="https://www.centos.bz/tag/ubuntu/">Ubuntu</a> 或 CentOS/RHEL 6:</p>
+<pre><code>$ sudo service fail2ban restart
+</code></pre>
+<p>在 Fedora 或 CentOS/RHEL 7:</p>
+<pre><code>$ sudo systemctl restart fail2ban
+</code></pre>
+<p>为了验证fail2ban成功运行，使用参数’ping’来运行fail2ban-client 命令。 如果fail2ban服务正常运行，你可以看到“pong（嘭）”作为响应。</p>
+<pre><code>$ sudo fail2ban-client ping
+<a href="https://www.centos.bz/tag/server/">Server</a> replied: pong
+</code></pre>
+<h2 id="测试 fail2ban 保护SSH免遭暴力破解攻击">测试 fail2ban 保护SSH免遭暴力破解攻击</h2>
+<p>为了测试fail2ban是否能正常工作，尝试通过使用错误的密码来用SSH连接到服务器模拟一个暴力破解攻击。与此同时，监控 /var/log/fail2ban.log，该文件记录在fail2ban中发生的任何敏感事件。</p>
+<pre><code>$ sudo tail -f /var/log/fail2ban.log
+</code></pre>
+<p><img src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/2-3.jpg" alt="" class="alignnone size-full wp-image-19474" srcset="https://www.centos.bz/wp-content/uploads/2018/04/2-3.jpg 800w, https://www.centos.bz/wp-content/uploads/2018/04/2-3-768x277.jpg 768w" sizes="(max-width: 800px) 100vw, 800px" data-tag="bdshare" width="800" height="289"></p>
+<p>根据上述的日志文件，Fail2ban通过检测IP地址的多次失败登录尝试，禁止了一个IP地址192.168.1.8。</p>
+<h2 id="检查fail2ban状态并解禁被锁住的IP地址">检查fail2ban状态并解禁被锁住的IP地址</h2>
+<p>由于fail2ban的“ssh-iptables”监狱使用iptables来阻塞问题IP地址，你可以通过以下方式来检测当前iptables来验证禁止规则。</p>
+<pre><code>$ sudo iptables --list -n
+</code></pre>
+<pre><code>Chain INPUT (policy ACCEPT)
+target     prot opt <a href="https://www.centos.bz/tag/source/">source</a>               destination
+fail2ban-SSH  tcp  --  0.0.0.0/0            0.0.0.0/0           tcp dpt:22
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain fail2ban-SSH (1 references)
+target     prot opt source               destination
+DROP       all  --  192.168.1.8          0.0.0.0/0
+RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+</code></pre>
+<p>如果你想要从fail2ban中解锁某个IP地址，你可以使用iptables命令：</p>
+<pre><code>$ sudo iptables -D fail2ban-SSH -s 192.168.1.8 -j DROP
+</code></pre>
+<p>当然你可以使用上述的iptables命令手动地检验和管理fail2ban的IP阻塞列表，但实际上有一个适当的方法就是使用fail2ban-
+client命令行工具。这个命令不仅允许你对”ssh-iptables”监狱进行管理，同时也是一个标准的命令行接口，可以管理其他类型的
+fail2ban监狱。</p>
+<p>为了检验fail2ban状态（会显示出当前活动的监狱列表）：</p>
+<pre><code>$ sudo fail2ban-client <a href="https://www.centos.bz/tag/status/">status</a>
+</code></pre>
+<p>为了检验一个特定监狱的状态（例如ssh-iptables):</p>
+<pre><code>$ sudo fail2ban-client status ssh-iptables
+</code></pre>
+<p>上面的命令会显示出被禁止IP地址列表。</p>
+<p><img src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/3-3.jpg" alt="" class="alignnone size-full wp-image-19475" data-tag="bdshare" width="766" height="310"></p>
+<p>为了解锁特定的IP地址：</p>
+<pre><code>$ sudo fail2ban-client set ssh-iptables unbanip 192.168.1.8
+</code></pre>
+<p><img src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/4-2.jpg" alt="" class="alignnone size-full wp-image-19476" data-tag="bdshare" width="762" height="254"></p>
+<p>注意，如果你停止了Fail2ban 服务，那么所有的IP地址都会被解锁。当你重启 
+Fail2ban，它会从/etc/log/secure(或 
+/var/log/auth.log)中找到异常的IP地址列表，如果这些异常地址的发生时间仍然在禁止时间内，那么Fail2ban会重新将这些IP地
+址禁止。</p>
+<h2 id="设置 Fail2ban 自动启动">设置 Fail2ban 自动启动</h2>
+<p>一旦你成功地测试了fail2ban之后，最后一个步骤就是在你的服务器上让其在开机时自动启动。在基于Debian的发行版中，fail2ban已经默认让自动启动生效。在基于Red-Hat的发行版中，按照下面的方式让自动启动生效。</p>
+<p>在 CentOS/RHEL 6中:</p>
+<pre><code>$ sudo chkconfig fail2ban on
+</code></pre>
+<p>在 Fedora 或 CentOS/RHEL 7:</p>
+<pre><code>$ sudo systemctl enable fail2ban
+</code></pre>
+<h2 id="总结">总结</h2>
+<p>在该教程中，我演示了如何安装并配置fail2ban来保护一个SSH服务器。当然fail2ban可以缓解暴力密码攻击，但是请注意，这并不能保
+护SSH服务器避免来自复杂的分布式暴力破解组织，这些攻击者通过使用成千上万个机器控制的IP地址来绕过fail2ban的防御机制。</p>			        	<p class="post-copyright">原文出处：linux -&gt; <a rel="nofollow" href="https://linux.cn/article-5067-1.html">https://linux.cn/article-5067-1.html</a></p>		</article>
+		           <div class="gave">
+            <p><a href="javascript:;" id="gave">打赏</a></p>
+<p>如果此文对你有所帮助，请随意打赏鼓励作者^_^</p>
+            <div class="code" id="wechatCode" style="display: none;">
+                <img src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/weixin_reward.jpg" alt="微信扫一扫支付" data-tag="bdshare">
+                <div><img src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/ico-wechat.jpg" alt="微信logo" class="ico-wechat" data-tag="bdshare">微信扫一扫，打赏作者吧～</div>
+            </div>
+        </div>
+       
+				
+		<div class="article-tags">
+			标签：<a href="https://www.centos.bz/tag/fail2ban/" rel="tag" data-original-title="" title="">fail2ban</a><a href="https://www.centos.bz/tag/ssh/" rel="tag" data-original-title="" title="">SSH</a>		</div>
+		<nav class="article-nav">
+			<span class="article-nav-prev">上一篇<br><a href="https://www.centos.bz/2018/04/mysql-mariadb%e5%a4%87%e4%bb%bdxtrabackup%e8%bf%98%e5%8e%9f%e5%ae%9e%e6%88%98/" rel="prev">Mysql/Mariadb备份(xtrabackup)还原实战</a></span>
+			<span class="article-nav-next">下一篇<br><a href="https://www.centos.bz/2018/04/nginx%e8%ae%bf%e9%97%ae%e9%a2%91%e7%8e%87%e6%8e%a7%e5%88%b6/" rel="next">Nginx访问频率控制</a></span>
+		</nav>
+		<div class="ads ads-content ads-related"><script async="" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/adsbygoogle.js"></script>
+<!-- 全站文章顶部728*90 -->
+<ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-7207924189700482" data-ad-slot="4668235082" data-adsbygoogle-status="done"><ins id="aswift_0_expand" style="display:inline-table;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent;"><ins id="aswift_0_anchor" style="display:block;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0px;width:728px;height:90px;" width="728" height="90" frameborder="0"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script></div>		<div class="relates relates-model-thumb"><h3 class="title"><strong>相关推荐</strong></h3><ul><li><a href="https://www.centos.bz/2019/01/git-ssh-https-%e8%b8%a9%e5%9d%91%e8%ae%b0-%e5%9f%9f%e8%b4%a6%e5%8f%b7%e5%af%86%e7%a0%81%e6%9b%b4%e6%96%b0/"><span><img data-original="https://www.centos.bz/wp-content/themes/xiu/images/thumbnail.png" class="thumb" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/thumbnail.png" style="display: inline;"></span>git ssh https 踩坑记 —- 域账号密码更新</a></li><li><a href="https://www.centos.bz/2019/01/git%e8%ae%be%e7%bd%aessh%e8%ae%bf%e9%97%ae/"><span><img data-original="https://www.centos.bz/wp-content/themes/xiu/images/thumbnail.png" class="thumb" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/thumbnail.png" style="display: inline;"></span>git设置ssh访问</a></li><li><a href="https://www.centos.bz/2019/01/linux-%e9%98%b2%e7%81%ab%e5%a2%99-%e9%98%bb%e6%ad%a2ssh%e6%9a%b4%e5%8a%9b%e6%b5%8b%e8%af%95/"><span><img data-original="https://www.centos.bz/wp-content/themes/xiu/images/thumbnail.png" class="thumb" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/thumbnail.png" style="display: inline;"></span>Linux 防火墙 阻止ssh暴力测试</a></li><li><a href="https://www.centos.bz/2019/01/%e8%a7%a3%e5%86%b3ssh%e6%97%a0%e6%b3%95%e8%bf%9e%e6%8e%a5%e8%bf%9c%e7%a8%8bubuntu%ef%bc%8cuuntu%e5%ae%89%e8%a3%85ssh-server/"><span><img data-original="https://www.centos.bz/wp-content/themes/xiu/images/thumbnail.png" class="thumb" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/thumbnail.png" style="display: inline;"></span>解决ssh无法连接远程Ubuntu，Uuntu安装ssh-server</a></li><li><a href="https://www.centos.bz/2019/01/centos7-ssh-%e5%85%8d%e5%af%86%e7%99%bb%e5%bd%95/"><span><img data-original="https://www.centos.bz/wp-content/themes/xiu/images/thumbnail.png" class="thumb" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/thumbnail.png" style="display: inline;"></span>centos7 ssh 免密登录</a></li><li><a href="https://www.centos.bz/2019/01/ssh-%e5%85%8d%e5%af%86%e7%a0%81%e7%99%bb%e9%99%86%e4%bb%a5%e5%8f%8a%e7%ae%80%e5%8c%96%e5%91%bd%e4%bb%a4/"><img data-original="https://www.centos.bz/wp-content/uploads/2019/01/1-2-1.png" class="thumb" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/1-2-1.png" style="display: inline;">ssh 免密码登陆以及简化命令</a></li><li><a href="https://www.centos.bz/2019/01/ssh%e7%9a%84%e5%ae%89%e5%85%a8%e8%ae%be%e7%bd%ae/"><img data-original="https://www.centos.bz/wp-content/uploads/2019/01/1-1.png" class="thumb" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/1-1.png" style="display: inline;">SSH的安全设置</a></li><li><a href="https://www.centos.bz/2019/01/%e8%a7%a3%e5%86%b3ssh%e7%99%bb%e9%99%86%e8%bf%87%e6%85%a2%e9%97%ae%e9%a2%98/"><span><img data-original="https://www.centos.bz/wp-content/themes/xiu/images/thumbnail.png" class="thumb" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/thumbnail.png" style="display: inline;"></span>解决ssh登陆过慢问题</a></li></ul></div>							</div>
+</div>
+<aside class="sidebar">	
+<div class="widget widget_ads affix" style="top: 100px;"><div class="widget_ads_inner"><script async="" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/adsbygoogle.js"></script>
+<!-- 右侧300x250 -->
+<ins class="adsbygoogle" style="display: inline-block; width: 300px; height: 250px;" data-ad-client="ca-pub-7207924189700482" data-ad-slot="9461374684" data-adsbygoogle-status="done"><ins id="aswift_1_expand" style="display:inline-table;border:none;height:250px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><ins id="aswift_1_anchor" style="display:block;border:none;height:250px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_1" name="aswift_1" style="left:0;position:absolute;top:0;border:0px;width:300px;height:250px;" width="300" height="250" frameborder="0"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script></div></div><div class="widget widget_tags affix" style="top: 375px;"><h3 class="title"><strong>热门标签</strong></h3><ul class="widget_tags_inner"><li><a title="" href="https://www.centos.bz/tag/docker/" data-original-title="395个话题">docker</a></li><li><a title="" href="https://www.centos.bz/tag/nginx-2/" data-original-title="350个话题">nginx</a></li><li><a title="" href="https://www.centos.bz/tag/mysql-2/" data-original-title="271个话题">mysql</a></li><li><a title="" href="https://www.centos.bz/tag/linux/" data-original-title="207个话题">Linux</a></li><li><a title="" href="https://www.centos.bz/tag/centos/" data-original-title="206个话题">CentOS</a></li><li><a title="" href="https://www.centos.bz/tag/ubuntu/" data-original-title="114个话题">ubuntu</a></li><li><a title="" href="https://www.centos.bz/tag/zabbix/" data-original-title="112个话题">zabbix</a></li><li><a title="" href="https://www.centos.bz/tag/python-3/" data-original-title="100个话题">python</a></li><li><a title="" href="https://www.centos.bz/tag/redis/" data-original-title="95个话题">redis</a></li><li><a title="" href="https://www.centos.bz/tag/apache/" data-original-title="92个话题">apache</a></li><li><a title="" href="https://www.centos.bz/tag/git/" data-original-title="91个话题">git</a></li><li><a title="" href="https://www.centos.bz/tag/kubernetes/" data-original-title="88个话题">kubernetes</a></li><li><a title="" href="https://www.centos.bz/tag/mongodb/" data-original-title="83个话题">mongodb</a></li><li><a title="" href="https://www.centos.bz/tag/wordpress/" data-original-title="79个话题">wordpress</a></li><li><a title="" href="https://www.centos.bz/tag/tomcat/" data-original-title="74个话题">tomcat</a></li><li><a title="" href="https://www.centos.bz/tag/php/" data-original-title="72个话题">PHP</a></li><li><a title="" href="https://www.centos.bz/tag/ansible/" data-original-title="72个话题">ansible</a></li><li><a title="" href="https://www.centos.bz/tag/mariadb/" data-original-title="70个话题">MariaDB</a></li><li><a title="" href="https://www.centos.bz/tag/jenkins/" data-original-title="70个话题">Jenkins</a></li><li><a title="" href="https://www.centos.bz/tag/ssh/" data-original-title="69个话题">SSH</a></li><li><a title="" href="https://www.centos.bz/tag/flask/" data-original-title="67个话题">flask</a></li><li><a title="" href="https://www.centos.bz/tag/saltstack/" data-original-title="61个话题">saltstack</a></li><li><a title="" href="https://www.centos.bz/tag/gitlab/" data-original-title="51个话题">gitlab</a></li><li><a title="" href="https://www.centos.bz/tag/iptables/" data-original-title="50个话题">Iptables</a></li><li><a title="" href="https://www.centos.bz/tag/k8s/" data-original-title="50个话题">k8s</a></li><li><a title="" href="https://www.centos.bz/tag/rsync/" data-original-title="49个话题">rsync</a></li><li><a title="" href="https://www.centos.bz/tag/awk/" data-original-title="46个话题">awk</a></li><li><a title="" href="https://www.centos.bz/tag/crontab/" data-original-title="43个话题">crontab</a></li><li><a title="" href="https://www.centos.bz/tag/https/" data-original-title="41个话题">https</a></li><li><a title="" href="https://www.centos.bz/tag/php-fpm/" data-original-title="38个话题">php-fpm</a></li><li><a title="" href="https://www.centos.bz/tag/docker-compose/" data-original-title="37个话题">docker compose</a></li><li><a title="" href="https://www.centos.bz/tag/supervisor/" data-original-title="36个话题">supervisor</a></li><li><a title="" href="https://www.centos.bz/tag/nfs/" data-original-title="34个话题">NFS</a></li><li><a title="" href="https://www.centos.bz/tag/django/" data-original-title="32个话题">Django</a></li><li><a title="" href="https://www.centos.bz/tag/haproxy/" data-original-title="32个话题">haproxy</a></li><li><a title="" href="https://www.centos.bz/tag/openresty/" data-original-title="31个话题">OpenResty</a></li><li><a title="" href="https://www.centos.bz/tag/uwsgi/" data-original-title="31个话题" aria-describedby="tooltip963444">uWSGI</a></li><li><a title="" href="https://www.centos.bz/tag/memcached/" data-original-title="30个话题">memcached</a></li><li><a title="" href="https://www.centos.bz/tag/kvm/" data-original-title="30个话题">KVM</a></li><li><a title="" href="https://www.centos.bz/tag/postgresql/" data-original-title="29个话题">PostgreSQL</a></li><li><a title="" href="https://www.centos.bz/tag/lvm/" data-original-title="28个话题">LVM</a></li><li><a title="" href="https://www.centos.bz/tag/lua/" data-original-title="28个话题">lua</a></li><li><a title="" href="https://www.centos.bz/tag/keepalived/" data-original-title="27个话题">keepalived</a></li><li><a title="" href="https://www.centos.bz/tag/yum/" data-original-title="27个话题">yum</a></li><li><a title="" href="https://www.centos.bz/tag/innodb/" data-original-title="27个话题">innodb</a></li></ul></div><div class="widget widget_postlist"><h3 class="title"><strong>随便看看</strong></h3><ul class="items-03">		<li><a href="https://www.centos.bz/2017/07/ubuntu-16-04-docker-install-wordpress/"><span class="text">Ubuntu 16.04使用Docker部署WordPress</span><span class="text-muted post-views">阅读(956)</span></a></li>
+				<li><a href="https://www.centos.bz/2017/07/mysql-processlist-connection/"><span class="text">通过三个维度分析processlist 高效追溯MySQL活跃连接数飙升根因</span><span class="text-muted post-views">阅读(636)</span></a></li>
+				<li><a href="https://www.centos.bz/2012/02/nginx-keepalived-high-availability/"><span class="text">nginx+keepalived实现双机热备的高可用</span><span class="text-muted post-views">阅读(6695)</span></a></li>
+				<li><a href="https://www.centos.bz/2012/07/iptables-notes/"><span class="text">iptables学习笔记</span><span class="text-muted post-views">阅读(3182)</span></a></li>
+				<li><a href="https://www.centos.bz/2018/11/%e8%ae%b0%e5%bd%95%e4%b8%8b%e5%9c%a8linux%e9%85%8d%e7%bd%aemongodbnginxnode%e7%9a%84%e8%bf%87%e7%a8%8b/"><span class="text">记录下在linux配置mongodb+nginx+node的过程</span><span class="text-muted post-views">阅读(381)</span></a></li>
+				<li><a href="https://www.centos.bz/2011/09/centos-compile-lamp-apache-mysql-php/"><span class="text">CentOS 源码编译安装LAMP(Apache MySQL PHP)</span><span class="text-muted post-views">阅读(3050)</span></a></li>
+		</ul></div></aside>
+</section>
+<footer class="footer">
+	    © 2019 <a href="https://www.centos.bz/">Linux运维日志</a> &nbsp;
+<a href="https://www.centos.bz/sitemap.xml">网站地图</a> | <a href="https://www.centos.bz/tags/">所有标签</a> | <a href="http://www.miitbeian.gov.cn/">粤ICP备15110427号-1</a>    <script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?245337fe2a5eec764f81f87e3d0180a7";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+</footer>
+
+<script>
+window.jui = {
+	uri: 'https://www.centos.bz/wp-content/themes/xiu',
+	roll: '1 2',
+	ajaxpager: '0'
+}
+</script>
+<link rel="stylesheet" id="wechat-reward-css" href="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/wechat-reward.css" type="text/css" media="all">
+<script type="text/javascript" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/bootstrap.js"></script>
+<script type="text/javascript" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/custom.js"></script><div class="rollto" style="display: block;"><a href="javascript:;"></a></div>
+<script type="text/javascript" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/wp-embed.js"></script>
+<script type="text/javascript" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/wechat-reward.js"></script>
+
+
+<iframe id="google_osd_static_frame_9005511812188" name="google_osd_static_frame" style="display: none; width: 0px; height: 0px;"></iframe><div class="tooltip fade top in" role="tooltip" id="tooltip963444" style="display: block; top: 3042px; left: 1552.5px;"><div class="tooltip-arrow"></div><div class="tooltip-inner">31个话题</div></div></body><iframe id="google_esf" name="google_esf" src="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%20fail2ban%20%E9%98%B2%E5%BE%A1%20SSH%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E6%94%BB%E5%87%BB-Linux%E8%BF%90%E7%BB%B4%E6%97%A5%E5%BF%97_files/zrt_lookup.html" style="display: none;" data-ad-client="ca-pub-7207924189700482"></iframe></html>
