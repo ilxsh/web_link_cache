@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="gb2312" />
+<meta name="applicable-device" content="pc">
+<meta name="renderer" content="webkit"/>
+<meta name="force-rendering" content="webkit"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+<meta http-equiv="Cache-Control" content="no-transform" />
+<title>SSH端口转发实现内网穿透的实现_Linux_脚本之家</title>
+<meta name="keywords" content="SSH,内网穿透,SSH端口转发内网穿透" />
+<meta name="description" content="这篇文章主要介绍了SSH端口转发实现内网穿透的实现，文中通过示例代码介绍的非常详细，对大家的学习或者工作具有一定的参考学习价值，需要的朋友们下面随着小编来一起学习学习吧" />
+<link rel="alternate" media="only screen and(max-width: 640px)" href="https://m.jb51.net/article/168657.htm" />
+<meta http-equiv="mobile-agent" content="format=html5; url=https://m.jb51.net/article/168657.htm" />
+<meta http-equiv="mobile-agent" content="format=xhtml; url=https://m.jb51.net/article/168657.htm" />
+<script type="text/javascript">
+var tougao="zx",lmname="服务器",suoyin="no";
+(function(){var reWriteUrl=function(url){if(url){var Splits=url.split("/"),siteName=window.location.pathname;if(typeof siteName!=="undefined"){return "https://m.jb51.net"+siteName}}};if(/Android|webOS|iPhone|iPad|Windows Phone|iPod|BlackBerry|SymbianOS|Nokia|Mobile/i.test(navigator.userAgent)){var url=window.location.href;var pathname=window.location.pathname;if(url.indexOf("?pc")<0){try{window.location.href=reWriteUrl(url)}catch(e){}}}})();
+</script>
+<meta name="referrer" content="always">
+<link type="text/css" href="/skin/2019/css/base.css" rel="stylesheet" />
+<link type="text/css" href="/skin/2019/css/common.css" rel="stylesheet" />
+<script type="text/javascript" src="//apps.bdimg.com/libs/jquery/1.11.3/jquery.min.js"></script>
+<script type="text/javascript">
+    if (typeof jQuery == 'undefined') {
+        document.write(unescape("%3Cscript src='/skin/js/jquery.js' type='text/javascript'%3E%3C/script%3E"));
+    }
+</script>
+<script type=text/javascript src="/js/function.js"></script> 
+</head>
+<body>
+<!--topTools Start -->
+<div id="topbar">
+    <div id="wrap">
+		<div class="topbarleft">
+			<a href="/" target="_blank">脚本之家</a>
+			<a href="http://s.jb51.net" target="_blank" rel="nofollow">服务器常用软件</a>
+		</div>
+		<div class="fr">
+			<ul>
+				<li><i class="ico-mobile"></i><a target="_blank" href="https://m.jb51.net/" rel="nofollow">手机版</a></li>
+				<li><i class="ico-contribute"></i><a href="http://tougao.jb51.net" rel="nofollow" target="_blank">投稿中心</a></li>
+				<li id="wxHide"><i class="ico-wechat"></i><a href="javascript:void(0)" target="_blank">关注微信</a>
+					<div id="wxShow" class="wxHide_box"><img src="//files.jb51.net/skin/2018/images/erwm.jpg" alt="扫一扫" width="84" hight="84" data-baiduimageplus-ignore></div>
+				</li>
+			</ul>
+			<!--快捷导航 开始 -->
+			<div class="text_d right" id="navHide">
+				<a rel="nofollow" href="javascript:void(0);">快捷导航 <i class="arrowright"></i></a>
+				<div id="navBox" class="nwebnav">
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="/softs/" target="_blank">软件下载</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="/softs/android.html" target="_blank">android</a>
+								<a rel="nofollow" href="/softs/mac.html" target="_blank">MAC</a>
+								<a rel="nofollow" href="/qudong/" target="_blank">驱动下载</a>
+								<a rel="nofollow" href="/fonts/" target="_blank">字体下载</a>
+								<a rel="nofollow" href="/dll/" target="_blank">DLL</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="/codes/" target="_blank">源码下载</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="/codes/php.html" target="_blank">PHP</a>
+								<a rel="nofollow" href="/codes/aspnet.html" target="_blank">ASP.NET</a>
+								<a rel="nofollow" href="/codes/asp.html" target="_blank">ASP</a>
+								<a rel="nofollow" href="/codes/jsp.html" target="_blank">JSP</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="/list/index_84.htm" target="_blank">软件编程</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="/list/list_85_1.htm" target="_blank">C#</a>
+								<a rel="nofollow" href="/list/list_134_1.htm" target="_blank">JAVA</a>
+								<a rel="nofollow" href="/list/list_159_1.htm" target="_blank">C 语言</a>
+								<a rel="nofollow" href="/list/list_206_1.htm" target="_blank">Delphi</a>
+								<a rel="nofollow" href="/list/list_233_1.htm" target="_blank">Android</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="/list/index_1.htm" target="_blank">网络编程</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="/list/list_15_1.htm" target="_blank">PHP</a>
+								<a rel="nofollow" href="/list/list_21_1.htm" target="_blank">ASP.NET</a>
+								<a rel="nofollow" href="/list/list_2_1.htm" target="_blank">ASP</a>
+								<a rel="nofollow" href="/list/list_3_1.htm" target="_blank">JavaScript</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="http://tools.jb51.net/" target="_blank">在线工具</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="/tools/cssyasuo.shtml" target="_blank">CSS格式化</a>
+								<a rel="nofollow" href="http://tools.jb51.net/tools/js_geshihua.asp" target="_blank">JS格式化</a>
+								<a rel="nofollow" href="/tools/html-js.htm" target="_blank">Html转化为Js</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="/list/index_104.htm" target="_blank">数据库</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="/list/list_112_1.htm" target="_blank">MYSQL</a>
+								<a rel="nofollow" href="/list/list_113_1.htm" target="_blank">MSSQL</a>
+								<a rel="nofollow" href="/list/list_154_1.htm" target="_blank">oracle</a>
+								<a rel="nofollow" href="/list/list_155_1.htm" target="_blank">DB2</a>
+								<a rel="nofollow" href="/list/list_252_1.htm" target="_blank">MARIADB</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="/cms/" target="_blank">CMS</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="/cms/list411_1.html" target="_blank">PHPCMS</a>
+								<a rel="nofollow" href="/cms/list408_1.html" target="_blank">DEDECMS</a>
+								<a rel="nofollow" href="/cms/list578_1.html" target="_blank">帝国CMS</a>
+								<a rel="nofollow" href="/cms/list419_1.html" target="_blank">WordPress</a>
+							</dd>
+						</dl>
+					</div>
+					<div class="ndeallist clear_fix">
+						<h4><a rel="nofollow" href="javascript:0;" target="_blank">常用工具</a></h4>
+						<dl>
+							<dd>
+								<a rel="nofollow" href="/zt/phphuanjing.html" target="_blank">PHP开发工具</a>
+								<a rel="nofollow" href="/zt/python.html" target="_blank">python</a>
+								<a rel="nofollow" href="/zt/photoshopxz.html" target="_blank">Photoshop</a>
+								<a rel="nofollow" href="/bibei/win/index.html" target="_blank">必备软件</a>
+							</dd>
+						</dl>
+					</div>
+				</div>
+			</div>
+			<!--快捷导航 结束 -->
+		</div>
+    </div>
+</div>
+<!--topTools end -->
+
+<div id="header">
+	<!-- Logo start -->
+	  <div id="logo"><a href="/"><img src="/images/logo.gif" title="脚本之家" alt="脚本之家" /></a></div>
+	  <div class="logom fl"><span id="logo_m" class="jbTestPos"></span></div>
+	  <div class="logor fr"><span id="logo_r" class="jbTestPos"></span></div>
+	<!--Logo end -->
+</div>	
+	<!--Logo end -->
+	
+	<!-- 导航开始 -->
+<div id="nav">
+	<ul>
+		<li><a href="/">网站首页</a></li>
+		<li><a href="/web/">网页制作</a></li>
+		<li><a href="/list/index_1.htm">网络编程</a></li>
+		<li><a href="/list/index_96.htm">脚本专栏</a></li>
+		<li><a href="/jiaoben/">脚本下载</a></li>
+		<li><a href="/list/index_104.htm">数据库</a></li>
+		<li><a href="/list/list_82_1.htm">服务器</a></li>
+		<li><a href="/books/">电子书籍</a></li>
+		<li><a href="/os/">操作系统</a></li>
+		<li><a href="/yunying/">网站运营</a></li>
+		<li><a href="/pingmian/">平面设计</a></li>
+		<li><p><i>其它</i><span>
+			<a href="/media/">媒体动画</a>
+			<a href="/diannaojichu/">电脑基础</a>
+			<a href="/hardware/">硬件教程</a>
+			<a href="/hack/">网络安全</a>	
+		</span></p>
+		</li>
+	</ul>
+</div>
+	<!--导航结束-->
+</div>
+
+<!-- 二级菜单开始 -->
+<div id="submenu">
+	<div class="subnav clearfix">
+<ul><li><a href='/list/list_192_1.htm' title="星外虚拟主机">星外虚拟主机</a></li>
+<li><a href='/list/list_193_1.htm' title="华众虚拟主机">华众虚拟主机</a></li>
+<li><a href='/list/list_203_1.htm' title="Linux">Linux</a></li>
+<li><a href='/list/list_204_1.htm' title="win服务器">win服务器</a></li>
+<li><a href='/list/list_218_1.htm' title="FTP服务器">FTP服务器</a></li>
+<li><a href='/list/list_219_1.htm' title="DNS服务器">DNS服务器</a></li>
+<li><a href='/list/list_223_1.htm' title="Tomcat ">Tomcat </a></li>
+<li><a href='/list/list_226_1.htm' title="nginx">nginx</a></li>
+<li><a href='/list/list_247_1.htm' title="zabbix">zabbix</a></li>
+<li><a href='/list/list_255_1.htm' title="云和虚拟化">云和虚拟化</a></li>
+<li><a href='/list/list_220_1.htm' title="服务器其它">服务器其它</a></li>
+</ul>
+	</div>
+</div>
+<!-- 二级菜单结束 -->	
+
+<!--content Star -->
+<div id="wrapper">
+	<div id="container">
+		<div class="pt10 clearfix">
+			<div class="clearfix"><span id="tonglan1" class="jbTestPos"></span></div>
+		</div>
+	
+		<div class="clearfix">
+			<div class="breadcrumb">
+				<i class="ico-path"></i>您的位置：<a href='/'>首页</a> → <a href="/list/index_27.htm" title="网站技巧">网站技巧</a> → <a href="/list/list_82_1.htm" title="服务器">服务器</a> → <a href="/list/list_203_1.htm" title="Linux">Linux</a> → 正文内容 SSH端口转发实现内网穿透
+			</div>
+			<div class="search">
+			<form action="/do/search.php" target="_blank">
+				<input type="hidden" name="s" value="10520733385329581432">
+				<input type="hidden" name="ie" value="gbk">
+				<input type="text" name="q" class="searchinput" placeholder="请输入关键词">
+				<input type="submit" value=" " class="search-button">
+			</form>
+			</div>
+		</div>
+	
+	   <div id="main" class="clearfix">
+		  <div class="main-left">
+			  <div id="article">
+			  		<h1 class="title">SSH端口转发实现内网穿透的实现</h1>
+					<div class="info"> &nbsp;更新时间：2019年08月28日 10:02:41 &nbsp; 作者：秦时的明月夜  &nbsp; <a href="#comments"> <img src="/skin/2018/images/text-message.png" width="15" height="15" /> 我要评论</a></div>
+					<div class="lbd clearfix"><span id="tit_down" class="jbTestPos"></span></div>
+                    <div class="summary">这篇文章主要介绍了SSH端口转发实现内网穿透的实现，文中通过示例代码介绍的非常详细，对大家的学习或者工作具有一定的参考学习价值，需要的朋友们下面随着小编来一起学习学习吧</div>
+					<div class="lbd clearfix"><span id="art_up" class="jbTestPos"></span></div>
+					<div id="content">
+						<p>我们局域网的机器能够访问外网，但是外网不能访问内网。因为内网访问互联网时候能确定外网的地址，外网却不能确定我们局域网内的具体地址。（ip地址有限）如果 我们在访问外网的时候，这个链接让他保持、不断，那么这个链接就相当于我们建了一条路，内网数据能出去，外网数据能进来，ssh也是这个方法。</p>
+<p><strong>使用ssh命令链接公网服务器<br />
+</strong></p>
+<p>1、首先在外网服务器上编辑sshd的配置文件<br />
+</p>
+<div class="jb51code">
+<pre class="brush:bash;">
+vim /etc/ssh/sshd_config
+#将GatewayPorts 开关打开
+GatewayPorts yes
+重启sshd服务，使用修改生效（linux 版本不同命令可能会有差异）
+systemctl restart sshd 
+</pre>
+</div>
+<p>2、命令<br />
+</p>
+<div class="jb51code">
+<pre class="brush:bash;">
+ssh -NTf -R &lt;local-host&gt;:&lt;local-port&gt;:&lt;remote -host&gt;:&lt;remote-port&gt; user@host
+
+local-host 可省略
+例如：ssh -NTf -R 8888:127.0.0.1:8080 root@host
+</pre>
+</div>
+<p>3、参数说明<br />
+</p>
+<p>-C 允许压缩数据<br />
+-f 后台运行<br />
+-N 表示只连接远程主机，不打开远程shell<br />
+-R 将端口绑定到远程服务器，反向代理<br />
+-L 将端口绑定到本地客户端，正向代理<br />
+-T 不为这个连接分配TTY<br />
+-NT 代表这个SSH连接只用来传数据，不执行远程操作<br />
+</p>
+<p><span style="color: #ff0000"><strong>保持ssh链接不断开</strong></span><br />
+</p>
+<p>通常我们使用ssh 链接服务器的时候，如果长时间不操作，这个链接是会关闭的。</p>
+<p><strong>方法一、设置客户端</strong><br />
+</p>
+<p>1）用户级别的设置<br />
+</p>
+<div class="jb51code">
+<pre class="brush:bash;">
+vim ~/.ssh/config（如果没有config创建一个）</pre>
+</div>
+<p>2）全局设置</p>
+<div class="jb51code">
+<pre class="brush:bash;">
+/etc/ssh/ssh_config</pre>
+</div>
+<p>选择其中一个就可以，添加下面参数<br />
+</p>
+<div class="jb51code">
+<pre class="brush:bash;">
+#每隔60秒向服务器发送一个空包
+ServerAliveInterval 60
+#如果超过两次没成功就断开
+ServerAliveCountMax 2
+#转发失败后退出，便于重建连接
+ExitOnForwardFailure yes </pre>
+</div>
+<p>临时写法（推荐，不影响他人）<br />
+</p>
+<div class="jb51code">
+<pre class="brush:bash;">
+ssh -o ServerAliveInterval=30 root@host
+ssh -NTf -R 8888:127.0.0.1:8080 root@host -o ServerAliveInterval=30 -o ServerAliveCountMax=2</pre>
+</div>
+<p><strong>方法二、设置服务器端<br />
+</strong></p>
+<div class="jb51code">
+<pre class="brush:bash;">
+vim /etc/ssh/sshd_config
+#每隔30秒，服务器端向客户端发送心跳
+ClientAliveInterval 30
+#3次心跳无响应之后，会认为Client已经断开
+ClientAliveCountMax 3</pre>
+</div>
+<p><strong>方法三、使用shell脚本</strong><br />
+</p>
+<div class="jb51code">
+<pre class="brush:bash;">
+touch myAutoSSH.sh
+因为我设置ssh连接是rsa免密认证，所以这里逻辑就不需要密码 </pre>
+</div>
+<p><a target="_blank" href="https://www.jb51.net/article/168656.htm">ssh免密登录方法</a></p>
+<div class="jb51code">
+<pre class="brush:bash;">
+while(1)
+do
+  ssh -NTR &lt;local-host&gt;:&lt;local-port&gt;:&lt;remote -host&gt;:&lt;remote-port&gt; user@host
+done
+</pre>
+</div>
+<p>保证断开后立马就能连上把-f参数去掉 否则就死循环了<br />
+</p>
+<p><strong>方法四、使用autossh</strong><br />
+</p>
+<p>需要下载autossh软件，操作和直接使用ssh 差不多<br />
+</p>
+<p>-M是监听端口，监听命令是否有无响应的，帮我们保持链接的<br />
+</p>
+<div class="jb51code">
+<pre class="brush:bash;">
+autossh -M 5678 -NTR &lt;local-host&gt;:&lt;local-port&gt;:&lt;remote-host&gt;:&lt;remote-port&gt; user@host
+</pre>
+</div>
+<p>我不喜欢下载软件-乱七八糟的软件装的很多，也不喜欢修改配置-修改后怕影响别人使用，所以我喜欢使用客户端临时配置的方式<br />
+</p>
+<p>以上就是本文的全部内容，希望对大家的学习有所帮助，也希望大家多多支持脚本之家。</p>
+                        
+                        <div class="art_xg">
+                        <h4>您可能感兴趣的文章:</h4><ul><li><a href="/article/148886.htm" title="SSH端口转发,本地端口转发,远程端口转发,动态端口转发详解" target="_blank">SSH端口转发,本地端口转发,远程端口转发,动态端口转发详解</a></li><li><a href="/article/107751.htm" title="SSH远程登录和端口转发详解" target="_blank">SSH远程登录和端口转发详解</a></li><li><a href="/article/172133.htm" title="linux ssh端口转发的三种方式" target="_blank">linux ssh端口转发的三种方式</a></li></ul>
+                        </div>
+						<div class="lbd_bot clearfix">
+						<span id="art_bot" class="jbTestPos"></span>
+						</div>
+					</div><!--endmain-->
+					<div class="tags clearfix">
+						<i class="icon-tag"></i>
+						<ul class="meta-tags">
+						  <li class="tag item"><a href="http://common.jb51.net/tag/SSH/1.htm" target="_blank" title="搜索关于SSH的文章" rel="nofollow">SSH</a></li>
+<li class="tag item"><a href="http://common.jb51.net/tag/%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91/1.htm" target="_blank" title="搜索关于端口转发的文章" rel="nofollow">端口转发</a></li>
+<li class="tag item"><a href="http://common.jb51.net/tag/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F/1.htm" target="_blank" title="搜索关于内网穿透的文章" rel="nofollow">内网穿透</a></li>
+
+						</ul>
+					</div>
+					<div class="lbd clearfix">
+						<span id="art_down" class="jbTestPos"></span>
+					</div>
+					<div id="shoucang"></div>
+					<div class="xgcomm clearfix">
+						<h2>相关文章</h2>
+						<ul><li class="lbd clearfix"><span id="art_xg" class="jbTestPos"></span></li><li><div class="item-inner"><a href="/article/137124.htm" title="CentOS7yum安装PHP7.2的操作方法" class="img-wrap" target="_blank"> <img alt="CentOS7yum安装PHP7.2的操作方法" src="//files.jb51.net/images/xgimg/bcimg0.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="/article/137124.htm" title="CentOS7yum安装PHP7.2的操作方法">CentOS7yum安装PHP7.2的操作方法</a></p><div class="item-info"><div class="js">下面小编就为大家分享一篇CentOS7yum安装PHP7.2的操作方法，具有很好的参考价值，希望对大家有所帮助。一起跟随小编过来看看吧</div><span class="lbtn" style="float:right"> 2018-03-03 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="/article/105878.htm" title="详解linux中nginx启动 重启 关闭命令" class="img-wrap" target="_blank"> <img alt="详解linux中nginx启动 重启 关闭命令" src="//files.jb51.net/images/xgimg/bcimg1.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="/article/105878.htm" title="详解linux中nginx启动 重启 关闭命令">详解linux中nginx启动 重启 关闭命令</a></p><div class="item-info"><div class="js">本篇文章主要介绍了详解linux中nginx启动 重启 关闭命令，小编觉得挺不错的，现在分享给大家，也给大家做个参考。一起跟随小编过来看看吧
+</div><span class="lbtn" style="float:right"> 2017-02-02 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="/article/101242.htm" title="详解Linux中搭建常用服务器" class="img-wrap" target="_blank"> <img alt="详解Linux中搭建常用服务器" src="//files.jb51.net/images/xgimg/bcimg2.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="/article/101242.htm" title="详解Linux中搭建常用服务器">详解Linux中搭建常用服务器</a></p><div class="item-info"><div class="js">本篇文章主要介绍了Linux中搭建常用服务器，主要包括telnet、DHCP、DNS、sendmail、FTP、web、samba有兴趣的可以了解一下。
+</div><span class="lbtn" style="float:right"> 2016-12-12 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="/article/108136.htm" title="Linux与windows文件传输详解及实例" class="img-wrap" target="_blank"> <img alt="Linux与windows文件传输详解及实例" src="//files.jb51.net/images/xgimg/bcimg3.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="/article/108136.htm" title="Linux与windows文件传输详解及实例">Linux与windows文件传输详解及实例</a></p><div class="item-info"><div class="js">这篇文章主要介绍了Linux与windows文件传输详解及实例的相关资料,需要的朋友可以参考下</div><span class="lbtn" style="float:right"> 2017-03-03 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="/article/98277.htm" title="Apache配置虚拟目录和多主机头的方法" class="img-wrap" target="_blank"> <img alt="Apache配置虚拟目录和多主机头的方法" src="//files.jb51.net/images/xgimg/bcimg4.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="/article/98277.htm" title="Apache配置虚拟目录和多主机头的方法">Apache配置虚拟目录和多主机头的方法</a></p><div class="item-info"><div class="js">这篇文章主要介绍了apache中配置虚拟目录，以及多主机头配置，有需要的朋友，可以参考下</div><span class="lbtn" style="float:right"> 2016-11-11 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="/article/35805.htm" title="用DNSPod和Squid打造自己的CDN (四)" class="img-wrap" target="_blank"> <img alt="用DNSPod和Squid打造自己的CDN (四)" src="//files.jb51.net/images/xgimg/bcimg5.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="/article/35805.htm" title="用DNSPod和Squid打造自己的CDN (四)">用DNSPod和Squid打造自己的CDN (四)</a></p><div class="item-info"><div class="js">感觉与上一篇一样，为了利于用户阅读，就不出重复了</div><span class="lbtn" style="float:right"> 2013-04-04 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="/article/131521.htm" title="Azure给ubuntu虚拟机挂载数据盘的详细步骤" class="img-wrap" target="_blank"> <img alt="Azure给ubuntu虚拟机挂载数据盘的详细步骤" src="//files.jb51.net/images/xgimg/bcimg6.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="/article/131521.htm" title="Azure给ubuntu虚拟机挂载数据盘的详细步骤">Azure给ubuntu虚拟机挂载数据盘的详细步骤</a></p><div class="item-info"><div class="js">这篇文章主要介绍了Azure给ubuntu虚拟机挂载数据盘的详细步骤，小编觉得挺不错的，现在分享给大家，也给大家做个参考。一起跟随小编过来看看吧</div><span class="lbtn" style="float:right"> 2017-12-12 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="/article/101847.htm" title="Linux中查看物理CPU个数、核数、逻辑CPU个数的方法" class="img-wrap" target="_blank"> <img alt="Linux中查看物理CPU个数、核数、逻辑CPU个数的方法" src="//files.jb51.net/images/xgimg/bcimg7.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="/article/101847.htm" title="Linux中查看物理CPU个数、核数、逻辑CPU个数的方法">Linux中查看物理CPU个数、核数、逻辑CPU个数的方法</a></p><div class="item-info"><div class="js">下面小编就为大家带来一篇Linux中查看物理CPU个数、核数、逻辑CPU个数的方法。小编觉得挺不错的，现在就分享给大家，也给大家做个参考。一起跟随小编过来看看吧</div><span class="lbtn" style="float:right"> 2017-01-01 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="/article/97634.htm" title="阿里云CentOS 7系统挂载SSD云盘的教程" class="img-wrap" target="_blank"> <img alt="阿里云CentOS 7系统挂载SSD云盘的教程" src="//files.jb51.net/images/xgimg/bcimg8.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="/article/97634.htm" title="阿里云CentOS 7系统挂载SSD云盘的教程">阿里云CentOS 7系统挂载SSD云盘的教程</a></p><div class="item-info"><div class="js">最近在阿里云购买了块云盘，但悲催的发现阿里云购买的第2块云盘默认是不自动挂载的，需要手动配置挂载上。所以只能求助万能的百度了，通过查找网上的资料，和自己的实践终于将云盘挂载成功了，现在将步骤分享给大家，有同样需要的朋友们可以参考借鉴。</div><span class="lbtn" style="float:right"> 2016-11-11 </span></div></div></div></div></li>
+<li><div class="item-inner"><a href="/article/104686.htm" title="Centos下配置Redis开机启动脚本" class="img-wrap" target="_blank"> <img alt="Centos下配置Redis开机启动脚本" src="//files.jb51.net/images/xgimg/bcimg9.png"> </a><div class="rbox"><div class="rbox-inner"><p><a class="link title" target="_blank" href="/article/104686.htm" title="Centos下配置Redis开机启动脚本">Centos下配置Redis开机启动脚本</a></p><div class="item-info"><div class="js">本篇文章主要介绍了redis之Centos下配置Redis开机启动脚本，小编觉得挺不错的，现在分享给大家，也给大家做个参考。一起跟随小编过来看看吧
+</div><span class="lbtn" style="float:right"> 2017-02-02 </span></div></div></div></div></li>
+</ul>
+					</div>
+					<div class="lbd clearfix mt5">
+						<span id="art_down2" class="jbTestPos"></span>
+					</div>
+					<a href="#comments"></a>
+					<div id="comments">
+						<h2>最新评论</h2>
+						<div class="pd5"><div id="SOHUCS" sid="art_168657"></div></div>
+					</div>
+				  </div><!--endborder-->
+			  </div><!--end fl-->
+		  
+			<div class="main-right">
+				<div id="sidebar-right">
+					<div class="r300 clearfix"><span id="side_up" class="jbTestPos"></span></div>
+                    <div class="sidebox-recomm">
+						<a class="style01" href="https://www.jb51.net/news/699009.html" target="_blank">
+							<div class="title"><strong>站长推荐</strong></div>
+							<div class="tj_ico"></div>
+							<h2>正版 Office 软件</h2>
+							<p>Microsoft Office 2016/2019/365 正版最低价仅需[<i> ￥148元</i>]</p>
+						</a>
+						<a class="style02" href="https://www.jb51.net/os/win10/698746.html" target="_blank">
+							<div class="title"><strong>站长推荐</strong></div>
+							<div class="tj_ico2"></div>
+							<h2>正版 Windows 10</h2>
+							<p>正版Windows 10 家庭/专业版，操作系统限时抢购[￥<span>1088</span>&rarr;<i>￥248</i>]</p>
+						</a>
+					</div>
+					<div class="sidebox bor-blue">
+						<div class="bor-default pb10">
+							<h4 class="blue">大家感兴趣的内容</h4>
+                            <ul class="newsList newList-in">
+							<li><EM class="no1">1</EM><a href="/article/25476.htm" title="apache开启.htaccess及.htaccess的使用方法" target="_blank">apache开启.htaccess及.htaccess</a></li><li><EM class="no2">2</EM><a href="/article/94599.htm" title="Linux下实现免密码登录(超详细)" target="_blank">Linux下实现免密码登录(超详细)</a></li><li><EM class="no3">3</EM><a href="/article/36776.htm" title="Service Temporarily Unavailable的503错误是怎么回事？" target="_blank">Service Temporarily Unavailabl</a></li><li><EM class="no4">4</EM><a href="/article/24435.htm" title="Apache Rewrite url重定向功能的简单配置" target="_blank">Apache Rewrite url重定向功能的</a></li><li><EM class="no5">5</EM><a href="/article/15008.htm" title="linux下用cron定时执行任务的方法" target="_blank">linux下用cron定时执行任务的方法</a></li><li><EM class="no6">6</EM><a href="/article/59469.htm" title="apache性能测试工具ab使用详解" target="_blank">apache性能测试工具ab使用详解</a></li><li><EM class="no7">7</EM><a href="/article/37987.htm" title="CentOS 6.4安装配置LAMP服务器(Apache+PHP5+MySQL)" target="_blank">CentOS 6.4安装配置LAMP服务器(A</a></li><li><EM class="no8">8</EM><a href="/article/26597.htm" title="CentOS+Nginx+PHP+MySQL详细配置(图解)" target="_blank">CentOS+Nginx+PHP+MySQL详细配置</a></li><li><EM class="no9">9</EM><a href="/article/64223.htm" title="apache You don''t have permission to access /test.php on this server解决方法" target="_blank">apache You don''t have permiss</a></li><li><EM class="no10">10</EM><a href="/article/53542.htm" title="Flume环境部署和配置详解及案例大全" target="_blank">Flume环境部署和配置详解及案例大</a></li>
+                            </ul>
+						</div>
+					</div>
+					<div class="r300 clearfix mt10"><span id="idctu" class="jbTestPos"></span></div>
+					<div class="sidebox bor-blue">
+						<div class="bor-default pb10">
+							<h4 class="blue">最近更新的内容</h4>
+                            <ul class="newsListA">
+							<li><a href="/article/35780.htm" title="linux中 关于screen 的命令详解" target="_blank">linux中 关于screen 的命令详解</a></li><li><a href="/article/116472.htm" title="linux下建站目录分配权限的经验技巧总结" target="_blank">linux下建站目录分配权限的经验技巧总结</a></li><li><a href="/article/100307.htm" title="修改linux文件权限命令：chmod命令详解" target="_blank">修改linux文件权限命令：chmod命令详解</a></li><li><a href="/article/168974.htm" title="Linux C 后台服务程序单进程控制的实现" target="_blank">Linux C 后台服务程序单进程控制的实现</a></li><li><a href="/article/95168.htm" title="Linux系统下使用U盘的方法" target="_blank">Linux系统下使用U盘的方法</a></li><li><a href="/article/99024.htm" title="centos系统搭建本地yum服务器的方法" target="_blank">centos系统搭建本地yum服务器的方法</a></li><li><a href="/article/142110.htm" title="详解Linux下Tomcat开启查看GC信息" target="_blank">详解Linux下Tomcat开启查看GC信息</a></li><li><a href="/article/57073.htm" title="Apache设置目录禁止访问" target="_blank">Apache设置目录禁止访问</a></li><li><a href="/article/56999.htm" title="php扩展memcached和memcache的安装配置方法" target="_blank">php扩展memcached和memcache的安装配置方</a></li><li><a href="/article/100298.htm" title="解决启动php-fpm后访问不到php文件的办法" target="_blank">解决启动php-fpm后访问不到php文件的办法</a></li>
+                            </ul>
+						</div>
+					</div>
+					<div class="r300 clearfix mt10">
+						<span id="idctu1" class="jbTestPos"></span>
+					</div>
+                    <div class="sidebox bor-blue">
+						<div class="bor-default pb10">
+							<h4 class="blue">常用在线小工具</h4>
+							<ul class="newsListA"><span id="bctools" class="jbTestPos"></span></ul>
+						</div>
+					</div>
+					<div class="r300 clearfix mt10"><span id="idctu2" class="jbTestPos"></span></div>
+					<div class="mt10 rFixedBox">
+						<div class="r300 clearfix"><span id="r2gg" class="jbTestPos"></span></div>
+						<div class="r300 clearfix mt10">
+							<span id="rbbd" class="jbTestPos"></span>
+						</div>
+					</div>
+				  </div>
+			  </div><!--end fr-->
+		  </div>
+	  </div>
+	  <!--share start-->
+	 <div id="right-share">
+		<div class="right-share jb-share" id="jb-share">
+			<a class="rshare-weixin" title="">微信</a>
+			<a rel="nofollow" class="rshare-qzone" target="_blank" href="http://tougao.jb51.net/" title="投稿">投稿</a>
+			<a rel="nofollow" class="rshare-tsina2" target="_blank" href="http://tools.jb51.net/" title="在线工具">在线工具</a>
+		</div>
+		<a class="rshare-top2" onClick="javascript:;"></a>
+		<div id="weixin-code" class="hide">
+		<div class="popup_weixin_head"><p>关注微信公众号</p> 
+		<div id="code"><img src="//files.jb51.net/skin/2018/images/erwm.jpg" alt="扫一扫" width="100" hight="100"></div>
+		</div>
+		</div>	
+	 </div>
+	<!--share end-->
+
+</div><!--end content-->
+<div id="footer">
+	<div class="footer-bottom">
+		<p>
+			<a rel="nofollow" href="/about.htm" target="_blank">关于我们</a> - 
+			<a rel="nofollow" href="/support.htm" target="_blank">广告合作</a> - 
+			<a rel="nofollow" href="/linkus.htm" target="_blank">联系我们</a> -  
+			<a rel="nofollow" href="/sm.htm" target="_blank">免责声明</a> -  
+			<a rel="nofollow" href="/sitemap.htm" target="_blank">网站地图</a> - 
+			<a rel="nofollow" href="tencent://message/?uin=461478385&Site=https://www.jb51.net" target="_blank">投诉建议</a> - 
+			<a rel="nofollow" href="/up.htm" target="_blank">在线投稿</a>
+		</p>
+		<p>&copy;CopyRight 2006-2020 JB51.Net Inc All Rights Reserved. 脚本之家 版权所有</p>
+	</div>
+</div><!--end footer-->
+<link type="text/css" rel="stylesheet" href="/jslib/syntaxhighlighter/styles/shCore.css" />
+<link type="text/css" rel="Stylesheet" href="/jslib/syntaxhighlighter/styles/shThemeDefault.css" />
+<script type="text/javascript" src="/jslib/syntaxhighlighter/scripts/shCore.js"></script>
+<script type="text/javascript" src="/jslib/syntaxhighlighter/scripts/shAutoloader.js"></script>
+<script type="text/javascript"> 
+/*更多导航*/
+$("#nav p").hover(function(){$(this).addClass("hover")},function(){$(this).removeClass("hover")});
+if (top.location != self.location)top.location=self.location;
+var varwindow=$(window);
+$('#content').find('img').each(function(){
+        var img = this;
+        if (img.width >= 800 && !$(this).hasClass("nohref")){
+            img.style.width = "800px";
+            img.style.height = "auto";
+            //$(img).removeAttr('height');
+            var aTag = document.createElement('a');
+            aTag.href = img.src;
+			aTag.target="_blank";
+            $(aTag).addClass('bPic')
+            .insertAfter(img).append(img)
+          }
+    });
+ $(window).scroll(function()
+    {	
+    	//rFixedBox跟随滚动
+    	var h = varwindow.height();
+        var top = varwindow.scrollTop();
+    	var rFixedBox = $('.rFixedBox').prev().offset();
+        var fixedTop = rFixedBox.top;
+		
+        if(top>=fixedTop+330)
+        {
+			var h1 = parseInt($('#content').children('.main').height());
+			$('.rFixedBox').css({'position':'fixed','top': 0});
+        }
+        else
+        {
+            $('.rFixedBox').css({'position':'static', 'top':0});   
+        }	
+       /* return true;*/
+	   
+	   /*右侧快捷菜单*/
+	   sideFixed();
+    });
+	
+	var ww = varwindow.width();
+	function sideFixed(){
+	var scrolltop = document.body.scrollTop || document.documentElement.scrollTop;
+	var a1 = 550;
+	if(ww>440){
+		if(a1<=scrolltop){
+			$('#right-share').slideDown();
+			}
+		else{
+			$('#right-share').slideUp();
+			}
+		}
+	}
+	$('.rshare-weixin').hover(function(){
+			$('#weixin-code').removeClass('hide');
+		},function(){
+			$('#weixin-code').addClass('hide');
+		});
+	/*二维码*/
+	$('#right-share .rshare-top2').on('click',function(){
+        $('html,body').animate({'scrollTop':0},500);
+    });
+if(suoyin=="ok"){
+	GenerateContentList();
+}
+
+SyntaxHighlighter.autoloader(
+	'applescript			/jslib/syntaxhighlighter/scripts/shBrushAppleScript.js',
+	'actionscript3 as3		/jslib/syntaxhighlighter/scripts/shBrushAS3.js',
+	'bash shell				/jslib/syntaxhighlighter/scripts/shBrushBash.js',
+	'coldfusion cf			/jslib/syntaxhighlighter/scripts/shBrushColdFusion.js',
+	'cpp c					/jslib/syntaxhighlighter/scripts/shBrushCpp.js',
+	'obj-c objc				/jslib/syntaxhighlighter/scripts/shBrushObjC.js',
+	'c# c-sharp csharp		/jslib/syntaxhighlighter/scripts/shBrushCSharp.js',
+	'css					/jslib/syntaxhighlighter/scripts/shBrushCss.js',
+	'delphi pascal			/jslib/syntaxhighlighter/scripts/shBrushDelphi.js',
+	'diff patch pas			/jslib/syntaxhighlighter/scripts/shBrushDiff.js',
+	'erl erlang				/jslib/syntaxhighlighter/scripts/shBrushErlang.js',
+	'groovy					/jslib/syntaxhighlighter/scripts/shBrushGroovy.js',
+	'haxe hx				/jslib/syntaxhighlighter/scripts/shBrushHaxe.js',
+	'java					/jslib/syntaxhighlighter/scripts/shBrushJava.js',
+	'jfx javafx				/jslib/syntaxhighlighter/scripts/shBrushJavaFX.js',
+	'js jscript javascript	/jslib/syntaxhighlighter/scripts/shBrushJScript.js',
+	'perl pl				/jslib/syntaxhighlighter/scripts/shBrushPerl.js',
+	'php					/jslib/syntaxhighlighter/scripts/shBrushPhp.js',
+	'text plain				/jslib/syntaxhighlighter/scripts/shBrushPlain.js',
+	'py python				/jslib/syntaxhighlighter/scripts/shBrushPython.js',
+	'ruby rails ror rb		/jslib/syntaxhighlighter/scripts/shBrushRuby.js',
+	'scala					/jslib/syntaxhighlighter/scripts/shBrushScala.js',
+	'sql					/jslib/syntaxhighlighter/scripts/shBrushSql.js',
+	'vb vbnet				/jslib/syntaxhighlighter/scripts/shBrushVb.js',
+	'ps powershell			/jslib/syntaxhighlighter/scripts/shBrushPowerShell.js',
+	'xml xhtml xslt html	/jslib/syntaxhighlighter/scripts/shBrushXml.js'
+);
+SyntaxHighlighter.all();
+
+var ourl="https://www.jianshu.com/p/793fab12b930";
+
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+<script type="text/javascript" src='//icws.jb51.net/good/arc2019.js'></script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<!--右侧浮动临时增加-->
+<script>jbLoader();</script><script class="closetag">jbLoader(true);</script>
+<div id="tongji">
+<script type="text/javascript" src="//icws.jb51.net/tongji/tongji.js"></script>
+</div>
+<script type="text/javascript">
+//tu+
+var cpro_id = "u1893014";
+document.write('<scri'+'pt src="//cpro.baidustatic.com/cpro/ui/i.js" type="text/javascript"></s'+'cript>');
+(function(){
+var src = (document.location.protocol == "http:") ? "http://js.passport.qihucdn.com/11.0.1.js?2f793ca9dd6f4c32488903eed5c7fbcb":"https://jspassport.ssl.qhimg.com/11.0.1.js?2f793ca9dd6f4c32488903eed5c7fbcb";
+document.write('<script src="' + src + '" id="sozz"><\/script>');
+})();
+</script> 
+<script type="text/javascript" src="//www.jb51.net/pl.asp?id=168657"></script>
+<script type="application/ld+json">
+        {
+            "@context": "https://ziyuan.baidu.com/contexts/cambrian.jsonld",
+            "@id": "https://www.jb51.net/article/168657.htm",
+            "appid": "1549322409310619",
+            "title": "SSH端口转发实现内网穿透的实现",
+            "description": "这篇文章主要介绍了SSH端口转发实现内网穿透的实现，文中通过示例代码介绍的非常详细，对大家的学习或者工作具有一定的参考学习价值，需要的朋友们下面随着小编来一起学习学习吧",
+            "pubDate": "2019-08-28T10:02:41",
+			"upDate": "2019-08-28T10:02:41"
+        }
+</script>
+</body>
+</html>
+<!-- published at 2019/10/25 13:25:26By dxycms qq:461478385  -->

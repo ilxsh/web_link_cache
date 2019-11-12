@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="/favicon.ico" />
+        <title>SSH 使用及-L -R -D简介-黄海的技术空间-51CTO博客</title>
+    <meta name="keywords" content="SSH">
+<meta name="description" content="SSH TunnelSSH Tunnel 顾名思义就是 SSH 安全隧道，平时看别人的相关帖子的时候很多时候可能看不太明白讲的是几个意思，这里我们约定一下说法的含义：“ HostA 可以访问 HostB ” 意思是在机器 HostA 上，可以通过 SSH Client 远程登陆到机器 HostB 上。下边 Sequence 图中，箭头方向就是机器间可以访问的方向。下边 Sequence 图中，命令">    <link href="https://static1.51cto.com/edu/blog/css/header.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/other.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/right.css?v=3.1.7" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/blog_details.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/highlight.css" rel="stylesheet">
+    <script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="https://static1.51cto.com/edu/center/js/jquery.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/cookie.js"></script><script src="https://static1.51cto.com/edu/blog/js/login.js"></script><script src="https://static1.51cto.com/edu/blog/js/common.js"></script><script src="https://static1.51cto.com/edu/blog/js/mbox.js"></script><script src="https://static1.51cto.com/edu/blog/js/follow.js"></script><script src="https://static1.51cto.com/edu/blog/js/vip.js"></script><script src="https://static1.51cto.com/edu/blog/js/window.js"></script></head>
+<body>
+<img src="https://static1.51cto.com/edu/blog/mobile/images/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201911/08/b2d0c3a161df327c9cf0b8cbfae11821.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url('https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png') 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=11" target="_blank">
+  <img src="https://s1.51cto.com/images/blog/201911/08/78827bc952f6f6395f2d43cb454385c2.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li ><a href="https://blog.51cto.com/">首页</a></li>
+      <li ><a href="https://blog.51cto.com/original">文章</a></li>
+      <li ><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com" target="_blank">WOT</a>
+            <a href="http://www.51cto.com" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fhuanghai%2F1793850&logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fhuanghai%2F1793850" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="https://static1.51cto.com/edu/blog/images/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index"  target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onClick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="https://static1.51cto.com/edu/blog/mobile/js/lib/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=11" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201911/08/e5bed235b694ffab73b18009b94aaf4a.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog102',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="//www.sobot.com/chat/frame/js/entrance.js?sysNum=a8d9379eaf884b4f81a48348979e3b1a" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br/>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box">
+      <link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/mdeShow.css">
+  <link rel="stylesheet" href="https://blog.51cto.com/static/js/ueditor1.4.3/prism.css">
+  <script type="text/javascript" charset="utf-8" src="https://blog.51cto.com/static/js/ueditor1.4.3/prism.js"></script>
+<link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/tinyscrollbar.css"/>
+<script type="text/javascript" src="https://static1.51cto.com/edu/blog/js/jquery.tinyscrollbar.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name reprint">转载</a>
+							</div>
+			<h1 class="artical-title">SSH 使用及-L -R -D简介</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/huanghai" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="2466276" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+				</div>
+				<a href="https://blog.51cto.com/huanghai" class="name fl" target="_blank" style="margin-right:0;">t_huanghai</a>
+									                	                    <a id="checkFollow1_2466276" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">24445人阅读</a>
+				<a href="javascript:;" class="time fr">2016-06-29 08:48:49</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><h1 id="ssh-tunnel">SSH Tunnel</h1><p><strong>SSH Tunnel</strong> 顾名思义就是 SSH 安全隧道，平时看别人的相关帖子的时候很多时候可能看不太明白讲的是几个意思，这里我们约定一下说法的含义：</p><ol class="list-paddingleft-2"><li><p>“ <strong>HostA 可以访问 HostB</strong> ” 意思是在机器 <strong>HostA</strong> 上，可以通过 SSH Client 远程登陆到机器 <strong>HostB</strong> 上。</p></li><li><p>下边 Sequence 图中，箭头方向就是机器间可以访问的方向。</p></li><li><p>下边 Sequence 图中，命令在箭头 <strong>起点端的机器</strong> 执行。</p></li></ol><p>用流程图表示为：</p><p>HostAHostAHostBHostBssh HostBUser1@HostB此时已登陆了HostB的terminal</p><h2><a name="t1"></a>SSH 的 -L, -R, -D 三种用法</h2><h3><a name="t2"></a>ssh -L 用法1（本地起端口映射到其他机器）</h3><p>HostAHostAHostBHostBHostCHostC[执行1] ssh -L 8888 UserC@HostC[效果] ssh -p 8888 UserC@HostB</p><p>意思是在 HostB 上，让 localhost 起 8888 端口，使之映射到 HostC 的 22 端口（默认）。如此，在 HostA 上可以使用 HostB:8888 就像使用 HostC:22 一样。</p><p>关键命令：</p><pre class="prettyprint">HostB$&nbsp;ssh&nbsp;-L&nbsp;8888&nbsp;UserC@HostC1</pre><h3><a name="t3"></a>ssh -L 用法2（本地起端口映射到其他机器）</h3><p>HostAHostAHostBHostBHostCHostC[执行1] ssh -L 8888:HostC:22 UserB@HostB[效果] ssh -p 8888 UserC@localhost</p><p>意思是在 HostA 上，让 localhost 起 8888 端口，使之映射到 HostC 的 22 端口。如此，在 HostA 上可以使用 localhost:8888 就像使用 HostC:22 一样。</p><p>关键命令：</p><pre class="prettyprint">HostA$&nbsp;ssh&nbsp;-L&nbsp;8888:HostC:22&nbsp;UserB@HostB1</pre><h3><a name="t4"></a>ssh -R 用法1（非本地起端口映射到其他机器）</h3><p>HostAHostAHostBHostBHostCHostC[执行1] ssh -R 8888:localhost:22 UserB@HostB[效果] ssh -p 8888 UserC@HostB</p><p>意思是在 HostC 上，让 HostB 起 8888 端口，使之映射到 localhost 的 22 端口。如此，在 HostA 上可以使用 HostB:8888 就像使用 HostC:22 一样。</p><pre class="prettyprint">HostC$&nbsp;ssh&nbsp;-R&nbsp;8888:localhost:22&nbsp;UserB@HostB1</pre><h3><a name="t5"></a>ssh -R 用法2（非本地起端口映射到其他机器）</h3><p>HostAHostAHostBHostBHostCHostCHostDHostD[执行1] ssh -R 8888:HostD:22 UserB@HostB[效果] ssh -p 8888 UserD@HostB</p><p>意思是在 HostC 上，让 HostB 起 8888 端口，使之映射到 HostD 的 22 端口。如此，在 HostA 上可以使用 HostB:8888 就像使用 HostD:22 一样。</p><pre class="prettyprint">HostC$&nbsp;ssh&nbsp;-R&nbsp;8888:HostD:22&nbsp;UserB@HostB1</pre><h3><a name="t6"></a>ssh -D 用法（本地或非本地起 Socket Proxy）</h3><ol class="list-paddingleft-2"><li><p>本地的代理服务，通过 localhost:22 隧道入口建立</p></li></ol><pre class="prettyprint">HostA$&nbsp;ssh&nbsp;-D&nbsp;80801</pre><p>此时 localhost:8080 就是本地的 Socket 代理服务器。效果，即浏览器配置了 本机IP:8080 Socket5 的代理后，就可以像在本机上一样访问网站资源了。</p><ol class="list-paddingleft-2"><li><p>本地的代理服务，通过 HostB:22 隧道入口建立</p></li></ol><pre class="prettyprint">HostA$&nbsp;ssh&nbsp;-D&nbsp;8080&nbsp;UserB:HostB
+或写全
+HostA$&nbsp;ssh&nbsp;-D&nbsp;localhost:8080&nbsp;-p&nbsp;22&nbsp;UserB:HostB123</pre><p>此时 localhost:8080 就是HostB上的 Socket 代理服务器。效果，即浏览器配置了 本机IP:8080 Socket5 的代理后，就可以像在HostB上一样访问网站资源了。</p><p><br /></p></div>
+				</div>
+															<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=SSH" target="_blank">SSH</a>
+															                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="1793850" userid='2466276'>0</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina" >微博</a>
+					  <a class="bds_sqq" data-cmd="sqq" >QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin" >微信</a>
+					  <img src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2Fhuanghai%2F1793850">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/huanghai/1782689" title="crontab定时执行任务">
+						上一篇：crontab定时执行任务</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/huanghai/1834814" title="为vSphere准备存放OS的NFS空间+FTP本地账户登陆管理">
+						下一篇：为vSphere准备存放OS的N...</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/huanghai" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="2466276" src="https://ucenter.51cto.com/images/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/huanghai" target="_blank" style="display:inline-block;">t_huanghai</a>
+										<h3>66篇文章，26W+人气，3粉丝</h3>
+									</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_2466276" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/huanghai" class="header-img" target="_blank">
+						<img  src="https://ucenter.51cto.com/images/noavatar_middle.gif"/>
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可"  maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="2466276">
+					<input type="hidden" class="reply_id" value="1793850">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList">
+			</div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/15" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201903/04/2810ca683899f6932ce0424b536b8992.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/15" target="_blank"> Web网站安全评估分析及防御</a>
+									<h3 class="white-space">企业级网安运维</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/simeon" target="_blank">simeon2005</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>437人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="15" href="/cloumn/detail/15" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/3" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201805/31/602d0cf94f108fd7ace3225fbc0b0be0.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/3" target="_blank"> 网络安全入门到实战，让SQLmap子弹飞一会儿</a>
+									<h3 class="white-space">9本网络安全实战书籍精华</h3>
+									<h4 class="white-space">共23章&nbsp;|&nbsp;<a href="https://blog.51cto.com/simeon" target="_blank">simeon2005</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>841人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="3" href="/cloumn/detail/3" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/28/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>543人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="6" href="/cloumn/detail/6" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/huanghai/2447827?source=dra" target="_blank">Linux下调整磁盘大小后的基于LVM的磁盘扩容</a>
+															<a class="white-space" href="https://blog.51cto.com/huanghai/2446497?source=dra" target="_blank">SSH实现远程免密登录</a>
+															<a class="white-space" href="https://blog.51cto.com/skypegnu1/1538371?source=drt" target="_blank">Linux基础：利用SSH上传、下载（使用sz与rz命令）</a>
+															<a class="white-space" href="https://blog.51cto.com/lynnteng0/1066795?source=drt" target="_blank">linux中ssh/scp连接远程ssh非22端口的服务器方法</a>
+															<a class="white-space" href="https://blog.51cto.com/lhflinux/526122?source=drt" target="_blank">使用ssh-keygen设置ssh无密码登录</a>
+															<a class="white-space" href="https://blog.51cto.com/xiong51/2091739?source=drt" target="_blank">jenkins使用Publish Over SSH插件实现远程自动部署</a>
+															<a class="white-space" href="https://blog.51cto.com/13587182/2083375?source=drt" target="_blank">ssh连接报错：Connection refused的解决办法</a>
+															<a class="white-space" href="https://blog.51cto.com/laowafang/1364298?source=drt" target="_blank">CenOS6.3 ssh 公钥认证报错：Permission denied (publickey,gssapi-keyex,gssapi-with-mic).解决</a>
+															<a class="white-space" href="https://blog.51cto.com/chidongting/1761061?source=drt" target="_blank">Linux centos 远程SSH默认22端口修改为其他端口</a>
+															<a class="white-space" href="https://blog.51cto.com/386dx/751023?source=drt" target="_blank">linux下怎么查看ssh的用户登录日志 </a>
+															<a class="white-space" href="https://blog.51cto.com/19001989/645882?source=drt" target="_blank">linux ssh_config和sshd_config配置文件 </a>
+															<a class="white-space" href="https://blog.51cto.com/smelon/245405?source=drt" target="_blank">SSH 登录失败：Host key verification failed 的处理方法</a>
+															<a class="white-space" href="https://blog.51cto.com/zdhyw/2327705?source=drh" target="_blank">通过关键字获取漏洞平台最新漏洞信息</a>
+															<a class="white-space" href="https://blog.51cto.com/xsboke/2135466?source=drh" target="_blank">python-dnspod：批量添加域名、解析记录和修改解析记录等</a>
+															<a class="white-space" href="https://blog.51cto.com/lijie1977/2121554?source=drh" target="_blank">H3C室外无线AP（WA4320X）胖瘦切换设置方法</a>
+															<a class="white-space" href="https://blog.51cto.com/gingerbeer/2115127?source=drh" target="_blank">网络运维 - 你与真相就差一层窗户纸</a>
+															<a class="white-space" href="https://blog.51cto.com/yoke88/2055575?source=drh" target="_blank">奇怪的VM高网络接收吞吐量问题查找</a>
+															<a class="white-space" href="https://blog.51cto.com/yoke88/2053667?source=drh" target="_blank">无法回应的ARP请求包导致的网站缓慢问题排错</a>
+															<a class="white-space" href="https://blog.51cto.com/12077138/1970291?source=drh" target="_blank">CISCO 命名规则路由/交换/模块</a>
+															<a class="white-space" href="https://blog.51cto.com/520yg/1969253?source=drh" target="_blank">PXE+Kickstart无人值守安装CentOS 7出现DHCP故障解决报告</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="https://s1.51cto.com/images/blog/201910/25/e44823f12c0ccbfd99decb605b02ec10.png" style="width:50px;height:50px;"/> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="https://static1.51cto.com/edu/blog/mobile/images/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="1793850" userid='2466276'></span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>1</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2Fhuanghai%2F1793850"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_2466276" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a href="https://blog.51cto.com/huanghai" class="b-name fr">t_huanghai</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/huanghai" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="2466276" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="https://static1.51cto.com/edu/blog/js/shCores.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '1793850'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'2466276',
+            'blog_id':'1793850'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/huanghai';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='2466276'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/huanghai'
+    	nickname = 't_huanghai'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_2466276'),'2466276','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_2466276'),'2466276','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_2466276'),'2466276','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<h1 id=\"ssh-tunnel\">SSH Tunnel<\/h1><p><strong>SSH Tunnel<\/strong> \u987e\u540d\u601d\u4e49\u5c31\u662f SSH \u5b89\u5168\u96a7\u9053\uff0c\u5e73\u65f6\u770b\u522b\u4eba\u7684\u76f8\u5173\u5e16\u5b50\u7684\u65f6\u5019\u5f88\u591a\u65f6\u5019\u53ef\u80fd\u770b\u4e0d\u592a\u660e\u767d\u8bb2\u7684\u662f\u51e0\u4e2a\u610f\u601d\uff0c\u8fd9\u91cc\u6211\u4eec\u7ea6\u5b9a\u4e00\u4e0b\u8bf4\u6cd5\u7684\u542b\u4e49\uff1a<\/p><ol class=\"list-paddingleft-2\"><li><p>\u201c <strong>HostA \u53ef\u4ee5\u8bbf\u95ee HostB<\/strong> \u201d \u610f\u601d\u662f\u5728\u673a\u5668 <strong>HostA<\/strong> \u4e0a\uff0c\u53ef\u4ee5\u901a\u8fc7 SSH Client \u8fdc\u7a0b\u767b\u9646\u5230\u673a\u5668 <strong>HostB<\/strong> \u4e0a\u3002<\/p><\/li><li><p>\u4e0b\u8fb9 Sequence \u56fe\u4e2d\uff0c\u7bad\u5934\u65b9\u5411\u5c31\u662f\u673a\u5668\u95f4\u53ef\u4ee5\u8bbf\u95ee\u7684\u65b9\u5411\u3002<\/p><\/li><li><p>\u4e0b\u8fb9 Sequence \u56fe\u4e2d\uff0c\u547d\u4ee4\u5728\u7bad\u5934 <strong>\u8d77\u70b9\u7aef\u7684\u673a\u5668<\/strong> \u6267\u884c\u3002<\/p><\/li><\/ol><p>\u7528\u6d41\u7a0b\u56fe\u8868\u793a\u4e3a\uff1a<\/p><p>HostAHostAHostBHostBssh HostBUser1@HostB\u6b64\u65f6\u5df2\u767b\u9646\u4e86HostB\u7684terminal<\/p><h2><a name=\"t1\"><\/a>SSH \u7684 -L, -R, -D \u4e09\u79cd\u7528\u6cd5<\/h2><h3><a name=\"t2\"><\/a>ssh -L \u7528\u6cd51\uff08\u672c\u5730\u8d77\u7aef\u53e3\u6620\u5c04\u5230\u5176\u4ed6\u673a\u5668\uff09<\/h3><p>HostAHostAHostBHostBHostCHostC[\u6267\u884c1] ssh -L 8888 UserC@HostC[\u6548\u679c] ssh -p 8888 UserC@HostB<\/p><p>\u610f\u601d\u662f\u5728 HostB \u4e0a\uff0c\u8ba9 localhost \u8d77 8888 \u7aef\u53e3\uff0c\u4f7f\u4e4b\u6620\u5c04\u5230 HostC \u7684 22 \u7aef\u53e3\uff08\u9ed8\u8ba4\uff09\u3002\u5982\u6b64\uff0c\u5728 HostA \u4e0a\u53ef\u4ee5\u4f7f\u7528 HostB:8888 \u5c31\u50cf\u4f7f\u7528 HostC:22 \u4e00\u6837\u3002<\/p><p>\u5173\u952e\u547d\u4ee4\uff1a<\/p><pre class=\"prettyprint\">HostB$&nbsp;ssh&nbsp;-L&nbsp;8888&nbsp;UserC@HostC1<\/pre><h3><a name=\"t3\"><\/a>ssh -L \u7528\u6cd52\uff08\u672c\u5730\u8d77\u7aef\u53e3\u6620\u5c04\u5230\u5176\u4ed6\u673a\u5668\uff09<\/h3><p>HostAHostAHostBHostBHostCHostC[\u6267\u884c1] ssh -L 8888:HostC:22 UserB@HostB[\u6548\u679c] ssh -p 8888 UserC@localhost<\/p><p>\u610f\u601d\u662f\u5728 HostA \u4e0a\uff0c\u8ba9 localhost \u8d77 8888 \u7aef\u53e3\uff0c\u4f7f\u4e4b\u6620\u5c04\u5230 HostC \u7684 22 \u7aef\u53e3\u3002\u5982\u6b64\uff0c\u5728 HostA \u4e0a\u53ef\u4ee5\u4f7f\u7528 localhost:8888 \u5c31\u50cf\u4f7f\u7528 HostC:22 \u4e00\u6837\u3002<\/p><p>\u5173\u952e\u547d\u4ee4\uff1a<\/p><pre class=\"prettyprint\">HostA$&nbsp;ssh&nbsp;-L&nbsp;8888:HostC:22&nbsp;UserB@HostB1<\/pre><h3><a name=\"t4\"><\/a>ssh -R \u7528\u6cd51\uff08\u975e\u672c\u5730\u8d77\u7aef\u53e3\u6620\u5c04\u5230\u5176\u4ed6\u673a\u5668\uff09<\/h3><p>HostAHostAHostBHostBHostCHostC[\u6267\u884c1] ssh -R 8888:localhost:22 UserB@HostB[\u6548\u679c] ssh -p 8888 UserC@HostB<\/p><p>\u610f\u601d\u662f\u5728 HostC \u4e0a\uff0c\u8ba9 HostB \u8d77 8888 \u7aef\u53e3\uff0c\u4f7f\u4e4b\u6620\u5c04\u5230 localhost \u7684 22 \u7aef\u53e3\u3002\u5982\u6b64\uff0c\u5728 HostA \u4e0a\u53ef\u4ee5\u4f7f\u7528 HostB:8888 \u5c31\u50cf\u4f7f\u7528 HostC:22 \u4e00\u6837\u3002<\/p><pre class=\"prettyprint\">HostC$&nbsp;ssh&nbsp;-R&nbsp;8888:localhost:22&nbsp;UserB@HostB1<\/pre><h3><a name=\"t5\"><\/a>ssh -R \u7528\u6cd52\uff08\u975e\u672c\u5730\u8d77\u7aef\u53e3\u6620\u5c04\u5230\u5176\u4ed6\u673a\u5668\uff09<\/h3><p>HostAHostAHostBHostBHostCHostCHostDHostD[\u6267\u884c1] ssh -R 8888:HostD:22 UserB@HostB[\u6548\u679c] ssh -p 8888 UserD@HostB<\/p><p>\u610f\u601d\u662f\u5728 HostC \u4e0a\uff0c\u8ba9 HostB \u8d77 8888 \u7aef\u53e3\uff0c\u4f7f\u4e4b\u6620\u5c04\u5230 HostD \u7684 22 \u7aef\u53e3\u3002\u5982\u6b64\uff0c\u5728 HostA \u4e0a\u53ef\u4ee5\u4f7f\u7528 HostB:8888 \u5c31\u50cf\u4f7f\u7528 HostD:22 \u4e00\u6837\u3002<\/p><pre class=\"prettyprint\">HostC$&nbsp;ssh&nbsp;-R&nbsp;8888:HostD:22&nbsp;UserB@HostB1<\/pre><h3><a name=\"t6\"><\/a>ssh -D \u7528\u6cd5\uff08\u672c\u5730\u6216\u975e\u672c\u5730\u8d77 Socket Proxy\uff09<\/h3><ol class=\"list-paddingleft-2\"><li><p>\u672c\u5730\u7684\u4ee3\u7406\u670d\u52a1\uff0c\u901a\u8fc7 localhost:22 \u96a7\u9053\u5165\u53e3\u5efa\u7acb<\/p><\/li><\/ol><pre class=\"prettyprint\">HostA$&nbsp;ssh&nbsp;-D&nbsp;80801<\/pre><p>\u6b64\u65f6 localhost:8080 \u5c31\u662f\u672c\u5730\u7684 Socket \u4ee3\u7406\u670d\u52a1\u5668\u3002\u6548\u679c\uff0c\u5373\u6d4f\u89c8\u5668\u914d\u7f6e\u4e86 \u672c\u673aIP:8080 Socket5 \u7684\u4ee3\u7406\u540e\uff0c\u5c31\u53ef\u4ee5\u50cf\u5728\u672c\u673a\u4e0a\u4e00\u6837\u8bbf\u95ee\u7f51\u7ad9\u8d44\u6e90\u4e86\u3002<\/p><ol class=\"list-paddingleft-2\"><li><p>\u672c\u5730\u7684\u4ee3\u7406\u670d\u52a1\uff0c\u901a\u8fc7 HostB:22 \u96a7\u9053\u5165\u53e3\u5efa\u7acb<\/p><\/li><\/ol><pre class=\"prettyprint\">HostA$&nbsp;ssh&nbsp;-D&nbsp;8080&nbsp;UserB:HostB\n\u6216\u5199\u5168\nHostA$&nbsp;ssh&nbsp;-D&nbsp;localhost:8080&nbsp;-p&nbsp;22&nbsp;UserB:HostB123<\/pre><p>\u6b64\u65f6 localhost:8080 \u5c31\u662fHostB\u4e0a\u7684 Socket \u4ee3\u7406\u670d\u52a1\u5668\u3002\u6548\u679c\uff0c\u5373\u6d4f\u89c8\u5668\u914d\u7f6e\u4e86 \u672c\u673aIP:8080 Socket5 \u7684\u4ee3\u7406\u540e\uff0c\u5c31\u53ef\u4ee5\u50cf\u5728HostB\u4e0a\u4e00\u6837\u8bbf\u95ee\u7f51\u7ad9\u8d44\u6e90\u4e86\u3002<\/p><p><br \/><\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"SSH 使用及-L -R -D简介",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1573220792; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="https://static1.51cto.com/edu/blog/js/marked.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/highlight.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail_mp.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail.js"></script><script src="https://static1.51cto.com/edu/blog/js/details_new.js"></script><script src="https://static1.51cto.com/edu/blog/js/copy.js"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="https://log.51cto.com/pageview.php?frompos=blog_art"></iframe>
+</div>
+
+<script src="https://static1.51cto.com/edu/blog/js/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type='text/javascript'>
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="https://static1.51cto.com/edu//blog/js/jquery.cookie.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+</body>
+</html>

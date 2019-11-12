@@ -1,0 +1,746 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN">
+<head profile="http://gmpg.org/xfn/11">
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+ <title>SSH隧道与端口转发及内网穿透 | Creke Blog | 梦溪博客</title>
+<script type="text/javascript">
+    var _czc = _czc || [];
+    _czc.push(["_setAccount", "1286488"]);
+    var tmRef = (new Date()).getTime();
+</script>
+  <link rel="canonical" href="http://blog.creke.net/722.html" />
+ 
+ <link rel="stylesheet" href="http://blog.creke.net/wp-content/themes/js-o4-noire/style.css" type="text/css" media="screen" />
+ <link title="RSS 2.0" type="application/rss+xml" href="http://feed.creke.net" rel="alternate" />
+ <link rel="pingback" href="http://blog.creke.net/xmlrpc.php" />
+  
+ 
+<!-- All in One SEO Pack 2.3.9.1 by Michael Torbert of Semper Fi Web Design[290,334] -->
+<meta name="description"  content="大家都知道SSH是一种安全的传输协议，用在连接服务器上比较多。不过其实除了这个功能，它的隧道转发功能更是吸引人。下面是个人根据自己的需求以及在网上查找的资料配合自己的实际操作所得到的一些心得。 SSH/plink命令的基本资料： 首先，认识下这三个非常强大的命令： ssh -C -f -N -g -L l..." />
+
+<meta name="keywords"  content="ssh,内网穿透,端口,端口转发,隧道" />
+
+<link rel="canonical" href="http://blog.creke.net/722.html" />
+<!-- /all in one seo pack -->
+<link rel="alternate" type="application/rss+xml" title="Creke Blog | 梦溪博客 &raquo; SSH隧道与端口转发及内网穿透评论Feed" href="http://blog.creke.net/722.html/feed" />
+		<script type="text/javascript">
+			window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/72x72\/","ext":".png","source":{"concatemoji":"http:\/\/blog.creke.net\/wp-includes\/js\/wp-emoji-release.min.js?ver=4.5.16"}};
+			!function(a,b,c){function d(a){var c,d,e,f=b.createElement("canvas"),g=f.getContext&&f.getContext("2d"),h=String.fromCharCode;if(!g||!g.fillText)return!1;switch(g.textBaseline="top",g.font="600 32px Arial",a){case"flag":return g.fillText(h(55356,56806,55356,56826),0,0),f.toDataURL().length>3e3;case"diversity":return g.fillText(h(55356,57221),0,0),c=g.getImageData(16,16,1,1).data,d=c[0]+","+c[1]+","+c[2]+","+c[3],g.fillText(h(55356,57221,55356,57343),0,0),c=g.getImageData(16,16,1,1).data,e=c[0]+","+c[1]+","+c[2]+","+c[3],d!==e;case"simple":return g.fillText(h(55357,56835),0,0),0!==g.getImageData(16,16,1,1).data[0];case"unicode8":return g.fillText(h(55356,57135),0,0),0!==g.getImageData(16,16,1,1).data[0]}return!1}function e(a){var c=b.createElement("script");c.src=a,c.type="text/javascript",b.getElementsByTagName("head")[0].appendChild(c)}var f,g,h,i;for(i=Array("simple","flag","unicode8","diversity"),c.supports={everything:!0,everythingExceptFlag:!0},h=0;h<i.length;h++)c.supports[i[h]]=d(i[h]),c.supports.everything=c.supports.everything&&c.supports[i[h]],"flag"!==i[h]&&(c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&c.supports[i[h]]);c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&!c.supports.flag,c.DOMReady=!1,c.readyCallback=function(){c.DOMReady=!0},c.supports.everything||(g=function(){c.readyCallback()},b.addEventListener?(b.addEventListener("DOMContentLoaded",g,!1),a.addEventListener("load",g,!1)):(a.attachEvent("onload",g),b.attachEvent("onreadystatechange",function(){"complete"===b.readyState&&c.readyCallback()})),f=c.source||{},f.concatemoji?e(f.concatemoji):f.wpemoji&&f.twemoji&&(e(f.twemoji),e(f.wpemoji)))}(window,document,window._wpemojiSettings);
+		</script>
+		<style type="text/css">
+img.wp-smiley,
+img.emoji {
+	display: inline !important;
+	border: none !important;
+	box-shadow: none !important;
+	height: 1em !important;
+	width: 1em !important;
+	margin: 0 .07em !important;
+	vertical-align: -0.1em !important;
+	background: none !important;
+	padding: 0 !important;
+}
+</style>
+<link rel='https://api.w.org/' href='http://blog.creke.net/wp-json/' />
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="http://blog.creke.net/xmlrpc.php?rsd" />
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="http://blog.creke.net/wp-includes/wlwmanifest.xml" /> 
+<link rel='prev' title='解决IE6/IE7浏览器不能浏览Statusnet的问题' href='http://blog.creke.net/721.html' />
+<link rel='next' title='英文Ubuntu安装中文包（locale）的方法' href='http://blog.creke.net/723.html' />
+<meta name="generator" content="WordPress 4.5.16" />
+<link rel='shortlink' href='http://blog.creke.net/?p=722' />
+<link rel="alternate" type="application/json+oembed" href="http://blog.creke.net/wp-json/oembed/1.0/embed?url=http%3A%2F%2Fblog.creke.net%2F722.html" />
+<link rel="alternate" type="text/xml+oembed" href="http://blog.creke.net/wp-json/oembed/1.0/embed?url=http%3A%2F%2Fblog.creke.net%2F722.html&#038;format=xml" />
+		<style type="text/css">.recentcomments a{display:inline !important;padding:0 !important;margin:0 !important;}</style>
+			
+</head>
+<body>
+
+<div id="wrapper" class="encadre">
+	<div class="tl"></div>
+	<div class="tr"></div>
+
+    	<div id="header">
+		        	<p><span class="twitter"><a href="http://twitter.com/creke">Follow me</a></span><span class="rss"><a href="http://feed.creke.net">订阅Creke Blog</a></span></p>
+			<ul>
+                	<li class="no_bg"><a class="top" href="http://www.creke.net">Creke Online</a></li>
+        	</ul>
+        </div> <!--header ends-->
+		<div id="headerlogo">
+		<a href="http://blog.creke.net/" id="logo" title="Creke Blog | 梦溪博客" class="replace"><span>Creke Blog | 梦溪博客</span></a>
+		
+		
+        <form id="search_form" method="get" action="http://blog.creke.net">
+        	<p><input id="s" name="s" type="text" size="21" value="在这里搜索Creke Blog..." onfocus="if (this.value == '在这里搜索Creke Blog...') {this.value = '';}" onblur="if (this.value == '') {this.value = '在这里搜索Creke Blog...';}" />
+            	<input type="submit" id="submit-s" value="" /></p>
+        </form> <!--form ends-->
+</div>
+        <div id="banner">
+        </div> <!--banner ends-->
+        
+        <div id="navigation">
+        	<ul>
+								<li class="home"><a href="http://blog.creke.net">首页</a></li>
+									<li class="cat-item cat-item-1"><a href="http://blog.creke.net/category/%e9%9a%8f%e5%bf%83%e9%9a%8f%e6%84%9f" >随心随感</a>
+</li>
+	<li class="cat-item cat-item-3"><a href="http://blog.creke.net/category/%e6%a2%a6%e6%ba%aa%e7%ac%94%e8%ae%b0" title="梦溪笔记">梦溪笔记</a>
+</li>
+	<li class="cat-item cat-item-4"><a href="http://blog.creke.net/category/%e6%b8%b8%e6%88%8f%e4%ba%ba%e7%94%9f" title="游戏人生">游戏人生</a>
+</li>
+	<li class="cat-item cat-item-5"><a href="http://blog.creke.net/category/%e5%80%9f%e6%ad%a4%e9%89%b4%e5%bd%bc" title="借此鉴彼">借此鉴彼</a>
+</li>
+	<li class="cat-item cat-item-7"><a href="http://blog.creke.net/category/%e6%89%80%e8%b0%93%e6%8a%80%e6%9c%af" >所谓技术</a>
+</li>
+												<li class="home"><a href="http://blog.creke.net/about">关于</a></li>
+				        	</ul>
+        </div> <!--navigation ends--> 
+<div id="content">
+
+<div id="left_column">
+<div id="tab-content-post">
+<div class="single-post">
+ <ul>
+ 
+ <li class="post">
+ <h2>SSH隧道与端口转发及内网穿透</h2>
+
+  <p>大家都知道SSH是一种安全的传输协议，用在连接服务器上比较多。不过其实除了这个功能，它的隧道转发功能更是吸引人。下面是个人根据自己的需求以及在网上查找的资料配合自己的实际操作所得到的一些心得。</p>
+<p><strong>SSH/plink命令的基本资料：</strong> </p>
+<p>首先，认识下这三个非常强大的命令：</p>
+<blockquote><p>ssh -C -f -N -g -L listen_port:DST_Host:DST_port user@Tunnel_Host      <br />ssh -C -f -N -g -R listen_port:DST_Host:DST_port user@Tunnel_Host       <br />ssh -C -f -N -g -D listen_port user@Tunnel_Host </p>
+</blockquote>
+<p>相关参数的解释：    <br />-f Fork into background after authentication.     <br />后台认证用户/密码，通常和-N连用，不用登录到远程主机。 </p>
+<p>-L port:host:hostport    <br />将本地机(客户机)的某个端口转发到远端指定机器的指定端口. 工作原理是这样的, 本地机器上分配了一个 socket 侦听 port 端口, 一旦这个端口上有了连接, 该连接就经过安全通道转发出去, 同时远程主机和 host 的 hostport 端口建立连接. 可以在配置文件中指定端口的转发. 只有 root 才能转发特权端口. IPv6 地址用另一种格式说明: port/host/hostport </p>
+<p>-R port:host:hostport    <br />将远程主机(服务器)的某个端口转发到本地端指定机器的指定端口. 工作原理是这样的, 远程主机上分配了一个 socket 侦听 port 端口, 一旦这个端口上有了连接, 该连接就经过安全通道转向出去, 同时本地主机和 host 的 hostport 端口建立连接. 可以在配置文件中指定端口的转发. 只有用 root 登录远程主机才能转发特权端口. IPv6 地址用另一种格式说明: port/host/hostport </p>
+<p>-D port    <br />指定一个本地机器 “动态的’’ 应用程序端口转发. 工作原理是这样的, 本地机器上分配了一个 socket 侦听 port 端口, 一旦这个端口上有了连接, 该连接就经过安全通道转发出去, 根据应用程序的协议可以判断出远程主机将和哪里连接. 目前支持 SOCKS4 协议, 将充当 SOCKS4 服务器. 只有 root 才能转发特权端口. 可以在配置文件中指定动态端口的转发. </p>
+<p>-C Enable compression.    <br />压缩数据传输。 </p>
+<p>-N Do not execute a shell or command.    <br />不执行脚本或命令，通常与-f连用。 </p>
+<p>-g Allow remote hosts to connect to forwarded ports.    <br />在-L/-R/-D参数中，允许远程主机连接到建立的转发的端口，如果不加这个参数，只允许本地主机建立连接。注：这个参数我在实践中似乎始终不起作用。</p>
+<p><em>以上摘录自：</em><a title="http://chenweiguang.blogspot.com/2009/03/ssh.html" href="http://chenweiguang.blogspot.com/2009/03/ssh.html"><em>http://chenweiguang.blogspot.com/2009/03/ssh.html</em></a></p>
+<p><strong>建立本地SSH隧道例子</strong></p>
+<p>在我们计划建立一个本地SSH隧道之前，我们必须清楚下面这些数据：</p>
+<ol>
+<li>中间服务器d的IP地址 </li>
+<li>要访问服务器c的IP地址 </li>
+<li>要访问服务器c的端口 </li>
+</ol>
+<p>现在，我们把上面这张图变得具体一些，给这些机器加上IP地址。并且根据下面这张图列出我们的计划：</p>
+<p><img alt="" src="http://farm4.static.flickr.com/3530/3968539917_2d7a552df2.jpg" /></p>
+<ol>
+<li>需要访问234.234.234.234的FTP服务，也就是端口21 </li>
+<li>中间服务器是123.123.123.123 </li>
+</ol>
+<p>现在我们使用下面这条命令来达成我们的目的</p>
+<blockquote><p>1.ssh -N -f -L 2121:234.234.234.234:21 123.123.123.123</p>
+<p>2.ftp localhost:2121 # 现在访问本地2121端口，就能连接234.234.234.234的21端口了</p>
+</blockquote>
+<p>这里我们用到了SSH客户端的三个参数，下面我们一一做出解释：</p>
+<ul>
+<li>-N 告诉SSH客户端，这个连接不需要执行任何命令。仅仅做端口转发 </li>
+<li>-f 告诉SSH客户端在后台运行 </li>
+<li>-L 做本地映射端口，被冒号分割的三个部分含义分别是
+<ul>
+<li>需要使用的本地端口号 </li>
+<li>需要访问的目标机器IP地址（IP: 234.234.234.234） </li>
+<li>需要访问的目标机器端口（端口: 21) </li>
+</ul>
+</li>
+<li>最后一个参数是我们用来建立隧道的中间机器的IP地址(IP: 123.123.123.123) </li>
+</ul>
+<p>我们再重复一下-L参数的行为。-L X:Y:Z的含义是，将IP为Y的机器的Z端口通过中间服务器映射到本地机器的X端口。</p>
+<p>在这条命令成功执行之后，我们已经具有绕过公司防火墙的能力，并且成功访问到了我们喜欢的一个FTP服务器了。</p>
+<h5>如何建立远程SSH隧道</h5>
+<p>通过建立本地SSH隧道，我们成功地绕过防火墙开始下载FTP上的资源了。那么当我们在家里的时候想要察看下载进度怎么办呢？大多数公司的网络是通过路由器接入互联网的，公司内部的机器不会直接与互联网连接，也就是不能通过互联网直接访问。通过线路D-B-A访问公司里的机器a便是不可能的。也许你已经注意到了，虽然D-B-A这个方向的连接不通，但是A-B-D这个方向的连接是没有问题的。那么，我们能否利用一条已经连接好的A-B-D方向的连接来完成D-B-A方向的访问呢？答案是肯定的，这就是远程SSH隧道的用途。</p>
+<p>与本地SSH一样，我们在建立远程SSH隧道之前要清楚下面几个参数：</p>
+<ul>
+<li>需要访问内部机器的远程机器的IP地址（这里是123.123.123.123） </li>
+<li>需要让远程机器能访问的内部机器的IP地址(这里因为是想把本机映射出去，因此IP是127.0.0.1) </li>
+<li>需要让远程机器能访问的内部机器的端口号(端口:22) </li>
+</ul>
+<p>在清楚了上面的参数后，我们使用下面的命令来建立一个远程SSH隧道</p>
+<blockquote><p>1.ssh -N -f -R 2222:127.0.0.1:22 123.123.123.123</p>
+</blockquote>
+<p>现在，在IP是123.123.123.123的机器上我们用下面的命令就可以登陆公司的IP是192.168.0.100的机器了。</p>
+<blockquote><p>1.ssh -p 2222 localhost</p>
+</blockquote>
+<p>-N，-f 这两个参数我们已经在本地SSH隧道中介绍过了。我们现在重点说说参数-R。该参数的三个部分的含义分别是:</p>
+<ul>
+<li>远程机器使用的端口（2222） </li>
+<li>需要映射的内部机器的IP地址(127.0.0.1) </li>
+<li>需要映射的内部机器的端口(22) </li>
+</ul>
+<p>例如：-R X:Y:Z 就是把我们内部的Y机器的Z端口映射到远程机器的X端口上。</p>
+<p><strong>建立SSH隧道的几个技巧</strong></p>
+<p><b>自动重连</b></p>
+<p>隧道可能因为某些原因断开，例如：机器重启，长时间没有数据通信而被路由器切断等等。因此我们可以用程序控制隧道的重新连接，例如一个简单的循环或者使用 <a href="http://cr.yp.to/daemontools.html">djb’s daemontools</a> . 不管用哪种方法，重连时都应避免因输入密码而卡死程序。关于如何安全的避免输入密码的方法，请参考我的 <a href="http://blog.jianingy.com/node/73">如何实现安全的免密码ssh登录</a> 。这里请注意，如果通过其他程序控制隧道连接，应当避免将SSH客户端放到后台执行，也就是去掉-f参数。</p>
+<p><b>保持长时间连接</b></p>
+<p>有些路由器会把长时间没有通信的连接断开。SSH客户端的TCPKeepAlive选项可以避免这个问题的发生，默认情况下它是被开启的。如果它被关闭了，可以在ssh的命令上加上-o TCPKeepAlive=yes来开启。</p>
+<p>另一种方法是，去掉-N参数，加入一个定期能产生输出的命令。例如: top或者vmstat。下面给出一个这种方法的例子：</p>
+<blockquote><p>1.ssh -R 2222:localhost:22 123.123.123.123 &quot;vmstat 30&quot;</p>
+</blockquote>
+<p><b>检查隧道状态</b></p>
+<p>有些时候隧道会因为一些原因通信不畅而卡死，例如：由于传输数据量太大，被路由器带入stalled状态。这种时候，往往SSH客户端并不退出，而是卡死在那里。一种应对方法是，使用SSH客户端的ServerAliveInterval和ServerAliveCountMax选项。 ServerAliveInterval会在隧道无通信后的一段设置好的时间后发送一个请求给服务器要求服务器响应。如果服务器在 ServerAliveCountMax次请求后都没能响应，那么SSH客户端就自动断开连接并退出，将控制权交给你的监控程序。这两个选项的设置方法分别是在ssh时加入-o ServerAliveInterval=n和-o ServerAliveCountMax=m。其中n, m可以自行定义。</p>
+<p><b>如何将端口绑定到外部地址上</b></p>
+<p>使用上面的方法，映射的端口只能绑定在127.0.0.1这个接口上。也就是说，只能被本机自己访问到。如何才能让其他机器访问这个端口呢？我们可以把这个映射的端口绑定在0.0.0.0的接口上，方法是加上参数-b 0.0.0.0。同时还需要打开SSH服务器端的一个选项－GatewayPorts。默认情况下它应当是被打开的。如果被关闭的话，可以在/etc /sshd_config中修改GatewayPorts no为GatewayPorts yes来打开它。</p>
+<p><strong>通过SSH隧道建立SOCKS服务器</strong></p>
+<p>如果我们需要借助一台中间服务器访问很多资源，一个个映射显然不是高明的办法（事实上，高明确实没有用这个方法）。幸好，SSH客户端为我们提供了通过SSH隧道建立SOCKS服务器的功能。</p>
+<p>通过下面的命令我们可以建立一个通过123.123.123.123的SOCKS服务器。</p>
+<blockquote><p>1.ssh -N -f -D 1080 123.123.123 # 将端口绑定在127.0.0.1上 </p>
+<p>2.ssh -N -f -D 0.0.0.0:1080 123.123.123.123 # 将端口绑定在0.0.0.0上</p>
+</blockquote>
+<p>通过SSH建立的SOCKS服务器使用的是SOCKS5协议，在为应用程序设置SOCKS代理的时候要特别注意。</p>
+<p><em>以上摘录自：</em><a title="http://chenweiguang.blogspot.com/2009/03/ssh.html" href="http://blog.jianingy.com/content/ssh%E9%9A%A7%E9%81%93%E6%8A%80%E6%9C%AF%E7%AE%80%E4%BB%8B">http://blog.jianingy.com/content/...</a></p>
+
+  
+  <div id="postmeta">
+   <p>分类： <a href="http://blog.creke.net/category/%e6%89%80%e8%b0%93%e6%8a%80%e6%9c%af" rel="category tag">所谓技术</a> | 标签：  <a href="http://blog.creke.net/tag/ssh" rel="tag">SSH</a>,<a href="http://blog.creke.net/tag/%e5%86%85%e7%bd%91%e7%a9%bf%e9%80%8f" rel="tag">内网穿透</a>,<a href="http://blog.creke.net/tag/%e7%ab%af%e5%8f%a3" rel="tag">端口</a>,<a href="http://blog.creke.net/tag/%e7%ab%af%e5%8f%a3%e8%bd%ac%e5%8f%91" rel="tag">端口转发</a>,<a href="http://blog.creke.net/tag/%e9%9a%a7%e9%81%93" rel="tag">隧道</a> </p>
+  </div><!-- end #postmeta -->
+ </li>
+ </ul>
+ </div>
+ 
+<!-- You can start editing here. -->
+<div id="commentblock">
+
+
+<h3 id="comments">《SSH隧道与端口转发及内网穿透》已有 <span id="comment-num">17</span> 条评论</h3>
+
+
+	<ol class="commentlist" id="commentlist">
+	   	   <li class="comment even thread-even depth-1" id="li-comment-653">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-653">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite>qrpeng</cite>
+<span class="re_icon"><a rel='nofollow' class='comment-reply-link' href='http://blog.creke.net/722.html?replytocom=653#respond' onclick='return addComment.moveForm( "comment-653", "653", "respond", "722" )' aria-label='回复给qrpeng'>回复</a></span>
+	<span class="timestamp">10/11/09 23:24</span>
+	<span class="get-id">#comment-653</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://0.gravatar.com/avatar/313677478980a2bd80e24d3ed894f405?s=36&#038;d=mm&#038;r=pg' srcset='http://0.gravatar.com/avatar/313677478980a2bd80e24d3ed894f405?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>-D port<br />
+目前支持 SOCKS4 协议</p>
+<p>貌似可以支持 SOCKS5 吧。。</p>
+
+			
+</div>
+
+
+     </div></div>
+<ul class="children">
+   	   <li class="comment byuser comment-author-creke bypostauthor odd alt depth-2" id="li-comment-654">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-654">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite><a href='http://blog.creke.net' rel='external nofollow' class='url'>creke</a></cite>
+<span class="re_icon"></span>
+	<span class="timestamp">10/11/10 12:20</span>
+	<span class="get-id">#comment-654</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://0.gravatar.com/avatar/30e083bdb064a74f9dc723229d9dd6ef?s=36&#038;d=mm&#038;r=pg' srcset='http://0.gravatar.com/avatar/30e083bdb064a74f9dc723229d9dd6ef?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>其实，都支持的</p>
+
+			
+</div>
+
+
+     </div></div>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+   	   <li class="comment even thread-odd thread-alt depth-1" id="li-comment-1987">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-1987">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite>Chris</cite>
+<span class="re_icon"><a rel='nofollow' class='comment-reply-link' href='http://blog.creke.net/722.html?replytocom=1987#respond' onclick='return addComment.moveForm( "comment-1987", "1987", "respond", "722" )' aria-label='回复给Chris'>回复</a></span>
+	<span class="timestamp">12/02/24 21:35</span>
+	<span class="get-id">#comment-1987</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://2.gravatar.com/avatar/?s=36&#038;d=mm&#038;r=pg' srcset='http://1.gravatar.com/avatar/?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo avatar-default' height='36' width='36' />			</div>
+						<p>-g参数对remote forwarding无效吧。只能通过sshd_config配置。</p>
+<p>列两个来源供您参考：<br />
+1. man ssh:<br />
+-g      Allows remote hosts to connect to local forwarded ports.</p>
+<p>2. <a href="http://www.debianadmin.com/howto-use-ssh-local-and-remote-port-forwarding.html" rel="nofollow">http://www.debianadmin.com/howto-use-ssh-local-and-remote-port-forwarding.html</a> 的"Remote port forwarding for anyone at work !"部分。</p>
+
+			
+</div>
+
+
+     </div></div>
+<ul class="children">
+   	   <li class="comment byuser comment-author-creke bypostauthor odd alt depth-2" id="li-comment-1988">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-1988">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite><a href='http://blog.creke.net' rel='external nofollow' class='url'>creke</a></cite>
+<span class="re_icon"></span>
+	<span class="timestamp">12/02/24 23:35</span>
+	<span class="get-id">#comment-1988</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://0.gravatar.com/avatar/30e083bdb064a74f9dc723229d9dd6ef?s=36&#038;d=mm&#038;r=pg' srcset='http://0.gravatar.com/avatar/30e083bdb064a74f9dc723229d9dd6ef?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>ssh命令是不太完善，相比之下客户端用plink会比较好</p>
+
+			
+</div>
+
+
+     </div></div>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+   	   <li class="comment even thread-even depth-1" id="li-comment-2842">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-2842">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite><a href='http://wendal.net' rel='external nofollow' class='url'>wendal</a></cite>
+<span class="re_icon"><a rel='nofollow' class='comment-reply-link' href='http://blog.creke.net/722.html?replytocom=2842#respond' onclick='return addComment.moveForm( "comment-2842", "2842", "respond", "722" )' aria-label='回复给wendal'>回复</a></span>
+	<span class="timestamp">13/06/21 17:18</span>
+	<span class="get-id">#comment-2842</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://2.gravatar.com/avatar/89bbfb169f008b30a569c2de6b3e62f7?s=36&#038;d=mm&#038;r=pg' srcset='http://2.gravatar.com/avatar/89bbfb169f008b30a569c2de6b3e62f7?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>好文章!!! 严重受教了!!</p>
+
+			
+</div>
+
+
+     </div></div>
+</li><!-- #comment-## -->
+   	   <li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-3517">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-3517">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite>匿名</cite>
+<span class="re_icon"><a rel='nofollow' class='comment-reply-link' href='http://blog.creke.net/722.html?replytocom=3517#respond' onclick='return addComment.moveForm( "comment-3517", "3517", "respond", "722" )' aria-label='回复给'>回复</a></span>
+	<span class="timestamp">15/11/10 11:56</span>
+	<span class="get-id">#comment-3517</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://2.gravatar.com/avatar/8bbf5e237d86f623e12eef4b4737783c?s=36&#038;d=mm&#038;r=pg' srcset='http://2.gravatar.com/avatar/8bbf5e237d86f623e12eef4b4737783c?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>刚开始学 一头雾水 受教了</p>
+
+			
+</div>
+
+
+     </div></div>
+</li><!-- #comment-## -->
+   	   <li class="comment even thread-even depth-1" id="li-comment-9411">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-9411">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite>test</cite>
+<span class="re_icon"><a rel='nofollow' class='comment-reply-link' href='http://blog.creke.net/722.html?replytocom=9411#respond' onclick='return addComment.moveForm( "comment-9411", "9411", "respond", "722" )' aria-label='回复给test'>回复</a></span>
+	<span class="timestamp">16/12/16 10:57</span>
+	<span class="get-id">#comment-9411</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://2.gravatar.com/avatar/ee4d8158c8e5bb9f98cadb94dc80b365?s=36&#038;d=mm&#038;r=pg' srcset='http://2.gravatar.com/avatar/ee4d8158c8e5bb9f98cadb94dc80b365?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>ssh -N -f -L 2121:234.234.234.234:21 123.123.123.123这样就能通过123去访问234，那么在123上不需要做任何配置，123就会无条件帮你转发吗？</p>
+
+			
+</div>
+
+
+     </div></div>
+<ul class="children">
+   	   <li class="comment odd alt depth-2" id="li-comment-9425">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-9425">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite>chrisma</cite>
+<span class="re_icon"></span>
+	<span class="timestamp">17/08/02 09:49</span>
+	<span class="get-id">#comment-9425</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://2.gravatar.com/avatar/?s=36&#038;d=mm&#038;r=pg' srcset='http://1.gravatar.com/avatar/?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo avatar-default' height='36' width='36' />			</div>
+						<p>是这样的，估计文章没有说全，123这个机器是你自己的，访问链路是这样的：<br />
+- 192可以ssh到123上去<br />
+- 192不能直接访问234<br />
+- 123可以直接访问234<br />
+可以把123理解为代理服务器，192到234的请求都经由123代理、转发。</p>
+
+			
+</div>
+
+
+     </div></div>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+   	   <li class="comment even thread-odd thread-alt depth-1" id="li-comment-9412">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-9412">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite>test</cite>
+<span class="re_icon"><a rel='nofollow' class='comment-reply-link' href='http://blog.creke.net/722.html?replytocom=9412#respond' onclick='return addComment.moveForm( "comment-9412", "9412", "respond", "722" )' aria-label='回复给test'>回复</a></span>
+	<span class="timestamp">16/12/16 11:11</span>
+	<span class="get-id">#comment-9412</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://2.gravatar.com/avatar/ee4d8158c8e5bb9f98cadb94dc80b365?s=36&#038;d=mm&#038;r=pg' srcset='http://2.gravatar.com/avatar/ee4d8158c8e5bb9f98cadb94dc80b365?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>虽然基本上看懂，但是操作起来不管是A-B-D还是D-B-A都没有成功</p>
+
+			
+</div>
+
+
+     </div></div>
+<ul class="children">
+   	   <li class="comment byuser comment-author-creke bypostauthor odd alt depth-2" id="li-comment-9414">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-9414">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite><a href='http://blog.creke.net' rel='external nofollow' class='url'>creke</a></cite>
+<span class="re_icon"></span>
+	<span class="timestamp">16/12/21 00:39</span>
+	<span class="get-id">#comment-9414</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://0.gravatar.com/avatar/30e083bdb064a74f9dc723229d9dd6ef?s=36&#038;d=mm&#038;r=pg' srcset='http://0.gravatar.com/avatar/30e083bdb064a74f9dc723229d9dd6ef?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>多试几次吧，慢慢折腾:)</p>
+
+			
+</div>
+
+
+     </div></div>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+   	   <li class="comment even thread-even depth-1" id="li-comment-9445">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-9445">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite>testjzf</cite>
+<span class="re_icon"><a rel='nofollow' class='comment-reply-link' href='http://blog.creke.net/722.html?replytocom=9445#respond' onclick='return addComment.moveForm( "comment-9445", "9445", "respond", "722" )' aria-label='回复给testjzf'>回复</a></span>
+	<span class="timestamp">18/08/23 09:13</span>
+	<span class="get-id">#comment-9445</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://2.gravatar.com/avatar/e5ac59b2964e9913bf554b5e9399f532?s=36&#038;d=mm&#038;r=pg' srcset='http://2.gravatar.com/avatar/e5ac59b2964e9913bf554b5e9399f532?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>如果操作结束，如何关掉ssh隧道</p>
+
+			
+</div>
+
+
+     </div></div>
+<ul class="children">
+   	   <li class="comment odd alt depth-2" id="li-comment-9447">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-9447">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite>Mr_Zthan</cite>
+<span class="re_icon"></span>
+	<span class="timestamp">18/10/13 13:37</span>
+	<span class="get-id">#comment-9447</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://1.gravatar.com/avatar/1302467e36038c3f758c44a70370e2c3?s=36&#038;d=mm&#038;r=pg' srcset='http://1.gravatar.com/avatar/1302467e36038c3f758c44a70370e2c3?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>logout</p>
+
+			
+</div>
+
+
+     </div></div>
+</li><!-- #comment-## -->
+   	   <li class="comment even depth-2" id="li-comment-9454">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-9454">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite><a href='https://v.youku.com' rel='external nofollow' class='url'>卧槽</a></cite>
+<span class="re_icon"></span>
+	<span class="timestamp">19/10/12 10:57</span>
+	<span class="get-id">#comment-9454</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://1.gravatar.com/avatar/dae916a6316c3421fd42193bc8a06332?s=36&#038;d=mm&#038;r=pg' srcset='http://1.gravatar.com/avatar/dae916a6316c3421fd42193bc8a06332?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>$ ps aux |grep ssh<br />
+$ kill -INT $pid</p>
+
+			
+</div>
+
+
+     </div></div>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+   	   <li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-9452">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-9452">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite>qwe</cite>
+<span class="re_icon"><a rel='nofollow' class='comment-reply-link' href='http://blog.creke.net/722.html?replytocom=9452#respond' onclick='return addComment.moveForm( "comment-9452", "9452", "respond", "722" )' aria-label='回复给qwe'>回复</a></span>
+	<span class="timestamp">19/07/25 10:49</span>
+	<span class="get-id">#comment-9452</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://2.gravatar.com/avatar/?s=36&#038;d=mm&#038;r=pg' srcset='http://1.gravatar.com/avatar/?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo avatar-default' height='36' width='36' />			</div>
+						<p>xqwertzbcmv</p>
+
+			
+</div>
+
+
+     </div></div>
+</li><!-- #comment-## -->
+   	   <li class="comment even thread-even depth-1" id="li-comment-9453">
+      	<span class="comments_posted_top"></span>
+     <div id="comment-9453">
+		<div class="comment-author vcard">
+	<p class="message_head"><cite><a href='https://v.youku.com' rel='external nofollow' class='url'>卧槽</a></cite>
+<span class="re_icon"><a rel='nofollow' class='comment-reply-link' href='http://blog.creke.net/722.html?replytocom=9453#respond' onclick='return addComment.moveForm( "comment-9453", "9453", "respond", "722" )' aria-label='回复给卧槽'>回复</a></span>
+	<span class="timestamp">19/10/12 10:56</span>
+	<span class="get-id">#comment-9453</span>	
+	</p>
+			
+
+<div class="message_body">
+			<div class="avatarbg">
+			<img alt='' src='http://1.gravatar.com/avatar/dae916a6316c3421fd42193bc8a06332?s=36&#038;d=mm&#038;r=pg' srcset='http://1.gravatar.com/avatar/dae916a6316c3421fd42193bc8a06332?s=72&amp;d=mm&amp;r=pg 2x' class='avatar avatar-36 photo' height='36' width='36' />			</div>
+						<p>不明觉厉，已经搞出来了</p>
+
+			
+</div>
+
+
+     </div></div>
+</li><!-- #comment-## -->
+	</ol>
+
+
+ 
+
+
+<div id="respond">
+
+
+<div id="cancel-comment-reply"> 
+	<small><a rel="nofollow" id="cancel-comment-reply-link" href="/722.html#respond" style="display:none;">点击这里取消回复。</a></small>
+</div> 
+
+
+<form action="http://blog.creke.net/wp-comments-post.php" method="post" id="commentform">
+
+  		<div id="comment-personaldetails">
+<p><input type="text" name="author" id="author" value="" size="22" tabindex="1" />
+<label for="author"><small>名字</small></label></p>
+
+<p><input type="text" name="email" id="email" value="" size="22" tabindex="2" />
+<label for="email"><small>邮箱 (放心，不会公开)</small></label></p>
+
+<p><input type="text" name="url" id="url" value="" size="22" tabindex="3" />
+<label for="url"><small>网站 (选填)</small></label></p>
+</div>
+
+<!--<p><small><strong>XHTML:</strong> You can use these tags: <code>&lt;a href=&quot;&quot; title=&quot;&quot;&gt; &lt;abbr title=&quot;&quot;&gt; &lt;acronym title=&quot;&quot;&gt; &lt;b&gt; &lt;blockquote cite=&quot;&quot;&gt; &lt;cite&gt; &lt;code&gt; &lt;del datetime=&quot;&quot;&gt; &lt;em&gt; &lt;i&gt; &lt;q cite=&quot;&quot;&gt; &lt;s&gt; &lt;strike&gt; &lt;strong&gt; </code></small></p>-->
+
+<div id="re-use"><textarea name="comment" id="comment" cols="55%" rows="6" tabindex="4"></textarea></div>
+<div id="commentload"></div>
+<p><input class="formbutton" name="submit" type="submit" id="submit" tabindex="5" value="发表" />
+<input type='hidden' name='comment_post_ID' value='722' id='comment_post_ID' />
+<input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+ 
+
+        <input type='hidden' name='creke_comment_k' value='1573200035' /> 
+        <input type='hidden' name='creke_comment_v' id='creke_comment_v' creke_comment_v='2598964274' value='1573200035'/> 
+        </p>
+<div class="clear"></div>
+
+</form>
+  <div id="commenterror"></div>
+</div>
+
+      <p class="pinglisth">The trackbacks and pingpacks:</p>
+  <ul id="pinglist">
+
+  	      <li id="comment-2376">
+      	<a href='http://web.366days.cn/wordpress/?p=2509' rel='external nofollow' class='url'>SSH隧道与端口转发及内网穿透 | 探索---不思</a> - Pingback on 12/06/25 23:45      </li>
+          <li id="comment-2852">
+      	<a href='http://blog.xystoy.com/?p=1939' rel='external nofollow' class='url'>内网中转 | 馨羽的玩具</a> - Pingback on 13/08/20 09:32      </li>
+      </ul>
+    </div> 
+ </div>
+
+</div> <!--left column ends-->
+            <div id="right_column">
+
+							<div class="heading"><h2>最新文章</h2></div>		<ul>
+					<li>
+				<a href="http://blog.creke.net/823.html">EarthLiveSharp中cloudinary的CDN图片缓存自动清理</a>
+						</li>
+					<li>
+				<a href="http://blog.creke.net/821.html">WordPress取消英文标点符号自动替换中文标点符号的优雅方法</a>
+						</li>
+					<li>
+				<a href="http://blog.creke.net/819.html">安装aria2及使用yaaw配置WebGUI界面</a>
+						</li>
+					<li>
+				<a href="http://blog.creke.net/818.html">Zabbix安装简记</a>
+						</li>
+					<li>
+				<a href="http://blog.creke.net/817.html">WordPress垃圾评论大作战</a>
+						</li>
+				</ul>
+				<div class="heading"><h2>最近评论</h2></div><ul id="recentcomments"><li class="recentcomments"><span class="comment-author-link"><a href='https://v.youku.com' rel='external nofollow' class='url'>卧槽</a></span>发表在《<a href="http://blog.creke.net/722.html/comment-page-1#comment-9454">SSH隧道与端口转发及内网穿透</a>》</li><li class="recentcomments"><span class="comment-author-link"><a href='https://v.youku.com' rel='external nofollow' class='url'>卧槽</a></span>发表在《<a href="http://blog.creke.net/722.html/comment-page-1#comment-9453">SSH隧道与端口转发及内网穿透</a>》</li><li class="recentcomments"><span class="comment-author-link">qwe</span>发表在《<a href="http://blog.creke.net/722.html/comment-page-1#comment-9452">SSH隧道与端口转发及内网穿透</a>》</li><li class="recentcomments"><span class="comment-author-link">Joke Huang</span>发表在《<a href="http://blog.creke.net/770.html/comment-page-1#comment-9451">让SSH/SOCKS成为全局代理的软件们（Windows+Linux）</a>》</li><li class="recentcomments"><span class="comment-author-link">用盆吃饭</span>发表在《<a href="http://blog.creke.net/750.html/comment-page-1#comment-9449">DNS隧道之DNS2TCP使用心得教程</a>》</li></ul><div class="heading"><h2>标签云</h2></div><div class="tagcloud"><a href='http://blog.creke.net/tag/apache' class='tag-link-16 tag-link-position-1' title='7个话题' style='font-size: 10.666666666667pt;'>Apache</a>
+<a href='http://blog.creke.net/tag/cctv' class='tag-link-18 tag-link-position-2' title='7个话题' style='font-size: 10.666666666667pt;'>CCTV</a>
+<a href='http://blog.creke.net/tag/centos' class='tag-link-1072 tag-link-position-3' title='10个话题' style='font-size: 13.777777777778pt;'>CentOS</a>
+<a href='http://blog.creke.net/tag/google' class='tag-link-294 tag-link-position-4' title='5个话题' style='font-size: 8pt;'>Google</a>
+<a href='http://blog.creke.net/tag/java' class='tag-link-96 tag-link-position-5' title='7个话题' style='font-size: 10.666666666667pt;'>JAVA</a>
+<a href='http://blog.creke.net/tag/linux' class='tag-link-1124 tag-link-position-6' title='8个话题' style='font-size: 11.777777777778pt;'>Linux</a>
+<a href='http://blog.creke.net/tag/mysql' class='tag-link-101 tag-link-position-7' title='10个话题' style='font-size: 13.777777777778pt;'>MySQL</a>
+<a href='http://blog.creke.net/tag/php' class='tag-link-102 tag-link-position-8' title='16个话题' style='font-size: 18pt;'>PHP</a>
+<a href='http://blog.creke.net/tag/phpmyadmin' class='tag-link-103 tag-link-position-9' title='6个话题' style='font-size: 9.5555555555556pt;'>PHPmyadmin</a>
+<a href='http://blog.creke.net/tag/rewrite' class='tag-link-832 tag-link-position-10' title='9个话题' style='font-size: 12.888888888889pt;'>rewrite</a>
+<a href='http://blog.creke.net/tag/ssh' class='tag-link-829 tag-link-position-11' title='8个话题' style='font-size: 11.777777777778pt;'>SSH</a>
+<a href='http://blog.creke.net/tag/statusnet' class='tag-link-1089 tag-link-position-12' title='6个话题' style='font-size: 9.5555555555556pt;'>StatusNet</a>
+<a href='http://blog.creke.net/tag/wordpress' class='tag-link-853 tag-link-position-13' title='10个话题' style='font-size: 13.777777777778pt;'>wordpress</a>
+<a href='http://blog.creke.net/tag/yy' class='tag-link-244 tag-link-position-14' title='5个话题' style='font-size: 8pt;'>YY</a>
+<a href='http://blog.creke.net/tag/%e4%b8%8b%e8%bd%bd' class='tag-link-204 tag-link-position-15' title='10个话题' style='font-size: 13.777777777778pt;'>下载</a>
+<a href='http://blog.creke.net/tag/%e4%b8%ad%e5%9b%bd' class='tag-link-210 tag-link-position-16' title='14个话题' style='font-size: 16.888888888889pt;'>中国</a>
+<a href='http://blog.creke.net/tag/%e4%bd%bf%e7%94%a8' class='tag-link-335 tag-link-position-17' title='5个话题' style='font-size: 8pt;'>使用</a>
+<a href='http://blog.creke.net/tag/%e5%89%a7%e6%83%85' class='tag-link-117 tag-link-position-18' title='6个话题' style='font-size: 9.5555555555556pt;'>剧情</a>
+<a href='http://blog.creke.net/tag/%e5%8a%a8%e6%bc%ab' class='tag-link-119 tag-link-position-19' title='14个话题' style='font-size: 16.888888888889pt;'>动漫</a>
+<a href='http://blog.creke.net/tag/%e5%8a%a8%e6%bc%ab%e8%a1%a5%e5%ae%8c%e8%ae%a1%e5%88%92' class='tag-link-365 tag-link-position-20' title='6个话题' style='font-size: 9.5555555555556pt;'>动漫补完计划</a>
+<a href='http://blog.creke.net/tag/%e5%8a%a8%e7%94%bb' class='tag-link-118 tag-link-position-21' title='5个话题' style='font-size: 8pt;'>动画</a>
+<a href='http://blog.creke.net/tag/%e5%8d%9a%e5%ae%a2' class='tag-link-121 tag-link-position-22' title='7个话题' style='font-size: 10.666666666667pt;'>博客</a>
+<a href='http://blog.creke.net/tag/%e5%9f%9f%e5%90%8d' class='tag-link-755 tag-link-position-23' title='7个话题' style='font-size: 10.666666666667pt;'>域名</a>
+<a href='http://blog.creke.net/tag/%e5%ae%89%e8%a3%85' class='tag-link-141 tag-link-position-24' title='25个话题' style='font-size: 22pt;'>安装</a>
+<a href='http://blog.creke.net/tag/%e5%bd%b1%e8%af%84' class='tag-link-554 tag-link-position-25' title='6个话题' style='font-size: 9.5555555555556pt;'>影评</a>
+<a href='http://blog.creke.net/tag/%e6%81%ad%e8%b4%ba2010' class='tag-link-1048 tag-link-position-26' title='8个话题' style='font-size: 11.777777777778pt;'>恭贺2010</a>
+<a href='http://blog.creke.net/tag/%e6%96%b9%e6%b3%95' class='tag-link-508 tag-link-position-27' title='8个话题' style='font-size: 11.777777777778pt;'>方法</a>
+<a href='http://blog.creke.net/tag/%e6%97%a5%e6%9c%ac' class='tag-link-181 tag-link-position-28' title='7个话题' style='font-size: 10.666666666667pt;'>日本</a>
+<a href='http://blog.creke.net/tag/%e6%9c%8d%e5%8a%a1%e5%99%a8' class='tag-link-828 tag-link-position-29' title='6个话题' style='font-size: 9.5555555555556pt;'>服务器</a>
+<a href='http://blog.creke.net/tag/%e6%9f%af%e5%8d%97' class='tag-link-189 tag-link-position-30' title='6个话题' style='font-size: 9.5555555555556pt;'>柯南</a>
+<a href='http://blog.creke.net/tag/%e6%ad%bb%e4%ba%a1%e7%ac%94%e8%ae%b0' class='tag-link-195 tag-link-position-31' title='5个话题' style='font-size: 8pt;'>死亡笔记</a>
+<a href='http://blog.creke.net/tag/%e6%b8%b8%e6%88%8f' class='tag-link-330 tag-link-position-32' title='6个话题' style='font-size: 9.5555555555556pt;'>游戏</a>
+<a href='http://blog.creke.net/tag/%e7%94%b5%e5%bd%b1' class='tag-link-29 tag-link-position-33' title='6个话题' style='font-size: 9.5555555555556pt;'>电影</a>
+<a href='http://blog.creke.net/tag/%e7%ac%ac10%e6%94%be%e6%98%a0%e5%ae%a4' class='tag-link-711 tag-link-position-34' title='9个话题' style='font-size: 12.888888888889pt;'>第10放映室</a>
+<a href='http://blog.creke.net/tag/%e7%bd%91%e7%ab%99' class='tag-link-42 tag-link-position-35' title='13个话题' style='font-size: 16.222222222222pt;'>网站</a>
+<a href='http://blog.creke.net/tag/%e7%bd%91%e7%bb%9c' class='tag-link-460 tag-link-position-36' title='7个话题' style='font-size: 10.666666666667pt;'>网络</a>
+<a href='http://blog.creke.net/tag/%e7%bf%bb%e8%af%91' class='tag-link-615 tag-link-position-37' title='7个话题' style='font-size: 10.666666666667pt;'>翻译</a>
+<a href='http://blog.creke.net/tag/%e8%85%be%e8%ae%af' class='tag-link-53 tag-link-position-38' title='6个话题' style='font-size: 9.5555555555556pt;'>腾讯</a>
+<a href='http://blog.creke.net/tag/%e8%a7%82%e5%90%8e%e6%84%9f' class='tag-link-68 tag-link-position-39' title='11个话题' style='font-size: 14.666666666667pt;'>观后感</a>
+<a href='http://blog.creke.net/tag/%e8%a7%84%e5%88%99' class='tag-link-1078 tag-link-position-40' title='6个话题' style='font-size: 9.5555555555556pt;'>规则</a>
+<a href='http://blog.creke.net/tag/%e8%a7%86%e9%a2%91' class='tag-link-69 tag-link-position-41' title='9个话题' style='font-size: 12.888888888889pt;'>视频</a>
+<a href='http://blog.creke.net/tag/%e8%a7%a3%e5%86%b3' class='tag-link-507 tag-link-position-42' title='8个话题' style='font-size: 11.777777777778pt;'>解决</a>
+<a href='http://blog.creke.net/tag/%e8%ae%be%e7%bd%ae' class='tag-link-77 tag-link-position-43' title='5个话题' style='font-size: 8pt;'>设置</a>
+<a href='http://blog.creke.net/tag/%e8%af%84%e8%ae%ba' class='tag-link-78 tag-link-position-44' title='13个话题' style='font-size: 16.222222222222pt;'>评论</a>
+<a href='http://blog.creke.net/tag/%e9%85%8d%e7%bd%ae' class='tag-link-525 tag-link-position-45' title='13个话题' style='font-size: 16.222222222222pt;'>配置</a></div>
+<div class="heading"><h2>友情链接</h2></div>
+	<ul class='xoxo blogroll'>
+<li><a href="http://www.cuijie.net" title="Cuijie.Net">Cuijie.Net</a></li>
+<li><a href="http://recgo.com" title="RecGo.com">RecGo</a></li>
+<li><a href="https://waifu.lofiu.com/index.html" title="Selfie 2 waifu">Selfie 2 waifu</a></li>
+<li><a href="http://www.programlife.net/">代码疯子</a></li>
+<li><a href="http://fungo.me/" title="波波波波">山羊博客</a></li>
+<li><a href="https://waifu.lofiu.com/index.zh.html" title="自拍转二次元">自拍转二次元</a></li>
+<li><a href="http://lufie.net" title="路菲尔（Lufie.Net）">路菲尔（Lufie.Net）</a></li>
+
+	</ul>
+
+            </div> <!--right column ends--></div> <!--content ends-->
+</div> <!--wrapper ends-->
+
+    <div id="footer">
+    	<div id="footer_content" class="encadre">
+			<div class="bl"></div>
+			<div class="br"></div>
+        	<ul>
+			<li class="no_bg"><a class="top" href="#">顶部</a></li>
+				<li class="page_item page-item-2"><a href="http://blog.creke.net/about">关于</a></li>
+			</ul>
+            <p> <a href="http://www.creke.net">Creke Online</a> &copy; 2005-2019 Creke Blog | 梦溪博客. <br/>
+			Js O4 noire theme by Jinwen, valid <a href="http://jigsaw.w3.org/css-validator/check/referer">CSS 2.1</a> &amp; <a href="http://validator.w3.org/check?uri=referer">XHTML 1.0</a><br/>
+			Stats: 46 queries. 0.365 seconds. | <script src="http://s88.cnzz.com/stat.php?id=1286488&web_id=1286488" language="JavaScript" charset="gb2312"></script>
+
+<!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script',"http://blog.creke.net/_extra/ga_js.php",'ga');
+
+ga('create', 'UA-405227-4', 'auto');
+ga('send', 'pageview');
+</script>
+<!-- End Google Analytics -->
+
+			</p>
+
+    	</div> <!--footer content ends-->
+    </div> <!--footer ends-->
+	 <script type="text/javascript">var base="http://blog.creke.net"; var md5="a2563614b392157e5bfeab6c1fb4fe26";</script>
+ <script type="text/javascript" src="http://blog.creke.net/wp-content/themes/js-o4-noire/js/jquery.v1.2.6.min.js"></script>
+ <script type="text/javascript" src="http://blog.creke.net/wp-content/themes/js-o4-noire/js/all.js"></script>
+<script type="text/javascript">
+window.addEventListener("load", function () {
+    var tmNow = (new Date()).getTime();
+    var tmDiff = tmNow - tmRef;
+    _czc.push(["_trackEvent",'前台时间','全页','加载完毕',tmDiff,'']);
+}, false);
+</script>
+
+
+        <script type='text/javascript'>
+            jQuery(function($) {
+                var id='#creke_'; 
+                id+='comment_v'; 
+                $(id).val($(id).attr('creke_comment_v'));
+            });
+        </script>
+        
+<script type='text/javascript' src='http://blog.creke.net/wp-includes/js/comment-reply.min.js?ver=4.5.16'></script>
+<script type='text/javascript' src='http://blog.creke.net/wp-includes/js/wp-embed.min.js?ver=4.5.16'></script>
+
+<script>function lc_get_cookie(name) {var c = document.cookie;if (c.indexOf(name) != -1) {var x = c.indexOf(name)+name.length+1;var y = c.indexOf(";",x);if (y < 0) y = c.length;return decodeURIComponent(c.substring(x,y));} else return "";}if ((d = document.getElementById("commentform")) != null) { e = d.elements;var z = lc_get_cookie("comment_author_email_a2563614b392157e5bfeab6c1fb4fe26");if (z != "") e["email"].value = z;z = lc_get_cookie("comment_author_a2563614b392157e5bfeab6c1fb4fe26");if (z != "") e["author"].value = z.replace(/\+/g, " ");z = lc_get_cookie("comment_author_url_a2563614b392157e5bfeab6c1fb4fe26");if (z != "") e["url"].value = z;}</script></body></html><!-- hyper cache 2019-11-08 08:00:35 -->
