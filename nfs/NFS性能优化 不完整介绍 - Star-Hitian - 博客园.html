@@ -1,0 +1,459 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="origin" />
+    <meta property="og:description" content="https://blog.csdn.net/freedom8531/article/details/43793517 ~~~~~~~~~~~~~ Table of Contents 1 NFS概述 2" />
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>NFS性能优化  不完整介绍 - Star-Hitian - 博客园</title>
+    
+    <link rel="stylesheet" href="/css/blog-common.min.css?v=PyyhYDRKBG1sYtpoHme_xHO5AMd5iN57I45iBKF8FVY" />
+    <link id="MainCss" rel="stylesheet" href="/skins/thinkinside/bundle-thinkinside.min.css?v=1-KrXNJYJQ6fzQkHwmvcoojSig4MoPsk5pQiheJRqM8" />
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/thinkinside/bundle-thinkinside-mobile.min.css?v=1n1RC3KV8fbLN2eucEef-TNA6gCjbM2MsyTAFLyKkkA" />
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/Star-Haitian/rss" />
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/Star-Haitian/rsd.xml" />
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/Star-Haitian/wlwmanifest.xml" />
+    <script src="https://common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script src="/js/blog-common.min.js?v=bFDfcdA7K5TN2YCEqeKzBzRWXnHNT4bOcuel8WW_cR8"></script>
+    <script>
+        var currentBlogId = 335942;
+        var currentBlogApp = 'Star-Haitian';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+    </script>
+    
+    
+    
+</head>
+<body>
+    <a name="top"></a>
+    
+    
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+        <a id="lnkBlogLogo" href="https://www.cnblogs.com/Star-Haitian/"><img id="blogLogo" src="/skins/custom/images/logo.gif" alt="返回主页" /></a>		
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/Star-Haitian/">Star-Hitian</a>
+</h1>
+<h2>
+All  growth is a leap in the dark！
+</h2>
+
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+</li>
+<li>
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/Star-Haitian/">
+首页</a>
+</li>
+<li>
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+</li>
+<li>
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/Star-Hitian">
+联系</a></li>
+<li>
+<a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/Star-Haitian/rss/">
+订阅</a>
+<!--<partial name="./Shared/_XmlLink.cshtml" model="Model" /></li>--></li>
+<li>
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+</ul>
+
+
+		<div class="blogStats">
+			
+			<span id="stats_post_count">随笔 - 
+44&nbsp; </span>
+<span id="stats_article_count">文章 - 
+92&nbsp; </span>
+<span id="stats-comment_count">评论 - 
+2</span>
+
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		<div id="post_detail">
+    <!--done-->
+    <div id="topics">
+        <div class="post">
+            <h1 class = "postTitle">
+                
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/Star-Haitian/articles/8995628.html">NFS性能优化  不完整介绍</a>
+
+            </h1>
+            <div class="clear"></div>
+            <div class="postBody">
+                
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <p>https://blog.csdn.net/freedom8531/article/details/43793517</p>
+<p>~~~~~~~~~~~~~</p>
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li>1 NFS概述</li>
+<li>2 设置NFS读写块大小，优化传输速度</li>
+<li>3 网络包大小和网卡驱动</li>
+<li>4 网络包分片导致的溢出</li>
+<li>5 使用NFS over TCP</li>
+<li>6 超时和重传值</li>
+<li>7 守护进程NFSD的个数</li>
+<li>8 输入队列的内存限制</li>
+<li>9 关闭网卡和集线器的自动协商协议</li>
+<li>10 NFS的同步和非同步选项</li>
+<li>11 和NFS无关的提高服务器性能的方法</li>
+<li>12 文件属性与目录属性的更新时间</li>
+</ul>
+</div>
+<div id="outline-container-1" class="outline-3">
+<h3 id="sec-1">&nbsp;</h3>
+<h3><a class="eye-protector-processed" name="t2"></a><span class="section-number-3">1<span class="Apple-converted-space">&nbsp;NFS概述</span></span></h3>
+<div id="text-1" class="outline-text-3">
+<p>NFS：Network file system，网络文件系统.由sun公司1984年推出，用来在网络中的多台计算机间实现资源共享(包括象文件或cd-rom).设计的目的是：实现在不同系统间交互使用，所以它的通信协议采用与主机和操作系统无关的技术</p>
+<p>NFS Server可以看作是File Server，它可以让你的PC通过网络将远端得NFS SERVER共享出来的档案MOUNT到自己的系统中，在CLIENT看来使用NFS的远端文件就象是在使用本地文件一样.</p>
+<p>NFS协议从诞生到现在有多个版本： NFS V2（rfc1094）, NFS V3（rfc1813）(最新的版本是V4(rfc3010))</p>
+<p>如何查看nfs当前的版本：</p>
+<p>rpm -qi portmap</p>
+<p>rpm -qi nfs-utils</p>
+</div>
+</div>
+<div id="outline-container-2" class="outline-3">
+<h3 id="sec-2"><a class="eye-protector-processed" name="t3"></a><span class="section-number-3">2<span class="Apple-converted-space">&nbsp;设置NFS读写块大小，优化传输速度</span></span></h3>
+<div id="text-2" class="outline-text-3">
+<p>在客户端中有两个挂载选项&mdash;&mdash;rsize和wsize&mdash;&mdash;来设定客户端和服务器间来回的数据包大小。如果没有设定默认的rsize和wsize一般是4K(4096 byte)。理论上，NFS v2的最大块大小是8K，但是NFS v3最大的是32K(32*1024 byte)（over TCP）或者64K（over UDP），在linux服务端上，最大的块大小定义在内核的源文件./include/linux/nfsd/const.h中的NFSSVC_MAXBLKSIZE。根据不同的需要，默认值可能太大或者太小。这就需要通过不断的实验调整rsize和wsize。</p>
+<p>首先是在客户端写文件，设定文件块为32K，共写入16384个文件块，文件大小为32K*16384</p>
+<pre name="code" class="example eye-protector-processed"># time dd if=/dev/zero of=/mnt/home/testfile bs=32k count=16384</pre>
+<p>然后是在客户端读文件，文件大小一般要是内存大小的两倍,以保证不被内存缓冲机制所缓冲</p>
+<pre name="code" class="example eye-protector-processed"># time dd if=/mnt/home/testfile of=/dev/null bs=16k</pre>
+<p>这样重复几次取平均值。在每次测试前记得在客户端重新挂载文件系统，这样能清除缓冲。<br />然后，换更大或者更小的块大小。要保证块大小是1024的整数倍，并且不能超过NFS最大的系统块大小限制。不论*NFSSVC_MAXBLKSIZE*定义的是多少，NFS Version 2最大的块大小都是8K；Version 3可以允许最大支持64K（over UDP），文件的块大小必须是2的幂。尽管如此，一些用户也报告说可以不是2的幂，但也是文件系统和网络包大小的整数倍。</p>
+<p>挂载更大的块以后，cd进挂载的文件目录，执行ls命令，确保一切正常。如果rsize/wsize太大，系统就会表现得很奇怪并且不能100%的显示命令输出。一种典型的现象就是，执行ls命令后，不能显示完整的文件列表，摈弃没有任何的错误嘻嘻，或者没有任何错误提示的情况下读文件失败。在指定好rsize/wsize以后，可以再次测试速度。</p>
+<p>通常的做法都是在/etc/fstab中指定rsize/wsize的大小：</p>
+<pre name="code" class="example eye-protector-processed"># echo "foo:/tmp /mnt/foo nfs rw,hard,intr,rsize=8192,wsize=8192 0 0"
+    &gt;&gt; /etc/fstab
+# mkdir /mnt/foo
+# mount /mnt/foo</pre>
+</div>
+</div>
+<div id="outline-container-3" class="outline-3">
+<h3 id="sec-3"><a class="eye-protector-processed" name="t4"></a><span class="section-number-3">3<span class="Apple-converted-space">&nbsp;网络包大小和网卡驱动</span></span></h3>
+<div id="text-3" class="outline-text-3">
+<p>大部分的linux网卡驱动是正常的，但是总有少数有问题。有问题的时候可以尝试升级驱动程序，来看看是否能解决问题。先使用ping back的命令</p>
+<pre name="code" class="example eye-protector-processed">#ping -f
+#ping -s</pre>
+<p>如果有很多丢包或者长时间的响应，就很有可能是网卡的问题了</p>
+<p>除此以外，还用nfsstat分析NFS的流量，客户端和服务器统计，网络统计。选项&ldquo;-o net&rdquo;可以显示丢包的数目。在UDP传输中最重要的统计项是重传数&mdash;&mdash;可能是由于丢包，socket缓冲移出，超时等情况引起。这些都会严重影响NFS性能，必须仔细检查。</p>
+<p>PS：nfsstat不再支持参数&ldquo;-z&rdquo;（把nfsstat的统计清零），所以得留意之前的nfsstat统计值</p>
+<p>为了纠正网络问题，有时候需要重新配置网卡的默认IP包大小。经常会发生路由的最大IP包大小比网卡的小。TCP协议可以自适应，但是UDP协议不行（会导致分片丢包，然后重传）。所以NFS over UDP特别要注意设置MTU的大小。可以用命令*tracepath*来看网络上的MTU值，用ifconfig命令来看网卡的MTU值，要使两者匹配。</p>
+</div>
+</div>
+<div id="outline-container-4" class="outline-3">
+<h3 id="sec-4"><a class="eye-protector-processed" name="t5"></a><span class="section-number-3">4<span class="Apple-converted-space">&nbsp;网络包分片导致的溢出</span></span></h3>
+<div id="text-4" class="outline-text-3">
+<p>当rsize/wsize大于网络的MTU（大部分网络都是1500，除非设置了支持大包）时，IP包在用UDP协议传输时会分片。大量IP包分片会消耗网络两端大量的CPU资源，而且还会导致网络通信更不稳定（因为完整的RPC在UDP分片的任何一个包丢失时都得整个RPC重传）。任何RPC的重传增加都会导致时延的增加。这是NFS over UDP性能的最大瓶颈。</p>
+<p>如果你的网络拓扑很复杂，UDP的分片包的路由很可能不同，可能不会都及时到达服务器。内核对分片包的缓存有限制，最大值由ipfrag/_high_thresh指定。可以查看文件/proc/sys/net/ipv4/ipfrag_high_thresh和/proc/sys/net/ipv4/ipfrag_low_thresh。一旦未处理的包数目超过ipfrag_high_thresh，内核就会丢弃分片包，直到数量达到ipfrag_low_thresh</p>
+<p>另一种监视的方法是文件/proc/net/snmp中的IP：ReasmFails。这是分片组合失败的数量，如果这个值在大量文件传输过程中上升太快，就有可能是有上述问题。</p>
+</div>
+</div>
+<div id="outline-container-5" class="outline-3">
+<h3 id="sec-5"><a class="eye-protector-processed" name="t6"></a><span class="section-number-3">5<span class="Apple-converted-space">&nbsp;使用NFS over TCP</span></span></h3>
+<div id="text-5" class="outline-text-3">
+<p>NFS over TCP 是 2.4和2.5内核的新特性。和UDP相比有不同的优缺点。</p>
+<ul>
+<li>优点是在低可靠性的网络中的性能优于UDP。一旦丢包只要重传一个包而不是整个RPC。另外，TCP在不同网速的网络中可以自协调速度，性能也会比UDP好。</li>
+<li>缺点是TCP是可靠连接协议，如果在包的传输过程中服务端奔溃了，在客户端需要重新挂载</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-6" class="outline-3">
+<h3 id="sec-6"><a class="eye-protector-processed" name="t7"></a><span class="section-number-3">6<span class="Apple-converted-space">&nbsp;超时和重传值</span></span></h3>
+<div id="text-6" class="outline-text-3">
+<p>NFS over UDP 中有两个选项 timeo 和 retrans ，分别控制超时和重传数。其中timeo的单位是0.1s，默认值是0.7s。retrans是超时后重传的次数，默认值是3。重传时会显示消息</p>
+<pre name="code" class="example eye-protector-processed">Server not responding</pre>
+<p>一旦客户端显示这个消息，客户端就会重新发起请求。如果这时正好另一个超时发生了，客户端就会先处理更近的超时错误，处理结束后再接着处理这个超时。如果处理成功则会显示消息</p>
+<pre name="code" class="example eye-protector-processed">Server OK</pre>
+</div>
+</div>
+<div id="outline-container-7" class="outline-3">
+<h3 id="sec-7"><a class="eye-protector-processed" name="t8"></a><span class="section-number-3">7<span class="Apple-converted-space">&nbsp;守护进程NFSD的个数</span></span></h3>
+<div id="text-7" class="outline-text-3">
+<p>大部分的默认情况下，linux或者其它操作系统都会启动8个NFSD。这个数字是在NFS早期由Sun公司的一个经验法则。后来其它人就沿袭下来了。没有什么好方法来确定究竟多少个NFSD才是最优的，但是更大的负载可能需要更多个NFSD。虽然你应该一个处理器至少有一个NFSD,但是每个处理器8个可能是比较好的经验法则。如果你的内核是2.4以上，并且你想看看每个NFSD 线程的负载情况，你可以看文件/proc/net/rpc/NFSD。文件中th行的最后的10个数说明线程的负载的百分比对于时间的直方图（第一个数代表运行的NFSD 数，第二个数代表所有线程需要的时间，后面的就是那一时刻的所需时间/最大允许时间）。如果后面的几个数加速增加了，那么你的服务端就得要更多的NFSD 线程。</p>
+<p>修改NFSD 线程数是在 /etc/rc.d/init.d/nfs 中的RPCNFSDCOUNT值。记得重启服务。</p>
+</div>
+</div>
+<div id="outline-container-8" class="outline-3">
+<h3 id="sec-8"><a class="eye-protector-processed" name="t9"></a><span class="section-number-3">8<span class="Apple-converted-space">&nbsp;输入队列的内存限制</span></span></h3>
+<div id="text-8" class="outline-text-3">
+<p>在2.2和2.4内核中，默认的socket读缓存rmem_default是64k，写缓冲wmem_default是8k。这两个值对有大量读写负载的情况很重要。</p>
+<p>许多公开的对NFS的测评多使用大得多的读写缓存[rw]mem_default和[rw]mem_max。可以考虑增加这些值到256k。按下面的方法做比较安全(以读缓冲为例)</p>
+<ul>
+<li>在文件中增加值</li>
+</ul>
+<pre name="code" class="example eye-protector-processed"># echo 262144 &gt; /proc/sys/net/core/rmem_default
+# echo 262144 &gt; /proc/sys/net/core/rmem_max</pre>
+<ul>
+<li>重启NFS(Redhat环境)</li>
+</ul>
+<pre name="code" class="example eye-protector-processed"># /etc/rc.d/init.d/nfs restart</pre>
+<ul>
+<li>测试结束后恢复正常值</li>
+</ul>
+<pre name="code" class="example eye-protector-processed"># echo 65536 &gt; /proc/sys/net/core/rmem_default
+# echo 65536 &gt; /proc/sys/net/core/rmem_max</pre>
+</div>
+</div>
+<div id="outline-container-9" class="outline-3">
+<h3 id="sec-9"><a class="eye-protector-processed" name="t10"></a><span class="section-number-3">9<span class="Apple-converted-space">&nbsp;关闭网卡和集线器的自动协商协议</span></span></h3>
+<div id="text-9" class="outline-text-3">
+<p>如果网卡和hub与交换机自协商异常并且运行在不同的速度上，或者处在不同配置的双工模式下（全双工、半双工），那么性能会因为过多冲突或丢包等受到严重的影响。如果可能，尽量在100M全双工内网传输，这样可以为NFS over UDP消除大部分的网络。当关闭网卡自适应时，要注意项链的hub或者交换机将重置到其它双工设置，并且一些网卡为了支持老hub默认是半双工的。最好的解决方法是强制网卡为100M全双工。</p>
+</div>
+</div>
+<div id="outline-container-10" class="outline-3">
+<h3 id="sec-10"><a class="eye-protector-processed" name="t11"></a><span class="section-number-3">10<span class="Apple-converted-space">&nbsp;NFS的同步和非同步选项</span></span></h3>
+<div id="text-10" class="outline-text-3">
+<p>NFSD v2 和 v3协议默认的是非同步的。非同步默认让服务端不等把数据写入本地磁盘就响应客户端请求。在服务端&ldquo;exportfs -av&rdquo;出的列表中可以看到async选项。虽然有可能在服务端仍然有未写入的数据时服务器重启会导致数据丢失的代价，但是非同步的性能更好。当发生上述情况时不能被检测到，因为&ldquo;async&rdquo;选项指示服务器欺骗客户端，让它以为所有的数据确实都写入磁盘了，而不考虑协议是怎样做的。</p>
+<p>当使用同步选项时，NFS v2将等到所有的数据都写入磁盘以后才响应请求；NFS v3则不同，它会返回状态来高数客户端什么数据仍然在缓冲中和什么数据可以安全的丢弃。状态有三种值，定义在include/linux/nfs.h的nfs3_stable_how字段：</p>
+<ul>
+<li>NFS_UNSTABLE 在服务端数据还没写入磁盘，必须在客户端缓冲数据，除非随后客户端提交请求确认服务端已经把数据写入磁盘了</li>
+<li>NFS_DATA_SYNC 数据还没完全写入，必须在客户端缓冲。这时必须返回上面说的请求</li>
+<li>NFS_FILE_SYNC 没有数据需要被缓冲这时不需要返回</li>
+</ul>
+<p>除此以外，当服务端使用同步选项，客户端如果打开文件的时候使用O_SYNC选项,客户端都会坚持等把数据写入磁盘以后再响应其它请求。这种情况下，从客户端来看NFS v2 和v3 的性能看起来都是一样的。</p>
+<p>如果在服务端设定非同步，那么O_SYNC选项将不起作用，因为服务端不等数据完全写入磁盘就马上响应。v2和v3版本间无差异。</p>
+<p>最后，当NFS v3 使用同步选项并且当文件关闭或者fsync()的时候，将强制服务器把所有缓冲中的数据写入磁盘才响应客户端请求。如果使用非同步选项，这个请求没有任何作用。</p>
+</div>
+</div>
+<div id="outline-container-11" class="outline-3">
+<h3 id="sec-11"><a class="eye-protector-processed" name="t12"></a><span class="section-number-3">11<span class="Apple-converted-space">&nbsp;和NFS无关的提高服务器性能的方法</span></span></h3>
+<div id="text-11" class="outline-text-3">
+<p>通常来说，服务器的性能和磁盘服务的性能也会严重影响NFS的性能。一下几点有必要考虑：</p>
+<ul>
+<li>如果使用RAID阵列，用RAID 1/0可以保证写速度和冗余；RAID 5有比较好的读速度但是会降低写速度</li>
+<li>journalling 文件系统会减少重启时间。目前ext3已经可以正确的和NFS v3。另外，Reiserfs v3.6可以在2.4.7或者更高的内核上和NFS v3 一起工作。Reiserfs更早版本会有问题</li>
+<li>Additionally, journalled file systems can be configured to maximize performance by taking advantage of the fact that journal updates are all that is necessary for data protection. One example is using ext3 with data=journal so that all updates go first to the journal, and later to the main file system. Once the journal has been updated, the NFS server can safely issue the reply to the clients, and the main file system update can occur at the server&rsquo;s leisure.</li>
+</ul>
+<p>The journal in a journalling file system may also reside on a separate device such as a flash memory card so that journal updates normally require no seeking. With only rotational delay imposing a cost, this gives reasonably good synchronous IO performance. Note that ext3 currently supports journal relocation, and ReiserFS will (officially) support it soon. The Reiserfs tool package found at<span class="Apple-converted-space">&nbsp;<a class="eye-protector-processed" href="ftp://ftp.namesys.com/pub/reiserfsprogs/reiserfsprogs-3.x.0k.tar.gz" target="_blank">ftp://ftp.namesys.com/pub/reiserfsprogs/reiserfsprogs-3.x.0k.tar.gz</a><span class="Apple-converted-space">&nbsp;contains the reiserfstune tool, which will allow journal relocation. It does, however, require a kernel patch which has not yet been officially released as of January, 2002.</span></span></p>
+<ul>
+<li>用自动挂载（比如autofs或者amd）可以在机器down以后自动挂载。</li>
+<li>一些厂商（Network Appliance, Hewlett Packard或者其它）用NVRAM提供NFS加速。NVRAM提高访问速度到async的访问速度</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-12" class="outline-3">
+<h3 id="sec-12"><a class="eye-protector-processed" name="t13"></a><span class="section-number-3">12<span class="Apple-converted-space">&nbsp;文件属性与目录属性的更新时间</span></span></h3>
+<div id="text-12" class="outline-text-3">
+<p>在NFS中如果需要提高实时性，还有一组非常容易忽略的参数</p>
+<ul>
+<li>acregmin=n：设定最小的在文件更新之前cache时间，默认是3</li>
+<li>acregmax=n：设定最大的在文件更新之前cache时间，默认是60</li>
+<li>acdirmin=n：设定最小的在目录更新之前cache时间，默认是30</li>
+<li>acdirmax=n：设定最大的在目录更新之前cache时间，默认是60</li>
+<li>actimeo=n：将acregmin、acregmax、acdirmin、acdirmax设定为同一个数值，默认是没有启用。</li>
+<li>noac: 关闭cache机制。</li>
+</ul>
+<p>新建和删除文件属于修改目录属性；增加和修改文件属于文件属性。</p>
+<p>在抓包测试中发现，当客户端读文件属性的时候，NFS的工作方式是nfs客户端直接给出cache的文件属性。而服务端最快每隔acregmin更新一次文件属性，每隔acdirmin更新一次目录属性。因此就算在局域网的理想条件下，也常常会有其实文件或目录已经更新,在NFS客户端却无法及时看到更新的假象。</p>
+</div>
+</div>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+    <div id="blog_post_info"></div>
+    <div class="clear"></div>
+    <div id="post_next_prev"></div>
+</div>
+            </div>
+            <div class="postDesc">posted @ 
+<span id="post-date">2018-05-05 19:09</span>&nbsp;
+<a href="https://www.cnblogs.com/Star-Haitian/">Star-Hitian</a>&nbsp;
+阅读(<span id="post_view_count">...</span>)&nbsp;
+评论(<span id="post_comment_count">...</span>)&nbsp;
+<a href="https://i.cnblogs.com/EditArticles.aspx?postid=8995628" rel="nofollow">
+    编辑
+</a>
+<a href="javascript:void(0)" onclick="AddToWz(8995628);return false;">收藏</a></div>
+        </div>
+	    
+	    
+    </div><!--end: topics 文章、评论容器-->
+</div>
+<script src="https://common.cnblogs.com/highlight/9.12.0/highlight.min.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 335942, cb_blogApp = 'Star-Haitian', cb_blogUserGuid = '1622a454-a9f9-e611-845c-ac853d9f53ac';
+    var cb_entryId = 8995628, cb_entryCreatedDate = '2018-05-05 19:09', cb_postType = 2; 
+    loadViewCount(cb_entryId);
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container"></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;"></div>
+    </div>
+    <div id="under_post_news"></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;">
+            <script>
+                if (new Date() >= new Date(2018, 9, 13)) {
+                    googletag.cmd.push(function () { googletag.display("div-gpt-ad-1539008685004-0"); });
+                }
+            </script>
+        </div>
+    </div>
+    <div id="under_post_kb"></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div>
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<div id="sidebar_news" class="newsItem">
+            <script>loadBlogNews();</script>
+</div>
+
+			<div id="blog-calendar" style="display:none"></div><script>loadBlogDefaultCalendar();</script>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"></div>
+                    <script>loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		<!--done-->
+Copyright &copy; 2019 Star-Hitian
+<br /><span id="poweredby">Powered by .NET Core 3.1.0 on Linux</span>
+
+
+
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+    <div id="page_end_html">
+        <script language="javascript" type="text/javascript">
+// 生成目录索引列表
+// ref: http://www.cnblogs.com/wangqiguo/p/4355032.html
+// modified by: zzq
+function GenerateContentList()
+{
+    var mainContent = $('#cnblogs_post_body');
+    var h2_list = $('#cnblogs_post_body h2');//如果你的章节标题不是h2,只需要将这里的h2换掉即可
+
+    if(mainContent.length < 1)
+        return;
+ 
+    if(h2_list.length>0)
+    {
+        var content = '<a name="_labelTop"></a>';
+        content += '<div id="navCategory" style="color:#152e97;">';
+        content += '<p style="font-size:18px;"><b>目录</b></p>';
+        content += '<ul>';
+        for(var i=0; i<h2_list.length; i++)
+        {
+            var go_to_top = '<div style="text-align: right;"><a href="#_labelTop" style="color:#f68a33">回到顶部</a><a name="_label' + i + '"></a></div>';
+            $(h2_list[i]).before(go_to_top);
+            
+            var h3_list = $(h2_list[i]).nextAll("h3");
+            var li3_content = '';
+            for(var j=0; j<h3_list.length; j++)
+            {
+                var tmp = $(h3_list[j]).prevAll('h2').first();
+                if(!tmp.is(h2_list[i]))
+                    break;
+                var li3_anchor = '<a name="_label' + i + '_' + j + '"></a>';
+                $(h3_list[j]).before(li3_anchor);
+                li3_content += '<li><a href="#_label' + i + '_' + j + '">' + $(h3_list[j]).text() + '</a></li>';
+            }
+            
+            var li2_content = '';
+            if(li3_content.length > 0)
+                li2_content = '<li><a href="#_label' + i + '">' + $(h2_list[i]).text() + '</a><ul>' + li3_content + '</ul></li>';
+            else
+                li2_content = '<li><a href="#_label' + i + '">' + $(h2_list[i]).text() + '</a></li>';
+            content += li2_content;
+        }
+        content += '</ul>';
+        content += '</div><p>&nbsp;</p>';
+        content += '<hr style="height:1px;border:none;border-top:1px dashed #0066CC;"/>';
+        if($('#cnblogs_post_body').length != 0 )
+        {
+            $($('#cnblogs_post_body')[0]).prepend(content);
+        }
+    }   
+}
+
+GenerateContentList();
+</script>
+    </div>
+</body>
+</html>

@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+	
+			<title>【Linux】lftp用法手册 - 枫芸志</title>		
+							
+	<meta name="keywords" content="FTP,Linux" />
+	<meta name="description" content="蛋疼地翻译了一遍man lftp......
+
+====================
+
+lftp是个功能强大的文件传输工具，操作上很像shell，支持命令补全、历史记录、多任务后台执行，还有书签、排队、镜像、断点续传、多进程下载等功能。 " />
+	<meta name="viewport" content="initial-scale=1.0,user-scalable=no">
+	<link rel="shortcut icon" href="http://witmax.cn/wp-content/uploads/icon_80x80.png" type="image/x-icon" />	
+	<link rel='dns-prefetch' href='//s.w.org' />
+<link rel='stylesheet' id='wp-block-library-css'  href='http://witmax.cn/wp-includes/css/dist/block-library/style.min.css?ver=5.2.5' type='text/css' media='all' />
+<link rel='stylesheet' id='wp-pagenavi-css'  href='http://witmax.cn/wp-content/plugins/wp-pagenavi/pagenavi-css.css?ver=2.70' type='text/css' media='all' />
+<link rel='stylesheet' id='css-css'  href='http://witmax.cn/wp-content/themes/forget/css/main.css?ver=1.0' type='text/css' media='screen' />
+<link rel='stylesheet' id='lightboxStyle-css'  href='http://witmax.cn/wp-content/plugins/lightbox-plus/css/shadowed/colorbox.min.css?ver=2.7.2' type='text/css' media='screen' />
+<script type='text/javascript' src='http://witmax.cn/wp-content/themes/forget/js/jquery.min.js?ver=1.8.0'></script>
+<script type='text/javascript' src='http://witmax.cn/wp-includes/js/jquery/jquery.js?ver=1.12.4-wp'></script>
+<script type='text/javascript' src='http://witmax.cn/wp-includes/js/jquery/jquery-migrate.min.js?ver=1.4.1'></script>
+<link rel='https://api.w.org/' href='http://witmax.cn/wp-json/' />
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="http://witmax.cn/xmlrpc.php?rsd" />
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="http://witmax.cn/wp-includes/wlwmanifest.xml" /> 
+
+<link rel="alternate" type="application/json+oembed" href="http://witmax.cn/wp-json/oembed/1.0/embed?url=http%3A%2F%2Fwitmax.cn%2Flinux-lftp.html" />
+<link rel="alternate" type="text/xml+oembed" href="http://witmax.cn/wp-json/oembed/1.0/embed?url=http%3A%2F%2Fwitmax.cn%2Flinux-lftp.html&#038;format=xml" />
+<script type="text/javascript">
+function runcode_open_new(element)
+{
+	var code = document.getElementById(element).value;
+	var win = window.open("", "", "");
+	win.opener = null;
+	win.document.write(code);
+	win.document.close();
+}
+function saveCode(obj,filename)
+{
+	if(!document.all){alert("您的浏览器不支持此方法。");	return;
+	}
+    var winname = window.open("", "", "top=10000,left=10000");
+    winname.document.open("text/html", "replace");
+    winname.document.write(document.getElementById(obj).value);
+    winname.document.execCommand("saveas", "", filename + ".htm");
+    winname.close();
+}
+function runcode_copy(element)
+{
+	var codeobj = document.getElementById(element);
+	var meintext = codeobj.value;
+	try {
+	 if (window.clipboardData)
+	   {
+	  
+	   // the IE-manier
+	   window.clipboardData.setData("Text", meintext);
+	  
+	   // waarschijnlijk niet de beste manier om Moz/NS te detecteren;
+	   // het is mij echter onbekend vanaf welke versie dit precies werkt:
+	   }
+	   else if (window.netscape)
+	   {
+	  
+	   // dit is belangrijk maar staat nergens duidelijk vermeld:
+	   // you have to sign the code to enable this, or see notes below
+	   netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
+	  
+	   // maak een interface naar het clipboard
+	   var clip = Components.classes['@mozilla.org/widget/clipboard;1']
+					 .createInstance(Components.interfaces.nsIClipboard);
+	   if (!clip) return;
+	  
+	   // maak een transferable
+	   var trans = Components.classes['@mozilla.org/widget/transferable;1']
+					  .createInstance(Components.interfaces.nsITransferable);
+	   if (!trans) return;
+	  
+	   // specificeer wat voor soort data we op willen halen; text in dit geval
+	   trans.addDataFlavor('text/unicode');
+	  
+	   // om de data uit de transferable te halen hebben we 2 nieuwe objecten
+	   // nodig om het in op te slaan
+	   var str = new Object();
+	   var len = new Object();
+	  
+	   var str = Components.classes["@mozilla.org/supports-string;1"]
+					.createInstance(Components.interfaces.nsISupportsString);
+	  
+	   var copytext=meintext;
+	  
+	   str.data=copytext;
+	  
+	   trans.setTransferData("text/unicode",str,copytext.length*2);
+	  
+	   var clipid=Components.interfaces.nsIClipboard;
+	  
+	   if (!clip) return false;
+	  
+	   clip.setData(trans,null,clipid.kGlobalClipboard);
+	  
+	   }
+	} catch (e) {alert('因为安全策略的原因，此项功能已被您的浏览器禁止。关闭此窗口，然后按下“Ctrl+C”组合键完成复制。');		codeobj.focus();
+	}
+	codeobj.select();
+   return false;
+}
+</script><style type="text/css" id="syntaxhighlighteranchor"></style>
+<link rel="icon" href="http://witmax.cn/wp-content/uploads/icon_80x80.png" sizes="32x32" />
+<link rel="icon" href="http://witmax.cn/wp-content/uploads/icon_80x80.png" sizes="192x192" />
+<link rel="apple-touch-icon-precomposed" href="http://witmax.cn/wp-content/uploads/icon_80x80.png" />
+<meta name="msapplication-TileImage" content="http://witmax.cn/wp-content/uploads/icon_80x80.png" />
+<!-- wp thread comment 1.4.9.4.002 -->
+<style type="text/css" media="screen">
+.editComment, .editableComment, .textComment{
+	display: inline;
+}
+.comment-childs{
+	border: 1px solid #999;
+	margin: 5px 2px 2px 4px;
+	padding: 4px 2px 2px 4px;
+	background-color: white;
+}
+.chalt{
+	background-color: #E2E2E2;
+}
+#newcomment{
+	border:1px dashed #777;width:90%;
+}
+#newcommentsubmit{
+	color:red;
+}
+.adminreplycomment{
+	border:1px dashed #777;
+	width:99%;
+	margin:4px;
+	padding:4px;
+}
+.mvccls{
+	color: #999;
+}
+			
+</style>
+	</head>
+<body>
+		
+		<div id="m-nav" class="m-nav ">
+		<div class="m-nav-all">
+			<div class="m-logo-url">
+				<img src="http://witmax.cn/wp-content/uploads/me.png">
+				<h3>枫芸志</h3>
+			</div>
+			<ul class="nav">
+				<li><a href="http://witmax.cn">首页</a></li>
+				
+<li class="page_item page-item-15"><a href="http://witmax.cn/archives">文章</a></li>
+<li class="page_item page-item-6"><a href="http://witmax.cn/downloads">下载</a></li>
+<li class="page_item page-item-2"><a href="http://witmax.cn/about">关于</a></li>
+<li class="page_item page-item-326"><a href="http://witmax.cn/links">友链</a></li>
+<li class="page_item page-item-24"><a href="http://witmax.cn/guestbook">留言板</a></li>
+
+			</ul>
+		</div>
+	</div>
+	<div class="index-search">
+		<form role="search" method="get" id="search-form" action="http://witmax.cn/">
+			<div class="search-form">
+				<span id="search-form-close">&times;</span>
+				<input placeholder="Search for" type="text" value="" name="s" id="search-input-s" />
+				<input type="submit" class="webFont" id="searchsubmit" value="搜索" />
+			</div>
+		</form>
+	</div>
+	<div id="m-header" class="m-header">
+		<div id="showLeftPush" class="left m-header-button"></div>
+		<h1><a href="http://witmax.cn">枫芸志</a></h1>
+		<div id="search-trigger" style="font-size: 18px;" class="right m-header-search"></div>
+	</div><div id="m-container" class="container">
+   <aside class="sidebar">
+     <div class="cbl-logo">
+	  <div class="cbl-logo-info">
+	    <h3><a href="http://witmax.cn">枫芸志</a></h3>
+		<div class="cbl-logo-like">
+			<a href="javascript:;" data-action="ding" data-id="676767" class="favorite">
+				<span class="c-like-text">关注</span> 
+				<span> | </span>
+				<span class="count">1694</span>
+			</a>
+		</div>
+		<ul class="artist-data">
+            <li>
+                <strong>728</strong> <span class="label">文章</span>
+            </li>
+            <li>
+                <strong>2776</strong> <span class="label">评论</span>
+            </li>
+            <li class="last"><strong>7,326,500</strong> <span class="label">浏览量</span></li>
+        </ul>
+	  </div>
+	 </div>
+	 <div class="m-sidebar">
+      <section class="topspaceinfo">
+        <h1>天行健，君子以自强不息</h1>
+        <p>记录点滴总结</p>
+      </section>
+      <div class="userinfo"> 
+        <p class="q-fans">
+			公告：欢迎来到我的博客！		</p> 
+      </div>
+	  	  
+	  	  
+	  	  
+	  	  
+	<section class="widget widget_search"><form class="form-inline" id="search" method="post" action="http://witmax.cn/" role="search">
+	<div class="input-group">
+		<input type="text" placeholder="搜索" class="form-control" name="s">
+		<span class="input-group-btn">
+			<button class="btn btn-primary" id="search-btn" type="submit">搜索</button>
+		</span>
+	</div><!-- /input-group -->
+</form></section><section class="widget_text widget widget_custom_html"><h2 class="widget_tit">推荐内容</h2><div class="textwidget custom-html-widget"><script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- 大方块360x255 -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-3668677667576779"
+     data-ad-slot="4682171961"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script></div></section><section class="widget widget_mycategoryorder"><h2 class="widget_tit">分类目录</h2>		<ul>
+			<li class="cat-item cat-item-7"><a href="http://witmax.cn/category/programming" title="编程技术、编程思想、开发技巧、软件工程等">程序开发</a> (138)
+</li>
+	<li class="cat-item cat-item-8"><a href="http://witmax.cn/category/webdesign" title="图片制作、网页编码、交互设计等">网页设计</a> (56)
+</li>
+	<li class="cat-item cat-item-10"><a href="http://witmax.cn/category/website" title="站点优化、网站美化、SEO、用户分析、站点推广等">站点建设</a> (118)
+</li>
+	<li class="cat-item cat-item-18"><a href="http://witmax.cn/category/web" title="网络技术、服务评点、应用技巧等">网络应用</a> (38)
+</li>
+	<li class="cat-item cat-item-5"><a href="http://witmax.cn/category/coolsoft" title="优秀实用型软件搜集">酷软搜索</a> (42)
+</li>
+	<li class="cat-item cat-item-6"><a href="http://witmax.cn/category/softskill" title="操作系统、软件应用、实用技巧等">软件技巧</a> (209)
+</li>
+	<li class="cat-item cat-item-12"><a href="http://witmax.cn/category/essay" title="生活记录、心情随笔、纷飞思绪等">心情随笔</a> (51)
+</li>
+	<li class="cat-item cat-item-9"><a href="http://witmax.cn/category/live" title="生活常识、生活理解、社会思考、人生感悟等">生活感悟</a> (90)
+</li>
+	<li class="cat-item cat-item-17"><a href="http://witmax.cn/category/collection" title="开心笑话、搞笑图片、精彩影音摘录收藏">娱文收藏</a> (20)
+</li>
+		</ul>
+		</section>		<section class="widget widget_recent_entries">		<h2 class="widget_tit">近期文章</h2>		<ul>
+											<li>
+					<a href="http://witmax.cn/gitlab-pipeline-deploy.html">【Gitlab】集成自动化部署PHP代码</a>
+									</li>
+											<li>
+					<a href="http://witmax.cn/nginx-laravel-url-rewrite.html">【Nginx】Laravel URL重写无效空白页面的解决办法</a>
+									</li>
+											<li>
+					<a href="http://witmax.cn/laravel-api-case-conversion.html">【Laravel】前后端不同命名方式的自动转换</a>
+									</li>
+											<li>
+					<a href="http://witmax.cn/docker-gitlab.html">Docker方式部署Gitlab</a>
+									</li>
+											<li>
+					<a href="http://witmax.cn/docker-sentry.html">Docker安装配置Sentry及中间遇到的坑</a>
+									</li>
+											<li>
+					<a href="http://witmax.cn/phpmyadmin-the-server-requested-authentication-method-unknown-to-the-client.html">【PhpMyAdmin】mysqli_real_connect(): The server requested authentication method unknown to the client [caching_sha2_password]</a>
+									</li>
+											<li>
+					<a href="http://witmax.cn/links-adjustment-20180524.html">博客友联整理 20180524</a>
+									</li>
+											<li>
+					<a href="http://witmax.cn/sentry.html">【Sentry】集中化日志管理系统</a>
+									</li>
+											<li>
+					<a href="http://witmax.cn/mac-install-windows-10-vm.html">【Mac】安装Windows 10虚拟机</a>
+									</li>
+											<li>
+					<a href="http://witmax.cn/sonarqube-docker.html">【SonarQube】使用Docker来快速启动</a>
+									</li>
+					</ul>
+		</section><section class="widget_text widget widget_custom_html"><h2 class="widget_tit">站点信息</h2><div class="textwidget custom-html-widget"><ul>
+<li>版权：转载请遵循<a target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/3.0/deed.zh" class="external" rel="noopener noreferrer">《署名-非商业性使用-相同方式共享 3.0 Unported 许可协议》</a></li>
+<li>备案：<a target="_blank" href="http://www.miibeian.gov.cn/" class="external" rel="noopener noreferrer">沪ICP备09057164号</a></li>
+<li><a href="http://www.prchecker.info/" title="PRchecker.info" target="_blank" rel="nofollow noopener noreferrer" class="external">
+<img src="https://pr-v2.prchecker.info/getpr.v2.php?codex=aHR0cDovL3dpdG1heC5jbg==&tag=3" alt="PRchecker.info" style="border:0;" /></a></li>
+</ul></div></section>     </div>
+    </aside><div id="content" class="clearfix">
+	<section id="primary">
+		<div class="main">
+			<article id="post-1311" class="post post-article post-1311 type-post status-publish format-standard hentry category-softskill tag-ftp tag-linux">
+    <h2 class="title"><a class="slow" title="【Linux】lftp用法手册">【Linux】lftp用法手册</a><span class="edit"></span></h2>
+        <ul class="text">
+			<p><!-- Quick Adsense WordPress Plugin: <a href="http://quickadsense.com/" class="external" target="_blank">http://quickadsense.com/</a> --></p>
+<div style="float: none; margin:10px 0 10px 0; text-align:center;">
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><br />
+<ins class="adsbygoogle"
+     style="display:block; text-align:center;"
+     data-ad-format="fluid"
+     data-ad-layout="in-article"
+     data-ad-client="ca-pub-3668677667576779"
+     data-ad-slot="1461768795"></ins><br />
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+<p>蛋疼地翻译了一遍man lftp......</p>
+<p>====================</p>
+<p>lftp是个功能强大的文件传输工具，操作上很像shell，支持命令补全、历史记录、多任务后台执行，还有书签、排队、镜像、断点续传、多进程下载等功能。 </p>
+<p>lftp支持ftp, ftps, http, https, hftp, fish, sftp, file等多种文件访问方式（https和ftps方式只有lftp编译集成了OpenSSL库时才可用）。可以在open url命令中指定访问方式，比如open <a href="http://www.us.kernel.org/pub/linux/." class="external" target="_blank">http://www.us.kernel.org/pub/linux/.</a>  hftp是ftp-over-http-proxy协议的缩写，即通过http代理的ftp访问，设置ftp:proxy为<a href="http://proxy----escape_sem_autolink_uri:7" class="external" target="_blank">http://proxy----escape_sem_autolink_uri:7</a>be6e0311b7a3cfe0d547fd75105d6dc----后会自动应用。fish是通过ssh连接到unix账户的协议。sftp是内置了ssh2的访问协议。 </p>
+<p>lftp中的每项操作都是可靠的，非致命错误都会被忽略同时操作会被重新执行。比如下载中断，它会重新从中断点开始继续下载；即便ftp服务器不支持断点续传，lftp会从头开始重新下载文件知道文件传输完成。 </p>
+<p><!-- Quick Adsense WordPress Plugin: <a href="http://quickadsense.com/" class="external" target="_blank">http://quickadsense.com/</a> --></p>
+<div style="float: none; margin:10px 0 10px 0; text-align:center;">
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><br />
+<ins class="adsbygoogle"
+     style="display:block; text-align:center;"
+     data-ad-format="fluid"
+     data-ad-layout="in-article"
+     data-ad-client="ca-pub-3668677667576779"
+     data-ad-slot="1461768795"></ins><br />
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+<p>lftp拥有类似shell的语法，支持并行在后台(&amp;)运行命令，支持用()分组命令并将它们在后台执行。所有后台任务在同一个进程中执行。使用^Z(Ctrl+Z)将前台任务切换到后台执行，wait或fg(wait的别名)命令将后台任务切换到前台，使用jobs命令罗列正在执行的任务。一些命令（如cat, ls等）允许将输出重定向至文件或通过管道传送给别的命令。命令能根据前一命令的结束状态有选择性地执行(&amp;&amp;, ||)。 </p>
+<p>如果你在仍有任务未完成的情况下退出lftp, lftp将会把自己切换到nohup模式在后台继续运行，直至任务完成。 </p>
+<p>lftp内置了镜像功能（mirror命令）允许下载整个目录，反向镜像功能（mirror -R命令）允许上传整个目录到服务器上。镜像功能同样可用于同步两个远程服务器上的文件夹。 </p>
+<p>at命令在当前环境下指定在特定的时刻执行某些任务；queue命令将指定的命令在当前服务器上按顺序执行；还有其他很多命令。 </p>
+<p>启动时，lftp先后执行配置文件/etc/lftp.conf, ~/.lftprc, ~/.lftp/rc 。你可以在这些配置文件中增加alias或set命令。希望看到完整协议调试内容的朋友可以通过debug命令来启动调试模式，如使用debug 3将看到所有的问候消息和错误消息。 </p>
+<p>lftp拥有大量的配置项，可以通过set -a命令来查看所有的配置项和值，set -d命令查看配置项的默认值。配置项可以使用缩写并且省略前导符，只要名称唯一。 </p>
+<p>如果编译包括了OpenSSL (configure --with-openssl)，那么lftp将内置有OpenSSL项目开发的软件功能。 </p>
+<p><strong>lftp命令 </strong></p>
+<p>! shell command </p>
+<p>运行shell或shell命令；如!ls将列出本地的当前文件夹下的内容。 </p>
+<p>alias  [name [value]] </p>
+<p>定义或取消name别名。设置value，别名name将被定义；忽略value，别名name将被取消。没有参数，将罗列当前的所有别名。比如 </p>
+<pre class="brush: plain; title: ; notranslate" title="">alias dir ls -lF
+alias less zmore</pre>
+<p>anon </p>
+<p>设置用户为匿名用户，默认情况。 </p>
+<p>at time [ -- command ] </p>
+<p>等到指定时间执行指定的命令。参见linux下的at命令。 </p>
+<p>bookmark  [subcommand] </p>
+<p>操作书签，子命令如下： </p>
+<ul>
+<li>add &lt;name&gt; [&lt;loc&gt;] 将当前位置或指定位置以指定名称添加到书签</li>
+<li>del &lt;name&gt; 删除指定名称的书签</li>
+<li>edit 启动编辑器来编辑书签文件</li>
+<li>import &lt;type&gt; 导入外部书签</li>
+<li>list 罗列所有书签（默认）</li>
+</ul>
+<p>cache  [subcommand] </p>
+<p>操作本地内存缓存，子命令如下： </p>
+<ul>
+<li>stat 打印缓存状态（默认）</li>
+<li>on|off 开启或关闭缓存</li>
+<li>flush 清空缓存</li>
+<li>size lim 设置缓存大小限制，-1表示不限制</li>
+<li>expire Nx 设置缓存过期时间为N秒(x=s), 分钟(x=m), 小时(x=h), 天(x=d)</li>
+</ul>
+<p>cat files </p>
+<p>罗列远程目录下的内容到标准输出。 </p>
+<p>cd rdir </p>
+<p>切换当前的远程目录。前一远程目录被存为-， 可以使用cd -切换到前一目录。每个站点前一目录会被保存到磁盘，所以即使重启lftp后同样可以执行open site; cd -命令。 </p>
+<p>chmod mode files </p>
+<p>改变远程文件的权限控制码，mode必须为八进制数字。 </p>
+<p>close [-a] </p>
+<p>关闭空闲链接。默认只关闭当前服务器连接，使用-a关闭所有空闲链接。 </p>
+<p>cls [OPTS] files... </p>
+<p>获取指定的文件或目录信息，以OPTS参数指定的格式显示结果。与ls的差别是，ls请求由服务器来格式化信息，cls由自身来格式化信息。通过help cls查看OPTS参数的使用。 </p>
+<p>command cmd args... </p>
+<p>执行执行的命令，忽略别名。 </p>
+<p>debug [-o file] level|off </p>
+<p>切换调试默认是level级别或关闭调试。使用-o重定向调试信息输出到文件。 </p>
+<p>echo [-n] string </p>
+<p>输出string字符串，使用-n不输出换行符。 </p>
+<p>eval [-f format ] args... </p>
+<p>不指定-f，将把args作为命令执行；使用-f，args将被转换为新的命令。format可以包括普通字符和占位符$0 ... $9, $@（与参数args对应） </p>
+<p>exit [bg] [top] [kill] [<span>code</span>] </p>
+<p>退出lftp或将lftp切换到后台执行如果仍有活动任务。如果当前没有活动任务，code会被作为lftp的结束状态传给操作系统。如果code被忽略，最后一条命令的退出代码将被作为code。 </p>
+<p>exit bg强制lftp切换到后台执行如果cmd:move-background是false。exit  top终止最上层shell（lftp的内部命令）的执行。exit kill在退出前结束所有任务。选项可以别结合使用，比如at 08:00 -- exit top kill &amp; 将在8:00结束所有任务并退出lftp。 </p>
+<p>fg </p>
+<p>wait的别名。 </p>
+<p>find  [directory] </p>
+<p>罗列指定目录（默认为当前目录）及所有子目录下的所有文件。作为服务器没有ls -R功能的补充。输出可进行重定向。 </p>
+<p>ftpcopy </p>
+<p>过时的命令，使用一下命令取代： </p>
+<ul>
+<li>get ftp://... -o ftp://...</li>
+<li>get -O ftp://... file1 file2...</li>
+<li>put ftp://...</li>
+<li>mput ftp://.../*</li>
+<li>mget -O ftp://... ftp://.../*</li>
+</ul>
+<p>get [-E] [-a] [-c] [-O base] rfile [-o lfile] ... </p>
+<p>获取远程文件rfile并保存为本地文件lfile。如果没有-o参数，文件将被保存为与rfile同名的本地文件。可以通过指定多个rfile和-o lfile来获取多个文件。如需使用通配符，请用mget代替get命令。举例： </p>
+<ul>
+<li>get README</li>
+<li>get README -o debian.README</li>
+<li>get README README.mirrors</li>
+<li>get README -o debian.README README.mirrors -o debian.mirrors</li>
+<li>get README -o <a href="ftp://some.host.org/debian.README" class="external" target="_blank">ftp://some.host.org/debian.README</a></li>
+<li>get README -o <a href="ftp://some.host.org/debian-dir/" class="external" target="_blank">ftp://some.host.org/debian-dir/</a> (end slash is important)</li>
+</ul>
+<p>get1 [OPTS] rfile </p>
+<p>传输单个文件，选项： </p>
+<ul>
+<li>-o &lt;lfile&gt; 目标文件名（默认为同rfile中的文件名）</li>
+<li>-c 继续，重新获取</li>
+<li>-E 在传输完成后删除源文件</li>
+<li>-a 使用ascii模式（默认为二进制模式）</li>
+<li>--source-region=&lt;from-to&gt; 传输源文件的指定区块</li>
+<li>--target-position=&lt;pos&gt; 指定目标文件的数据写入位置</li>
+</ul>
+<p>glob [-d] [-a] [-f] command patterns </p>
+<p>取出当前目录下符合patterns的文件或文件夹名，结果串接后传给command命令。比如glob echo *。选项： </p>
+<ul>
+<li>-f  文件（默认）</li>
+<li>-d 文件夹</li>
+<li>-a 所有类型</li>
+</ul>
+<p>help [cmd] </p>
+<p>打印cmd命令的帮助信息；未指定cmd时将打印所有可用命令。 </p>
+<p>jobs [-v] </p>
+<p>罗列正在运行的任务。-v显示详细信息，可指定多个-v。 </p>
+<p>kill all|job_no </p>
+<p>删除job_no指定的任务或所有任务。job_no可通过jobs命令查看。 </p>
+<p>lcd ldir </p>
+<p>切换当前的本地目录为ldir。前一本地目录被存为-， 可以使用lcd -切换到前一目录。 </p>
+<p>lpwd </p>
+<p>打印当前本地的工作目录。 </p>
+<p>ls params </p>
+<p>罗列远程文件。可以将此命令的输出重定向至文件或通过管道传送给其他命令。默认，ls的输出会被缓存，使用rels或cache flush来查看新的罗列结果。 </p>
+<p>mget [-c] [-d] [-a] [-E] [-O base] files </p>
+<p>获取满足通配符条件的文件，选项： </p>
+<ul>
+<li>-c 继续，重新获取</li>
+<li>-d 创建与文件路径中目录名相同的目录，并保存文件到对应目录中</li>
+<li>-E 在传输完成后删除源文件</li>
+<li>-a 使用ascii模式（默认为二进制模式）</li>
+<li>-O &lt;base&gt; 指定文件被保存的目录或URL</li>
+</ul>
+<p>mirror [OPTS] [<span>source</span> [<span>target</span>]]</p>
+<p>将源文件夹镜像到目标文件夹。如果目标文件夹以/结尾，原文件夹名称会被附加到目标文件夹名称之后。源和目标都可以是指向文件夹的URL。 </p>
+<ul>
+<li>-c, --continue 续传上次的任务</li>
+<li>-e, --delete 删除远程目录上不存在的文件</li>
+<li>   --delete-first 在传输新文件之前删除旧的文件</li>
+<li>   --depth-first 进入下一层目录优先于文件传输</li>
+<li>-s, --allow-suid 根据远程站点设置suid/sgid比特位</li>
+<li>   --allow-chown 尝试将自己设置为文件所有者和所有组</li>
+<li>   --ascii 使用ascii方式传输（隐含了--ignore-size）</li>
+<li>   --ignore-time 决定是否下载时忽略时间因素</li>
+<li>   --ignore-size 决定是否下载时忽略文件大小因素</li>
+<li>   --only-missing 只下载缺少的文件</li>
+<li>   --only-existing 只下载已经存在于目标文件夹中的文件</li>
+<li>-n, --only-newer 只下载新文件（-c参数无法工作）</li>
+<li>   --no-empty-dirs 不创建空文件夹（隐含了--depth-first）</li>
+<li>-r, --no-recursion 不进入子文件夹</li>
+<li>   --no-symlinks 不创建符号链接</li>
+<li>-p, --no-perms 不设置文件权限</li>
+<li>   --no-umask 不使用文件预设权限</li>
+<li>-R, --reverse 反向镜像（上传文件）</li>
+<li>-L, --dereference 将符号链接作为文件下载</li>
+<li>-N, --newer-than=SPEC 只下载比指定时间晚的文件</li>
+<li>   --on-change=CMD 只要有文件或文件夹存在差异就执行命令CMD</li>
+<li>   --older-than=SPEC 只下载比指定时间早的文件</li>
+<li>   --size-range=RANGE 只下载大小在指定区间上的文件</li>
+<li>-P, --parallel[=N] 并行下载N个文件</li>
+<li>   --use-pget[-n=N] 使用pget传输每个文件</li>
+<li>   --loop 循环知道找不到差异</li>
+<li>-i RX, --include RX 包括相匹配的文件</li>
+<li>-x RX, --exclude RX 不包括相匹配的文件</li>
+<li>-I GP, --include-glob GP 包括相匹配的文件</li>
+<li>-X GP, --exclude-glob GP 不包括相匹配的文件</li>
+<li>-v, --verbose[=level] 冗长操作</li>
+<li>   --log=FILE 将执行的lftp命令写入文件FILE</li>
+<li>   --script=FILE 将lftp命令写入文件FILE，但不执行</li>
+<li>   --just-print, --dry-run 与--script=-相同</li>
+<li>   --use-cache 使用缓存目录列表</li>
+<li>--Remove-source-files 传输完成后删除源文件</li>
+<li>-a 与--allow-chown --allow-suid --no-umask相同</li>
+</ul>
+<p>使用-R时，第一个目录为本地目录，第二个目录为远程目录。如果第二个目录被忽略，将采用第一个目录的目录名。如果两个目录都被忽略，将采用当前的本地和远程目录。如果目标目录以/结尾，那么源目录名将被加到目标目录上。</p>
+<p>RX是扩展的正则表达式，具体语法可参考egrep命令。</p>
+<p>GP是通配符规则，比如*.zip。</p>
+<p>包含和不包含选项可以被多次使用。符合以下规则之一的文件将被镜像传输：(1)符合包含规则而不符合之后的不包含规则；(2)不符合任何规则，但第一条为不包含规则。目录匹配时包括结尾的/。</p>
+<p>注意：符号链接（软链接）不会被传输到远程服务器上，因为无法被FTP协议传输。要上传链接指向的文件，请使用mirror -RL命令（将符号链接视为普通文件）。</p>
+<p>对于--newer-than选项，你可以使用文件或时间作为参数。时间参数的格式同at命令，如now-7days、week age等。如果指定为文件，将采用文件的修改时间。</p>
+<p>冗长输出级别可以通过--verbose=level选项或者使用多个-v选项进行设定，比如-vvv。冗长输出级别为：</p>
+<ul>
+<li>0 - 无输出（默认）</li>
+<li>1 - 打印动作</li>
+<li>2 - +打印不删除的文件名（当没有采用-e选项时）</li>
+<li>3 - +打印</li>
+</ul>
+<p>--only-newer关闭文件大小比较，只上传/下载新的文件，即使文件大小存在差异，默认情况下旧的文件会被新的文件代替。</p>
+<p>当用URL代替目录时，可以对两台服务器上的目录进行镜像操作。只要可以，会自动使用FXP在FTP服务器之间进行文件传输。</p>
+<p>一些ftp服务器默认隐藏了.开头的文件（如.htaccess），只会在LIST命令使用-a选项时显示。在这种情况下，使用设置set ftp:list-options -a。</p>
+<p>mkdir [-p] dir(s)</p>
+<p>创建远程目录。如果使用-p参数，将创建路径的所有相关目录。</p>
+<p>module module [ args ]</p>
+<p>使用dlopen函数加载已知模块。如果模块名中不包含/，将在module:path指定的位置搜索模块。参数会被传给module_init函数，具体技术细节可查看README.modules。</p>
+<p>more files</p>
+<p>与cat files | more命令相同。</p>
+<p>mput [-c] [-d] [-a] [-E] [-O base] files</p>
+<p>上传符合通配符规则的文件。默认使用本地文件名作为远程的文件名，可以使用-d选项修改。</p>
+<ul>
+<li>-c 继续上传</li>
+<li>-d 创建与文件路径中目录名相同的目录，并将文件放到对应目录，而不是当前目录</li>
+<li>-E 传输成功后删除源文件</li>
+<li>-a 使用ascii模式（默认为二进制模式）</li>
+<li>-O &lt;base&gt; 指定目标目录或URL</li>
+</ul>
+<p>mrm file(s)</p>
+<p>与glob rm命令相同，删除符合通配符规则的文件。</p>
+<p>mv file1 file2</p>
+<p>将文件file1重命名为file2。</p>
+<p>nlist [args]</p>
+<p>列出远程文件名。</p>
+<p>open [-e cmd] [-u user[,pass]] [-p port] host|url</p>
+<p>打开一台ftp服务器。</p>
+<p>pget [OPTS] rfile [-o lfile]</p>
+<p>使用多个连接下载同一文件，可提高下载速度，但会加重网络和服务器的负载，影响其他用户。尽量只在紧急时使用。选项：</p>
+<ul>
+<li>-c 继续传输；需要文件lfile.lftp-pget-status</li>
+<li>-n maxconn 设置最大连接数（默认使用pget:default-n设置）</li>
+</ul>
+<p>put [-E] [-a] [-c] [-O base] lfile [-o rfile]</p>
+<p>将文件lfile上传到远程并存为rfile。如果忽略-o参数，lfile中的文件名将被作为远程的文件名。如需扩展通配符，请使用mput。</p>
+<ul>
+<li>-o &lt;rfile&gt; 指定远程文件名（默认为lfile中的文件名）</li>
+<li>-c 继续上传，需要远程文件的覆盖权限</li>
+<li>-E 传输完成后删除源文件</li>
+<li>-a 使用ascii模式（默认为二进制模式）</li>
+<li>-O &lt;base&gt; 指定目标目录或URL</li>
+</ul>
+<p>pwd [-p]</p>
+<p>打印当前的远程URL。使用-p参数在URL中显示密码。</p>
+<p>queue [-n num ] cmd</p>
+<p>将指定命令放入队列来依次执行。每个站点维护一个命令队列。-n参数将指定命令放入队列中指定位置。不要将cd或lcd命令加入队列，这可能使lftp执行出现混乱。应在queue命令之前使用cd/lcd切换目录。允许通过queue wait &lt;jobno&gt;命令将正在执行的任务加入队列，任务将继续执行即使它不是队列中的第一个。</p>
+<p>queue stop将停止队列，它将不再执行任何新的命令，但正在执行的命令会继续执行。你可以使用queue stop命令来创建一个空的暂停队列。queue start命令可以重新启动命令执行。当你退出lftp时，它将自动启动所有暂停的队列。</p>
+<p>没有指定参数的queue命令将创建一个暂停队列或者打印队列状态。</p>
+<p>queue --delete|-d [index or wildcard expression]</p>
+<p>删除队列中的一个或多个条目。如果没有指定参数，会删除队列中的最后一个条目。</p>
+<p>queue --move|-m &lt;index or wildcard expression&gt; [index]</p>
+<p>将指定条目移动到队列的指定位置；如没有指定位置，将会移动到末尾。</p>
+<ul>
+<li>-q 不输出任何提示</li>
+<li>-v 输出详细的提示</li>
+<li>-Q 以特定格式输出，可以被重新加入队列</li>
+</ul>
+<pre class="brush: plain; title: ; notranslate" title="">&gt; get file &amp;
+[1] get file
+&gt; queue wait 1
+&gt; queue get another_file
+&gt; cd a_directory
+&gt; queue get yet_another_file
+
+queue -d 3          删除队列中的第3个条目
+queue -m 6 4        移动队列中的第6个条目到第4个条目之前
+queue -m &quot;get*zip&quot; 1     移动所有符合get*zip的命令道队列最开始（条目顺序不变）
+queue -d &quot;get*zip&quot;  删除所有所有符合get*zip的命令</pre>
+<p>quote cmd</p>
+<p>FTP协议下，将直接向服务器发送命令。使用时需要注意：它将导致远程处于未知状态，导致重新连接，即使重新连接状态仍然无法被重置。</p>
+<p>HTTP协议下，语法为quote &lt;command&gt; [&lt;args&gt;]，command可以为set-cookie或post。</p>
+<pre class="brush: plain; title: ; notranslate" title="">open http://www.site.net
+quote set-cookie &quot;variable=value; othervar=othervalue&quot;
+set http:post-content-type application/x-www-form-urlencoded
+quote post /cgi-bin/script.cgi &quot;var=value&amp;othervar=othervalue&quot; &gt; local_file</pre>
+<p>FISH协议下，将直接向服务器发送命令。使用此方法可以在服务器上执行任何命令。但执行的命令不能需要输入和在新行的开头打印###，否则将导致协议失去同步。</p>
+<pre class="brush: plain; title: ; notranslate" title="">open fish://server
+quote find -name \*.zip</pre>
+<p>reget rfile [-o lfile]</p>
+<p>与get -c命令相同。</p>
+<p>rels [args]</p>
+<p>与ls命令相同，但忽略缓存。</p>
+<p>renlist [args]</p>
+<p>与nlist命令相同，但忽略缓存。</p>
+<p>repeat [ -c &lt;count&gt;] [[-d] delay] [command]</p>
+<p>重复执行命令。在命令执行之间会加入延时，默认为1秒。-c选项用来限制重复次数。--while-ok将使命令返回非零值时退出循环；--until-ok将使命令返回零值时退出循环。比如：</p>
+<pre class="brush: plain; title: ; notranslate" title="">repeat at tomorrow -- mirror
+repeat 1d mirror</pre>
+<p>reput lfile [-o rfile]</p>
+<p>与put -c命令相同。</p>
+<p>rm [-r] [-f] files</p>
+<p>删除远程文件。如需要使用通配符规则，请使用mrm代替。-r指定递归删除目录，-f 取消错误消息提示。</p>
+<p>rmdir dir(s)</p>
+<p>删除远程目录。</p>
+<p>scache [session]</p>
+<p>罗列缓存的会话，或切换到指定会话。</p>
+<p>set [var [val]]</p>
+<p>将变量设定为指定值。如果值被忽略了，则取消这个变量。如未指定变量名，将显示被改变的设置变量。可以使用以下选项修改显示：</p>
+<ul>
+<li>-a 罗列所有的设置，包括默认值</li>
+<li>-d 只罗列默认值</li>
+</ul>
+<p>site site_cmd</p>
+<p>执行站点命令site_cmd，可以重定向输出。</p>
+<p>sleep interval</p>
+<p>休眠指定时间间隔然后退出。时间间隔默认以秒为单位，但可以后缀m, h, d来对应表示分钟、小时、天。</p>
+<p>slot [name]</p>
+<p>选择特定的slot，或者罗列所有已分配的slot。slot是与服务器的一个连接，有点像虚拟控制台。你可以创建连接到不同服务器的多个slot，并可在不同的slot之间进行切换。你同样可以使用slot:name作为伪URL表示那个slot位置。</p>
+<p>默认情况下，可以使用Meta-0 至 Meta-9（往往使用Alt键代替Meta键）快捷键来快速切换0-9的slot。</p>
+<p>source file</p>
+<p>source -e command</p>
+<p>执行file文件中的命令或是有特定command返回的命令。</p>
+<pre class="brush: plain; title: ; notranslate" title="">source ~/.lftp/rc
+source -e echo help</pre>
+<p>suspend</p>
+<p>暂停lftp进程。注意：传输任务同样或被暂停直到你使用shell的fg或bg命令继续执行这个进行。</p>
+<p>user user [pass]</p>
+<p>user URL [pass]</p>
+<p>使用特定的信息登陆远程ftp。如果你对URL指定了用户名，输入的密码将被缓存起来供以后使用。</p>
+<p>version</p>
+<p>打印lftp版本信息。</p>
+<p>wait [jobno]</p>
+<p>wait all</p>
+<p>等待特定任务终止。如果忽略jobno，将等待最后一个后台任务终止。wait all等待所有任务终止。</p>
+<p>zcat files</p>
+<p>与cat相同，但通过zcat过来每个文件。</p>
+<p>zmore files</p>
+<p>与more相同，但通过zcat过来每个文件。</p>
+<p><strong>lftp设置</strong></p>
+<p>lftp启动时执行~/.lftprc 和~/.lftp/rc。你可以在这两个文件中加入alias或set命令。如果你想看到完全的协议调试过程，可以使用debug来打开调试。</p>
+<p>系统级的启动文件为/etc/lftp.conf。</p>
+<p>lftp拥有众多设置项，可以通过set -a命令查看所有设置项及它们的值。</p>
+<p><strong>lftp命令选项</strong></p>
+<p>-d 切换到调试模式</p>
+<p>-e commands 执行指定的命令，并且不退出</p>
+<p>-p port 使用执行端口进行连接</p>
+<p>-u user[,pass] 使用执行的用户名和密码进行连接</p>
+<p>-f script_file 执行文件中的命令并且退出</p>
+<p>-c commands 执行指定的命令并且退出</p>
+<p><strong>环境变量</strong></p>
+<p>以下环境变量将被lftp使用：</p>
+<p>HOME 作为~的扩展</p>
+<p>SHELL 在!命令时决定使用哪个shell来运行</p>
+<p>PAGER 作为页面名称，在more和zmore命令中使用</p>
+<p>http_proxy, https_proxy 作为初始时http:proxy, hftp:proxy, https:proxy的值</p>
+<p>ftp_proxy 作为初始时ftp:proxy或hftp:proxy的值（由环境变量中的URL协议指定）</p>
+<p>no_proxy 作为初始时的net:no-proxy值</p>
+<p>LFTP_MODULE_PATH 作为初始时的module:path值</p>
+<p>LFTP_HOME 用于定位用户配置文件的目录，如未设置将使用~/.lftp</p>
+<p><strong>相关文件</strong></p>
+<p>/etc/lftp.conf 系统级启动文件。实际位置由--sysconfdir配置项决定。</p>
+<p>~/.lftp/rc, ~/.lftprc 这些文件在/etc/lftp.conf之后被执行。</p>
+<p>~/.lftp/log 用于记录lftp运行于后台nohup模式时的日志。</p>
+<p>~/.lftp/bookmarks 用户保存lftp中的书签。</p>
+<p>~/.lftp/cwd_history 用于保存每个站点的当前工作目录。</p>
+<p>~/.netrc 用于保存站点的用户名和密码。</p>
+<p>[完毕]</p>
+<p>p.s. 以上如有翻译不到位的地方欢迎指出。</p>
+<div class="wumii-hook">
+    <input type="hidden" name="wurl" value="http://witmax.cn/linux-lftp.html" /><br />
+    <input type="hidden" name="wtitle" value="【Linux】lftp用法手册" /><br />
+    <input type="hidden" name="wpic" value="" />
+</div>
+<p><!-- Quick Adsense WordPress Plugin: <a href="http://quickadsense.com/" class="external" target="_blank">http://quickadsense.com/</a> --></p>
+<div style="float: left; margin: 10px 10px 10px 0;">
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><br />
+<!-- 336x280 Ã�Â¥Ã�Â¤Ã�Â§Ã�Â§Ã¯Â¿Â½Ã�Â©Ã�Â¥Ã�Â½Ã�Â¢ --><br />
+<ins class="adsbygoogle"
+     style="display:inline-block;width:336px;height:280px"
+     data-ad-client="ca-pub-3668677667576779"
+     data-ad-slot="5664225749"></ins><br />
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+<div style="font-size: 0px; height: 0px; line-height: 0px; margin: 0; padding: 0; clear: both;"></div>
+										<div class="warning">
+					<div class="box-content">本博客所有文章如无特别注明均为原创。<br>
+						复制或转载请以超链接形式注明转自<a href="http://witmax.cn">枫芸志</a>，原文地址《<a href="http://witmax.cn/linux-lftp.html" rel="bookmark" title="【Linux】lftp用法手册">【Linux】lftp用法手册</a>》
+					</div>
+				</div>
+						<div class="textfoot">
+				<span>标签： <a href="http://witmax.cn/tag/ftp" rel="tag">FTP</a> &bull; <a href="http://witmax.cn/tag/linux" rel="tag">Linux</a></span>
+			</div>
+						<div class="action-share bdsharebuttonbox">分享：<a class="bds_qzone" data-cmd="qzone"></a><a class="bds_tsina" data-cmd="tsina"></a><a class="bds_weixin" data-cmd="weixin"></a><a class="bds_tqq" data-cmd="tqq"></a><a class="bds_sqq" data-cmd="sqq"></a><a class="bds_renren" data-cmd="renren"></a><a class="bds_douban" data-cmd="douban"></a><a class="bds_fbook" data-cmd="fbook"></a><a class="bds_twi" data-cmd="twi"></a><a class="bds_count" data-cmd="count"></a></div>			<div id="wumiiDisplayDiv"></div>
+		</ul>
+</article>		<div id="comments">
+	
+			<div class="comments-data">
+			<h2 class="comments-title">已经有4 条评论抢在你前面了~</h2>
+		</div>
+	
+		<div id="respond" class="respond">
+		<form method="post" action="" id="comment_form">
+			<h3 class="clearfix"><span id="cancel-comment-reply"><a rel="nofollow" id="cancel-comment-reply-link" href="/linux-lftp.html#respond" style="display:none;">点击这里取消回复。</a></span></h3>
+												<div id="author_info" class="ui form">
+						<div class="ui three fields">
+							<div class="field">
+								<input type="text" name="author" id="author" class="text" placeholder="网名" value="" />
+							</div>
+							<div class="field">
+								<input type="text" name="email" id="mail" class="text" placeholder="邮箱" value="" />
+							</div>
+							<div class="field">
+								<input type="text" name="url" id="url" class="text" placeholder="域名" value="" />
+							</div>
+						</div>
+					</div>
+								<div id="author_textarea">
+										<div id="comment" contenteditable="true" tabindex="4"></div>
+					<div id="author_footer" class="clearfix">
+						<div id="smilies" class="dropdown">
+							<span class="smilies-icon"></span>
+							<div class="dropdown-arrow1"></div>
+							<div class="dropdown-arrow2"></div>
+							<div id="smilies-box" class="submenu">
+								<ul class="inline-ul"><li class="inline-li"><a href="javascript:;" class="smilie smilie-f1" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f1.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f1.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f2" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f2.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f2.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f3" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f3.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f3.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f4" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f4.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f4.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f5" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f5.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f5.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f6" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f6.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f6.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f7" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f7.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f7.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f8" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f8.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f8.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f9" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f9.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f9.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f10" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f10.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f10.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f11" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f11.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f11.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f12" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f12.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f12.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f13" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f13.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f13.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f14" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f14.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f14.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f15" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f15.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f15.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f16" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f16.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f16.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f17" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f17.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f17.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f18" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f18.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f18.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f19" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f19.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f19.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f20" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f20.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f20.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f21" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f21.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f21.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f22" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f22.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f22.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f23" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f23.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f23.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f24" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f24.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f24.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f25" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f25.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f25.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f26" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f26.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f26.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f27" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f27.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f27.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f28" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f28.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f28.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f29" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f29.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f29.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f30" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f30.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f30.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f31" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f31.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f31.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f32" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f32.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f32.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f33" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f33.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f33.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f34" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f34.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f34.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f35" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f35.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f35.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f36" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f36.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f36.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f37" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f37.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f37.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f38" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f38.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f38.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f39" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f39.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f39.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f40" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f40.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f40.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f41" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f41.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f41.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f42" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f42.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f42.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f43" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f43.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f43.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f44" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f44.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f44.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f45" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f45.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f45.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f46" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f46.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f46.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f47" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f47.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f47.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f48" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f48.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f48.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f49" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f49.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f49.png"></a></li><li class="inline-li"><a href="javascript:;" class="smilie smilie-f50" data-surl="http://witmax.cn/wp-content/themes/forget/images/smilies/f50.png"><img src="http://witmax.cn/wp-content/themes/forget/images/smilies/f50.png"></a></li></ul>							</div>
+						</div>
+						<div id="author_error"></div>
+						<div id="submit-button"><input id="submit" type="submit" name="submit" value="发布评论" class="submit"></div>
+					</div>
+				</div>
+			<input type='hidden' name='comment_post_ID' value='1311' id='comment_post_ID' />
+<input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+ 
+			<p style="display: none;"><input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce" value="535090d2d4" /></p><p style="display: none;"><input type="hidden" id="ak_js" name="ak_js" value="19"/></p><p><input type="hidden" id="comment_reply_ID" name="comment_reply_ID" value="0" /><input type="hidden" id="comment_reply_dp" name="comment_reply_dp" value="0" /></p><div id="cancel_reply" style="display:none;"><a href="javascript:void(0)" onclick="movecfm(null,0,1,null);" style="color:red;">点击取消回复</a></div><p><input type="checkbox" name="comment_mail_notify" id="comment_mail_notify" value="comment_mail_notify" checked="checked" style="width: auto;" /><label for="comment_mail_notify" style="display: inline;">有人回复时邮件通知我</label></p><script type="text/javascript">
+/* <![CDATA[ */
+var commentformid = "comment_form";
+var USERINFO = false;
+var atreply = "authorlink";
+/* ]]> */
+</script>
+<script type="text/javascript" src="http://witmax.cn/wp-content/plugins/wordpress-thread-comment/wp-thread-comment.js.php?jsver=common"></script>
+					</form>
+	</div>
+		
+			<div class="comments-container">
+			<ol class="commentlist clearfix">
+							</ol>
+			<div class="comments-data comments-data-footer clearfix">
+									<div class="comment-topnav"></div>
+							</div>
+		</div>
+	 </div>		</div>
+	</section>
+</div>
+</div>
+<div id="back-to-top" class="red" title="返回顶部" data-scroll="body">
+<svg id="point-up" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="32" height="32" viewBox="0 0 32 32">
+	<path d="M23.588 17.637c-0.359-0.643-0.34-1.056-2.507-3.057 0.012-7.232-4.851-12.247-5.152-12.55 0-0.010 0-0.015 0-0.015s-0.003 0.003-0.007 0.007l-0.007-0.007c0 0 0 0.005 0 0.015-0.299 0.305-5.141 5.342-5.097 12.575-2.158 2.010-2.138 2.423-2.493 3.068-0.65 1.178-0.481 5.888 0.132 6.957 0.613 1.069 1.629 0.293 1.977-0.004 0.348-0.298 1.885-2.264 2.263-2.176 0 0 0.465-0.090 0.989 0.414 0.518 0.498 1.462 0.966 2.27 1.033 0 0.001 0 0.002-0 0.003 0.005-0.001 0.010-0.001 0.015-0.002 0.005 0 0.010 0.001 0.015 0.001 0-0.001-0-0.002 0-0.003 0.808-0.070 1.749-0.543 2.265-1.043 0.522-0.507 0.988-0.419 0.988-0.419 0.378-0.090 1.923 1.869 2.272 2.165 0.35 0.296 1.369 1.067 1.977-0.005 0.608-1.072 0.756-5.783 0.101-6.958v0 0zM15.95 14.86c-1.349 0.003-2.445-1.112-2.448-2.492-0.003-1.38 1.088-2.5 2.437-2.503 1.349-0.003 2.445 1.112 2.448 2.492 0.003 1.379-1.088 2.5-2.437 2.503v0 0zM17.76 24.876c-0.615 0.474-1.236 0.633-1.801 0.626-0.566 0.009-1.187-0.147-1.804-0.617-0.553-0.403-1.047-0.348-1.308 0.003-0.261 0.351-0.169 2.481 0.152 2.939 0.321 0.458 0.697-0.298 1.249-0.327 0.552-0.028 1.011 1.103 1.221 1.75 0.107 0.331 0.274 0.633 0.5 0.654 0.226-0.023 0.392-0.326 0.497-0.657 0.207-0.648 0.661-1.781 1.213-1.756 0.553 0.026 0.932 0.78 1.251 0.321 0.319-0.459 0.401-2.59 0.139-2.94-0.262-0.35-0.757-0.403-1.308 0.003v0 0z" fill="#CCCCCC" />
+</svg>
+</div>
+ <footer id="m-footer">
+   <div class="Copyright">
+     <p>转载请遵循<a target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/3.0/deed.zh">《署名-非商业性使用-相同方式共享 3.0 Unported 许可协议》</a> <a target="_blank" href="http://www.miibeian.gov.cn/">沪ICP备09057164号</a><a href="http://www.prchecker.info/" title="PRchecker.info" target="_blank" rel="nofollow">
+<img src="https://pr-v2.prchecker.info/getpr.v2.php?codex=aHR0cDovL3dpdG1heC5jbg==&tag=3" alt="PRchecker.info" style="border:0;" /></a></p>
+   </div>
+ </footer>
+ <div id="jquery_jplayer" class="jp-jplayer"></div>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-131361276-7"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-131361276-7');
+</script><script type="text/javascript"><!--//--><![CDATA[//><!--
+var cf = document.getElementById("commentform");
+if(cf){
+	var msghtml = "<strong>NOTICE:</strong> You should type some Chinese word (like “你好”) in your comment to pass the spam-check, thanks for your patience!";
+	if(cf.insertAdjacentHTML){
+		cf.insertAdjacentHTML("afterEnd", msghtml);
+	}else{/* FireFox */
+		var range = cf.ownerDocument.createRange();
+		range.setStartAfter(cf);
+		var frag = range.createContextualFragment(msghtml);
+		cf.parentNode.insertBefore(frag, cf.nextSibling);
+	}
+}
+//--><!]]></script>
+<p style="margin:0;padding:0;height:1px;overflow:hidden;">
+    <script type="text/javascript"><!--
+        var wumiiSitePrefix = "http://witmax.cn";
+        var wumiiEnableCustomPos = true;
+        var wumiiParams = "&num=8&mode=3&displayInFeed=1&version=1.0.5.7&pf=WordPress5.2.5";
+        var wumiiCategories = ["\u8f6f\u4ef6\u6280\u5de7"];
+    //--></script><script type="text/javascript" src="http://widget.wumii.cn/ext/relatedItemsWidget"></script><a href="http://www.wumii.com/widget/relatedItems" style="border:0;"><img src="http://static.wumii.cn/images/pixel.png" alt="无觅相关文章插件，快速提升流量" style="border:0;padding:0;margin:0;" /></a>
+</p><!-- Lightbox Plus Colorbox v2.7.2/1.5.9 - 2013.01.24 - Message: 0-->
+<script type="text/javascript">
+jQuery(document).ready(function($){
+  $("a[rel*=lightbox]").colorbox({speed:350,initialWidth:"300",initialHeight:"100",opacity:0.8,loop:false,scrolling:false,escKey:false,arrowKey:false,top:false,right:false,bottom:false,left:false});
+});
+</script>
+<script type='text/javascript' src='http://witmax.cn/wp-content/plugins/syntaxhighlighter/syntaxhighlighter3/scripts/shCore.js?ver=3.0.9b'></script>
+<script type='text/javascript' src='http://witmax.cn/wp-content/plugins/syntaxhighlighter/syntaxhighlighter3/scripts/shBrushPlain.js?ver=3.0.9b'></script>
+<script type='text/javascript'>
+	(function(){
+		var corecss = document.createElement('link');
+		var themecss = document.createElement('link');
+		var corecssurl = "http://witmax.cn/wp-content/plugins/syntaxhighlighter/syntaxhighlighter3/styles/shCore.css?ver=3.0.9b";
+		if ( corecss.setAttribute ) {
+				corecss.setAttribute( "rel", "stylesheet" );
+				corecss.setAttribute( "type", "text/css" );
+				corecss.setAttribute( "href", corecssurl );
+		} else {
+				corecss.rel = "stylesheet";
+				corecss.href = corecssurl;
+		}
+		document.getElementsByTagName("head")[0].insertBefore( corecss, document.getElementById("syntaxhighlighteranchor") );
+		var themecssurl = "http://witmax.cn/wp-content/plugins/syntaxhighlighter/syntaxhighlighter3/styles/shThemeDefault.css?ver=3.0.9b";
+		if ( themecss.setAttribute ) {
+				themecss.setAttribute( "rel", "stylesheet" );
+				themecss.setAttribute( "type", "text/css" );
+				themecss.setAttribute( "href", themecssurl );
+		} else {
+				themecss.rel = "stylesheet";
+				themecss.href = themecssurl;
+		}
+		//document.getElementById("syntaxhighlighteranchor").appendChild(themecss);
+		document.getElementsByTagName("head")[0].insertBefore( themecss, document.getElementById("syntaxhighlighteranchor") );
+	})();
+	SyntaxHighlighter.config.strings.expandSource = '+ expand source';
+	SyntaxHighlighter.config.strings.help = '?';
+	SyntaxHighlighter.config.strings.alert = 'SyntaxHighlighter\n\n';
+	SyntaxHighlighter.config.strings.noBrush = 'Can\'t find brush for: ';
+	SyntaxHighlighter.config.strings.brushNotHtmlScript = 'Brush wasn\'t configured for html-script option: ';
+	SyntaxHighlighter.defaults['auto-links'] = false;
+	SyntaxHighlighter.defaults['pad-line-numbers'] = true;
+	SyntaxHighlighter.defaults['toolbar'] = false;
+	SyntaxHighlighter.all();
+
+	// Infinite scroll support
+	if ( typeof( jQuery ) !== 'undefined' ) {
+		jQuery( function( $ ) {
+			$( document.body ).on( 'post-load', function() {
+				SyntaxHighlighter.highlight();
+			} );
+		} );
+	}
+</script>
+<script type='text/javascript' src='http://witmax.cn/wp-content/themes/forget/js/simplePlayer.js?ver=1.0'></script>
+<script type='text/javascript' src='http://witmax.cn/wp-content/themes/forget/js/functionall.js?ver=1.0'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var fashao = {"url":"http:\/\/witmax.cn\/wp-content\/themes\/forget","ajaxurl":"http:\/\/witmax.cn\/","postid":"1311"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='http://witmax.cn/wp-content/themes/forget/js/home.js?ver=1.0'></script>
+<script type='text/javascript' src='http://witmax.cn/wp-content/plugins/lightbox-plus/js/jquery.colorbox.1.5.9-min.js?ver=1.5.9'></script>
+<script type='text/javascript' src='http://witmax.cn/wp-includes/js/wp-embed.min.js?ver=5.2.5'></script>
+<script async="async" type='text/javascript' src='http://witmax.cn/wp-content/plugins/akismet/_inc/form.js?ver=4.1.2'></script>
+<!--[if lt IE 9]>
+	<script src="http://libs.useso.com/js/html5shiv/3.7/html5shiv.min.js"></script>
+	<script src="http://libs.useso.com/js/respond.js/1.4.2/respond.min.js"></script>
+<![endif]-->
+
+</body>
+</html>

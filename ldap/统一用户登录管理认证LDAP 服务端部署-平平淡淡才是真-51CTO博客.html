@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="/favicon.ico" />
+        <title>统一用户登录管理认证LDAP 服务端部署-平平淡淡才是真-51CTO博客</title>
+    <meta name="keywords" content="管理,ldap,统一账户">
+<meta name="description" content="&amp;nbsp; &amp;nbsp;网上找了好多关于LDAP统一账户管理的文件，好多都是粘贴复制，能用得上的少之又少，正好最近又用到这个，于是着手看了郭老师的视频，顺便把自己学习的过程记录下来，供大家学习参考。1、实验环境：[root@localhost&amp;nbsp;~]#&amp;nbsp;cat&amp;nbsp;/etc/redhat-release&amp;nbsp;
+CentOS&amp;nbsp;Linux&amp;nbsp;relea">    <link href="https://static1.51cto.com/edu/blog/css/header.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/other.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/right.css?v=3.1.7" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/blog_details.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/highlight.css" rel="stylesheet">
+    <script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="https://static1.51cto.com/edu/center/js/jquery.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/cookie.js"></script><script src="https://static1.51cto.com/edu/blog/js/login.js"></script><script src="https://static1.51cto.com/edu/blog/js/common.js"></script><script src="https://static1.51cto.com/edu/blog/js/mbox.js"></script><script src="https://static1.51cto.com/edu/blog/js/follow.js"></script><script src="https://static1.51cto.com/edu/blog/js/vip.js"></script><script src="https://static1.51cto.com/edu/blog/js/window.js"></script></head>
+<body>
+<img src="https://static1.51cto.com/edu/blog/mobile/images/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/201911/18/2ba4632e0c819494b4594ef853f359d0.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url('https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png') 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=9" target="_blank">
+  <img src="https://s1.51cto.com/images/blog/201911/18/3ec4ec9d4b7f5b9de68c8e24e390310a.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li ><a href="https://blog.51cto.com/">首页</a></li>
+      <li ><a href="https://blog.51cto.com/original">文章</a></li>
+      <li ><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com" target="_blank">WOT</a>
+            <a href="http://www.51cto.com" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fucode%2F1975843&logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fucode%2F1975843" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="https://static1.51cto.com/edu/blog/images/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index"  target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onClick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="https://static1.51cto.com/edu/blog/mobile/js/lib/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=4&pc" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/201911/27/cdcaa0c7aca2ca6970bf7bf3410d4199.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog106',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="//www.sobot.com/chat/frame/js/entrance.js?sysNum=a8d9379eaf884b4f81a48348979e3b1a" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br/>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box">
+      <link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/mdeShow.css">
+  <link rel="stylesheet" href="https://blog.51cto.com/static/js/ueditor1.4.3/prism.css">
+  <script type="text/javascript" charset="utf-8" src="https://blog.51cto.com/static/js/ueditor1.4.3/prism.js"></script>
+<link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/tinyscrollbar.css"/>
+<script type="text/javascript" src="https://static1.51cto.com/edu/blog/js/jquery.tinyscrollbar.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">统一用户登录管理认证LDAP 服务端部署</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/ucode" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="10837891" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+				</div>
+				<a href="https://blog.51cto.com/ucode" class="name fl" target="_blank" style="margin-right:0;">027ryan</a>
+												<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">9447人阅读</a>
+				<a href="javascript:;" class="time fr">2017-10-24 23:29:54</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">&nbsp; &nbsp;网上找了好多关于LDAP统一账户管理的文件，好多都是粘贴复制，能用得上的少之又少，正好最近又用到这个，于是着手看了郭老师的视频，顺便把自己学习的过程记录下来，供大家学习参考。</span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><br/></span></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">1、实验环境：</span></strong></p><pre class="brush:bash;toolbar:false">[root@localhost&nbsp;~]#&nbsp;cat&nbsp;/etc/redhat-release&nbsp;
+CentOS&nbsp;Linux&nbsp;release&nbsp;7.2.1511&nbsp;(Core)
+[root@localhost&nbsp;~]#&nbsp;ifconfig&nbsp;
+eno16777736:&nbsp;flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;&nbsp;&nbsp;mtu&nbsp;1500
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inet&nbsp;192.168.31.153&nbsp;&nbsp;netmask&nbsp;255.255.255.0&nbsp;&nbsp;broadcast&nbsp;192.168.31.255
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inet6&nbsp;fe80::20c:29ff:fefe:6478&nbsp;&nbsp;prefixlen&nbsp;64&nbsp;&nbsp;scopeid&nbsp;0x20&lt;link&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ether&nbsp;00:0c:29:fe:64:78&nbsp;&nbsp;txqueuelen&nbsp;1000&nbsp;&nbsp;(Ethernet)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RX&nbsp;packets&nbsp;37181&nbsp;&nbsp;bytes&nbsp;9238204&nbsp;(8.8&nbsp;MiB)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RX&nbsp;errors&nbsp;0&nbsp;&nbsp;dropped&nbsp;0&nbsp;&nbsp;overruns&nbsp;0&nbsp;&nbsp;frame&nbsp;0
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TX&nbsp;packets&nbsp;5520&nbsp;&nbsp;bytes&nbsp;701406&nbsp;(684.9&nbsp;KiB)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TX&nbsp;errors&nbsp;0&nbsp;&nbsp;dropped&nbsp;0&nbsp;overruns&nbsp;0&nbsp;&nbsp;carrier&nbsp;0&nbsp;&nbsp;collisions&nbsp;0
+lo:&nbsp;flags=73&lt;UP,LOOPBACK,RUNNING&gt;&nbsp;&nbsp;mtu&nbsp;65536
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inet&nbsp;127.0.0.1&nbsp;&nbsp;netmask&nbsp;255.0.0.0
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inet6&nbsp;::1&nbsp;&nbsp;prefixlen&nbsp;128&nbsp;&nbsp;scopeid&nbsp;0x10&lt;host&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loop&nbsp;&nbsp;txqueuelen&nbsp;0&nbsp;&nbsp;(Local&nbsp;Loopback)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RX&nbsp;packets&nbsp;111&nbsp;&nbsp;bytes&nbsp;9451&nbsp;(9.2&nbsp;KiB)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RX&nbsp;errors&nbsp;0&nbsp;&nbsp;dropped&nbsp;0&nbsp;&nbsp;overruns&nbsp;0&nbsp;&nbsp;frame&nbsp;0
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TX&nbsp;packets&nbsp;111&nbsp;&nbsp;bytes&nbsp;9451&nbsp;(9.2&nbsp;KiB)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TX&nbsp;errors&nbsp;0&nbsp;&nbsp;dropped&nbsp;0&nbsp;overruns&nbsp;0&nbsp;&nbsp;carrier&nbsp;0&nbsp;&nbsp;collisions&nbsp;0
+[root@localhost&nbsp;~]#</pre><p><br/><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">2、部署过程:</span></strong></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">yum install openldap-servers openldap-clients</span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">dn:</span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">changetype: modify</span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">add/delete/replace</span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">olcRootPW:&nbsp;</span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">objectClass:</span></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><br/></span></strong></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">2.1、安装部署服务端和相应程序包</span></strong></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;openldap-servers&nbsp;openldap-clients
+[root@ldapserver01&nbsp;~]#&nbsp;systemctl&nbsp;start&nbsp;slapd.service
+[root@ldapserver01&nbsp;~]#&nbsp;systemctl&nbsp;status&nbsp;slapd.service
+[root@ldapserver01&nbsp;~]#&nbsp;ps&nbsp;xua|grep&nbsp;slapd
+ldap&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2440&nbsp;&nbsp;0.0&nbsp;&nbsp;0.9&nbsp;&nbsp;78592&nbsp;&nbsp;4924&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ssl&nbsp;&nbsp;02:33&nbsp;&nbsp;&nbsp;0:00&nbsp;/usr/sbin/slapd&nbsp;-u&nbsp;ldap&nbsp;-h&nbsp;ldapi:///&nbsp;ldap:///
+root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2444&nbsp;&nbsp;0.0&nbsp;&nbsp;0.1&nbsp;112644&nbsp;&nbsp;&nbsp;952&nbsp;pts/0&nbsp;&nbsp;&nbsp;&nbsp;S+&nbsp;&nbsp;&nbsp;02:33&nbsp;&nbsp;&nbsp;0:00&nbsp;grep&nbsp;--color=auto&nbsp;slapd
+[root@ldapserver01&nbsp;~]#</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><strong>&nbsp; 查看服务端口：</strong></span><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;~]#&nbsp;netstat&nbsp;-lnptp
+Active&nbsp;Internet&nbsp;connections&nbsp;(only&nbsp;servers)
+Proto&nbsp;Recv-Q&nbsp;Send-Q&nbsp;Local&nbsp;Address&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Foreign&nbsp;Address&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;State&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PID/Program&nbsp;name&nbsp;&nbsp;&nbsp;&nbsp;
+tcp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;0.0.0.0:22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.0.0.0:*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1116/sshd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+tcp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;127.0.0.1:25&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.0.0.0:*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2215/master&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+tcp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;0.0.0.0:389&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.0.0.0:*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2440/slapd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+tcp6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;:::22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:::*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1116/sshd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+tcp6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;::1:25&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:::*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2215/master&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+tcp6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;:::389&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:::*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2440/slapd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[root@ldapserver01&nbsp;~]#</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">&nbsp; ldap默认端口为389，如果加密（CA +LDAP）了用端口636，这里默认端口389已经开启了</span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;color:rgb(255,0,0);">对于ldap服务命令需要注意的:</span></p><p style="white-space:normal;"><span style="font-family:&#39;宋体&#39;, SimSun;"><span style="font-size:14px;">一般以slapxxxx形式出现的命令为服务端命令，而以ldapxxxx形式出现的命令为客户端命令，比如下两个:</span></span></p><p style="white-space:normal;"><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">slappasswd&nbsp; 服务端命令</span></p><p style="white-space:normal;"><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">ldappasswd&nbsp; 客户端命令</span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><br/></span></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">2.2、LDAP服务安装好之后，我们接下来给ldap服务设置密码，在OpenLDAP server上执行如下操作:</span></strong></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;~]#&nbsp;slappasswd&nbsp;
+New&nbsp;password:&nbsp;
+Re-enter&nbsp;new&nbsp;password:&nbsp;
+{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr
+[root@ldapserver01&nbsp;~]#</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">&nbsp;ldap服务的全局配置文件存放路径为&quot;<span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">/etc/openldap/slapd.d/</span>&quot;，具体如下所示：</span></strong></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;~]#&nbsp;cd&nbsp;/etc/openldap/slapd.d/
+[root@ldapserver01&nbsp;slapd.d]#&nbsp;ls
+cn=config&nbsp;&nbsp;cn=config.ldif
+[root@ldapserver01&nbsp;slapd.d]#&nbsp;cd&nbsp;cn\=config
+[root@ldapserver01&nbsp;cn=config]#&nbsp;ls
+cn=schema&nbsp;&nbsp;cn=schema.ldif&nbsp;&nbsp;olcDatabase={0}config.ldif&nbsp;&nbsp;olcDatabase={-1}frontend.ldif&nbsp;&nbsp;olcDatabase={1}monitor.ldif&nbsp;&nbsp;olcDatabase={2}hdb.ldif
+[root@ldapserver01&nbsp;cn=config]#&nbsp;pwd
+/etc/openldap/slapd.d/cn=config
+[root@ldapserver01&nbsp;cn=config]#</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">&nbsp;添加密码命令和内容，添加密码其实是对文件olcDatabase={0}config.ldif进行修改</span></strong></p><pre class="brush:bash;toolbar:false">cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:///
+dn:&nbsp;olcDatabase={0}config,cn=config
+changetype:&nbsp;modify
+add:&nbsp;olcRootPW
+olcRootPW:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr
+EOF</pre><p><span style="color:rgb(255,0,0);"><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">添加密码前：</span></strong></span></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\=\{0\}config.ldif&nbsp;
+#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.
+#&nbsp;CRC32&nbsp;11f68910
+dn:&nbsp;olcDatabase={0}config
+objectClass:&nbsp;olcDatabaseConfig
+olcDatabase:&nbsp;{0}config
+olcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern
+&nbsp;al,cn=auth&quot;&nbsp;manage&nbsp;by&nbsp;*&nbsp;none
+structuralObjectClass:&nbsp;olcDatabaseConfig
+entryUUID:&nbsp;a9da3e02-4cd0-1037-930d-f5a0198f7b5b
+creatorsName:&nbsp;cn=config
+createTimestamp:&nbsp;20171024063108Z
+entryCSN:&nbsp;20171024063108.064679Z#000000#000#000000
+modifiersName:&nbsp;cn=config
+modifyTimestamp:&nbsp;20171024063108Z
+[root@ldapserver01&nbsp;cn=config]#</pre><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">执行密码添加操作：</span></strong></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:///
+dn:&nbsp;olcDatabase={0}config,cn=config&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+changetype:&nbsp;modify
+add:&nbsp;olcRootPW
+olcRootPW:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr
+EOF
+SASL/EXTERNAL&nbsp;authentication&nbsp;started
+SASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+SASL&nbsp;SSF:&nbsp;0
+modifying&nbsp;entry&nbsp;&quot;olcDatabase={0}config,cn=config&quot;
+[root@ldapserver01&nbsp;cn=config]#</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><p><span style="color:rgb(255,0,0);"><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">添加密码之后查看：</span></strong></span></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\=\{0\}config.ldif&nbsp;
+#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.
+#&nbsp;CRC32&nbsp;ea900b11
+dn:&nbsp;olcDatabase={0}config
+objectClass:&nbsp;olcDatabaseConfig
+olcDatabase:&nbsp;{0}config
+olcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern
+&nbsp;al,cn=auth&quot;&nbsp;manage&nbsp;by&nbsp;*&nbsp;none
+structuralObjectClass:&nbsp;olcDatabaseConfig
+entryUUID:&nbsp;a9da3e02-4cd0-1037-930d-f5a0198f7b5b
+creatorsName:&nbsp;cn=config
+createTimestamp:&nbsp;20171024063108Z
+olcRootPW::&nbsp;e1NTSEF9YktHdnN2QThHb2hkSldYU0Z5ZHR3STZpckk1N2JJcHI=
+entryCSN:&nbsp;20171024064249.681208Z#000000#000#000000
+modifiersName:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+modifyTimestamp:&nbsp;20171024064249Z
+[root@ldapserver01&nbsp;cn=config]#</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;color:rgb(255,0,0);">或者将修改的内容保存到一个文件中，然后通过命令ldapadd -Y EXTERANL -H ldapi:///&nbsp; -f /tmp/slappasswd.ldif</span></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;vim&nbsp;&nbsp;/tmp/slappasswd.ldif
+dn:&nbsp;olcDatabase={0}config,cn=config&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+changetype:&nbsp;modify
+add:&nbsp;olcRootPW
+olcRootPW:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr
+[root@ldapserver01&nbsp;cn=config]#&nbsp;
+[root@ldapserver01&nbsp;cn=config]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERANL&nbsp;-H&nbsp;ldapi:///&nbsp;-f&nbsp;/tmp/slappasswd.ldif</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span><br/></p><p><br/></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">3、导入基本的schema文件</span></strong></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">CentOS7默认情况下schema文件存放路径是:</span></strong></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;pwd
+/etc/openldap/slapd.d/cn=config
+[root@ldapserver01&nbsp;cn=config]#&nbsp;ls&nbsp;/etc/openldap/schema/
+collective.ldif&nbsp;&nbsp;&nbsp;&nbsp;corba.schema&nbsp;&nbsp;cosine.ldif&nbsp;&nbsp;&nbsp;&nbsp;duaconf.schema&nbsp;&nbsp;&nbsp;inetorgperson.ldif&nbsp;&nbsp;&nbsp;&nbsp;java.schema&nbsp;&nbsp;nis.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;openldap.schema&nbsp;&nbsp;ppolicy.ldif
+collective.schema&nbsp;&nbsp;core.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cosine.schema&nbsp;&nbsp;dyngroup.ldif&nbsp;&nbsp;&nbsp;&nbsp;inetorgperson.schema&nbsp;&nbsp;misc.ldif&nbsp;&nbsp;&nbsp;&nbsp;nis.schema&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pmi.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ppolicy.schema
+corba.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core.schema&nbsp;&nbsp;&nbsp;duaconf.ldif&nbsp;&nbsp;&nbsp;dyngroup.schema&nbsp;&nbsp;java.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;misc.schema&nbsp;&nbsp;openldap.ldif&nbsp;&nbsp;pmi.schema
+[root@ldapserver01&nbsp;cn=config]#</pre><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">&nbsp;导入基本schema文件存放路径为:/etc/openldap/slapd.d/cn=config/cn=schema</span></strong></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;pwd
+/etc/openldap/slapd.d/cn=config
+[root@ldapserver01&nbsp;cn=config]#&nbsp;ls&nbsp;cn\=schema
+cn={0}core.ldif
+[root@ldapserver01&nbsp;cn=config]#</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><br/></span><br/></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">3.1、导入第一个schema文件：</span></strong></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:///&nbsp;-f&nbsp;/etc/openldap/schema/cosine.ldif&nbsp;
+SASL/EXTERNAL&nbsp;authentication&nbsp;started
+SASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+SASL&nbsp;SSF:&nbsp;0
+adding&nbsp;new&nbsp;entry&nbsp;&quot;cn=cosine,cn=schema,cn=config&quot;
+[root@ldapserver01&nbsp;cn=config]#
+[root@ldapserver01&nbsp;cn=config]#&nbsp;cd&nbsp;cn\=schema
+[root@ldapserver01&nbsp;cn=schema]#&nbsp;ls
+cn={0}core.ldif&nbsp;&nbsp;cn={1}cosine.ldif
+[root@ldapserver01&nbsp;cn=schema]#&nbsp;pwd
+/etc/openldap/slapd.d/cn=config/cn=schema
+[root@ldapserver01&nbsp;cn=schema]#</pre><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><br/></span></strong></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">用同样的方式导入其他几个schema文件：</span></strong></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"><br/></span></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=schema]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:///&nbsp;-f&nbsp;/etc/openldap/schema/ppolicy.ldif&nbsp;
+SASL/EXTERNAL&nbsp;authentication&nbsp;started
+SASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+SASL&nbsp;SSF:&nbsp;0
+adding&nbsp;new&nbsp;entry&nbsp;&quot;cn=ppolicy,cn=schema,cn=config&quot;
+[root@ldapserver01&nbsp;cn=schema]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:///&nbsp;-f&nbsp;/etc/openldap/schema/nis.ldif&nbsp;
+SASL/EXTERNAL&nbsp;authentication&nbsp;started
+SASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+SASL&nbsp;SSF:&nbsp;0
+adding&nbsp;new&nbsp;entry&nbsp;&quot;cn=nis,cn=schema,cn=config&quot;
+[root@ldapserver01&nbsp;cn=schema]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:///&nbsp;-f&nbsp;/etc/openldap/schema/dyngroup.ldif&nbsp;
+SASL/EXTERNAL&nbsp;authentication&nbsp;started
+SASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+SASL&nbsp;SSF:&nbsp;0
+adding&nbsp;new&nbsp;entry&nbsp;&quot;cn=dyngroup,cn=schema,cn=config&quot;
+[root@ldapserver01&nbsp;cn=schema]#
+[root@ldapserver01&nbsp;cn=schema]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:///&nbsp;-f&nbsp;/etc/openldap/schema/inetorgperson.ldif&nbsp;
+SASL/EXTERNAL&nbsp;authentication&nbsp;started
+SASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+SASL&nbsp;SSF:&nbsp;0
+adding&nbsp;new&nbsp;entry&nbsp;&quot;cn=inetorgperson,cn=schema,cn=config&quot;
+[root@ldapserver01&nbsp;cn=schema]#&nbsp;ls
+cn={0}core.ldif&nbsp;&nbsp;cn={1}cosine.ldif&nbsp;&nbsp;cn={2}ppolicy.ldif&nbsp;&nbsp;cn={3}nis.ldif&nbsp;&nbsp;cn={4}dyngroup.ldif&nbsp;&nbsp;cn={5}inetorgperson.ldif
+[root@ldapserver01&nbsp;cn=schema]#</pre><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">4、修改相关域名：修改文件为olcDatabase\=\{2\}hdb.ldif和olcDatabase\=\{1\}monitor.ldif</span></strong></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=schema]#&nbsp;cd&nbsp;..
+[root@ldapserver01&nbsp;cn=config]#&nbsp;ls
+cn=schema&nbsp;&nbsp;cn=schema.ldif&nbsp;&nbsp;olcDatabase={0}config.ldif&nbsp;&nbsp;olcDatabase={-1}frontend.ldif&nbsp;&nbsp;olcDatabase={1}monitor.ldif&nbsp;&nbsp;olcDatabase={2}hdb.ldif
+[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\=\{2\}hdb.ldif&nbsp;
+#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.
+#&nbsp;CRC32&nbsp;41f0f60e
+dn:&nbsp;olcDatabase={2}hdb
+objectClass:&nbsp;olcDatabaseConfig
+objectClass:&nbsp;olcHdbConfig
+olcDatabase:&nbsp;{2}hdb
+olcDbDirectory:&nbsp;/var/lib/ldap
+olcSuffix:&nbsp;dc=my-domain,dc=com
+olcRootDN:&nbsp;cn=Manager,dc=my-domain,dc=com
+olcDbIndex:&nbsp;objectClass&nbsp;eq,pres
+olcDbIndex:&nbsp;ou,cn,mail,surname,givenname&nbsp;eq,pres,sub
+structuralObjectClass:&nbsp;olcHdbConfig
+entryUUID:&nbsp;a9da5450-4cd0-1037-930f-f5a0198f7b5b
+creatorsName:&nbsp;cn=config
+createTimestamp:&nbsp;20171024063108Z
+entryCSN:&nbsp;20171024063108.065249Z#000000#000#000000
+modifiersName:&nbsp;cn=config
+modifyTimestamp:&nbsp;20171024063108Z
+[root@ldapserver01&nbsp;cn=config]#</pre><p><br/><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\=\{1\}monitor.ldif&nbsp;
+#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.
+#&nbsp;CRC32&nbsp;80b9bea4
+dn:&nbsp;olcDatabase={1}monitor
+objectClass:&nbsp;olcDatabaseConfig
+olcDatabase:&nbsp;{1}monitor
+olcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern
+&nbsp;al,cn=auth&quot;&nbsp;read&nbsp;by&nbsp;dn.base=&quot;cn=Manager,dc=my-domain,dc=com&quot;&nbsp;read&nbsp;by&nbsp;*&nbsp;none
+structuralObjectClass:&nbsp;olcDatabaseConfig
+entryUUID:&nbsp;a9da455a-4cd0-1037-930e-f5a0198f7b5b
+creatorsName:&nbsp;cn=config
+createTimestamp:&nbsp;20171024063108Z
+entryCSN:&nbsp;20171024063108.064868Z#000000#000#000000
+modifiersName:&nbsp;cn=config
+modifyTimestamp:&nbsp;20171024063108Z
+[root@ldapserver01&nbsp;cn=config]#</pre><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">具体操作命令及内容:</span></strong></p><pre class="brush:bash;toolbar:false">cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:///
+dn:&nbsp;olcDatabase={1}monitor,cn=config
+changetype:&nbsp;modify
+replace:&nbsp;olcAccess
+olcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern
+&nbsp;al,cn=auth&quot;&nbsp;read&nbsp;by&nbsp;dn.base=&quot;cn=Manager,dc=ldap,dc=com&quot;&nbsp;read&nbsp;by&nbsp;*&nbsp;none
+dn:&nbsp;olcDatabase={2}hdb,cn=config
+changetype:&nbsp;modify
+replace:&nbsp;olcSuffix
+olcSuffix:&nbsp;dc=ldap,dc=com
+dn:&nbsp;olcDatabase={2}hdb,cn=config
+changetype:&nbsp;modify
+replace:&nbsp;olcRootDN
+olcRootDN:&nbsp;cn=Manager,dc=ldap,dc=com
+dn:&nbsp;olcDatabase={2}hdb,cn=config
+changetype:&nbsp;modify
+add:&nbsp;olcRootPW
+olcRootPW:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr
+EOF</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span><br/></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">4.1、操作方法：</span></strong></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;&nbsp;/tmp/domain.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+dn:&nbsp;olcDatabase={1}monitor,cn=config
+changetype:&nbsp;modify
+replace:&nbsp;olcAccess
+olcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern
+&nbsp;al,cn=auth&quot;&nbsp;read&nbsp;by&nbsp;dn.base=&quot;cn=Manager,dc=ldap,dc=com&quot;&nbsp;read&nbsp;by&nbsp;*&nbsp;none
+dn:&nbsp;olcDatabase={2}hdb,cn=config
+changetype:&nbsp;modify
+replace:&nbsp;olcSuffix
+olcSuffix:&nbsp;dc=ldap,dc=com
+dn:&nbsp;olcDatabase={2}hdb,cn=config
+changetype:&nbsp;modify
+replace:&nbsp;olcRootDN
+olcRootDN:&nbsp;cn=Manager,dc=ldap,dc=com
+dn:&nbsp;olcDatabase={2}hdb,cn=config
+changetype:&nbsp;modify
+add:&nbsp;olcRootPW
+olcRootPW:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr
+[root@ldapserver01&nbsp;cn=config]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:///&nbsp;-f&nbsp;/tmp/domain.ldif&nbsp;
+SASL/EXTERNAL&nbsp;authentication&nbsp;started
+SASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+SASL&nbsp;SSF:&nbsp;0
+modifying&nbsp;entry&nbsp;&quot;olcDatabase={1}monitor,cn=config&quot;
+modifying&nbsp;entry&nbsp;&quot;olcDatabase={2}hdb,cn=config&quot;
+modifying&nbsp;entry&nbsp;&quot;olcDatabase={2}hdb,cn=config&quot;
+modifying&nbsp;entry&nbsp;&quot;olcDatabase={2}hdb,cn=config&quot;
+[root@ldapserver01&nbsp;cn=config]#</pre><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">查看修改后的文件：</span></strong></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\=\{2\}hdb.ldif&nbsp;
+#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.
+#&nbsp;CRC32&nbsp;7160b48b
+dn:&nbsp;olcDatabase={2}hdb
+objectClass:&nbsp;olcDatabaseConfig
+objectClass:&nbsp;olcHdbConfig
+olcDatabase:&nbsp;{2}hdb
+olcDbDirectory:&nbsp;/var/lib/ldap
+olcDbIndex:&nbsp;objectClass&nbsp;eq,pres
+olcDbIndex:&nbsp;ou,cn,mail,surname,givenname&nbsp;eq,pres,sub
+structuralObjectClass:&nbsp;olcHdbConfig
+entryUUID:&nbsp;a9da5450-4cd0-1037-930f-f5a0198f7b5b
+creatorsName:&nbsp;cn=config
+createTimestamp:&nbsp;20171024063108Z
+olcSuffix:&nbsp;dc=ldap,dc=com
+olcRootDN:&nbsp;cn=Manager,dc=ldap,dc=com
+olcRootPW::&nbsp;e1NTSEF9YktHdnN2QThHb2hkSldYU0Z5ZHR3STZpckk1N2JJcHI=
+entryCSN:&nbsp;20171024071035.422517Z#000000#000#000000
+modifiersName:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+modifyTimestamp:&nbsp;20171024071035Z
+[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\=\{1\}monitor.ldif&nbsp;
+#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.
+#&nbsp;CRC32&nbsp;bc7ee631
+dn:&nbsp;olcDatabase={1}monitor
+objectClass:&nbsp;olcDatabaseConfig
+olcDatabase:&nbsp;{1}monitor
+structuralObjectClass:&nbsp;olcDatabaseConfig
+entryUUID:&nbsp;a9da455a-4cd0-1037-930e-f5a0198f7b5b
+creatorsName:&nbsp;cn=config
+createTimestamp:&nbsp;20171024063108Z
+olcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern
+&nbsp;al,cn=auth&quot;&nbsp;read&nbsp;by&nbsp;dn.base=&quot;cn=Manager,dc=ldap,dc=com&quot;&nbsp;read&nbsp;by&nbsp;*&nbsp;none
+entryCSN:&nbsp;20171024071035.418045Z#000000#000#000000
+modifiersName:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+modifyTimestamp:&nbsp;20171024071035Z
+[root@ldapserver01&nbsp;cn=config]#</pre><p><br/></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">5、设置组织架构</span></strong></p><p><span style="font-family:&#39;宋体&#39;, SimSun;"><span style="font-size:14px;">&nbsp; LDAP目录以树状的层次结构来存储数据。如果你对自顶向下的DNS树或UNIX文件的目录树比较熟悉，也就很容易掌握LDAP目录树这个概念了。就象DNS的主机名那样，LDAP目录记录的标识名（Distinguished Name，简称DN）是用来读取单个记录，以及回溯到树的顶部。</span></span></p><pre class="brush:bash;toolbar:false">cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-x&nbsp;-D&nbsp;cn=Manager,dc=ldap,dc=com&nbsp;-W
+dn:&nbsp;dc=ldap,dc=com
+objectClass:&nbsp;dcObject
+objectClass:&nbsp;organization
+dc:&nbsp;ldap
+o:&nbsp;ldap.com
+dn:&nbsp;ou=People,dc=ldap,dc=com
+objectClass:&nbsp;organizationalUnit
+objectClass:&nbsp;top
+ou:&nbsp;People
+dn:&nbsp;ou=Group,dc=ldap,dc=com
+objectClass:&nbsp;organizationalUnit
+ou:&nbsp;Group
+dn:&nbsp;cn=Manager,dc=ldap,dc=com
+objectClass:&nbsp;organizationalRole
+cn:&nbsp;Manager
+dn:&nbsp;cn=Host,ou=Group,dc=ldap,dc=com
+objectClass:&nbsp;posixGroup
+cn:&nbsp;Host
+gidNumber:&nbsp;1010
+EOF</pre><p><br/></p><p>5.1<span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;font-weight:bold;">执行添加条目操作：</span></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-x&nbsp;-D&nbsp;cn=Manager,dc=ldap,dc=com&nbsp;-W
+&gt;&nbsp;dn:&nbsp;dc=ldap,dc=com
+&gt;&nbsp;objectClass:&nbsp;dcObject
+&gt;&nbsp;objectClass:&nbsp;organization
+&gt;&nbsp;dc:&nbsp;ldap
+&gt;&nbsp;o:&nbsp;ldap.com
+&gt;&nbsp;
+&gt;&nbsp;dn:&nbsp;ou=People,dc=ldap,dc=com
+&gt;&nbsp;objectClass:&nbsp;organizationalUnit
+&gt;&nbsp;objectClass:&nbsp;top
+&gt;&nbsp;ou:&nbsp;People
+&gt;&nbsp;
+&gt;&nbsp;dn:&nbsp;ou=Group,dc=ldap,dc=com
+&gt;&nbsp;objectClass:&nbsp;organizationalUnit
+&gt;&nbsp;ou:&nbsp;Group
+&gt;&nbsp;
+&gt;&nbsp;dn:&nbsp;cn=Manager,dc=ldap,dc=com
+&gt;&nbsp;objectClass:&nbsp;organizationalRole
+&gt;&nbsp;cn:&nbsp;Manager
+&gt;&nbsp;
+&gt;&nbsp;dn:&nbsp;cn=Host,ou=Group,dc=ldap,dc=com
+&gt;&nbsp;objectClass:&nbsp;posixGroup
+&gt;&nbsp;cn:&nbsp;Host
+&gt;&nbsp;gidNumber:&nbsp;1010
+&gt;&nbsp;EOF
+Enter&nbsp;LDAP&nbsp;Password:&nbsp;
+adding&nbsp;new&nbsp;entry&nbsp;&quot;dc=ldap,dc=com&quot;
+adding&nbsp;new&nbsp;entry&nbsp;&quot;ou=People,dc=ldap,dc=com&quot;
+adding&nbsp;new&nbsp;entry&nbsp;&quot;ou=Group,dc=ldap,dc=com&quot;
+adding&nbsp;new&nbsp;entry&nbsp;&quot;cn=Manager,dc=ldap,dc=com&quot;
+adding&nbsp;new&nbsp;entry&nbsp;&quot;cn=Host,ou=Group,dc=ldap,dc=com&quot;
+[root@ldapserver01&nbsp;cn=config]#</pre><p><br/><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">查看添加的条目有两种方法</span></strong></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">①命令方式查看，添加字段BASE和URI</span></strong></p><pre class="brush:bash;toolbar:false;">[root@ldapserver01&nbsp;cn=config]#&nbsp;vim&nbsp;&nbsp;/etc/openldap/ldap.conf&nbsp;&nbsp;&nbsp;&nbsp;
+#
+#&nbsp;LDAP&nbsp;Defaults
+#
+#&nbsp;See&nbsp;ldap.conf(5)&nbsp;for&nbsp;details
+#&nbsp;This&nbsp;file&nbsp;should&nbsp;be&nbsp;world&nbsp;readable&nbsp;but&nbsp;not&nbsp;world&nbsp;writable.
+#BASE&nbsp;&nbsp;&nbsp;dc=example,dc=com
+#URI&nbsp;&nbsp;&nbsp;&nbsp;ldap://ldap.example.com&nbsp;ldap://ldap-master.example.com:666
+#SIZELIMIT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;12
+#TIMELIMIT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;15
+#DEREF&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;never
+TLS_CACERTDIR&nbsp;&nbsp;&nbsp;/etc/openldap/certs
+#&nbsp;Turning&nbsp;this&nbsp;off&nbsp;breaks&nbsp;GSSAPI&nbsp;used&nbsp;with&nbsp;krb5&nbsp;when&nbsp;rdns&nbsp;=&nbsp;false
+SASL_NOCANON&nbsp;&nbsp;&nbsp;&nbsp;on
+BASE&nbsp;&nbsp;dc=ldap,dc=com
+URI&nbsp;&nbsp;&nbsp;ldap://192.168.112.200
+[root@ldapserver01&nbsp;cn=config]#&nbsp;
+[root@ldapserver01&nbsp;cn=config]#&nbsp;ldapsearch&nbsp;-x&nbsp;-LLL
+dn:&nbsp;dc=ldap,dc=com
+objectClass:&nbsp;dcObject
+objectClass:&nbsp;organization
+dc:&nbsp;ldap
+o:&nbsp;ldap.com
+dn:&nbsp;ou=People,dc=ldap,dc=com
+objectClass:&nbsp;organizationalUnit
+objectClass:&nbsp;top
+ou:&nbsp;People
+dn:&nbsp;ou=Group,dc=ldap,dc=com
+objectClass:&nbsp;organizationalUnit
+ou:&nbsp;Group
+dn:&nbsp;cn=Manager,dc=ldap,dc=com
+objectClass:&nbsp;organizationalRole
+cn:&nbsp;Manager
+dn:&nbsp;cn=Host,ou=Group,dc=ldap,dc=com
+objectClass:&nbsp;posixGroup
+cn:&nbsp;Host
+gidNumber:&nbsp;1010
+[root@ldapserver01&nbsp;cn=config]#</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><p><br/></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">②url方式查看，该方式主要通过ldapadmin工具查看</span></strong></p><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">www.ldapadmin.org/download/languages/index.html</span></p><p><br/></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">③通过web界面方式查看，后面会介绍</span></strong></p><p><br/></p><p><span style="font-family:宋体, SimSun"><span style="font-size:14px;"><strong>6、<strong style="white-space:normal;"><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">添加用户：</span></strong></strong></span></span></p><pre class="brush:bash;toolbar:false">cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-x&nbsp;-D&nbsp;cn=Manager,dc=ldap,dc=com&nbsp;-W
+dn:&nbsp;uid=user01,ou=People,dc=ldap,dc=com
+objectClass:&nbsp;inetOrgPerson
+objectClass:&nbsp;posixAccount
+objectClass:&nbsp;shadowAccount
+homeDirectory:&nbsp;/home/user01
+userPassword:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr
+loginShell:&nbsp;/bin/bash
+cn:&nbsp;user01
+uidNumber:&nbsp;1000
+gidNumber:&nbsp;1010
+sn:&nbsp;System&nbsp;Administrator
+mail:&nbsp;user01@gmail.com
+mobile:&nbsp;12888888888
+EOF</pre><p><br/><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span></p><p><span style="font-family:宋体, SimSun"><span style="font-size:14px;"><strong>6.1&nbsp;<strong style="white-space:normal;"><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">执行添加用户操作命令:</span></strong></strong></span></span></p><pre class="brush:bash;toolbar:false">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-x&nbsp;-D&nbsp;cn=Manager,dc=ldap,dc=com&nbsp;-W
+&gt;&nbsp;dn:&nbsp;uid=user01,ou=People,dc=ldap,dc=com
+&gt;&nbsp;objectClass:&nbsp;inetOrgPerson
+&gt;&nbsp;objectClass:&nbsp;posixAccount
+&gt;&nbsp;objectClass:&nbsp;shadowAccount
+&gt;&nbsp;homeDirectory:&nbsp;/home/user01
+&gt;&nbsp;userPassword:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr
+&gt;&nbsp;loginShell:&nbsp;/bin/bash
+&gt;&nbsp;cn:&nbsp;user01
+&gt;&nbsp;uidNumber:&nbsp;1000
+&gt;&nbsp;gidNumber:&nbsp;1010
+&gt;&nbsp;sn:&nbsp;System&nbsp;Administrator
+&gt;&nbsp;mail:&nbsp;user01@gmail.com
+&gt;&nbsp;mobile:&nbsp;12888888888
+&gt;&nbsp;EOF
+Enter&nbsp;LDAP&nbsp;Password:&nbsp;
+adding&nbsp;new&nbsp;entry&nbsp;&quot;uid=user01,ou=People,dc=ldap,dc=com&quot;
+[root@ldapserver01&nbsp;cn=config]#</pre><p><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;"></span><br/></p><p><strong><span style="font-family:&#39;宋体&#39;, SimSun;font-size:14px;">至此，一个简单的ldap服务端配置完成，接下来配置ldap客户端</span></strong></p><p><br/></p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者027ryan的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+									<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=%E7%AE%A1%E7%90%86" target="_blank">管理</a>
+																								<a href="https://blog.51cto.com/search/result?q=ldap" target="_blank">ldap</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E7%BB%9F%E4%B8%80%E8%B4%A6%E6%88%B7" target="_blank">统一账户</a>
+															                				<a class="last" href="https://blog.51cto.com/ucode/category2.html" target="_blank"><i></i>Linux运维</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="1975843" userid='10837891'>0</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina" >微博</a>
+					  <a class="bds_sqq" data-cmd="sqq" >QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin" >微信</a>
+					  <img src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2Fucode%2F1975843">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/ucode/1973360" title="CentOS7下使用rpm-gpg-key-epel-6报错解决方法">
+						上一篇：CentOS7下使用rpm-gp...</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/ucode/1975844" title="统一用户登录管理认证LDAP 客户端部署">
+						下一篇：统一用户登录管理认证LDAP 客...</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/ucode" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="10837891" src="https://ucenter.51cto.com/images/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/ucode" target="_blank" style="display:inline-block;">027ryan</a>
+										<h3>278篇文章，75W+人气，0粉丝</h3>
+									</div>
+								<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/ucode" class="header-img" target="_blank">
+						<img  src="https://ucenter.51cto.com/images/noavatar_middle.gif"/>
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可"  maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="10837891">
+					<input type="hidden" class="reply_id" value="1975843">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList">
+			</div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201804/27/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>493人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="5" href="/cloumn/detail/5" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/03/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>490人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="13" href="/cloumn/detail/13" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/20/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1840人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="18" href="/cloumn/detail/18" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/06/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTOsummer</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>2119人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="30" href="/cloumn/detail/30" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/28/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>550人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="6" href="/cloumn/detail/6" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/ucode/2064078?source=dra" target="_blank">Linux下FTP虚拟账号环境部署总结</a>
+															<a class="white-space" href="https://blog.51cto.com/ucode/2063692?source=dra" target="_blank">centos7.2部署vnc服务记录</a>
+															<a class="white-space" href="https://blog.51cto.com/wangchunhai/837529?source=drt" target="_blank">使用iLO远程管理HP系列服务器</a>
+															<a class="white-space" href="https://blog.51cto.com/yangshufan/1969073?source=drt" target="_blank">VSphere入门之ESXi的安装及基本管理</a>
+															<a class="white-space" href="https://blog.51cto.com/ylw6006/2113542?source=drt" target="_blank">K8S使用dashboard管理集群</a>
+															<a class="white-space" href="https://blog.51cto.com/wangchunhai/278207?source=drt" target="_blank">Panabit流量管理系统使用经验</a>
+															<a class="white-space" href="https://blog.51cto.com/zhangjunhd/70068?source=drt" target="_blank">Java:使用Executors创建和管理线程</a>
+															<a class="white-space" href="https://blog.51cto.com/itstudy/1764907?source=drt" target="_blank">上网行为管理设备的介绍,部署与使用</a>
+															<a class="white-space" href="https://blog.51cto.com/lzlutao/1218077?source=drt" target="_blank">如何使用Intel AMT 8.0技术远程管理PC</a>
+															<a class="white-space" href="https://blog.51cto.com/dusong/139284?source=drt" target="_blank">Oracle用户、权限、角色管理</a>
+															<a class="white-space" href="https://blog.51cto.com/kinglixing/723870?source=drt" target="_blank">MyBatis+Spring 事务管理</a>
+															<a class="white-space" href="https://blog.51cto.com/zhangjunhd/128174?source=drt" target="_blank">Swing布局管理器介绍</a>
+															<a class="white-space" href="https://blog.51cto.com/14157628/2454369?source=drh" target="_blank">部署LAMP动静分离以及部署Discuz论坛</a>
+															<a class="white-space" href="https://blog.51cto.com/14156658/2453907?source=drh" target="_blank">Centos 7的Firewalld防火墙基础</a>
+															<a class="white-space" href="https://blog.51cto.com/14400213/2452815?source=drh" target="_blank">Linux系统启动流程及服务控制</a>
+															<a class="white-space" href="https://blog.51cto.com/14156658/2452452?source=drh" target="_blank">Centos部署KVM虚拟化平台（可跟做）</a>
+															<a class="white-space" href="https://blog.51cto.com/3001441/2452266?source=drh" target="_blank">BigOps自动化运维安装以及所遇故障处理</a>
+															<a class="white-space" href="https://blog.51cto.com/mpflinux/2452184?source=drh" target="_blank">rsync+inotify实时同步环境部署</a>
+															<a class="white-space" href="https://blog.51cto.com/14557905/2451982?source=drh" target="_blank">DHCP原理与配置（含DHCP中继实验）</a>
+															<a class="white-space" href="https://blog.51cto.com/14557673/2451887?source=drh" target="_blank">Linux网络服务之DHCP服务原理与自动获取实验</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="https://s1.51cto.com/images/blog/201910/25/e44823f12c0ccbfd99decb605b02ec10.png" style="width:50px;height:50px;"/> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="https://static1.51cto.com/edu/blog/mobile/images/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="1975843" userid='10837891'></span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>1</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2Fucode%2F1975843"></a>
+				</div>
+			</div>
+      						<a href="https://blog.51cto.com/ucode" class="b-name fr">027ryan</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/ucode" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="10837891" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="https://static1.51cto.com/edu/blog/js/shCores.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '1975843'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'10837891',
+            'blog_id':'1975843'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/ucode';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='10837891'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/ucode'
+    	nickname = '027ryan'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">&nbsp; &nbsp;\u7f51\u4e0a\u627e\u4e86\u597d\u591a\u5173\u4e8eLDAP\u7edf\u4e00\u8d26\u6237\u7ba1\u7406\u7684\u6587\u4ef6\uff0c\u597d\u591a\u90fd\u662f\u7c98\u8d34\u590d\u5236\uff0c\u80fd\u7528\u5f97\u4e0a\u7684\u5c11\u4e4b\u53c8\u5c11\uff0c\u6b63\u597d\u6700\u8fd1\u53c8\u7528\u5230\u8fd9\u4e2a\uff0c\u4e8e\u662f\u7740\u624b\u770b\u4e86\u90ed\u8001\u5e08\u7684\u89c6\u9891\uff0c\u987a\u4fbf\u628a\u81ea\u5df1\u5b66\u4e60\u7684\u8fc7\u7a0b\u8bb0\u5f55\u4e0b\u6765\uff0c\u4f9b\u5927\u5bb6\u5b66\u4e60\u53c2\u8003\u3002<\/span><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><br\/><\/span><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">1\u3001\u5b9e\u9a8c\u73af\u5883\uff1a<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@localhost&nbsp;~]#&nbsp;cat&nbsp;\/etc\/redhat-release&nbsp;\nCentOS&nbsp;Linux&nbsp;release&nbsp;7.2.1511&nbsp;(Core)\n[root@localhost&nbsp;~]#&nbsp;ifconfig&nbsp;\neno16777736:&nbsp;flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;&nbsp;&nbsp;mtu&nbsp;1500\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inet&nbsp;192.168.31.153&nbsp;&nbsp;netmask&nbsp;255.255.255.0&nbsp;&nbsp;broadcast&nbsp;192.168.31.255\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inet6&nbsp;fe80::20c:29ff:fefe:6478&nbsp;&nbsp;prefixlen&nbsp;64&nbsp;&nbsp;scopeid&nbsp;0x20&lt;link&gt;\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ether&nbsp;00:0c:29:fe:64:78&nbsp;&nbsp;txqueuelen&nbsp;1000&nbsp;&nbsp;(Ethernet)\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RX&nbsp;packets&nbsp;37181&nbsp;&nbsp;bytes&nbsp;9238204&nbsp;(8.8&nbsp;MiB)\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RX&nbsp;errors&nbsp;0&nbsp;&nbsp;dropped&nbsp;0&nbsp;&nbsp;overruns&nbsp;0&nbsp;&nbsp;frame&nbsp;0\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TX&nbsp;packets&nbsp;5520&nbsp;&nbsp;bytes&nbsp;701406&nbsp;(684.9&nbsp;KiB)\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TX&nbsp;errors&nbsp;0&nbsp;&nbsp;dropped&nbsp;0&nbsp;overruns&nbsp;0&nbsp;&nbsp;carrier&nbsp;0&nbsp;&nbsp;collisions&nbsp;0\nlo:&nbsp;flags=73&lt;UP,LOOPBACK,RUNNING&gt;&nbsp;&nbsp;mtu&nbsp;65536\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inet&nbsp;127.0.0.1&nbsp;&nbsp;netmask&nbsp;255.0.0.0\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inet6&nbsp;::1&nbsp;&nbsp;prefixlen&nbsp;128&nbsp;&nbsp;scopeid&nbsp;0x10&lt;host&gt;\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loop&nbsp;&nbsp;txqueuelen&nbsp;0&nbsp;&nbsp;(Local&nbsp;Loopback)\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RX&nbsp;packets&nbsp;111&nbsp;&nbsp;bytes&nbsp;9451&nbsp;(9.2&nbsp;KiB)\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RX&nbsp;errors&nbsp;0&nbsp;&nbsp;dropped&nbsp;0&nbsp;&nbsp;overruns&nbsp;0&nbsp;&nbsp;frame&nbsp;0\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TX&nbsp;packets&nbsp;111&nbsp;&nbsp;bytes&nbsp;9451&nbsp;(9.2&nbsp;KiB)\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TX&nbsp;errors&nbsp;0&nbsp;&nbsp;dropped&nbsp;0&nbsp;overruns&nbsp;0&nbsp;&nbsp;carrier&nbsp;0&nbsp;&nbsp;collisions&nbsp;0\n[root@localhost&nbsp;~]#<\/pre><p><br\/><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">2\u3001\u90e8\u7f72\u8fc7\u7a0b:<\/span><\/strong><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">yum install openldap-servers openldap-clients<\/span><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">dn:<\/span><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">changetype: modify<\/span><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">add\/delete\/replace<\/span><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">olcRootPW:&nbsp;<\/span><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">objectClass:<\/span><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><br\/><\/span><\/strong><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">2.1\u3001\u5b89\u88c5\u90e8\u7f72\u670d\u52a1\u7aef\u548c\u76f8\u5e94\u7a0b\u5e8f\u5305<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;openldap-servers&nbsp;openldap-clients\n[root@ldapserver01&nbsp;~]#&nbsp;systemctl&nbsp;start&nbsp;slapd.service\n[root@ldapserver01&nbsp;~]#&nbsp;systemctl&nbsp;status&nbsp;slapd.service\n[root@ldapserver01&nbsp;~]#&nbsp;ps&nbsp;xua|grep&nbsp;slapd\nldap&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2440&nbsp;&nbsp;0.0&nbsp;&nbsp;0.9&nbsp;&nbsp;78592&nbsp;&nbsp;4924&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ssl&nbsp;&nbsp;02:33&nbsp;&nbsp;&nbsp;0:00&nbsp;\/usr\/sbin\/slapd&nbsp;-u&nbsp;ldap&nbsp;-h&nbsp;ldapi:\/\/\/&nbsp;ldap:\/\/\/\nroot&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2444&nbsp;&nbsp;0.0&nbsp;&nbsp;0.1&nbsp;112644&nbsp;&nbsp;&nbsp;952&nbsp;pts\/0&nbsp;&nbsp;&nbsp;&nbsp;S+&nbsp;&nbsp;&nbsp;02:33&nbsp;&nbsp;&nbsp;0:00&nbsp;grep&nbsp;--color=auto&nbsp;slapd\n[root@ldapserver01&nbsp;~]#<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><strong>&nbsp; \u67e5\u770b\u670d\u52a1\u7aef\u53e3\uff1a<\/strong><\/span><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;~]#&nbsp;netstat&nbsp;-lnptp\nActive&nbsp;Internet&nbsp;connections&nbsp;(only&nbsp;servers)\nProto&nbsp;Recv-Q&nbsp;Send-Q&nbsp;Local&nbsp;Address&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Foreign&nbsp;Address&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;State&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PID\/Program&nbsp;name&nbsp;&nbsp;&nbsp;&nbsp;\ntcp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;0.0.0.0:22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.0.0.0:*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1116\/sshd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\ntcp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;127.0.0.1:25&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.0.0.0:*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2215\/master&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\ntcp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;0.0.0.0:389&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.0.0.0:*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2440\/slapd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\ntcp6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;:::22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:::*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1116\/sshd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\ntcp6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;::1:25&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:::*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2215\/master&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\ntcp6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;:::389&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:::*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2440\/slapd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n[root@ldapserver01&nbsp;~]#<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">&nbsp; ldap\u9ed8\u8ba4\u7aef\u53e3\u4e3a389\uff0c\u5982\u679c\u52a0\u5bc6\uff08CA +LDAP\uff09\u4e86\u7528\u7aef\u53e3636\uff0c\u8fd9\u91cc\u9ed8\u8ba4\u7aef\u53e3389\u5df2\u7ecf\u5f00\u542f\u4e86<\/span><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;color:rgb(255,0,0);\">\u5bf9\u4e8eldap\u670d\u52a1\u547d\u4ee4\u9700\u8981\u6ce8\u610f\u7684:<\/span><\/p><p style=\"white-space:normal;\"><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;\"><span style=\"font-size:14px;\">\u4e00\u822c\u4ee5slapxxxx\u5f62\u5f0f\u51fa\u73b0\u7684\u547d\u4ee4\u4e3a\u670d\u52a1\u7aef\u547d\u4ee4\uff0c\u800c\u4ee5ldapxxxx\u5f62\u5f0f\u51fa\u73b0\u7684\u547d\u4ee4\u4e3a\u5ba2\u6237\u7aef\u547d\u4ee4\uff0c\u6bd4\u5982\u4e0b\u4e24\u4e2a:<\/span><\/span><\/p><p style=\"white-space:normal;\"><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">slappasswd&nbsp; \u670d\u52a1\u7aef\u547d\u4ee4<\/span><\/p><p style=\"white-space:normal;\"><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">ldappasswd&nbsp; \u5ba2\u6237\u7aef\u547d\u4ee4<\/span><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><br\/><\/span><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">2.2\u3001LDAP\u670d\u52a1\u5b89\u88c5\u597d\u4e4b\u540e\uff0c\u6211\u4eec\u63a5\u4e0b\u6765\u7ed9ldap\u670d\u52a1\u8bbe\u7f6e\u5bc6\u7801\uff0c\u5728OpenLDAP server\u4e0a\u6267\u884c\u5982\u4e0b\u64cd\u4f5c:<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;~]#&nbsp;slappasswd&nbsp;\nNew&nbsp;password:&nbsp;\nRe-enter&nbsp;new&nbsp;password:&nbsp;\n{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr\n[root@ldapserver01&nbsp;~]#<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">&nbsp;ldap\u670d\u52a1\u7684\u5168\u5c40\u914d\u7f6e\u6587\u4ef6\u5b58\u653e\u8def\u5f84\u4e3a&quot;<span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\/etc\/openldap\/slapd.d\/<\/span>&quot;\uff0c\u5177\u4f53\u5982\u4e0b\u6240\u793a\uff1a<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;~]#&nbsp;cd&nbsp;\/etc\/openldap\/slapd.d\/\n[root@ldapserver01&nbsp;slapd.d]#&nbsp;ls\ncn=config&nbsp;&nbsp;cn=config.ldif\n[root@ldapserver01&nbsp;slapd.d]#&nbsp;cd&nbsp;cn\\=config\n[root@ldapserver01&nbsp;cn=config]#&nbsp;ls\ncn=schema&nbsp;&nbsp;cn=schema.ldif&nbsp;&nbsp;olcDatabase={0}config.ldif&nbsp;&nbsp;olcDatabase={-1}frontend.ldif&nbsp;&nbsp;olcDatabase={1}monitor.ldif&nbsp;&nbsp;olcDatabase={2}hdb.ldif\n[root@ldapserver01&nbsp;cn=config]#&nbsp;pwd\n\/etc\/openldap\/slapd.d\/cn=config\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">&nbsp;\u6dfb\u52a0\u5bc6\u7801\u547d\u4ee4\u548c\u5185\u5bb9\uff0c\u6dfb\u52a0\u5bc6\u7801\u5176\u5b9e\u662f\u5bf9\u6587\u4ef6olcDatabase={0}config.ldif\u8fdb\u884c\u4fee\u6539<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:\/\/\/\ndn:&nbsp;olcDatabase={0}config,cn=config\nchangetype:&nbsp;modify\nadd:&nbsp;olcRootPW\nolcRootPW:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr\nEOF<\/pre><p><span style=\"color:rgb(255,0,0);\"><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u6dfb\u52a0\u5bc6\u7801\u524d\uff1a<\/span><\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\\=\\{0\\}config.ldif&nbsp;\n#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.\n#&nbsp;CRC32&nbsp;11f68910\ndn:&nbsp;olcDatabase={0}config\nobjectClass:&nbsp;olcDatabaseConfig\nolcDatabase:&nbsp;{0}config\nolcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern\n&nbsp;al,cn=auth&quot;&nbsp;manage&nbsp;by&nbsp;*&nbsp;none\nstructuralObjectClass:&nbsp;olcDatabaseConfig\nentryUUID:&nbsp;a9da3e02-4cd0-1037-930d-f5a0198f7b5b\ncreatorsName:&nbsp;cn=config\ncreateTimestamp:&nbsp;20171024063108Z\nentryCSN:&nbsp;20171024063108.064679Z#000000#000#000000\nmodifiersName:&nbsp;cn=config\nmodifyTimestamp:&nbsp;20171024063108Z\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u6267\u884c\u5bc6\u7801\u6dfb\u52a0\u64cd\u4f5c\uff1a<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:\/\/\/\ndn:&nbsp;olcDatabase={0}config,cn=config&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\nchangetype:&nbsp;modify\nadd:&nbsp;olcRootPW\nolcRootPW:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr\nEOF\nSASL\/EXTERNAL&nbsp;authentication&nbsp;started\nSASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth\nSASL&nbsp;SSF:&nbsp;0\nmodifying&nbsp;entry&nbsp;&quot;olcDatabase={0}config,cn=config&quot;\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><p><span style=\"color:rgb(255,0,0);\"><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u6dfb\u52a0\u5bc6\u7801\u4e4b\u540e\u67e5\u770b\uff1a<\/span><\/strong><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\\=\\{0\\}config.ldif&nbsp;\n#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.\n#&nbsp;CRC32&nbsp;ea900b11\ndn:&nbsp;olcDatabase={0}config\nobjectClass:&nbsp;olcDatabaseConfig\nolcDatabase:&nbsp;{0}config\nolcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern\n&nbsp;al,cn=auth&quot;&nbsp;manage&nbsp;by&nbsp;*&nbsp;none\nstructuralObjectClass:&nbsp;olcDatabaseConfig\nentryUUID:&nbsp;a9da3e02-4cd0-1037-930d-f5a0198f7b5b\ncreatorsName:&nbsp;cn=config\ncreateTimestamp:&nbsp;20171024063108Z\nolcRootPW::&nbsp;e1NTSEF9YktHdnN2QThHb2hkSldYU0Z5ZHR3STZpckk1N2JJcHI=\nentryCSN:&nbsp;20171024064249.681208Z#000000#000#000000\nmodifiersName:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth\nmodifyTimestamp:&nbsp;20171024064249Z\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;color:rgb(255,0,0);\">\u6216\u8005\u5c06\u4fee\u6539\u7684\u5185\u5bb9\u4fdd\u5b58\u5230\u4e00\u4e2a\u6587\u4ef6\u4e2d\uff0c\u7136\u540e\u901a\u8fc7\u547d\u4ee4ldapadd -Y EXTERANL -H ldapi:\/\/\/&nbsp; -f \/tmp\/slappasswd.ldif<\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;vim&nbsp;&nbsp;\/tmp\/slappasswd.ldif\ndn:&nbsp;olcDatabase={0}config,cn=config&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\nchangetype:&nbsp;modify\nadd:&nbsp;olcRootPW\nolcRootPW:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr\n[root@ldapserver01&nbsp;cn=config]#&nbsp;\n[root@ldapserver01&nbsp;cn=config]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERANL&nbsp;-H&nbsp;ldapi:\/\/\/&nbsp;-f&nbsp;\/tmp\/slappasswd.ldif<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><br\/><\/p><p><br\/><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">3\u3001\u5bfc\u5165\u57fa\u672c\u7684schema\u6587\u4ef6<\/span><\/strong><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">CentOS7\u9ed8\u8ba4\u60c5\u51b5\u4e0bschema\u6587\u4ef6\u5b58\u653e\u8def\u5f84\u662f:<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;pwd\n\/etc\/openldap\/slapd.d\/cn=config\n[root@ldapserver01&nbsp;cn=config]#&nbsp;ls&nbsp;\/etc\/openldap\/schema\/\ncollective.ldif&nbsp;&nbsp;&nbsp;&nbsp;corba.schema&nbsp;&nbsp;cosine.ldif&nbsp;&nbsp;&nbsp;&nbsp;duaconf.schema&nbsp;&nbsp;&nbsp;inetorgperson.ldif&nbsp;&nbsp;&nbsp;&nbsp;java.schema&nbsp;&nbsp;nis.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;openldap.schema&nbsp;&nbsp;ppolicy.ldif\ncollective.schema&nbsp;&nbsp;core.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cosine.schema&nbsp;&nbsp;dyngroup.ldif&nbsp;&nbsp;&nbsp;&nbsp;inetorgperson.schema&nbsp;&nbsp;misc.ldif&nbsp;&nbsp;&nbsp;&nbsp;nis.schema&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pmi.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ppolicy.schema\ncorba.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core.schema&nbsp;&nbsp;&nbsp;duaconf.ldif&nbsp;&nbsp;&nbsp;dyngroup.schema&nbsp;&nbsp;java.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;misc.schema&nbsp;&nbsp;openldap.ldif&nbsp;&nbsp;pmi.schema\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">&nbsp;\u5bfc\u5165\u57fa\u672cschema\u6587\u4ef6\u5b58\u653e\u8def\u5f84\u4e3a:\/etc\/openldap\/slapd.d\/cn=config\/cn=schema<\/span><\/strong><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;pwd\n\/etc\/openldap\/slapd.d\/cn=config\n[root@ldapserver01&nbsp;cn=config]#&nbsp;ls&nbsp;cn\\=schema\ncn={0}core.ldif\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><br\/><\/span><br\/><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">3.1\u3001\u5bfc\u5165\u7b2c\u4e00\u4e2aschema\u6587\u4ef6\uff1a<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:\/\/\/&nbsp;-f&nbsp;\/etc\/openldap\/schema\/cosine.ldif&nbsp;\nSASL\/EXTERNAL&nbsp;authentication&nbsp;started\nSASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth\nSASL&nbsp;SSF:&nbsp;0\nadding&nbsp;new&nbsp;entry&nbsp;&quot;cn=cosine,cn=schema,cn=config&quot;\n[root@ldapserver01&nbsp;cn=config]#\n[root@ldapserver01&nbsp;cn=config]#&nbsp;cd&nbsp;cn\\=schema\n[root@ldapserver01&nbsp;cn=schema]#&nbsp;ls\ncn={0}core.ldif&nbsp;&nbsp;cn={1}cosine.ldif\n[root@ldapserver01&nbsp;cn=schema]#&nbsp;pwd\n\/etc\/openldap\/slapd.d\/cn=config\/cn=schema\n[root@ldapserver01&nbsp;cn=schema]#<\/pre><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><br\/><\/span><\/strong><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u7528\u540c\u6837\u7684\u65b9\u5f0f\u5bfc\u5165\u5176\u4ed6\u51e0\u4e2aschema\u6587\u4ef6\uff1a<\/span><\/strong><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><br\/><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=schema]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:\/\/\/&nbsp;-f&nbsp;\/etc\/openldap\/schema\/ppolicy.ldif&nbsp;\nSASL\/EXTERNAL&nbsp;authentication&nbsp;started\nSASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth\nSASL&nbsp;SSF:&nbsp;0\nadding&nbsp;new&nbsp;entry&nbsp;&quot;cn=ppolicy,cn=schema,cn=config&quot;\n[root@ldapserver01&nbsp;cn=schema]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:\/\/\/&nbsp;-f&nbsp;\/etc\/openldap\/schema\/nis.ldif&nbsp;\nSASL\/EXTERNAL&nbsp;authentication&nbsp;started\nSASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth\nSASL&nbsp;SSF:&nbsp;0\nadding&nbsp;new&nbsp;entry&nbsp;&quot;cn=nis,cn=schema,cn=config&quot;\n[root@ldapserver01&nbsp;cn=schema]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:\/\/\/&nbsp;-f&nbsp;\/etc\/openldap\/schema\/dyngroup.ldif&nbsp;\nSASL\/EXTERNAL&nbsp;authentication&nbsp;started\nSASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth\nSASL&nbsp;SSF:&nbsp;0\nadding&nbsp;new&nbsp;entry&nbsp;&quot;cn=dyngroup,cn=schema,cn=config&quot;\n[root@ldapserver01&nbsp;cn=schema]#\n[root@ldapserver01&nbsp;cn=schema]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:\/\/\/&nbsp;-f&nbsp;\/etc\/openldap\/schema\/inetorgperson.ldif&nbsp;\nSASL\/EXTERNAL&nbsp;authentication&nbsp;started\nSASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth\nSASL&nbsp;SSF:&nbsp;0\nadding&nbsp;new&nbsp;entry&nbsp;&quot;cn=inetorgperson,cn=schema,cn=config&quot;\n[root@ldapserver01&nbsp;cn=schema]#&nbsp;ls\ncn={0}core.ldif&nbsp;&nbsp;cn={1}cosine.ldif&nbsp;&nbsp;cn={2}ppolicy.ldif&nbsp;&nbsp;cn={3}nis.ldif&nbsp;&nbsp;cn={4}dyngroup.ldif&nbsp;&nbsp;cn={5}inetorgperson.ldif\n[root@ldapserver01&nbsp;cn=schema]#<\/pre><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">4\u3001\u4fee\u6539\u76f8\u5173\u57df\u540d\uff1a\u4fee\u6539\u6587\u4ef6\u4e3aolcDatabase\\=\\{2\\}hdb.ldif\u548colcDatabase\\=\\{1\\}monitor.ldif<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=schema]#&nbsp;cd&nbsp;..\n[root@ldapserver01&nbsp;cn=config]#&nbsp;ls\ncn=schema&nbsp;&nbsp;cn=schema.ldif&nbsp;&nbsp;olcDatabase={0}config.ldif&nbsp;&nbsp;olcDatabase={-1}frontend.ldif&nbsp;&nbsp;olcDatabase={1}monitor.ldif&nbsp;&nbsp;olcDatabase={2}hdb.ldif\n[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\\=\\{2\\}hdb.ldif&nbsp;\n#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.\n#&nbsp;CRC32&nbsp;41f0f60e\ndn:&nbsp;olcDatabase={2}hdb\nobjectClass:&nbsp;olcDatabaseConfig\nobjectClass:&nbsp;olcHdbConfig\nolcDatabase:&nbsp;{2}hdb\nolcDbDirectory:&nbsp;\/var\/lib\/ldap\nolcSuffix:&nbsp;dc=my-domain,dc=com\nolcRootDN:&nbsp;cn=Manager,dc=my-domain,dc=com\nolcDbIndex:&nbsp;objectClass&nbsp;eq,pres\nolcDbIndex:&nbsp;ou,cn,mail,surname,givenname&nbsp;eq,pres,sub\nstructuralObjectClass:&nbsp;olcHdbConfig\nentryUUID:&nbsp;a9da5450-4cd0-1037-930f-f5a0198f7b5b\ncreatorsName:&nbsp;cn=config\ncreateTimestamp:&nbsp;20171024063108Z\nentryCSN:&nbsp;20171024063108.065249Z#000000#000#000000\nmodifiersName:&nbsp;cn=config\nmodifyTimestamp:&nbsp;20171024063108Z\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><br\/><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\\=\\{1\\}monitor.ldif&nbsp;\n#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.\n#&nbsp;CRC32&nbsp;80b9bea4\ndn:&nbsp;olcDatabase={1}monitor\nobjectClass:&nbsp;olcDatabaseConfig\nolcDatabase:&nbsp;{1}monitor\nolcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern\n&nbsp;al,cn=auth&quot;&nbsp;read&nbsp;by&nbsp;dn.base=&quot;cn=Manager,dc=my-domain,dc=com&quot;&nbsp;read&nbsp;by&nbsp;*&nbsp;none\nstructuralObjectClass:&nbsp;olcDatabaseConfig\nentryUUID:&nbsp;a9da455a-4cd0-1037-930e-f5a0198f7b5b\ncreatorsName:&nbsp;cn=config\ncreateTimestamp:&nbsp;20171024063108Z\nentryCSN:&nbsp;20171024063108.064868Z#000000#000#000000\nmodifiersName:&nbsp;cn=config\nmodifyTimestamp:&nbsp;20171024063108Z\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u5177\u4f53\u64cd\u4f5c\u547d\u4ee4\u53ca\u5185\u5bb9:<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:\/\/\/\ndn:&nbsp;olcDatabase={1}monitor,cn=config\nchangetype:&nbsp;modify\nreplace:&nbsp;olcAccess\nolcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern\n&nbsp;al,cn=auth&quot;&nbsp;read&nbsp;by&nbsp;dn.base=&quot;cn=Manager,dc=ldap,dc=com&quot;&nbsp;read&nbsp;by&nbsp;*&nbsp;none\ndn:&nbsp;olcDatabase={2}hdb,cn=config\nchangetype:&nbsp;modify\nreplace:&nbsp;olcSuffix\nolcSuffix:&nbsp;dc=ldap,dc=com\ndn:&nbsp;olcDatabase={2}hdb,cn=config\nchangetype:&nbsp;modify\nreplace:&nbsp;olcRootDN\nolcRootDN:&nbsp;cn=Manager,dc=ldap,dc=com\ndn:&nbsp;olcDatabase={2}hdb,cn=config\nchangetype:&nbsp;modify\nadd:&nbsp;olcRootPW\nolcRootPW:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr\nEOF<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><br\/><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">4.1\u3001\u64cd\u4f5c\u65b9\u6cd5\uff1a<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;&nbsp;\/tmp\/domain.ldif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\ndn:&nbsp;olcDatabase={1}monitor,cn=config\nchangetype:&nbsp;modify\nreplace:&nbsp;olcAccess\nolcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern\n&nbsp;al,cn=auth&quot;&nbsp;read&nbsp;by&nbsp;dn.base=&quot;cn=Manager,dc=ldap,dc=com&quot;&nbsp;read&nbsp;by&nbsp;*&nbsp;none\ndn:&nbsp;olcDatabase={2}hdb,cn=config\nchangetype:&nbsp;modify\nreplace:&nbsp;olcSuffix\nolcSuffix:&nbsp;dc=ldap,dc=com\ndn:&nbsp;olcDatabase={2}hdb,cn=config\nchangetype:&nbsp;modify\nreplace:&nbsp;olcRootDN\nolcRootDN:&nbsp;cn=Manager,dc=ldap,dc=com\ndn:&nbsp;olcDatabase={2}hdb,cn=config\nchangetype:&nbsp;modify\nadd:&nbsp;olcRootPW\nolcRootPW:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr\n[root@ldapserver01&nbsp;cn=config]#&nbsp;ldapadd&nbsp;-Y&nbsp;EXTERNAL&nbsp;-H&nbsp;ldapi:\/\/\/&nbsp;-f&nbsp;\/tmp\/domain.ldif&nbsp;\nSASL\/EXTERNAL&nbsp;authentication&nbsp;started\nSASL&nbsp;username:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth\nSASL&nbsp;SSF:&nbsp;0\nmodifying&nbsp;entry&nbsp;&quot;olcDatabase={1}monitor,cn=config&quot;\nmodifying&nbsp;entry&nbsp;&quot;olcDatabase={2}hdb,cn=config&quot;\nmodifying&nbsp;entry&nbsp;&quot;olcDatabase={2}hdb,cn=config&quot;\nmodifying&nbsp;entry&nbsp;&quot;olcDatabase={2}hdb,cn=config&quot;\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u67e5\u770b\u4fee\u6539\u540e\u7684\u6587\u4ef6\uff1a<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\\=\\{2\\}hdb.ldif&nbsp;\n#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.\n#&nbsp;CRC32&nbsp;7160b48b\ndn:&nbsp;olcDatabase={2}hdb\nobjectClass:&nbsp;olcDatabaseConfig\nobjectClass:&nbsp;olcHdbConfig\nolcDatabase:&nbsp;{2}hdb\nolcDbDirectory:&nbsp;\/var\/lib\/ldap\nolcDbIndex:&nbsp;objectClass&nbsp;eq,pres\nolcDbIndex:&nbsp;ou,cn,mail,surname,givenname&nbsp;eq,pres,sub\nstructuralObjectClass:&nbsp;olcHdbConfig\nentryUUID:&nbsp;a9da5450-4cd0-1037-930f-f5a0198f7b5b\ncreatorsName:&nbsp;cn=config\ncreateTimestamp:&nbsp;20171024063108Z\nolcSuffix:&nbsp;dc=ldap,dc=com\nolcRootDN:&nbsp;cn=Manager,dc=ldap,dc=com\nolcRootPW::&nbsp;e1NTSEF9YktHdnN2QThHb2hkSldYU0Z5ZHR3STZpckk1N2JJcHI=\nentryCSN:&nbsp;20171024071035.422517Z#000000#000#000000\nmodifiersName:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth\nmodifyTimestamp:&nbsp;20171024071035Z\n[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;olcDatabase\\=\\{1\\}monitor.ldif&nbsp;\n#&nbsp;AUTO-GENERATED&nbsp;FILE&nbsp;-&nbsp;DO&nbsp;NOT&nbsp;EDIT!!&nbsp;Use&nbsp;ldapmodify.\n#&nbsp;CRC32&nbsp;bc7ee631\ndn:&nbsp;olcDatabase={1}monitor\nobjectClass:&nbsp;olcDatabaseConfig\nolcDatabase:&nbsp;{1}monitor\nstructuralObjectClass:&nbsp;olcDatabaseConfig\nentryUUID:&nbsp;a9da455a-4cd0-1037-930e-f5a0198f7b5b\ncreatorsName:&nbsp;cn=config\ncreateTimestamp:&nbsp;20171024063108Z\nolcAccess:&nbsp;{0}to&nbsp;*&nbsp;by&nbsp;dn.base=&quot;gidNumber=0+uidNumber=0,cn=peercred,cn=extern\n&nbsp;al,cn=auth&quot;&nbsp;read&nbsp;by&nbsp;dn.base=&quot;cn=Manager,dc=ldap,dc=com&quot;&nbsp;read&nbsp;by&nbsp;*&nbsp;none\nentryCSN:&nbsp;20171024071035.418045Z#000000#000#000000\nmodifiersName:&nbsp;gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth\nmodifyTimestamp:&nbsp;20171024071035Z\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><br\/><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">5\u3001\u8bbe\u7f6e\u7ec4\u7ec7\u67b6\u6784<\/span><\/strong><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;\"><span style=\"font-size:14px;\">&nbsp; LDAP\u76ee\u5f55\u4ee5\u6811\u72b6\u7684\u5c42\u6b21\u7ed3\u6784\u6765\u5b58\u50a8\u6570\u636e\u3002\u5982\u679c\u4f60\u5bf9\u81ea\u9876\u5411\u4e0b\u7684DNS\u6811\u6216UNIX\u6587\u4ef6\u7684\u76ee\u5f55\u6811\u6bd4\u8f83\u719f\u6089\uff0c\u4e5f\u5c31\u5f88\u5bb9\u6613\u638c\u63e1LDAP\u76ee\u5f55\u6811\u8fd9\u4e2a\u6982\u5ff5\u4e86\u3002\u5c31\u8c61DNS\u7684\u4e3b\u673a\u540d\u90a3\u6837\uff0cLDAP\u76ee\u5f55\u8bb0\u5f55\u7684\u6807\u8bc6\u540d\uff08Distinguished Name\uff0c\u7b80\u79f0DN\uff09\u662f\u7528\u6765\u8bfb\u53d6\u5355\u4e2a\u8bb0\u5f55\uff0c\u4ee5\u53ca\u56de\u6eaf\u5230\u6811\u7684\u9876\u90e8\u3002<\/span><\/span><\/p><pre class=\"brush:bash;toolbar:false\">cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-x&nbsp;-D&nbsp;cn=Manager,dc=ldap,dc=com&nbsp;-W\ndn:&nbsp;dc=ldap,dc=com\nobjectClass:&nbsp;dcObject\nobjectClass:&nbsp;organization\ndc:&nbsp;ldap\no:&nbsp;ldap.com\ndn:&nbsp;ou=People,dc=ldap,dc=com\nobjectClass:&nbsp;organizationalUnit\nobjectClass:&nbsp;top\nou:&nbsp;People\ndn:&nbsp;ou=Group,dc=ldap,dc=com\nobjectClass:&nbsp;organizationalUnit\nou:&nbsp;Group\ndn:&nbsp;cn=Manager,dc=ldap,dc=com\nobjectClass:&nbsp;organizationalRole\ncn:&nbsp;Manager\ndn:&nbsp;cn=Host,ou=Group,dc=ldap,dc=com\nobjectClass:&nbsp;posixGroup\ncn:&nbsp;Host\ngidNumber:&nbsp;1010\nEOF<\/pre><p><br\/><\/p><p>5.1<span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;font-weight:bold;\">\u6267\u884c\u6dfb\u52a0\u6761\u76ee\u64cd\u4f5c\uff1a<\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-x&nbsp;-D&nbsp;cn=Manager,dc=ldap,dc=com&nbsp;-W\n&gt;&nbsp;dn:&nbsp;dc=ldap,dc=com\n&gt;&nbsp;objectClass:&nbsp;dcObject\n&gt;&nbsp;objectClass:&nbsp;organization\n&gt;&nbsp;dc:&nbsp;ldap\n&gt;&nbsp;o:&nbsp;ldap.com\n&gt;&nbsp;\n&gt;&nbsp;dn:&nbsp;ou=People,dc=ldap,dc=com\n&gt;&nbsp;objectClass:&nbsp;organizationalUnit\n&gt;&nbsp;objectClass:&nbsp;top\n&gt;&nbsp;ou:&nbsp;People\n&gt;&nbsp;\n&gt;&nbsp;dn:&nbsp;ou=Group,dc=ldap,dc=com\n&gt;&nbsp;objectClass:&nbsp;organizationalUnit\n&gt;&nbsp;ou:&nbsp;Group\n&gt;&nbsp;\n&gt;&nbsp;dn:&nbsp;cn=Manager,dc=ldap,dc=com\n&gt;&nbsp;objectClass:&nbsp;organizationalRole\n&gt;&nbsp;cn:&nbsp;Manager\n&gt;&nbsp;\n&gt;&nbsp;dn:&nbsp;cn=Host,ou=Group,dc=ldap,dc=com\n&gt;&nbsp;objectClass:&nbsp;posixGroup\n&gt;&nbsp;cn:&nbsp;Host\n&gt;&nbsp;gidNumber:&nbsp;1010\n&gt;&nbsp;EOF\nEnter&nbsp;LDAP&nbsp;Password:&nbsp;\nadding&nbsp;new&nbsp;entry&nbsp;&quot;dc=ldap,dc=com&quot;\nadding&nbsp;new&nbsp;entry&nbsp;&quot;ou=People,dc=ldap,dc=com&quot;\nadding&nbsp;new&nbsp;entry&nbsp;&quot;ou=Group,dc=ldap,dc=com&quot;\nadding&nbsp;new&nbsp;entry&nbsp;&quot;cn=Manager,dc=ldap,dc=com&quot;\nadding&nbsp;new&nbsp;entry&nbsp;&quot;cn=Host,ou=Group,dc=ldap,dc=com&quot;\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><br\/><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u67e5\u770b\u6dfb\u52a0\u7684\u6761\u76ee\u6709\u4e24\u79cd\u65b9\u6cd5<\/span><\/strong><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u2460\u547d\u4ee4\u65b9\u5f0f\u67e5\u770b\uff0c\u6dfb\u52a0\u5b57\u6bb5BASE\u548cURI<\/span><\/strong><\/p><pre class=\"brush:bash;toolbar:false;\">[root@ldapserver01&nbsp;cn=config]#&nbsp;vim&nbsp;&nbsp;\/etc\/openldap\/ldap.conf&nbsp;&nbsp;&nbsp;&nbsp;\n#\n#&nbsp;LDAP&nbsp;Defaults\n#\n#&nbsp;See&nbsp;ldap.conf(5)&nbsp;for&nbsp;details\n#&nbsp;This&nbsp;file&nbsp;should&nbsp;be&nbsp;world&nbsp;readable&nbsp;but&nbsp;not&nbsp;world&nbsp;writable.\n#BASE&nbsp;&nbsp;&nbsp;dc=example,dc=com\n#URI&nbsp;&nbsp;&nbsp;&nbsp;ldap:\/\/ldap.example.com&nbsp;ldap:\/\/ldap-master.example.com:666\n#SIZELIMIT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;12\n#TIMELIMIT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;15\n#DEREF&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;never\nTLS_CACERTDIR&nbsp;&nbsp;&nbsp;\/etc\/openldap\/certs\n#&nbsp;Turning&nbsp;this&nbsp;off&nbsp;breaks&nbsp;GSSAPI&nbsp;used&nbsp;with&nbsp;krb5&nbsp;when&nbsp;rdns&nbsp;=&nbsp;false\nSASL_NOCANON&nbsp;&nbsp;&nbsp;&nbsp;on\nBASE&nbsp;&nbsp;dc=ldap,dc=com\nURI&nbsp;&nbsp;&nbsp;ldap:\/\/192.168.112.200\n[root@ldapserver01&nbsp;cn=config]#&nbsp;\n[root@ldapserver01&nbsp;cn=config]#&nbsp;ldapsearch&nbsp;-x&nbsp;-LLL\ndn:&nbsp;dc=ldap,dc=com\nobjectClass:&nbsp;dcObject\nobjectClass:&nbsp;organization\ndc:&nbsp;ldap\no:&nbsp;ldap.com\ndn:&nbsp;ou=People,dc=ldap,dc=com\nobjectClass:&nbsp;organizationalUnit\nobjectClass:&nbsp;top\nou:&nbsp;People\ndn:&nbsp;ou=Group,dc=ldap,dc=com\nobjectClass:&nbsp;organizationalUnit\nou:&nbsp;Group\ndn:&nbsp;cn=Manager,dc=ldap,dc=com\nobjectClass:&nbsp;organizationalRole\ncn:&nbsp;Manager\ndn:&nbsp;cn=Host,ou=Group,dc=ldap,dc=com\nobjectClass:&nbsp;posixGroup\ncn:&nbsp;Host\ngidNumber:&nbsp;1010\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><p><br\/><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u2461url\u65b9\u5f0f\u67e5\u770b\uff0c\u8be5\u65b9\u5f0f\u4e3b\u8981\u901a\u8fc7ldapadmin\u5de5\u5177\u67e5\u770b<\/span><\/strong><\/p><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">www.ldapadmin.org\/download\/languages\/index.html<\/span><\/p><p><br\/><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u2462\u901a\u8fc7web\u754c\u9762\u65b9\u5f0f\u67e5\u770b\uff0c\u540e\u9762\u4f1a\u4ecb\u7ecd<\/span><\/strong><\/p><p><br\/><\/p><p><span style=\"font-family:\u5b8b\u4f53, SimSun\"><span style=\"font-size:14px;\"><strong>6\u3001<strong style=\"white-space:normal;\"><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u6dfb\u52a0\u7528\u6237\uff1a<\/span><\/strong><\/strong><\/span><\/span><\/p><pre class=\"brush:bash;toolbar:false\">cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-x&nbsp;-D&nbsp;cn=Manager,dc=ldap,dc=com&nbsp;-W\ndn:&nbsp;uid=user01,ou=People,dc=ldap,dc=com\nobjectClass:&nbsp;inetOrgPerson\nobjectClass:&nbsp;posixAccount\nobjectClass:&nbsp;shadowAccount\nhomeDirectory:&nbsp;\/home\/user01\nuserPassword:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr\nloginShell:&nbsp;\/bin\/bash\ncn:&nbsp;user01\nuidNumber:&nbsp;1000\ngidNumber:&nbsp;1010\nsn:&nbsp;System&nbsp;Administrator\nmail:&nbsp;user01@gmail.com\nmobile:&nbsp;12888888888\nEOF<\/pre><p><br\/><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><\/p><p><span style=\"font-family:\u5b8b\u4f53, SimSun\"><span style=\"font-size:14px;\"><strong>6.1&nbsp;<strong style=\"white-space:normal;\"><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u6267\u884c\u6dfb\u52a0\u7528\u6237\u64cd\u4f5c\u547d\u4ee4:<\/span><\/strong><\/strong><\/span><\/span><\/p><pre class=\"brush:bash;toolbar:false\">[root@ldapserver01&nbsp;cn=config]#&nbsp;cat&nbsp;&lt;&lt;&nbsp;EOF&nbsp;|ldapadd&nbsp;-x&nbsp;-D&nbsp;cn=Manager,dc=ldap,dc=com&nbsp;-W\n&gt;&nbsp;dn:&nbsp;uid=user01,ou=People,dc=ldap,dc=com\n&gt;&nbsp;objectClass:&nbsp;inetOrgPerson\n&gt;&nbsp;objectClass:&nbsp;posixAccount\n&gt;&nbsp;objectClass:&nbsp;shadowAccount\n&gt;&nbsp;homeDirectory:&nbsp;\/home\/user01\n&gt;&nbsp;userPassword:&nbsp;{SSHA}bKGvsvA8GohdJWXSFydtwI6irI57bIpr\n&gt;&nbsp;loginShell:&nbsp;\/bin\/bash\n&gt;&nbsp;cn:&nbsp;user01\n&gt;&nbsp;uidNumber:&nbsp;1000\n&gt;&nbsp;gidNumber:&nbsp;1010\n&gt;&nbsp;sn:&nbsp;System&nbsp;Administrator\n&gt;&nbsp;mail:&nbsp;user01@gmail.com\n&gt;&nbsp;mobile:&nbsp;12888888888\n&gt;&nbsp;EOF\nEnter&nbsp;LDAP&nbsp;Password:&nbsp;\nadding&nbsp;new&nbsp;entry&nbsp;&quot;uid=user01,ou=People,dc=ldap,dc=com&quot;\n[root@ldapserver01&nbsp;cn=config]#<\/pre><p><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\"><\/span><br\/><\/p><p><strong><span style=\"font-family:&#39;\u5b8b\u4f53&#39;, SimSun;font-size:14px;\">\u81f3\u6b64\uff0c\u4e00\u4e2a\u7b80\u5355\u7684ldap\u670d\u52a1\u7aef\u914d\u7f6e\u5b8c\u6210\uff0c\u63a5\u4e0b\u6765\u914d\u7f6eldap\u5ba2\u6237\u7aef<\/span><\/strong><\/p><p><br\/><\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"统一用户登录管理认证LDAP 服务端部署",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1575039835; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="https://static1.51cto.com/edu/blog/js/marked.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/highlight.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail_mp.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail.js"></script><script src="https://static1.51cto.com/edu/blog/js/details_new.js"></script><script src="https://static1.51cto.com/edu/blog/js/copy.js"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="https://log.51cto.com/pageview.php?frompos=blog_art"></iframe>
+</div>
+
+<script src="https://static1.51cto.com/edu/blog/js/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type='text/javascript'>
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="https://static1.51cto.com/edu//blog/js/jquery.cookie.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+</body>
+</html>

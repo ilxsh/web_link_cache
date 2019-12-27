@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html id="XF" lang="en-US" dir="LTR" data-app="public" data-template="thread_view" data-container-key="node-12" data-content-key="thread-1541" data-logged-in="false" data-cookie-prefix="xf_" data-csrf="1574789912,ada1f8b9cd0f79c3d39c5a434557b572" class="has-no-js template-thread_view" data-run-jobs="">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Howto OpenSSH + LDAP on Debian | vpsBoard</title>
+<meta name="description" content="Firstly let me say, this guide is targeted at Debian Squeeze, although it will work on Wheezy. No warranty implied if you lock yourself out of a server, be..." />
+<meta property="og:description" content="Firstly let me say, this guide is targeted at Debian Squeeze, although it will work on Wheezy. No warranty implied if you lock yourself out of a server, be sure to have a KVM or something if you are attempting this on a production sever.
+
+At the end of this you should have a server that can be..." />
+<meta property="twitter:description" content="Firstly let me say, this guide is targeted at Debian Squeeze, although it will work on Wheezy. No warranty implied if you lock yourself out of a server, be sure to have a KVM or something if you..." />
+<meta property="og:url" content="https://vpsboard.com/threads/howto-openssh-ldap-on-debian.1541/" />
+<link rel="canonical" href="https://vpsboard.com/threads/howto-openssh-ldap-on-debian.1541/" />
+<meta property="og:site_name" content="vpsBoard" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Howto OpenSSH + LDAP on Debian" />
+<meta property="twitter:title" content="Howto OpenSSH + LDAP on Debian" />
+<meta property="og:image" content="https://vpsboard.com/logo.og.jpg" />
+<meta property="twitter:image" content="https://vpsboard.com/logo.og.jpg" />
+<meta property="twitter:card" content="summary" />
+<meta name="theme-color" content="#323232" />
+<link rel="preload" href="/styles/fonts/fa/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+<link rel="preload" href="/styles/fonts/fa/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+<link rel="preload" href="/styles/fonts/fa/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+<link rel="stylesheet" href="/css.php?css=public%3Anormalize.css%2Cpublic%3Acore.less%2Cpublic%3Aapp.less&amp;s=4&amp;l=1&amp;d=1563509493&amp;k=0e2ec012b88d96b40d781bac6aa01e951612d268" />
+<link rel="stylesheet" href="/css.php?css=public%3Amessage.less%2Cpublic%3Ashare_controls.less%2Cpublic%3Aextra.less&amp;s=4&amp;l=1&amp;d=1563509493&amp;k=f694c9550cc4ef2e066aa28d9502fd0e401ded01" />
+<script src="/js/xf/preamble.min.js?_v=7f022cb9"></script>
+<link rel="apple-touch-icon" href="https://vpsboard.com/logo.og.jpg" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-98267531-1"></script>
+<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+		gtag('config', 'UA-98267531-1', {
+			// 
+			
+			
+		});
+	</script>
+</head>
+<body data-template="thread_view">
+<div class="p-pageWrapper" id="top">
+<header class="p-header" id="header">
+<div class="p-header-inner">
+<div class="p-header-content">
+<div class="p-header-logo p-header-logo--image">
+<a href="/">
+<img src="https://vpsboard.com/logo.png" alt="vpsBoard" />
+</a>
+</div>
+</div>
+</div>
+</header>
+<div class="p-navSticky p-navSticky--primary" data-xf-init="sticky-header">
+<nav class="p-nav">
+<div class="p-nav-inner">
+<a class="p-nav-menuTrigger" data-xf-click="off-canvas" data-menu=".js-headerOffCanvasMenu" role="button" tabindex="0">
+<i aria-hidden="true"></i>
+<span class="p-nav-menuText">Menu</span>
+</a>
+<div class="p-nav-smallLogo">
+<a href="/">
+<img src="https://vpsboard.com/logo.png" alt="vpsBoard" />
+</a>
+</div>
+<div class="p-nav-scroller hScroller" data-xf-init="h-scroller" data-auto-scroll=".p-navEl.is-selected">
+<div class="hScroller-scroll">
+<ul class="p-nav-list js-offCanvasNavSource">
+<li>
+<div class="p-navEl is-selected" data-has-children="true">
+<a href="/" class="p-navEl-link p-navEl-link--splitMenu " data-nav-id="forums">Forums</a>
+<a data-xf-key="1" data-xf-click="menu" data-menu-pos-ref="< .p-navEl" class="p-navEl-splitTrigger" role="button" tabindex="0" aria-label="Toggle expanded" aria-expanded="false" aria-haspopup="true"></a>
+<div class="menu menu--structural" data-menu="menu" aria-hidden="true">
+<div class="menu-content">
+<a href="/whats-new/posts/" class="menu-linkRow u-indentDepth0 js-offCanvasCopy " data-nav-id="newPosts">New posts</a>
+<a href="/search/?type=post" class="menu-linkRow u-indentDepth0 js-offCanvasCopy " data-nav-id="searchForums">Search forums</a>
+</div>
+</div>
+</div>
+</li>
+<li>
+<div class="p-navEl " data-has-children="true">
+<a href="/whats-new/" class="p-navEl-link p-navEl-link--splitMenu " data-nav-id="whatsNew">What's new</a>
+<a data-xf-key="2" data-xf-click="menu" data-menu-pos-ref="< .p-navEl" class="p-navEl-splitTrigger" role="button" tabindex="0" aria-label="Toggle expanded" aria-expanded="false" aria-haspopup="true"></a>
+<div class="menu menu--structural" data-menu="menu" aria-hidden="true">
+<div class="menu-content">
+<a href="/whats-new/posts/" class="menu-linkRow u-indentDepth0 js-offCanvasCopy " rel="nofollow" data-nav-id="whatsNewPosts">New posts</a>
+<a href="/whats-new/latest-activity" class="menu-linkRow u-indentDepth0 js-offCanvasCopy " rel="nofollow" data-nav-id="latestActivity">Latest activity</a>
+</div>
+</div>
+</div>
+</li>
+<li>
+<div class="p-navEl " data-has-children="true">
+<a href="/members/" class="p-navEl-link p-navEl-link--splitMenu " data-nav-id="members">Members</a>
+<a data-xf-key="3" data-xf-click="menu" data-menu-pos-ref="< .p-navEl" class="p-navEl-splitTrigger" role="button" tabindex="0" aria-label="Toggle expanded" aria-expanded="false" aria-haspopup="true"></a>
+<div class="menu menu--structural" data-menu="menu" aria-hidden="true">
+<div class="menu-content">
+<a href="/members/list/" class="menu-linkRow u-indentDepth0 js-offCanvasCopy " data-nav-id="registeredMembers">Registered members</a>
+<a href="/online/" class="menu-linkRow u-indentDepth0 js-offCanvasCopy " data-nav-id="currentVisitors">Current visitors</a>
+</div>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="p-nav-opposite">
+<div class="p-navgroup p-account p-navgroup--guest">
+<a href="/login/" class="p-navgroup-link p-navgroup-link--textual p-navgroup-link--logIn" data-xf-click="overlay" data-follow-redirects="on">
+<span class="p-navgroup-linkText">Log in</span>
+</a>
+<a href="/register/" class="p-navgroup-link p-navgroup-link--textual p-navgroup-link--register" data-xf-click="overlay" data-follow-redirects="on">
+<span class="p-navgroup-linkText">Register</span>
+</a>
+</div>
+<div class="p-navgroup p-discovery">
+<a href="/whats-new/" class="p-navgroup-link p-navgroup-link--iconic p-navgroup-link--whatsnew" aria-label="What&#039;s new" title="What&#039;s new">
+<i aria-hidden="true"></i>
+<span class="p-navgroup-linkText">What's new</span>
+</a>
+<a href="/search/" class="p-navgroup-link p-navgroup-link--iconic p-navgroup-link--search" data-xf-click="menu" data-xf-key="/" aria-label="Search" aria-expanded="false" aria-haspopup="true" title="Search">
+<i aria-hidden="true"></i>
+<span class="p-navgroup-linkText">Search</span>
+</a>
+<div class="menu menu--structural menu--wide" data-menu="menu" aria-hidden="true">
+<form action="/search/search" method="post" class="menu-content" data-xf-init="quick-search">
+<h3 class="menu-header">Search</h3>
+<div class="menu-row">
+<div class="inputGroup inputGroup--joined">
+<input type="text" class="input" name="keywords" placeholder="Search…" aria-label="Search" data-menu-autofocus="true" />
+<select name="constraints" class="js-quickSearch-constraint input" aria-label="Search within">
+<option value="">Everywhere</option>
+<option value="{&quot;search_type&quot;:&quot;post&quot;}">Threads</option>
+<option value="{&quot;search_type&quot;:&quot;post&quot;,&quot;c&quot;:{&quot;nodes&quot;:[12],&quot;child_nodes&quot;:1}}">This forum</option>
+<option value="{&quot;search_type&quot;:&quot;post&quot;,&quot;c&quot;:{&quot;thread&quot;:1541}}">This thread</option>
+</select>
+</div>
+</div>
+<div class="menu-row">
+<label class="iconic"><input type="checkbox" name="c[title_only]" value="1" /><i aria-hidden="true"></i><span class="iconic-label">Search titles only</span></label>
+</div>
+<div class="menu-row">
+<div class="inputGroup">
+<span class="inputGroup-text" id="ctrl_search_menu_by_member">By:</span>
+<input type="text" class="input" name="c[users]" data-xf-init="auto-complete" placeholder="Member" aria-labelledby="ctrl_search_menu_by_member" />
+</div>
+</div>
+<div class="menu-footer">
+<span class="menu-footer-controls">
+<button type="submit" class="button--primary button button--icon button--icon--search"><span class="button-text">Search</span></button>
+<a href="/search/" class="button"><span class="button-text">Advanced search…</span></a>
+</span>
+</div>
+<input type="hidden" name="_xfToken" value="1574789912,ada1f8b9cd0f79c3d39c5a434557b572" />
+</form>
+</div>
+</div>
+</div>
+</div>
+</nav>
+</div>
+<div class="p-sectionLinks">
+<div class="p-sectionLinks-inner hScroller" data-xf-init="h-scroller">
+<div class="hScroller-scroll">
+<ul class="p-sectionLinks-list">
+<li>
+<div class="p-navEl ">
+<a href="/whats-new/posts/" class="p-navEl-link " data-xf-key="alt+1" data-nav-id="newPosts">New posts</a>
+</div>
+</li>
+<li>
+<div class="p-navEl ">
+<a href="/search/?type=post" class="p-navEl-link " data-xf-key="alt+2" data-nav-id="searchForums">Search forums</a>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="offCanvasMenu offCanvasMenu--nav js-headerOffCanvasMenu" data-menu="menu" aria-hidden="true" data-ocm-builder="navigation">
+<div class="offCanvasMenu-backdrop" data-menu-close="true"></div>
+<div class="offCanvasMenu-content">
+<div class="offCanvasMenu-header">
+Menu
+<a class="offCanvasMenu-closer" data-menu-close="true" role="button" tabindex="0" aria-label="Close"></a>
+</div>
+<div class="p-offCanvasRegisterLink">
+<div class="offCanvasMenu-linkHolder">
+<a href="/login/" class="offCanvasMenu-link" data-xf-click="overlay" data-menu-close="true">
+Log in
+</a>
+</div>
+<hr class="offCanvasMenu-separator" />
+<div class="offCanvasMenu-linkHolder">
+<a href="/register/" class="offCanvasMenu-link" data-xf-click="overlay" data-menu-close="true">
+Register
+</a>
+</div>
+<hr class="offCanvasMenu-separator" />
+</div>
+<div class="js-offCanvasNavTarget"></div>
+</div>
+</div>
+<div class="p-body">
+<div class="p-body-inner">
+
+<ul class="p-breadcrumbs " itemscope itemtype="https://schema.org/BreadcrumbList">
+<li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+<a href="/" itemprop="item">
+<span itemprop="name">Forums</span>
+</a>
+<meta itemprop="position" content="1" />
+</li>
+<li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+<a href="/.#web-hosting.4" itemprop="item">
+<span itemprop="name">Web Hosting</span>
+</a>
+<meta itemprop="position" content="2" />
+</li>
+<li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+<a href="/forums/tutorials-and-guides.12/" itemprop="item">
+<span itemprop="name">Tutorials and Guides</span>
+</a>
+<meta itemprop="position" content="3" />
+</li>
+</ul>
+<noscript><div class="blockMessage blockMessage--important blockMessage--iconic u-noJsOnly">JavaScript is disabled. For a better experience, please enable JavaScript in your browser before proceeding.</div></noscript>
+<!--[if lt IE 9]><div class="blockMessage blockMessage&#45;&#45;important blockMessage&#45;&#45;iconic">You are using an out of date browser. It  may not display this or other websites correctly.<br />You should upgrade or use an <a href="https://www.google.com/chrome/browser/" target="_blank">alternative browser</a>.</div><![endif]-->
+<div class="p-body-header">
+<div class="p-title ">
+<h1 class="p-title-value">Howto OpenSSH + LDAP on Debian</h1>
+</div>
+<div class="p-description">
+<ul class="listInline listInline--bullet">
+<li>
+<i class="fa--xf far fa-user" aria-hidden="true" title="Thread starter"></i>
+<span class="u-srOnly">Thread starter</span>
+<a href="/members/splitice.542/" class="username  u-concealed" dir="auto" data-user-id="542" data-xf-init="member-tooltip">splitice</a>
+</li>
+<li>
+<i class="fa--xf far fa-clock" aria-hidden="true" title="Start date"></i>
+<span class="u-srOnly">Start date</span>
+<a href="/threads/howto-openssh-ldap-on-debian.1541/" class="u-concealed"><time class="u-dt" dir="auto" datetime="2013-08-11T02:08:55-0500" data-time="1376204935" data-date-string="Aug 11, 2013" data-time-string="2:08 AM" title="Aug 11, 2013 at 2:08 AM">Aug 11, 2013</time></a>
+</li>
+<li>
+<dl class="tagList tagList--thread-1541 ">
+<dt>
+<i class="fa--xf far fa-tags" aria-hidden="true" title="Tags"></i>
+<span class="u-srOnly">Tags</span>
+</dt>
+<dd>
+<span class="js-tagList">
+<a href="/tags/debian/" class="tagItem" dir="auto">debian</a>
+<a href="/tags/ldap/" class="tagItem" dir="auto">ldap</a>
+<a href="/tags/openssh/" class="tagItem" dir="auto">openssh</a>
+</span>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+</div>
+<div class="p-body-main  ">
+<div class="p-body-content">
+<div class="p-body-pageContent">
+<div class="block block--messages" data-xf-init="" data-type="post" data-href="/inline-mod/">
+<div class="block-outer"></div>
+<div class="block-outer js-threadStatusField"></div>
+<div class="block-container lbContainer" data-xf-init="lightbox select-to-quote" data-message-selector=".js-post" data-lb-id="thread-1541" data-lb-universal="0">
+<div class="block-body js-replyNewMessageContainer">
+<article class="message message--post js-post js-inlineModContainer  " data-author="splitice" data-content="post-24512" id="js-post-24512">
+<span class="u-anchorTarget" id="post-24512"></span>
+<div class="message-inner">
+<div class="message-cell message-cell--user">
+<section itemscope itemtype="https://schema.org/Person" class="message-user">
+<div class="message-avatar ">
+<div class="message-avatar-wrapper">
+<a href="/members/splitice.542/" class="avatar avatar--m" data-user-id="542" data-xf-init="member-tooltip">
+<img src="/data/avatars/m/0/542.jpg?1493429415" alt="splitice" class="avatar-u542-m" itemprop="image" />
+</a>
+</div>
+</div>
+<div class="message-userDetails">
+<h4 class="message-name"><a href="/members/splitice.542/" class="username " dir="auto" data-user-id="542" data-xf-init="member-tooltip" itemprop="name">splitice</a></h4>
+<h5 class="userTitle message-userTitle" dir="auto" itemprop="jobTitle">Just a little bit crazy...</h5>
+<div class="userBanner userBanner userBanner--orange message-userBanner" itemprop="jobTitle"><span class="userBanner-before"></span><strong>Verified Provider</strong><span class="userBanner-after"></span></div>
+</div>
+<span class="message-userArrow"></span>
+</section>
+</div>
+<div class="message-cell message-cell--main">
+<div class="message-main js-quickEditTarget">
+<header class="message-attribution message-attribution--split">
+<div class="message-attribution-main">
+<a href="/threads/howto-openssh-ldap-on-debian.1541/post-24512" class="u-concealed" rel="nofollow">
+<time class="u-dt" dir="auto" datetime="2013-08-11T02:08:55-0500" data-time="1376204935" data-date-string="Aug 11, 2013" data-time-string="2:08 AM" title="Aug 11, 2013 at 2:08 AM">Aug 11, 2013</time>
+</a>
+</div>
+<ul class="message-attribution-opposite message-attribution-opposite--list">
+<li>
+<a href="/threads/howto-openssh-ldap-on-debian.1541/post-24512" data-xf-init="share-tooltip" data-href="/posts/24512/share" rel="nofollow">
+<i class="fa--xf far fa-share-alt" aria-hidden="true"></i>
+</a>
+</li>
+<li>
+<a href="/threads/howto-openssh-ldap-on-debian.1541/post-24512" rel="nofollow">
+#1
+</a>
+</li>
+</ul>
+</header>
+<div class="message-content js-messageContent">
+<div class="message-userContent lbContainer js-lbContainer " data-lb-id="post-24512" data-lb-caption-desc="splitice &middot; Aug 11, 2013 at 2:08 AM">
+<article class="message-body js-selectToQuote">
+<div class="bbWrapper">Firstly let me say, this guide is targeted at Debian Squeeze, although it will work on Wheezy. No warranty implied if you lock yourself out of a server, be sure to have a KVM or something if you are attempting this on a production sever.<br />
+<br />
+At the end of this you should have a server that can be authenticated via LDAP and with support for SSH Keys delivered over LDAP. What is not covered in this is setting up the LDAP server and IPSec (or SSL) for securing transport.<br />
+<br />
+This should not be attempted unless you have a solid grasp of the fundamentals as LDAP and PAM can be an absolute pain to debug.<br />
+<br />
+<b>Steps:</b><br />
+<br />
+1. Upgrade OpenSSH<br />
+<br />
+2. Install LDAP components.<br />
+<br />
+3. LDAP configuration<br />
+<br />
+4. Configure OpenSSH<br />
+<br />
+<b>Step 1. OpenSSH</b><br />
+<br />
+Debian comes with a version of OpenSSH that is too old to include support for getting authorized keys from an executed command. So we need to upgrade it to the latest.<br />
+<br />
+You will need a working compiler (build-essential) and the openssl library and headers.<br />
+<br />
+wget http://openbsd.mirrors.pair.com/OpenSSH/portable/openssh-6.2p2.tar.gz<br />
+tar -zxvf openssh-*.tar.gz<br />
+cd openssh-6.2p2<br />
+<br />
+<br />
+./configure --with-md5-passwords --sbindir=/usr/sbin --with-pam<br />
+make<br />
+make install<br />
+Or just run this script file: <a href="http://www.x4b.net/files/openssh-build.sh" target="_blank" class="link link--external" rel="nofollow noopener">http://www.x4b.net/files/openssh-build.sh</a><br />
+<b>Step 2. Install LDAP components</b><br />
+<br />
+apt-get install libnss-ldapd  ldap-utils libpam0g-dev <br />
+<br />
+<b>Step 3. Configuration Files</b><br />
+<br />
+There is alot of configuration required to get LDAP working if you are interested in the meaning of these files, consult a manual.<br />
+<br />
+You will need to edit/replace the following files. Take care to replace the bindpw etc in all files.<br />
+<br />
+ /etc/pam.d/common-account<br />
+<br />
+/etc/pam.d/common-auth<br />
+/etc/pam.d/common-password<br />
+/etc/pam.d/common-session<br />
+/etc/pam.d/common-session-noninteractive<br />
+/etc/nscd.conf<br />
+/etc/nslcd.conf<br />
+/etc/nsswitch.conf<br />
+/etc/ldap/ldap.conf Configuration files can be found rar'ed here: <a href="http://x4b.net/files/ldap.rar" target="_blank" class="link link--external" rel="nofollow noopener">http://x4b.net/files/ldap.rar</a><br />
+<br />
+Restart nslcd and nscd<br />
+<br />
+If everything is as expected &quot;getent passwd user&quot; where user is a user defined via LDAP should return a user entry.<br />
+<br />
+<b>Step 4. Configure OpenSSH</b><br />
+<br />
+add the following lines to /etc/ssh/sshd_config for LDAP ssh keys<br />
+<br />
+AuthorizedKeysCommand /var/LDAP/ldap-keys.sh<br />
+AuthorizedKeysCommandUser root <br />
+Create the file /var/LDAP/ldap-keys.sh and ensure it has execute permission<br />
+<br />
+ldapsearch -H ${uri} \<br />
+-w &quot;${bindpw}&quot; -D &quot;${binddn}&quot; \<br />
+-b &quot;${base}&quot; \<br />
+'(objectClass=posixAccount)(uid='&quot;$1&quot;')' \<br />
+'sshPublicKey' \<br />
+| sed -n '/^ /{H;d};/sshPublicKey:/x;$g;s/\n *//g;s/sshPublicKey: //gp' Add the following to /etc/defaults/ssh to ensure OpenSSH looks for its configuration at the Debian path<br />
+<br />
+SSHD_OPTS=&quot; -f /etc/ssh/sshd_config&quot; <b>Conclusion</b><br />
+<br />
+Restart OpenSSH and hope for the best. If you do have an issue your current open session should remain open allowing you to fix it.</div>
+<div class="js-selectToQuoteEnd">&nbsp;</div>
+</article>
+</div>
+<div class="message-lastEdit">
+Last edited by a moderator: <time class="u-dt" dir="auto" datetime="2013-08-12T08:19:44-0500" data-time="1376313584" data-date-string="Aug 12, 2013" data-time-string="8:19 AM" title="Aug 12, 2013 at 8:19 AM">Aug 12, 2013</time>
+</div>
+</div>
+<footer class="message-footer">
+<div class="reactionsBar js-reactionsList is-active">
+<ul class="reactionSummary">
+<li><span class="reaction reaction--small reaction--1" data-reaction-id="1"><i aria-hidden="true"></i><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="reaction-sprite js-reaction" alt="Like" title="Like" /></span></li>
+</ul>
+<span class="u-srOnly">Reactions:</span>
+<a class="reactionsBar-link" href="/posts/24512/reactions" data-xf-click="overlay" data-cache="false"><bdi>patz</bdi></a>
+</div>
+<div class="js-historyTarget message-historyTarget toggleTarget" data-href="trigger-href"></div>
+</footer>
+</div>
+</div>
+</div>
+</article>
+<article class="message message--post js-post js-inlineModContainer  " data-author="HalfEatenPie" data-content="post-24513" id="js-post-24513">
+<span class="u-anchorTarget" id="post-24513"></span>
+<div class="message-inner">
+<div class="message-cell message-cell--user">
+<section itemscope itemtype="https://schema.org/Person" class="message-user">
+<div class="message-avatar ">
+<div class="message-avatar-wrapper">
+<a href="/members/halfeatenpie.7/" class="avatar avatar--m" data-user-id="7" data-xf-init="member-tooltip">
+<img src="/data/avatars/m/0/7.jpg?1493429411" alt="HalfEatenPie" class="avatar-u7-m" itemprop="image" />
+</a>
+</div>
+</div>
+<div class="message-userDetails">
+<h4 class="message-name"><a href="/members/halfeatenpie.7/" class="username " dir="auto" data-user-id="7" data-xf-init="member-tooltip" itemprop="name">HalfEatenPie</a></h4>
+<h5 class="userTitle message-userTitle" dir="auto" itemprop="jobTitle">The Irrational One</h5>
+<div class="userBanner userBanner userBanner--silver message-userBanner" itemprop="jobTitle"><span class="userBanner-before"></span><strong>Retired Staff</strong><span class="userBanner-after"></span></div>
+</div>
+<span class="message-userArrow"></span>
+</section>
+</div>
+<div class="message-cell message-cell--main">
+<div class="message-main js-quickEditTarget">
+<header class="message-attribution message-attribution--split">
+<div class="message-attribution-main">
+<a href="/threads/howto-openssh-ldap-on-debian.1541/post-24513" class="u-concealed" rel="nofollow">
+<time class="u-dt" dir="auto" datetime="2013-08-11T02:30:26-0500" data-time="1376206226" data-date-string="Aug 11, 2013" data-time-string="2:30 AM" title="Aug 11, 2013 at 2:30 AM">Aug 11, 2013</time>
+</a>
+</div>
+<ul class="message-attribution-opposite message-attribution-opposite--list">
+<li>
+<a href="/threads/howto-openssh-ldap-on-debian.1541/post-24513" data-xf-init="share-tooltip" data-href="/posts/24513/share" rel="nofollow">
+<i class="fa--xf far fa-share-alt" aria-hidden="true"></i>
+</a>
+</li>
+<li>
+<a href="/threads/howto-openssh-ldap-on-debian.1541/post-24513" rel="nofollow">
+#2
+</a>
+</li>
+</ul>
+</header>
+<div class="message-content js-messageContent">
+<div class="message-userContent lbContainer js-lbContainer " data-lb-id="post-24513" data-lb-caption-desc="HalfEatenPie &middot; Aug 11, 2013 at 2:30 AM">
+<article class="message-body js-selectToQuote">
+<div class="bbWrapper">I hid the other one because it seemed like it was a double post.  If it wasn't then let me know.<br />
+<br />
+Nice Tutorial by the way! <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="smilie smilie--sprite smilie--sprite1" alt=":)" title="Smile    :)" data-shortname=":)" /></div>
+<div class="js-selectToQuoteEnd">&nbsp;</div>
+</article>
+</div>
+</div>
+<footer class="message-footer">
+<div class="reactionsBar js-reactionsList ">
+</div>
+<div class="js-historyTarget message-historyTarget toggleTarget" data-href="trigger-href"></div>
+</footer>
+</div>
+</div>
+</div>
+</article>
+<article class="message message--post js-post js-inlineModContainer  " data-author="splitice" data-content="post-24516" id="js-post-24516">
+<span class="u-anchorTarget" id="post-24516"></span>
+<div class="message-inner">
+<div class="message-cell message-cell--user">
+<section itemscope itemtype="https://schema.org/Person" class="message-user">
+<div class="message-avatar ">
+<div class="message-avatar-wrapper">
+<a href="/members/splitice.542/" class="avatar avatar--m" data-user-id="542" data-xf-init="member-tooltip">
+<img src="/data/avatars/m/0/542.jpg?1493429415" alt="splitice" class="avatar-u542-m" itemprop="image" />
+</a>
+</div>
+</div>
+<div class="message-userDetails">
+<h4 class="message-name"><a href="/members/splitice.542/" class="username " dir="auto" data-user-id="542" data-xf-init="member-tooltip" itemprop="name">splitice</a></h4>
+<h5 class="userTitle message-userTitle" dir="auto" itemprop="jobTitle">Just a little bit crazy...</h5>
+<div class="userBanner userBanner userBanner--orange message-userBanner" itemprop="jobTitle"><span class="userBanner-before"></span><strong>Verified Provider</strong><span class="userBanner-after"></span></div>
+</div>
+<span class="message-userArrow"></span>
+</section>
+</div>
+<div class="message-cell message-cell--main">
+<div class="message-main js-quickEditTarget">
+<header class="message-attribution message-attribution--split">
+<div class="message-attribution-main">
+<a href="/threads/howto-openssh-ldap-on-debian.1541/post-24516" class="u-concealed" rel="nofollow">
+<time class="u-dt" dir="auto" datetime="2013-08-11T02:54:14-0500" data-time="1376207654" data-date-string="Aug 11, 2013" data-time-string="2:54 AM" title="Aug 11, 2013 at 2:54 AM">Aug 11, 2013</time>
+</a>
+</div>
+<ul class="message-attribution-opposite message-attribution-opposite--list">
+<li>
+<a href="/threads/howto-openssh-ldap-on-debian.1541/post-24516" data-xf-init="share-tooltip" data-href="/posts/24516/share" rel="nofollow">
+<i class="fa--xf far fa-share-alt" aria-hidden="true"></i>
+</a>
+</li>
+<li>
+<a href="/threads/howto-openssh-ldap-on-debian.1541/post-24516" rel="nofollow">
+#3
+</a>
+</li>
+</ul>
+</header>
+<div class="message-content js-messageContent">
+<div class="message-userContent lbContainer js-lbContainer " data-lb-id="post-24516" data-lb-caption-desc="splitice &middot; Aug 11, 2013 at 2:54 AM">
+<article class="message-body js-selectToQuote">
+<div class="bbWrapper">Sorry what?<br />
+<br />
+The problem I refer to in that code block is obvious if you try and stick that code in a code block the code block glitches.<br />
+<br />
+<b>EDIT: Found the trick its an incompatibility with tabs</b></div>
+<div class="js-selectToQuoteEnd">&nbsp;</div>
+</article>
+</div>
+<div class="message-lastEdit">
+Last edited by a moderator: <time class="u-dt" dir="auto" datetime="2013-08-11T02:55:46-0500" data-time="1376207746" data-date-string="Aug 11, 2013" data-time-string="2:55 AM" title="Aug 11, 2013 at 2:55 AM">Aug 11, 2013</time>
+</div>
+</div>
+<footer class="message-footer">
+<div class="reactionsBar js-reactionsList ">
+</div>
+<div class="js-historyTarget message-historyTarget toggleTarget" data-href="trigger-href"></div>
+</footer>
+</div>
+</div>
+</div>
+</article>
+</div>
+</div>
+<div class="block-outer block-outer--after">
+<div class="block-outer-opposite">
+<a href="/login/" class="button--link button" data-xf-click="overlay"><span class="button-text">
+You must log in or register to reply here.
+</span></a>
+</div>
+</div>
+</div>
+<div class="blockMessage blockMessage--none">
+<div class="shareButtons shareButtons--iconic" data-xf-init="share-buttons" data-page-url="" data-page-title="" data-page-desc="">
+<span class="shareButtons-label">Share:</span>
+<div class="shareButtons-buttons">
+<a class="shareButtons-button shareButtons-button--brand shareButtons-button--facebook" data-href="https://www.facebook.com/sharer.php?u={url}">
+<i aria-hidden="true"></i>
+<span>Facebook</span>
+</a>
+<a class="shareButtons-button shareButtons-button--brand shareButtons-button--twitter" data-href="https://twitter.com/intent/tweet?url={url}&amp;text={title}&amp;via=vpsboard">
+<i aria-hidden="true"></i>
+<span>Twitter</span>
+</a>
+<a class="shareButtons-button shareButtons-button--brand shareButtons-button--reddit" data-href="https://reddit.com/submit?url={url}&amp;title={title}">
+<i aria-hidden="true"></i>
+<span>Reddit</span>
+</a>
+<a class="shareButtons-button shareButtons-button--brand shareButtons-button--pinterest" data-href="https://pinterest.com/pin/create/bookmarklet/?url={url}&amp;description={title}">
+<i aria-hidden="true"></i>
+ <span>Pinterest</span>
+</a>
+<a class="shareButtons-button shareButtons-button--brand shareButtons-button--tumblr" data-href="https://www.tumblr.com/widgets/share/tool?canonicalUrl={url}&amp;title={title}">
+<i aria-hidden="true"></i>
+<span>Tumblr</span>
+</a>
+<a class="shareButtons-button shareButtons-button--brand shareButtons-button--whatsApp" data-href="https://api.whatsapp.com/send?text={title}&nbsp;{url}">
+<i aria-hidden="true"></i>
+<span>WhatsApp</span>
+</a>
+<a class="shareButtons-button shareButtons-button--email" data-href="mailto:?subject={title}&amp;body={url}">
+<i aria-hidden="true"></i>
+<span>Email</span>
+</a>
+<a class="shareButtons-button shareButtons-button--link is-hidden" data-clipboard="{url}">
+<i aria-hidden="true"></i>
+<span>Link</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<ul class="p-breadcrumbs p-breadcrumbs--bottom" itemscope itemtype="https://schema.org/BreadcrumbList">
+<li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+<a href="/" itemprop="item">
+<span itemprop="name">Forums</span>
+</a>
+<meta itemprop="position" content="1" />
+</li>
+<li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+<a href="/.#web-hosting.4" itemprop="item">
+<span itemprop="name">Web Hosting</span>
+</a>
+<meta itemprop="position" content="2" />
+</li>
+<li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+<a href="/forums/tutorials-and-guides.12/" itemprop="item">
+<span itemprop="name">Tutorials and Guides</span>
+</a>
+<meta itemprop="position" content="3" />
+</li>
+</ul>
+</div>
+</div>
+<footer class="p-footer" id="footer">
+<div class="p-footer-inner">
+<div class="p-footer-row">
+<div class="p-footer-row-main">
+<ul class="p-footer-linkList">
+<li><a href="/misc/style" data-xf-click="overlay" data-xf-init="tooltip" title="Style chooser" rel="nofollow">
+<i class="fa--xf far fa-paint-brush" aria-hidden="true"></i> vpsBoard 1.5
+</a></li>
+</ul>
+</div>
+<div class="p-footer-row-opposite">
+<ul class="p-footer-linkList">
+<li><a href="/misc/contact/" data-xf-click="overlay">Contact us</a></li>
+<li><a href="https://vpsboard.com/threads/vpsboard-rules-guidelines.9673/#post-109014">Terms and rules</a></li>
+<li><a href="https://vpsboard.com/pages/privacy-policy">Privacy policy</a></li>
+<li><a href="/help/">Help</a></li>
+<li><a href="/forums/-/index.rss" target="_blank" class="p-footer-rssLink" title="RSS"><span aria-hidden="true"><i class="fa--xf far fa-rss" aria-hidden="true"></i><span class="u-srOnly">RSS</span></span></a></li>
+</ul>
+</div>
+</div>
+<div class="p-footer-copyright">
+<a href="https://xenforo.com" class="u-concealed" dir="ltr" target="_blank">Forum software by XenForo<sup>&reg;</sup> <span class="copyright">&copy; 2010-2019 XenForo Ltd.</span></a>
+</div>
+</div>
+</footer>
+</div> 
+<div class="u-bottomFixer js-bottomFixTarget">
+</div>
+<div class="u-scrollButtons js-scrollButtons" data-trigger-type="up">
+<a href="#top" class="button--scroll button" data-xf-click="scroll-to"><span class="button-text"><i class="fa--xf far fa-arrow-up" aria-hidden="true"></i><span class="u-srOnly">Top</span></span></a>
+</div>
+<script src="/js/vendor/jquery/jquery-3.3.1.min.js?_v=7f022cb9"></script>
+<script src="/js/vendor/vendor-compiled.js?_v=7f022cb9"></script>
+<script src="/js/xf/core-compiled.js?_v=7f022cb9"></script>
+<script>
+	XF.samViewCountMethod = "view";
+	XF.samServerTime = 1574789912;
+</script>
+<script>
+		jQuery.extend(true, XF.config, {
+			// 
+			userId: 0,
+			enablePush: true,
+			pushAppServerKey: 'BK79T28wo11ZNUjr4q88f0sCooEh8429Xs5ybJLe3qcRTODBWvuTJ1haCUzHjToTbM7xLkE+h0Rrm4S1buWJ/nE=',
+			url: {
+				fullBase: 'https://vpsboard.com/',
+				basePath: '/',
+				css: '/css.php?css=__SENTINEL__&s=4&l=1&d=1563509493',
+				keepAlive: '/login/keep-alive'
+			},
+			cookie: {
+				path: '/',
+				domain: '',
+				prefix: 'xf_',
+				secure: true
+			},
+			csrf: '1574789912,ada1f8b9cd0f79c3d39c5a434557b572',
+			js: {},
+			css: {"public:message.less":true,"public:share_controls.less":true,"public:extra.less":true},
+			time: {
+				now: 1574789912,
+				today: 1574748000,
+				todayDow: 2
+			},
+			borderSizeFeature: '3px',
+			fontAwesomeWeight: 'r',
+			enableRtnProtect: true,
+			enableFormSubmitSticky: true,
+			uploadMaxFilesize: 10485760,
+			allowedVideoExtensions: ["m4v","mov","mp4","mp4v","mpeg","mpg","ogv","webm"],
+			shortcodeToEmoji: true,
+			visitorCounts: {
+				conversations_unread: '0',
+				alerts_unread: '0',
+				total_unread: '0',
+				title_count: true,
+				icon_indicator: true
+			},
+			jsState: {},
+			publicMetadataLogoUrl: 'https://vpsboard.com/logo.og.jpg',
+			publicPushBadgeUrl: 'https://vpsboard.com/styles/default/xenforo/bell.png'
+		});
+
+		jQuery.extend(XF.phrases, {
+			// 
+			date_x_at_time_y: "{date} at {time}",
+			day_x_at_time_y:  "{day} at {time}",
+			yesterday_at_x:   "Yesterday at {time}",
+			x_minutes_ago:    "{minutes} minutes ago",
+			one_minute_ago:   "1 minute ago",
+			a_moment_ago:     "A moment ago",
+			today_at_x:       "Today at {time}",
+			in_a_moment:      "In a moment",
+			in_a_minute:      "In a minute",
+			in_x_minutes:     "In {minutes} minutes",
+			later_today_at_x: "Later today at {time}",
+			tomorrow_at_x:    "Tomorrow at {time}",
+
+			day0: "Sunday",
+			day1: "Monday",
+			day2: "Tuesday",
+			day3: "Wednesday",
+			day4: "Thursday",
+			day5: "Friday",
+			day6: "Saturday",
+
+			dayShort0: "Sun",
+			dayShort1: "Mon",
+			dayShort2: "Tue",
+			dayShort3: "Wed",
+			dayShort4: "Thu",
+			dayShort5: "Fri",
+			dayShort6: "Sat",
+
+			month0: "January",
+			month1: "February",
+			month2: "March",
+			month3: "April",
+			month4: "May",
+			month5: "June",
+			month6: "July",
+			month7: "August",
+			month8: "September",
+			month9: "October",
+			month10: "November",
+			month11: "December",
+
+			active_user_changed_reload_page: "The active user has changed. Reload the page for the latest version.",
+			server_did_not_respond_in_time_try_again: "The server did not respond in time. Please try again.",
+			oops_we_ran_into_some_problems: "Oops! We ran into some problems.",
+			oops_we_ran_into_some_problems_more_details_console: "Oops! We ran into some problems. Please try again later. More error details may be in the browser console.",
+			file_too_large_to_upload: "The file is too large to be uploaded.",
+			uploaded_file_is_too_large_for_server_to_process: "The uploaded file is too large for the server to process.",
+			files_being_uploaded_are_you_sure: "Files are still being uploaded. Are you sure you want to submit this form?",
+			attach: "Attach files",
+			rich_text_box: "Rich text box",
+			close: "Close",
+			link_copied_to_clipboard: "Link copied to clipboard.",
+			text_copied_to_clipboard: "Text copied to clipboard.",
+			loading: "Loading…",
+
+			processing: "Processing",
+			'processing...': "Processing…",
+
+			showing_x_of_y_items: "Showing {count} of {total} items",
+			showing_all_items: "Showing all items",
+			no_items_to_display: "No items to display",
+
+			push_enable_notification_title: "Push notifications enabled successfully at vpsBoard",
+			push_enable_notification_body: "Thank you for enabling push notifications!"
+		});
+	</script>
+<form style="display:none" hidden="hidden">
+<input type="text" name="_xfClientLoadTime" value="" id="_xfClientLoadTime" title="_xfClientLoadTime" tabindex="-1" />
+</form>
+<script type="text/template" id="xfReactTooltipTemplate">
+		<div class="tooltip-content-inner">
+			<div class="reactTooltip">
+				
+					<a href="#" class="reaction reaction--1" data-reaction-id="1"><i aria-hidden="true"></i><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="reaction-sprite js-reaction" alt="Like" title="Like" data-xf-init="tooltip" /></a>
+				
+					<a href="#" class="reaction reaction--2" data-reaction-id="2"><i aria-hidden="true"></i><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="reaction-sprite js-reaction" alt="Love" title="Love" data-xf-init="tooltip" /></a>
+				
+					<a href="#" class="reaction reaction--3" data-reaction-id="3"><i aria-hidden="true"></i><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="reaction-sprite js-reaction" alt="Haha" title="Haha" data-xf-init="tooltip" /></a>
+				
+					<a href="#" class="reaction reaction--4" data-reaction-id="4"><i aria-hidden="true"></i><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="reaction-sprite js-reaction" alt="Wow" title="Wow" data-xf-init="tooltip" /></a>
+				
+					<a href="#" class="reaction reaction--5" data-reaction-id="5"><i aria-hidden="true"></i><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="reaction-sprite js-reaction" alt="Sad" title="Sad" data-xf-init="tooltip" /></a>
+				
+					<a href="#" class="reaction reaction--6" data-reaction-id="6"><i aria-hidden="true"></i><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="reaction-sprite js-reaction" alt="Angry" title="Angry" data-xf-init="tooltip" /></a>
+				
+			</div>
+		</div>
+	</script>
+<script type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "DiscussionForumPosting",
+			"@id": "https:\/\/vpsboard.com\/threads\/howto-openssh-ldap-on-debian.1541\/",
+			"headline": "Howto OpenSSH + LDAP on Debian",
+			"articleBody": "Firstly let me say, this guide is targeted at Debian Squeeze, although it will work on Wheezy. No warranty implied if you lock yourself out of a server, be sure to have a KVM or something if you are attempting this on a production sever.\n\nAt the end of this you should have a server that can be authenticated via LDAP and with support for SSH Keys delivered over LDAP. What is not covered in this is setting up the LDAP server and IPSec (or SSL) for securing transport.\n\nThis should not be attempted unless you have a solid grasp of the fundamentals as LDAP and PAM can be an absolute pain to debug.\n\nSteps:\n\n1. Upgrade OpenSSH\n\n2. Install LDAP components.\n\n3. LDAP configuration\n\n4. Configure OpenSSH\n\nStep 1. OpenSSH\n\nDebian comes with a version of OpenSSH that is too old to include support for getting authorized keys from an executed command. So we need to upgrade it to the latest.\n\nYou will need a working compiler (build-essential) and the openssl library and headers.\n\nwget http:\/\/openbsd.mirrors.pair.com\/OpenSSH\/portable\/openssh-6.2p2.tar.gz\ntar -zxvf openssh-*.tar.gz\ncd openssh-6.2p2\n\n\n.\/configure --with-md5-passwords --sbindir=\/usr\/sbin --with-pam\nmake\nmake install\nOr just run this script file: http:\/\/www.x4b.net\/files\/openssh-build.sh\nStep 2. Install LDAP components\n\napt-get install libnss-ldapd  ldap-utils libpam0g-dev \n\nStep 3. Configuration Files\n\nThere is alot of configuration required to get LDAP working if you are interested in the meaning of these files, consult a manual.\n\nYou will need to edit\/replace the following files. Take care to replace the bindpw etc in all files.\n\n \/etc\/pam.d\/common-account\n\n\/etc\/pam.d\/common-auth\n\/etc\/pam.d\/common-password\n\/etc\/pam.d\/common-session\n\/etc\/pam.d\/common-session-noninteractive\n\/etc\/nscd.conf\n\/etc\/nslcd.conf\n\/etc\/nsswitch.conf\n\/etc\/ldap\/ldap.conf Configuration files can be found rar'ed here: http:\/\/x4b.net\/files\/ldap.rar\n\nRestart nslcd and nscd\n\nIf everything is as expected \"getent passwd user\" where user is a user defined via LDAP should return a user entry.\n\nStep 4. Configure OpenSSH\n\nadd the following lines to \/etc\/ssh\/sshd_config for LDAP ssh keys\n\nAuthorizedKeysCommand \/var\/LDAP\/ldap-keys.sh\nAuthorizedKeysCommandUser root \nCreate the file \/var\/LDAP\/ldap-keys.sh and ensure it has execute permission\n\nldapsearch -H ${uri} \\\n-w \"${bindpw}\" -D \"${binddn}\" \\\n-b \"${base}\" \\\n'(objectClass=posixAccount)(uid='\"$1\"')' \\\n'sshPublicKey' \\\n| sed -n '\/^ \/{H;d};\/sshPublicKey:\/x;$g;s\/\\n *\/\/g;s\/sshPublicKey: \/\/gp' Add the following to \/etc\/defaults\/ssh to ensure OpenSSH looks for its configuration at the Debian path\n\nSSHD_OPTS=\" -f \/etc\/ssh\/sshd_config\" Conclusion\n\nRestart OpenSSH and hope for the best. If you do have an issue your current open session should remain open allowing you to fix it.",
+			"articleSection": "Tutorials and Guides",
+			"author": {
+				"@type": "Person",
+				"name": "splitice"
+			},
+			"datePublished": "2013-08-11",
+			"dateModified": "2013-08-11",
+			"image": "https:\/\/vpsboard.com\/data\/avatars\/l\/0\/542.jpg?1493429415",
+			"interactionStatistic": {
+				"@type": "InteractionCounter",
+				"interactionType": "https://schema.org/ReplyAction",
+				"userInteractionCount": 2
+			}
+		}
+		</script>
+</body>
+</html>

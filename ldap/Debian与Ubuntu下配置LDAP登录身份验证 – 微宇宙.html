@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="profile" href="http://gmpg.org/xfn/11">
+	<link rel="pingback" href="https://zhensheng.im/xmlrpc.php">
+
+  	<meta name="description" content="前几天在两个使用Ubuntu Server 12.04的 VPS上搭建了LDAP环境。  Ubuntu使用LDAP身份验证，仅需从更新源安装libpam-ldap nscd这两个DEB包， apt-get -y install libpam-ldap nscd 然后根据引导一步步填入信息，再修改下pam的配置文件即可使用。  不过昨天在给两个个使用Debian的虚拟专用服务器使用同样的方法安装并配置LDAP身份验证客户端时，就一直弄不好.." />
+  	<meta name="keywords" content="Debian, LDAP, pam, SSH, ubuntu, Unix Like, 操作系统, 服务器, 未分类" />
+  	<title>Debian与Ubuntu下配置LDAP登录身份验证 &#8211; 微宇宙</title>
+<link rel='dns-prefetch' href='//static.zhensheng.im' />
+<link rel='dns-prefetch' href='//fonts.googleapis.com' />
+<link rel='dns-prefetch' href='//s.w.org' />
+<link rel="alternate" type="application/rss+xml" title="微宇宙 &raquo; Feed" href="https://zhensheng.im/feed" />
+<link rel="alternate" type="application/rss+xml" title="微宇宙 &raquo; 评论Feed" href="https://zhensheng.im/comments/feed" />
+<link rel="alternate" type="application/rss+xml" title="微宇宙 &raquo; Debian与Ubuntu下配置LDAP登录身份验证评论Feed" href="https://zhensheng.im/2014/07/20/2268/MIAO_LE_GE_MI/feed" />
+		<script type="text/javascript">
+			window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/12.0.0-1\/72x72\/","ext":".png","svgUrl":"https:\/\/s.w.org\/images\/core\/emoji\/12.0.0-1\/svg\/","svgExt":".svg","source":{"concatemoji":"https:\/\/zhensheng.im\/wp-includes\/js\/wp-emoji-release.min.js?ver=5.3"}};
+			!function(e,a,t){var r,n,o,i,p=a.createElement("canvas"),s=p.getContext&&p.getContext("2d");function c(e,t){var a=String.fromCharCode;s.clearRect(0,0,p.width,p.height),s.fillText(a.apply(this,e),0,0);var r=p.toDataURL();return s.clearRect(0,0,p.width,p.height),s.fillText(a.apply(this,t),0,0),r===p.toDataURL()}function l(e){if(!s||!s.fillText)return!1;switch(s.textBaseline="top",s.font="600 32px Arial",e){case"flag":return!c([127987,65039,8205,9895,65039],[127987,65039,8203,9895,65039])&&(!c([55356,56826,55356,56819],[55356,56826,8203,55356,56819])&&!c([55356,57332,56128,56423,56128,56418,56128,56421,56128,56430,56128,56423,56128,56447],[55356,57332,8203,56128,56423,8203,56128,56418,8203,56128,56421,8203,56128,56430,8203,56128,56423,8203,56128,56447]));case"emoji":return!c([55357,56424,55356,57342,8205,55358,56605,8205,55357,56424,55356,57340],[55357,56424,55356,57342,8203,55358,56605,8203,55357,56424,55356,57340])}return!1}function d(e){var t=a.createElement("script");t.src=e,t.defer=t.type="text/javascript",a.getElementsByTagName("head")[0].appendChild(t)}for(i=Array("flag","emoji"),t.supports={everything:!0,everythingExceptFlag:!0},o=0;o<i.length;o++)t.supports[i[o]]=l(i[o]),t.supports.everything=t.supports.everything&&t.supports[i[o]],"flag"!==i[o]&&(t.supports.everythingExceptFlag=t.supports.everythingExceptFlag&&t.supports[i[o]]);t.supports.everythingExceptFlag=t.supports.everythingExceptFlag&&!t.supports.flag,t.DOMReady=!1,t.readyCallback=function(){t.DOMReady=!0},t.supports.everything||(n=function(){t.readyCallback()},a.addEventListener?(a.addEventListener("DOMContentLoaded",n,!1),e.addEventListener("load",n,!1)):(e.attachEvent("onload",n),a.attachEvent("onreadystatechange",function(){"complete"===a.readyState&&t.readyCallback()})),(r=t.source||{}).concatemoji?d(r.concatemoji):r.wpemoji&&r.twemoji&&(d(r.twemoji),d(r.wpemoji)))}(window,document,window._wpemojiSettings);
+		</script>
+		<style type="text/css">
+img.wp-smiley,
+img.emoji {
+	display: inline !important;
+	border: none !important;
+	box-shadow: none !important;
+	height: 1em !important;
+	width: 1em !important;
+	margin: 0 .07em !important;
+	vertical-align: -0.1em !important;
+	background: none !important;
+	padding: 0 !important;
+}
+</style>
+	<link rel='stylesheet' id='wp-block-library-css'  href='https://zhensheng.im/wp-includes/css/dist/block-library/style.min.css?ver=5.3' type='text/css' media='all' />
+<link rel='stylesheet' id='owl-carousel-css'  href='https://static.zhensheng.im/wp-content/plugins/ammi-widgets/assets/owl-carousel/owl.carousel.css?ver=1.3.3' type='text/css' media='all' />
+<link rel='stylesheet' id='owl-theme-css'  href='https://static.zhensheng.im/wp-content/plugins/ammi-widgets/assets/owl-carousel/owl.theme.css?ver=1.3.3' type='text/css' media='all' />
+<link rel='stylesheet' id='ammi-google-fonts-css'  href='//fonts.googleapis.com/css?family=Montserrat%3A400%2C400i%2C700%2C700i%7CLato%3A400%2C400i%2C700%2C700i%7CNoto+Serif%3A400%2C400i%2C700%2C700i%7CUbuntu%3A400%2C400i%2C700%2C700i&#038;subset=latin&#038;ver=2.0.0' type='text/css' media='all' />
+<link rel='stylesheet' id='bootstrap-css'  href='https://static.zhensheng.im/wp-content/themes/ammi/css/bootstrap.min.css?ver=3.4.1' type='text/css' media='all' />
+<link rel='stylesheet' id='bootstrap-theme-css'  href='https://static.zhensheng.im/wp-content/themes/ammi/css/bootstrap-theme.min.css?ver=3.4.1' type='text/css' media='all' />
+<link rel='stylesheet' id='ammi-ie10-viewport-bug-workaround-css'  href='https://static.zhensheng.im/wp-content/themes/ammi/css/ie10-viewport-bug-workaround.css?ver=3.4.1' type='text/css' media='all' />
+<link rel='stylesheet' id='font-awesome-css'  href='https://static.zhensheng.im/wp-content/themes/ammi/css/font-awesome.min.css?ver=4.7.0' type='text/css' media='all' />
+<link rel='stylesheet' id='magnific-popup-css'  href='https://static.zhensheng.im/wp-content/themes/ammi/assets/magnific-popup/magnific-popup.css?ver=1.1.0' type='text/css' media='all' />
+<link rel='stylesheet' id='ammi-style-css'  href='https://static.zhensheng.im/wp-content/themes/ammi/style.css?ver=2.0.0' type='text/css' media='all' />
+<style id='ammi-style-inline-css' type='text/css'>
+
+		.bwp-post-media img,
+		.bwp-post-carousel-item img,
+		.w_bwp_posts_slider_item_link img {
+			width: 100%;
+			margin: 0;
+		}
+</style>
+<link rel='stylesheet' id='enlighter-local-css'  href='https://static.zhensheng.im/wp-content/plugins/enlighter/resources/EnlighterJS.min.css?ver=3.10.0' type='text/css' media='all' />
+<script type='text/javascript' src='https://static.zhensheng.im/wp-includes/js/jquery/jquery.js'></script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-includes/js/jquery/jquery-migrate.min.js'></script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-includes/js/wp-embed.min.js'></script>
+<!--[if lt IE 9]>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/themes/ammi/js/html5shiv.min.js?ver=3.7.3'></script>
+<![endif]-->
+<!--[if lt IE 9]>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/themes/ammi/js/respond.min.js?ver=1.4.2'></script>
+<![endif]-->
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/plugins/countdown-timer/js/webtoolkit.sprintf.js?ver=3.0.7'></script>
+<link rel='https://api.w.org/' href='https://zhensheng.im/wp-json/' />
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://zhensheng.im/xmlrpc.php?rsd" />
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="https://zhensheng.im/wp-includes/wlwmanifest.xml" /> 
+<link rel='prev' title='WHMCS LDAP Modules' href='https://zhensheng.im/2014/07/18/2256/MIAO_LE_GE_MI' />
+<link rel='next' title='VPN下路由表的编辑，实现部分IP直连' href='https://zhensheng.im/2014/07/23/2282/MIAO_LE_GE_MI' />
+<meta name="generator" content="WordPress 5.3" />
+<link rel="canonical" href="https://zhensheng.im/2014/07/20/2268/MIAO_LE_GE_MI" />
+<link rel='shortlink' href='https://zhensheng.im/?p=2268' />
+<link rel="alternate" type="application/json+oembed" href="https://zhensheng.im/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fzhensheng.im%2F2014%2F07%2F20%2F2268%2FMIAO_LE_GE_MI" />
+<link rel="alternate" type="text/xml+oembed" href="https://zhensheng.im/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fzhensheng.im%2F2014%2F07%2F20%2F2268%2FMIAO_LE_GE_MI&#038;format=xml" />
+<style type="text/css">.recentcomments a{display:inline !important;padding:0 !important;margin:0 !important;}</style></head>
+
+<body class="post-template-default single single-post postid-2268 single-format-standard">
+
+<!-- global container -->
+<div id="bwp-global-container" class="bwp-sidebar-close">
+
+	
+		<!-- fixed buttons -->
+		<div class="bwp-fixed-buttons hidden-sm hidden-xs">
+
+							<!-- "show sidebar" button -->
+				<a href="#" rel="nofollow" id="bwp-show-main-sidebar" class="bwp-show-main-sidebar-btn">
+					<span></span>
+				</a>
+				<!-- end: "show sidebar" button -->
+			
+							<!-- search -->
+				<div class="bwp-fixed-search">
+					<!-- search button -->
+					<a href="#" rel="nofollow" id="bwp-show-dropdown-search" class="bwp-show-dropdown-search-btn">
+						<i class="fa fa-search"></i>
+					</a>
+					<!-- end: search button -->
+					<!-- search form container -->
+					<div id="bwp-dropdown-search" class="bwp-dropdown-search-container bwp-search-hidden">
+						
+<!-- search form -->
+<form id="searchform" role="search" method="get" action="https://zhensheng.im/">
+	<div class="input-group">
+		<input type="text" name="s" id="s" class="bwp-search-field form-control" placeholder="Enter your search query...">
+		<span class="input-group-btn">
+			<button type="submit" class="btn bwp-search-submit">
+				<i class="fa fa-arrow-right"></i>
+			</button>
+		</span>
+	</div>
+</form>
+<!-- end: search form -->
+					</div>
+					<!-- end: search form container -->
+				</div>
+				<!-- end: search -->
+			
+		</div>
+		<!-- end: fixed buttons -->
+
+		
+			<!-- main sidebar -->
+		<div class="bwp-main-sidebar hidden-sm hidden-xs" role="complementary">
+			<aside id="archives-2" class="bwp-widget widget_archive clearfix"><h3 class="bwp-widget-title">文章归档</h3>		<label class="screen-reader-text" for="archives-dropdown-2">文章归档</label>
+		<select id="archives-dropdown-2" name="archive-dropdown">
+			
+			<option value="">选择月份</option>
+				<option value='https://zhensheng.im/2019/11'> 2019年十一月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2019/09'> 2019年九月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2019/02'> 2019年二月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2019/01'> 2019年一月 &nbsp;(4)</option>
+	<option value='https://zhensheng.im/2018/11'> 2018年十一月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2018/07'> 2018年七月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2018/05'> 2018年五月 &nbsp;(4)</option>
+	<option value='https://zhensheng.im/2018/04'> 2018年四月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2017/10'> 2017年十月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2017/08'> 2017年八月 &nbsp;(4)</option>
+	<option value='https://zhensheng.im/2017/05'> 2017年五月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2017/03'> 2017年三月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2016/07'> 2016年七月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2016/06'> 2016年六月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2016/04'> 2016年四月 &nbsp;(5)</option>
+	<option value='https://zhensheng.im/2016/03'> 2016年三月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2016/01'> 2016年一月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2015/12'> 2015年十二月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2015/11'> 2015年十一月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2015/10'> 2015年十月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2015/08'> 2015年八月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2015/07'> 2015年七月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2015/01'> 2015年一月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/12'> 2014年十二月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/10'> 2014年十月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/09'> 2014年九月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/08'> 2014年八月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/07'> 2014年七月 &nbsp;(4)</option>
+	<option value='https://zhensheng.im/2014/05'> 2014年五月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/04'> 2014年四月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2014/03'> 2014年三月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2014/02'> 2014年二月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2014/01'> 2014年一月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2013/12'> 2013年十二月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2013/11'> 2013年十一月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2013/10'> 2013年十月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2013/09'> 2013年九月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2013/08'> 2013年八月 &nbsp;(5)</option>
+	<option value='https://zhensheng.im/2013/07'> 2013年七月 &nbsp;(6)</option>
+	<option value='https://zhensheng.im/2013/06'> 2013年六月 &nbsp;(5)</option>
+	<option value='https://zhensheng.im/2013/04'> 2013年四月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2013/03'> 2013年三月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2013/02'> 2013年二月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2013/01'> 2013年一月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2012/12'> 2012年十二月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2012/07'> 2012年七月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2012/05'> 2012年五月 &nbsp;(1)</option>
+
+		</select>
+
+<script type="text/javascript">
+/* <![CDATA[ */
+(function() {
+	var dropdown = document.getElementById( "archives-dropdown-2" );
+	function onSelectChange() {
+		if ( dropdown.options[ dropdown.selectedIndex ].value !== '' ) {
+			document.location.href = this.options[ this.selectedIndex ].value;
+		}
+	}
+	dropdown.onchange = onSelectChange;
+})();
+/* ]]> */
+</script>
+
+		</aside><aside id="categories-3" class="bwp-widget widget_categories clearfix"><h3 class="bwp-widget-title">分类目录</h3>		<ul>
+				<li class="cat-item cat-item-544"><a href="https://zhensheng.im/category/note">NOTE</a> (6)
+</li>
+	<li class="cat-item cat-item-376"><a href="https://zhensheng.im/category/operating-system">操作系统</a> (38)
+<ul class='children'>
+	<li class="cat-item cat-item-51"><a href="https://zhensheng.im/category/operating-system/unix-like">Unix Like</a> (31)
+</li>
+	<li class="cat-item cat-item-445"><a href="https://zhensheng.im/category/operating-system/windows">Windows</a> (5)
+</li>
+	<li class="cat-item cat-item-533"><a href="https://zhensheng.im/category/operating-system/%e7%bd%91%e7%bb%9c">网络</a> (8)
+	<ul class='children'>
+	<li class="cat-item cat-item-536"><a href="https://zhensheng.im/category/operating-system/%e7%bd%91%e7%bb%9c/vpn">VPN</a> (3)
+</li>
+	</ul>
+</li>
+</ul>
+</li>
+	<li class="cat-item cat-item-541"><a href="https://zhensheng.im/category/%e6%95%b0%e6%8d%ae%e5%88%86%e6%9e%90">数据分析</a> (1)
+</li>
+	<li class="cat-item cat-item-229"><a href="https://zhensheng.im/category/internet-server" title="Linux or Windows Server">服务器</a> (47)
+<ul class='children'>
+	<li class="cat-item cat-item-256"><a href="https://zhensheng.im/category/internet-server/devops">运营维护</a> (22)
+</li>
+</ul>
+</li>
+	<li class="cat-item cat-item-12"><a href="https://zhensheng.im/category/unknow">未分类</a> (31)
+</li>
+	<li class="cat-item cat-item-210"><a href="https://zhensheng.im/category/mobile-phone">移动设备</a> (1)
+</li>
+	<li class="cat-item cat-item-510"><a href="https://zhensheng.im/category/programming-languages">编程</a> (13)
+<ul class='children'>
+	<li class="cat-item cat-item-511"><a href="https://zhensheng.im/category/programming-languages/c-cpp">C/CPP</a> (9)
+</li>
+	<li class="cat-item cat-item-512"><a href="https://zhensheng.im/category/programming-languages/php">PHP</a> (5)
+</li>
+</ul>
+</li>
+	<li class="cat-item cat-item-64"><a href="https://zhensheng.im/category/computer-hardware">计算机硬件</a> (4)
+</li>
+	<li class="cat-item cat-item-3"><a href="https://zhensheng.im/category/default">默认分类</a> (13)
+</li>
+		</ul>
+			</aside>		</div>
+		<!-- end: main sidebar -->
+	
+	<!-- main content -->
+	<div class="bwp-main-content">
+
+		<!-- header for small devices -->
+		<header class="bwp-sm-header hidden-md hidden-lg">
+			<div class="container">
+				<div class="bwp-sm-header-container clearfix">
+
+					
+				<!-- mobile logo (text) -->
+				<div class="bwp-sm-logo-wrap">
+					<a href="https://zhensheng.im/" rel="home" class="bwp-sm-logo-text">
+						<span>微宇宙</span>
+					</a>
+				</div>
+				<!-- end: mobile logo (text) -->
+
+				
+						<!-- mobile menu -->
+						<div class="bwp-sm-menu-wrap">
+							<!-- mobile menu icon -->
+							<a href="#" rel="nofollow" id="bwp-sm-menu-icon">
+								<i class="fa fa-bars"></i>
+							</a>
+							<!-- end: mobile menu icon -->
+							<!-- dropdown mobile menu -->
+							<div id="bwp-dropdown-sm-menu" class="bwp-sm-menu-container bwp-sm-menu-hidden">
+								<nav class="menu-menu-container"><ul id="menu-menu" class="bwp-sm-menu list-unstyled"><li id="menu-item-2933" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2933"><a href="/">首页</a></li>
+<li id="menu-item-750" class="mutheme-user menu-item menu-item-type-post_type menu-item-object-page menu-item-750"><a href="https://zhensheng.im/about">关于</a></li>
+</ul></nav>							</div>
+							<!-- end: dropdown mobile menu -->
+						</div>
+						<!-- end: mobile menu -->
+
+						
+				</div>
+			</div>
+		</header>
+		<!-- end: header for small devices -->
+
+	<!-- blog post + sidebar -->
+	<div class="container">
+		<div class="bwp-main-content-container">
+			<div class="row">
+
+				<!-- column 1 - blog post -->
+									<div class="col-md-8 col-md-push-4 bwp-single-post-col bwp-sidebar-left">
+				
+					<div class="bwp-single-post-container" role="main">
+
+						<!-- article -->
+						<article id="bwp-post-2268" class="post-2268 post type-post status-publish format-standard hentry category-unix-like category-operating-system category-internet-server category-unknow tag-debian tag-ldap tag-pam tag-ssh tag-ubuntu bwp-single-article">
+							<div class="bwp-post-wrap bwp-no-media">
+
+								<!-- header -->
+								<header class="bwp-post-header">
+
+																			<!-- format icon -->
+										<span class="bwp-post-format-icon">
+											<i class="fa fa-file-text-o"></i>
+										</span>
+										<!-- end: format icon -->
+									
+																			<!-- categories -->
+										<div class="bwp-post-categories">
+											<i class="fa fa-bookmark"></i><a href="https://zhensheng.im/category/operating-system/unix-like" rel="category tag">Unix Like</a>, <a href="https://zhensheng.im/category/operating-system" rel="category tag">操作系统</a>, <a href="https://zhensheng.im/category/internet-server" rel="category tag">服务器</a>, <a href="https://zhensheng.im/category/unknow" rel="category tag">未分类</a>										</div>
+										<!-- end: categories -->
+									
+									<!-- title -->
+									<h1 class="bwp-post-title entry-title">
+										Debian与Ubuntu下配置LDAP登录身份验证									</h1>
+									<!-- end: title -->
+
+																			<!-- metadata -->
+										<ul class="bwp-post-meta list-unstyled">
+																							<li>
+													<span class="vcard author">
+														<span class="fn">
+															<i class="fa fa-user"></i><a href="https://zhensheng.im/author/extreme" title="由Zhensheng Yuan发布" rel="author">Zhensheng Yuan</a>														</span>
+													</span>
+												</li>
+																																		<li>
+																										<span class="date updated">
+														<i class="fa fa-clock-o"></i><a href="https://zhensheng.im/2014/07/20">2014年7月20日</a>
+													</span>
+												</li>
+																					</ul>
+										<!-- end: metadata -->
+									
+								</header>
+								<!-- end: header -->
+
+								
+								<!-- content container -->
+								<div class="bwp-post-content">
+
+									
+									<!-- full post content -->
+									<div class="bwp-content entry-content clearfix">
+
+										<p>前几天在两个使用Ubuntu Server 12.04的 VPS上搭建了LDAP环境。</p>
+<p>Ubuntu使用LDAP身份验证，仅需从更新源安装libpam-ldap nscd这两个DEB包，</p>
+<pre class="lang:default decode:true">apt-get -y install libpam-ldap nscd</pre>
+<p>然后根据引导一步步填入信息，再修改下pam的配置文件即可使用。</p>
+<p>不过昨天在给两个个使用Debian的虚拟专用服务器使用同样的方法安装并配置LDAP身份验证客户端时，就一直弄不好，总是无法通过验证，从/var/log/auth.log文件可以读取到类似的信息：</p>
+<pre class="lang:default decode:true ">Jul 20 00:32:11 hostname sshd[8663]: pam_ldap: error trying to bind as user "cn=username,ou=users,dc=domain,dc=com" (Invalid credentials)</pre>
+<p>谷歌了下有关的资料，但并未找到有效的解决方案。昨天尝尽各种方法折腾了好久……</p>
+<p>今天早上起来用search从更新源看了下与ldap有关的DEB包，看到一个libnss-ldap，想起数天前弄pam_mysql时，也要安装一个libnss-mysql，于是尝试安装了这个包。</p>
+<pre class="lang:default decode:true">apt-get -y install libnss-ldap</pre>
+<p>同样，根据引导一步步填入信息，然后修改pam的配置文件。</p>
+<p>再次使用LDAP中已添加的账户登录，成功通过验证。</p>
+<p>&nbsp;</p>
+<p>为何有如此差异？</p>
+<p>先来看看Ubuntu下安装libpam-ldap nscd这两个包时输出的信息：</p>
+<pre class="lang:default decode:true">apt-get install libpam-ldap nscd
+Reading package lists... Done
+Building dependency tree... Done
+The following extra packages will be installed:
+  auth-client-config ldap-auth-client ldap-auth-config libnss-ldap
+Suggested packages:
+  libpam-cracklib
+The following NEW packages will be installed:
+  auth-client-config ldap-auth-client ldap-auth-config libnss-ldap libpam-ldap nscd</pre>
+<p>再看看Debian下安装libpam-ldap与nscd时输出的信息：</p>
+<pre class="lang:default decode:true ">apt-get install libpam-ldap nscd
+Reading package lists... Done
+Building dependency tree... Done
+Suggested packages:
+  libnss-ldapd libnss-ldap
+The following NEW packages will be installed:
+  libpam-ldap nscd</pre>
+<p>可见，Ubuntu自动安装了数个额外的DEB包，其中包括了libnss-ldap，而Debian是作为建议的DEB包出现，并没有自动安装。相信很多人都和我一样，除非出现错误信息，否则使用apt-get或yum安装东西肯定不会仔细看这些，自然也不会留意到有建议安装的包……</p>
+<p>再来看看Debian下安装libnss-ldap时输出的信息：</p>
+<pre class="lang:default decode:true ">apt-get install libnss-ldap
+Reading package lists... Done
+Building dependency tree... Done
+The following extra packages will be installed:
+  libpam-ldap nscd
+The following NEW packages will be installed:
+  libnss-ldap libpam-ldap nscd</pre>
+<p>这就充分说明，在Debian下配置LDAP验证，libnss-ldap这个包是最关键。</p>
+<p>&nbsp;</p>
+<p>最后就是配置文件。</p>
+<p>Debian下PAM的LDAP验证客户端的配置文件有两个，分别是pam-ldap和libnss-ldap的，他们在以下路径：</p>
+<pre class="lang:default decode:true ">/etc/libnss-ldap.conf
+/etc/pam_ldap.conf</pre>
+<p>密码则在以下两个文件中：</p>
+<pre class="lang:default decode:true ">/etc/libnss-ldap.secret
+/etc/pam_ldap.secret</pre>
+<p>Ubuntu应该是libnss-ldap与pam-ldap共用配置文件，其路径为：</p>
+<pre class="lang:default decode:true ">/etc/ldap.conf</pre>
+<p>密码文件在此：</p>
+<pre class="lang:default decode:true ">/etc/ldap.secret</pre>
+<p>&nbsp;</p>
+
+										<!-- clearfix -->
+										<div class="clearfix"></div>
+
+										
+									</div>
+									<!-- end: full post content -->
+
+									
+																					<!-- links -->
+											<div class="bwp-post-links">
+												<div class="row">
+													<div class="col-md-9">
+														<div class="bwp-post-tags">
+															Tags: <a href="https://zhensheng.im/tag/debian" rel="tag">Debian</a>, <a href="https://zhensheng.im/tag/ldap" rel="tag">LDAP</a>, <a href="https://zhensheng.im/tag/pam" rel="tag">pam</a>, <a href="https://zhensheng.im/tag/ssh" rel="tag">SSH</a>, <a href="https://zhensheng.im/tag/ubuntu" rel="tag">ubuntu</a>														</div>
+													</div>
+													<div class="col-md-3">
+																													<a href="#comments" class="bwp-comments-count">
+																No Comments															</a>
+																											</div>
+												</div>
+											</div>
+											<!-- end: links -->
+										
+									
+									
+								</div>
+								<!-- end: content container -->
+
+							</div>
+						</article>
+						<!-- end: article -->
+
+						
+	<nav class="navigation post-navigation" role="navigation" aria-label="文章">
+		<h2 class="screen-reader-text">文章导航</h2>
+		<div class="nav-links"><div class="nav-previous"><a href="https://zhensheng.im/2014/07/18/2256/MIAO_LE_GE_MI" rel="prev"><span class="meta-nav"><i class="fa fa-caret-left"></i>Previous post</span><span class="post-title-nav">WHMCS LDAP Modules</span></a></div><div class="nav-next"><a href="https://zhensheng.im/2014/07/23/2282/MIAO_LE_GE_MI" rel="next"><span class="meta-nav">Next post<i class="fa fa-caret-right"></i></span><span class="post-title-nav">VPN下路由表的编辑，实现部分IP直连</span></a></div></div>
+	</nav>
+		<!-- about the author -->
+		<div class="bwp-about-author clearfix">
+			<!-- avatar -->
+			<div class="bwp-about-author-avatar">
+				<a href="https://zhensheng.im/author/extreme">
+					<img alt='Zhensheng Yuan' src='https://secure.gravatar.com/avatar/6b242573b573bd6793200ba369de36d0?s=150&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/6b242573b573bd6793200ba369de36d0?s=300&#038;d=mm&#038;r=g 2x' class='avatar avatar-150 photo' height='150' width='150' />				</a>
+			</div>
+			<!-- end: avatar -->
+			<!-- biographical info -->
+			<div class="bwp-about-author-bio-wrap">
+				<h3 class="bwp-about-author-name">
+					<a href="https://zhensheng.im/author/extreme" title="由Zhensheng Yuan发布" rel="author">Zhensheng Yuan</a>					<span><i class="fa fa-pencil"></i>104 Posts</span>
+				</h3>
+				<div class="bwp-about-author-bio">
+					自信、努力、活出精彩；以前未所见的颜色，绘大千世界！				</div>
+				<a href="https://zhensheng.im/author/extreme" class="bwp-about-author-link">
+					View all posts<i class="fa fa-caret-right"></i>
+				</a>
+			</div>
+			<!-- end: biographical info -->
+		</div>
+		<!-- end: about the author -->
+
+		
+<!-- comments -->
+<div id="comments" class="comments-area">
+
+	
+	
+		<div id="respond" class="comment-respond">
+		<h2 id="reply-title" class="comment-reply-title"><span>Leave a reply</span> <small><a rel="nofollow" id="cancel-comment-reply-link" href="/2014/07/20/2268/MIAO_LE_GE_MI#respond" style="display:none;">Cancel reply</a></small></h2><form action="https://zhensheng.im/wp-comments-post.php" method="post" id="commentform" class="comment-form" novalidate><p class="comment-notes">Your email address will not be published. Required fields are marked *</p><p class="comment-form-comment"><label for="comment">评论</label> <textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" required="required"></textarea></p><p class="comment-form-author"><label for="author">姓名 <span class="required">*</span></label> <input id="author" name="author" type="text" value="" size="30" maxlength="245" required='required' /></p>
+<p class="comment-form-email"><label for="email">电子邮件 <span class="required">*</span></label> <input id="email" name="email" type="email" value="" size="30" maxlength="100" required='required' /></p>
+<p class="comment-form-url"><label for="url">站点</label> <input id="url" name="url" type="url" value="" size="30" maxlength="200" /></p>
+<p class="comment-form-cookies-consent"><input id="wp-comment-cookies-consent" name="wp-comment-cookies-consent" type="checkbox" value="yes" /> <label for="wp-comment-cookies-consent">在此浏览器中保存我的名字、电邮和网站。</label></p>
+<p class="comment-form-cookies-consent"><input type="checkbox" name="comment_mail_notify" id="comment_mail_notify" value="comment_mail_notify" checked="checked" style="margin-left:0px;width:12px;" /><label for="comment_mail_notify">有人回复时邮件通知我</label></p><p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="Post comment" /> <input type='hidden' name='comment_post_ID' value='2268' id='comment_post_ID' />
+<input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+</p><p style="display: none;"><input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce" value="be99188241" /></p><p style="display: none;"><input type="hidden" id="ak_js" name="ak_js" value="51"/></p></form>	</div><!-- #respond -->
+	
+</div>
+<!-- end: comments -->
+
+		<!-- related posts (by tags) -->
+		<div class="bwp-related-posts">
+
+			<!-- title -->
+			<h2 class="bwp-posts-list-title">
+				You might also like:			</h2>
+			<div class="bwp-posts-list-line"></div>
+			<!-- end: title -->
+
+			<!-- posts list -->
+			<div class="bwp-related-posts-list">
+
+				
+<!-- post - standard format -->
+<article id="bwp-post-2256" class="post-2256 post type-post status-publish format-standard hentry category-unix-like category-internet-server tag-ldap tag-module tag-open tag-server tag-ssh tag-whmcs">
+	<div class="bwp-post-wrap bwp-no-media">
+
+		
+		<!-- header -->
+		<header class="bwp-post-header">
+
+			
+							<!-- format icon -->
+				<span class="bwp-post-format-icon">
+					<i class="fa fa-file-text-o"></i>
+				</span>
+				<!-- end: format icon -->
+			
+							<!-- categories -->
+				<div class="bwp-post-categories">
+					<i class="fa fa-bookmark"></i><a href="https://zhensheng.im/category/operating-system/unix-like" rel="category tag">Unix Like</a>, <a href="https://zhensheng.im/category/internet-server" rel="category tag">服务器</a>				</div>
+				<!-- end: categories -->
+			
+			<!-- title -->
+			<h2 class="bwp-post-title entry-title">
+									<a href="https://zhensheng.im/2014/07/18/2256/MIAO_LE_GE_MI">WHMCS LDAP Modules</a>
+							</h2>
+			<!-- end: title -->
+
+							<!-- metadata -->
+				<ul class="bwp-post-meta list-unstyled">
+											<li>
+							<span class="vcard author">
+								<span class="fn">
+									<i class="fa fa-user"></i><a href="https://zhensheng.im/author/extreme" title="由Zhensheng Yuan发布" rel="author">Zhensheng Yuan</a>								</span>
+							</span>
+						</li>
+																<li>
+															<span class="date updated">
+									<i class="fa fa-clock-o"></i><a href="https://zhensheng.im/2014/07/18">2014年7月18日</a>
+								</span>
+														</li>
+									</ul>
+				<!-- end: metadata -->
+			
+		</header>
+		<!-- end: header -->
+
+		
+		<!-- content -->
+		<div class="bwp-post-content">
+
+			
+			<!-- excerpt -->
+			<div class="bwp-post-excerpt entry-content">
+				<p>最近有人向我谈起一个与一账户信息在多个OpenSSH Server上同步的问题。 这两三天我抽时间测试了pam_mysql,pam_radius，以及OpenLDAP这三个东西。其中pam_mysql,pam_radius虽然可以用某个服务器验证登录信息，但是都需要在各个服务器上使用useradd添加该用户。 OpenLDAP最完美，仅需在LDAP上添加一个记录，就可使用已添加的用户的信息登录到各个服务器。 考虑到谈起这个问题的人是想使用WHMCS开通SSH账户的，于是我弄了个WHMCS的LDAP模块。 这模块需要PHP的LDAP扩展，你们可以通过phpinfo()函数查看是否有ldap扩展， [&hellip;]</p>
+			</div>
+			<!-- end: excerpt -->
+
+			
+		<!-- links -->
+		<div class="bwp-post-links clearfix">
+			<a href="https://zhensheng.im/2014/07/18/2256/MIAO_LE_GE_MI" class="bwp-read-more">
+				Read more			</a>
+												<a href="https://zhensheng.im/2014/07/18/2256/MIAO_LE_GE_MI#comments" class="bwp-comments-count">
+						6 Comments					</a>
+									</div>
+		<!-- end: links -->
+
+		
+		</div>
+		<!-- end: content -->
+
+	</div>
+</article>
+<!-- end: post -->
+
+<!-- post - standard format -->
+<article id="bwp-post-1475" class="post-1475 post type-post status-publish format-standard has-post-thumbnail hentry category-internet-server category-unknow category-computer-hardware tag-initrd-gz tag-server tag-ubuntu tag-vmlinuz tag-246 tag-245 tag-231 tag-244">
+	<div class="bwp-post-wrap">
+
+		
+		<!-- header -->
+		<header class="bwp-post-header">
+
+			
+							<!-- format icon -->
+				<span class="bwp-post-format-icon">
+					<i class="fa fa-file-text-o"></i>
+				</span>
+				<!-- end: format icon -->
+			
+							<!-- categories -->
+				<div class="bwp-post-categories">
+					<i class="fa fa-bookmark"></i><a href="https://zhensheng.im/category/internet-server" rel="category tag">服务器</a>, <a href="https://zhensheng.im/category/unknow" rel="category tag">未分类</a>, <a href="https://zhensheng.im/category/computer-hardware" rel="category tag">计算机硬件</a>				</div>
+				<!-- end: categories -->
+			
+			<!-- title -->
+			<h2 class="bwp-post-title entry-title">
+									<a href="https://zhensheng.im/2013/01/19/1475/MIAO_LE_GE_MI">解决硬盘安装Ubuntu 12.04.1 Server提示“无法挂载你的安装光盘”或“找不到ISO”</a>
+							</h2>
+			<!-- end: title -->
+
+							<!-- metadata -->
+				<ul class="bwp-post-meta list-unstyled">
+											<li>
+							<span class="vcard author">
+								<span class="fn">
+									<i class="fa fa-user"></i><a href="https://zhensheng.im/author/extreme" title="由Zhensheng Yuan发布" rel="author">Zhensheng Yuan</a>								</span>
+							</span>
+						</li>
+																<li>
+															<span class="date updated">
+									<i class="fa fa-clock-o"></i><a href="https://zhensheng.im/2013/01/19">2013年1月19日</a>
+								</span>
+														</li>
+									</ul>
+				<!-- end: metadata -->
+			
+		</header>
+		<!-- end: header -->
+
+		
+	<!-- featured image -->
+	<figure class="bwp-post-media">
+					<a href="https://static.zhensheng.im/wp-content/uploads/2013/01/choose.jpg" class="bwp-post-media-link bwp-popup-image" title="解决硬盘安装Ubuntu 12.04.1 Server提示“无法挂载你的安装光盘”或“找不到ISO”">
+					<img width="642" height="483" src="https://static.zhensheng.im/wp-content/uploads/2013/01/choose.jpg" class="attachment-full size-full wp-post-image" alt="" srcset="https://static.zhensheng.im/wp-content/uploads/2013/01/choose.jpg 642w, https://static.zhensheng.im/wp-content/uploads/2013/01/choose-300x225.jpg 300w, https://static.zhensheng.im/wp-content/uploads/2013/01/choose-200x150.jpg 200w" sizes="(max-width: 642px) 100vw, 642px" />			<div class="bwp-post-bg-overlay"></div>
+			<span class="bwp-post-expand-icon">
+				<i class="fa fa-expand"></i>
+			</span>
+		</a>
+	</figure>
+	<!-- end: featured image -->
+
+	
+		<!-- content -->
+		<div class="bwp-post-content">
+
+			
+			<!-- excerpt -->
+			<div class="bwp-post-excerpt entry-content">
+				<p>最近入手了个KVM的VPS，SolusVM面板，提供VNC。 虽然VPS提供了模板安装系统，但是默认是把30GB都给了/，太不尽人意了。况且我也喜欢原版的系统。于是打算动手安装上去。 我使用的是硬盘安装的方法，但是安装的时候，却提示“无法挂载你的安装光盘”，经过我的一个晚上的折腾，终于找到解决办法了！ 首先，到模板处安装个Windows Server 2008，然后安装个WinPE，用DiskGenius调整C盘的大小，释放1GB空间出来，放Ubuntu的ISO用，并且格式化为FAT32格式，注意一定要FAT32格式，不然会提示找不到ISO！ 回到Win2008，下载好Ubuntu的ISO，还 [&hellip;]</p>
+			</div>
+			<!-- end: excerpt -->
+
+			
+		<!-- links -->
+		<div class="bwp-post-links clearfix">
+			<a href="https://zhensheng.im/2013/01/19/1475/MIAO_LE_GE_MI" class="bwp-read-more">
+				Read more			</a>
+												<a href="https://zhensheng.im/2013/01/19/1475/MIAO_LE_GE_MI#comments" class="bwp-comments-count">
+						3 Comments					</a>
+									</div>
+		<!-- end: links -->
+
+		
+		</div>
+		<!-- end: content -->
+
+	</div>
+</article>
+<!-- end: post -->
+
+<!-- post - standard format -->
+<article id="bwp-post-1881" class="post-1881 post type-post status-publish format-standard has-post-thumbnail hentry category-unknow tag-debian tag-pptpd tag-ubuntu">
+	<div class="bwp-post-wrap">
+
+		
+		<!-- header -->
+		<header class="bwp-post-header">
+
+			
+							<!-- format icon -->
+				<span class="bwp-post-format-icon">
+					<i class="fa fa-file-text-o"></i>
+				</span>
+				<!-- end: format icon -->
+			
+							<!-- categories -->
+				<div class="bwp-post-categories">
+					<i class="fa fa-bookmark"></i><a href="https://zhensheng.im/category/unknow" rel="category tag">未分类</a>				</div>
+				<!-- end: categories -->
+			
+			<!-- title -->
+			<h2 class="bwp-post-title entry-title">
+									<a href="https://zhensheng.im/2013/07/29/1881/MIAO_LE_GE_MI">PPTP自动安装配置Shell Script For Ubuntu/Debian</a>
+							</h2>
+			<!-- end: title -->
+
+							<!-- metadata -->
+				<ul class="bwp-post-meta list-unstyled">
+											<li>
+							<span class="vcard author">
+								<span class="fn">
+									<i class="fa fa-user"></i><a href="https://zhensheng.im/author/extreme" title="由Zhensheng Yuan发布" rel="author">Zhensheng Yuan</a>								</span>
+							</span>
+						</li>
+																<li>
+															<span class="date updated">
+									<i class="fa fa-clock-o"></i><a href="https://zhensheng.im/2013/07/29">2013年7月29日</a>
+								</span>
+														</li>
+									</ul>
+				<!-- end: metadata -->
+			
+		</header>
+		<!-- end: header -->
+
+		
+	<!-- featured image -->
+	<figure class="bwp-post-media">
+					<a href="https://static.zhensheng.im/wp-content/uploads/2013/07/ip.png" class="bwp-post-media-link bwp-popup-image" title="PPTP自动安装配置Shell Script For Ubuntu/Debian">
+					<img width="585" height="392" src="https://static.zhensheng.im/wp-content/uploads/2013/07/ip.png" class="attachment-full size-full wp-post-image" alt="Server IP" srcset="https://static.zhensheng.im/wp-content/uploads/2013/07/ip.png 585w, https://static.zhensheng.im/wp-content/uploads/2013/07/ip-300x201.png 300w, https://static.zhensheng.im/wp-content/uploads/2013/07/ip-200x134.png 200w" sizes="(max-width: 585px) 100vw, 585px" />			<div class="bwp-post-bg-overlay"></div>
+			<span class="bwp-post-expand-icon">
+				<i class="fa fa-expand"></i>
+			</span>
+		</a>
+	</figure>
+	<!-- end: featured image -->
+
+	
+		<!-- content -->
+		<div class="bwp-post-content">
+
+			
+			<!-- excerpt -->
+			<div class="bwp-post-excerpt entry-content">
+				<p>呵呵，不解释…… 使用方法： wget http://soft.yzs.me/pptpd.sh;sh pptpd.sh 执行后会自动列出你服务器的网卡的IP，挑一个外网的： =========================== Which IP is your server IP: IP:42.51.133.125 #这里输入你服务器的外网的IP地址 =========================== Server IP:42.51.133.125 =========================== =========================== eth0 Link enca [&hellip;]</p>
+			</div>
+			<!-- end: excerpt -->
+
+			
+		<!-- links -->
+		<div class="bwp-post-links clearfix">
+			<a href="https://zhensheng.im/2013/07/29/1881/MIAO_LE_GE_MI" class="bwp-read-more">
+				Read more			</a>
+												<a href="https://zhensheng.im/2013/07/29/1881/MIAO_LE_GE_MI#comments" class="bwp-comments-count">
+						24 Comments					</a>
+									</div>
+		<!-- end: links -->
+
+		
+		</div>
+		<!-- end: content -->
+
+	</div>
+</article>
+<!-- end: post -->
+
+<!-- post - standard format -->
+<article id="bwp-post-2832" class="post-2832 post type-post status-publish format-standard hentry category-c-cpp category-unix-like category-operating-system category-programming-languages tag-chroot tag-linux tag-ssh tag-user">
+	<div class="bwp-post-wrap bwp-no-media">
+
+		
+		<!-- header -->
+		<header class="bwp-post-header">
+
+			
+							<!-- format icon -->
+				<span class="bwp-post-format-icon">
+					<i class="fa fa-file-text-o"></i>
+				</span>
+				<!-- end: format icon -->
+			
+							<!-- categories -->
+				<div class="bwp-post-categories">
+					<i class="fa fa-bookmark"></i><a href="https://zhensheng.im/category/programming-languages/c-cpp" rel="category tag">C/CPP</a>, <a href="https://zhensheng.im/category/operating-system/unix-like" rel="category tag">Unix Like</a>, <a href="https://zhensheng.im/category/operating-system" rel="category tag">操作系统</a>, <a href="https://zhensheng.im/category/programming-languages" rel="category tag">编程</a>				</div>
+				<!-- end: categories -->
+			
+			<!-- title -->
+			<h2 class="bwp-post-title entry-title">
+									<a href="https://zhensheng.im/2016/04/20/2832/MIAO_LE_GE_MI">Linux chroot Shell —— 简单chroot指定用户</a>
+							</h2>
+			<!-- end: title -->
+
+							<!-- metadata -->
+				<ul class="bwp-post-meta list-unstyled">
+											<li>
+							<span class="vcard author">
+								<span class="fn">
+									<i class="fa fa-user"></i><a href="https://zhensheng.im/author/extreme" title="由Zhensheng Yuan发布" rel="author">Zhensheng Yuan</a>								</span>
+							</span>
+						</li>
+																<li>
+															<span class="date updated">
+									<i class="fa fa-clock-o"></i><a href="https://zhensheng.im/2016/04/20">2016年4月20日</a>
+								</span>
+														</li>
+									</ul>
+				<!-- end: metadata -->
+			
+		</header>
+		<!-- end: header -->
+
+		
+		<!-- content -->
+		<div class="bwp-post-content">
+
+			
+			<!-- excerpt -->
+			<div class="bwp-post-excerpt entry-content">
+				<p>对于Linux服务器，有时需要开放登录权限给一部分用户，但并非所有用户都愿意安分守己，也无法知道谁是不安分守己的，给多一个这些用户开放登录权限，系统的威胁就多了一分。 目前来说比较好的方案是chroot，调用了chroot()，就能把的根目录改成指定的根目录。何为根目录？顾名思义，“根”就是所有目录的“根”，一切目录均从“根”而生，没有“根”就没有其他目录，换句话说，“根目录”就是最原始的目录。你无法访问“根”之前前的数据，没有“根”的时候，怎么可以发展数据呢？ 二进制程序chroot乃GNU的核心程序中的一个，Linux发行版本一般都有Coreutils，不过二进制版的chroot在这种情况 [&hellip;]</p>
+			</div>
+			<!-- end: excerpt -->
+
+			
+		<!-- links -->
+		<div class="bwp-post-links clearfix">
+			<a href="https://zhensheng.im/2016/04/20/2832/MIAO_LE_GE_MI" class="bwp-read-more">
+				Read more			</a>
+												<a href="https://zhensheng.im/2016/04/20/2832/MIAO_LE_GE_MI#comments" class="bwp-comments-count">
+						1 Comment					</a>
+									</div>
+		<!-- end: links -->
+
+		
+		</div>
+		<!-- end: content -->
+
+	</div>
+</article>
+<!-- end: post -->
+
+			</div>
+			<!-- end: posts list -->
+
+		</div>
+		<!-- end: related posts -->
+
+		
+					</div><!-- /bwp-single-post-container -->
+				</div><!-- /col1 -->
+				<!-- end: column 1 - blog post -->
+
+				<!-- column 2 - sidebar -->
+									<div class="col-md-4 col-md-pull-8 bwp-sidebar-col bwp-sidebar-left">
+				
+					<div class="bwp-sidebar-container" role="complementary">
+
+						
+		<!-- sidebar - main navigation container -->
+		<div class="bwp-sidebar-nav-container hidden-sm hidden-xs">
+
+			
+				<!-- text logo + tagline -->
+				<div class="bwp-sidebar-logo-wrap">
+					<a href="https://zhensheng.im/" rel="home" class="bwp-logo-text">
+						<span>微宇宙</span>
+					</a>
+					
+			<span class="bwp-tagline">
+				不甘苟且于巨人肩膀之上			</span>
+
+							</div>
+				<!-- end: text logo + tagline -->
+
+				
+				<!-- menu -->
+				<div class="bwp-sidebar-menu-wrap">
+					<div class="bwp-sidebar-menu-line"></div>
+					<nav class="menu-menu-container"><ul id="menu-menu-1" class="sf-menu"><li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2933"><a href="/">首页</a></li>
+<li class="mutheme-user menu-item menu-item-type-post_type menu-item-object-page menu-item-750"><a href="https://zhensheng.im/about">关于</a></li>
+</ul></nav>					<div class="bwp-sidebar-menu-line"></div>
+				</div>
+				<!-- end: menu -->
+
+				
+				<!-- social links -->
+				<div class="bwp-sidebar-social-links-wrap">
+											<span>Follow us:</span>
+										<ul class="bwp-sidebar-social-links list-unstyled clearfix">
+						<li><a href="https://github.com/yzsme" target="_blank" rel="noopener" class="bwp-s-github-link"><i class="fa fa-github"></i></a></li><li><a href="/feed" target="_blank" rel="noopener" class="bwp-s-rss-link"><i class="fa fa-rss"></i></a></li>					</ul>
+				</div>
+				<!-- end: social links -->
+
+				
+		</div>
+		<!-- end: main navigation container -->
+
+		<aside id="search-2" class="bwp-widget widget_search clearfix">
+<!-- search form -->
+<form id="searchform" role="search" method="get" action="https://zhensheng.im/">
+	<div class="input-group">
+		<input type="text" name="s" id="s" class="bwp-search-field form-control" placeholder="Enter your search query...">
+		<span class="input-group-btn">
+			<button type="submit" class="btn bwp-search-submit">
+				<i class="fa fa-arrow-right"></i>
+			</button>
+		</span>
+	</div>
+</form>
+<!-- end: search form -->
+</aside><aside id="fergcorp_countdown_timer_widget-3" class="bwp-widget widget_fergcorp_countdown_timer_widget clearfix"><h3 class="bwp-widget-title">倒计时</h3><ul><li class = 'fergcorp_countdownTimer_event_li'><span class = 'fergcorp_countdownTimer_event_title'>博客建立在</span>:<br />
+<abbr title = "七月 28th, 2010, 9:28 上午" id = 'xf7600ca6f635cb529c0674d34813c5ca' class = 'fergcorp_countdownTimer_event_time'><span class="fergcorp_countdownTimer_day fergcorp_countdownTimer_timeUnit">3408 日</span> <span class="fergcorp_countdownTimer_hour fergcorp_countdownTimer_timeUnit">16 时</span> <span class="fergcorp_countdownTimer_minute fergcorp_countdownTimer_timeUnit">9 分</span> <span class="fergcorp_countdownTimer_second fergcorp_countdownTimer_timeUnit">5 秒</span>  之前</abbr></li>
+<li class = 'fergcorp_countdownTimer_event_li'><span class = 'fergcorp_countdownTimer_event_title'>离博客建立十周年还有</span>:<br />
+<abbr title = "七月 28th, 2020, 9:28 上午" id = 'xb97f065e0f089a40610201f4c8a93bed' class = 'fergcorp_countdownTimer_event_time'><span class="fergcorp_countdownTimer_day fergcorp_countdownTimer_timeUnit">244 日</span> <span class="fergcorp_countdownTimer_hour fergcorp_countdownTimer_timeUnit">7 时</span> <span class="fergcorp_countdownTimer_minute fergcorp_countdownTimer_timeUnit">50 分</span> <span class="fergcorp_countdownTimer_second fergcorp_countdownTimer_timeUnit">55 秒</span> </abbr></li>
+</ul></aside><aside id="tag_cloud-3" class="bwp-widget widget_tag_cloud clearfix"><h3 class="bwp-widget-title">标签云</h3><div class="tagcloud"><a href="https://zhensheng.im/tag/apache" class="tag-cloud-link tag-link-200 tag-link-position-1" style="font-size: 15.179487179487pt;" aria-label="apache (4个项目)">apache</a>
+<a href="https://zhensheng.im/tag/apc" class="tag-cloud-link tag-link-348 tag-link-position-2" style="font-size: 13.384615384615pt;" aria-label="APC (3个项目)">APC</a>
+<a href="https://zhensheng.im/tag/c" class="tag-cloud-link tag-link-513 tag-link-position-3" style="font-size: 16.615384615385pt;" aria-label="C (5个项目)">C</a>
+<a href="https://zhensheng.im/tag/change" class="tag-cloud-link tag-link-552 tag-link-position-4" style="font-size: 8pt;" aria-label="Change (1个项目)">Change</a>
+<a href="https://zhensheng.im/tag/cli" class="tag-cloud-link tag-link-361 tag-link-position-5" style="font-size: 11.230769230769pt;" aria-label="CLI (2个项目)">CLI</a>
+<a href="https://zhensheng.im/tag/debian" class="tag-cloud-link tag-link-237 tag-link-position-6" style="font-size: 13.384615384615pt;" aria-label="Debian (3个项目)">Debian</a>
+<a href="https://zhensheng.im/tag/directadmin" class="tag-cloud-link tag-link-307 tag-link-position-7" style="font-size: 17.871794871795pt;" aria-label="DirectAdmin (6个项目)">DirectAdmin</a>
+<a href="https://zhensheng.im/tag/freeradius" class="tag-cloud-link tag-link-394 tag-link-position-8" style="font-size: 13.384615384615pt;" aria-label="freeradius (3个项目)">freeradius</a>
+<a href="https://zhensheng.im/tag/ip" class="tag-cloud-link tag-link-322 tag-link-position-9" style="font-size: 13.384615384615pt;" aria-label="IP (3个项目)">IP</a>
+<a href="https://zhensheng.im/tag/ipsec" class="tag-cloud-link tag-link-479 tag-link-position-10" style="font-size: 13.384615384615pt;" aria-label="IPSec (3个项目)">IPSec</a>
+<a href="https://zhensheng.im/tag/iptables" class="tag-cloud-link tag-link-374 tag-link-position-11" style="font-size: 17.871794871795pt;" aria-label="IPTABLES (6个项目)">IPTABLES</a>
+<a href="https://zhensheng.im/tag/ldap" class="tag-cloud-link tag-link-468 tag-link-position-12" style="font-size: 13.384615384615pt;" aria-label="LDAP (3个项目)">LDAP</a>
+<a href="https://zhensheng.im/tag/linux" class="tag-cloud-link tag-link-501 tag-link-position-13" style="font-size: 21.282051282051pt;" aria-label="Linux (10个项目)">Linux</a>
+<a href="https://zhensheng.im/tag/log" class="tag-cloud-link tag-link-417 tag-link-position-14" style="font-size: 11.230769230769pt;" aria-label="log (2个项目)">log</a>
+<a href="https://zhensheng.im/tag/modules" class="tag-cloud-link tag-link-446 tag-link-position-15" style="font-size: 11.230769230769pt;" aria-label="MODULES (2个项目)">MODULES</a>
+<a href="https://zhensheng.im/tag/mysql" class="tag-cloud-link tag-link-217 tag-link-position-16" style="font-size: 16.615384615385pt;" aria-label="MySQL (5个项目)">MySQL</a>
+<a href="https://zhensheng.im/tag/nat" class="tag-cloud-link tag-link-461 tag-link-position-17" style="font-size: 11.230769230769pt;" aria-label="nat (2个项目)">nat</a>
+<a href="https://zhensheng.im/tag/nginx" class="tag-cloud-link tag-link-238 tag-link-position-18" style="font-size: 20.564102564103pt;" aria-label="nginx (9个项目)">nginx</a>
+<a href="https://zhensheng.im/tag/php" class="tag-cloud-link tag-link-218 tag-link-position-19" style="font-size: 22pt;" aria-label="PHP (11个项目)">PHP</a>
+<a href="https://zhensheng.im/tag/pptp" class="tag-cloud-link tag-link-395 tag-link-position-20" style="font-size: 13.384615384615pt;" aria-label="pptp (3个项目)">pptp</a>
+<a href="https://zhensheng.im/tag/qemu" class="tag-cloud-link tag-link-570 tag-link-position-21" style="font-size: 11.230769230769pt;" aria-label="qemu (2个项目)">qemu</a>
+<a href="https://zhensheng.im/tag/qos" class="tag-cloud-link tag-link-535 tag-link-position-22" style="font-size: 11.230769230769pt;" aria-label="QoS (2个项目)">QoS</a>
+<a href="https://zhensheng.im/tag/rm" class="tag-cloud-link tag-link-325 tag-link-position-23" style="font-size: 11.230769230769pt;" aria-label="rm (2个项目)">rm</a>
+<a href="https://zhensheng.im/tag/sae" class="tag-cloud-link tag-link-9 tag-link-position-24" style="font-size: 8pt;" aria-label="SAE (1个项目)">SAE</a>
+<a href="https://zhensheng.im/tag/security" class="tag-cloud-link tag-link-455 tag-link-position-25" style="font-size: 11.230769230769pt;" aria-label="SECURITY (2个项目)">SECURITY</a>
+<a href="https://zhensheng.im/tag/server" class="tag-cloud-link tag-link-243 tag-link-position-26" style="font-size: 16.615384615385pt;" aria-label="server (5个项目)">server</a>
+<a href="https://zhensheng.im/tag/shell-script" class="tag-cloud-link tag-link-396 tag-link-position-27" style="font-size: 11.230769230769pt;" aria-label="shell script (2个项目)">shell script</a>
+<a href="https://zhensheng.im/tag/ssh" class="tag-cloud-link tag-link-251 tag-link-position-28" style="font-size: 13.384615384615pt;" aria-label="SSH (3个项目)">SSH</a>
+<a href="https://zhensheng.im/tag/strongswan" class="tag-cloud-link tag-link-585 tag-link-position-29" style="font-size: 11.230769230769pt;" aria-label="StrongSwan (2个项目)">StrongSwan</a>
+<a href="https://zhensheng.im/tag/ubuntu" class="tag-cloud-link tag-link-241 tag-link-position-30" style="font-size: 15.179487179487pt;" aria-label="ubuntu (4个项目)">ubuntu</a>
+<a href="https://zhensheng.im/tag/varnish" class="tag-cloud-link tag-link-318 tag-link-position-31" style="font-size: 13.384615384615pt;" aria-label="Varnish (3个项目)">Varnish</a>
+<a href="https://zhensheng.im/tag/vpn" class="tag-cloud-link tag-link-106 tag-link-position-32" style="font-size: 15.179487179487pt;" aria-label="VPN (4个项目)">VPN</a>
+<a href="https://zhensheng.im/tag/whmcs" class="tag-cloud-link tag-link-273 tag-link-position-33" style="font-size: 15.179487179487pt;" aria-label="WHMCS (4个项目)">WHMCS</a>
+<a href="https://zhensheng.im/tag/windows" class="tag-cloud-link tag-link-55 tag-link-position-34" style="font-size: 15.179487179487pt;" aria-label="windows (4个项目)">windows</a>
+<a href="https://zhensheng.im/tag/x-forwarded-for" class="tag-cloud-link tag-link-355 tag-link-position-35" style="font-size: 13.384615384615pt;" aria-label="X-Forwarded-For (3个项目)">X-Forwarded-For</a>
+<a href="https://zhensheng.im/tag/%e4%b8%9c%e8%8e%9e" class="tag-cloud-link tag-link-84 tag-link-position-36" style="font-size: 8pt;" aria-label="东莞 (1个项目)">东莞</a>
+<a href="https://zhensheng.im/tag/%e4%b8%9c%e8%8e%9e%e7%90%86%e5%b7%a5%e5%ad%a6%e9%99%a2%e5%9f%8e%e5%b8%82%e5%ad%a6%e9%99%a2" class="tag-cloud-link tag-link-542 tag-link-position-37" style="font-size: 11.230769230769pt;" aria-label="东莞理工学院城市学院 (2个项目)">东莞理工学院城市学院</a>
+<a href="https://zhensheng.im/tag/%e5%8d%9a%e5%ae%a2" class="tag-cloud-link tag-link-26 tag-link-position-38" style="font-size: 11.230769230769pt;" aria-label="博客 (2个项目)">博客</a>
+<a href="https://zhensheng.im/tag/%e5%9b%ba%e4%bb%b6" class="tag-cloud-link tag-link-79 tag-link-position-39" style="font-size: 8pt;" aria-label="固件 (1个项目)">固件</a>
+<a href="https://zhensheng.im/tag/%e5%9b%be%e5%ba%8a" class="tag-cloud-link tag-link-44 tag-link-position-40" style="font-size: 8pt;" aria-label="图床 (1个项目)">图床</a>
+<a href="https://zhensheng.im/tag/%e5%a4%87%e6%a1%88" class="tag-cloud-link tag-link-43 tag-link-position-41" style="font-size: 8pt;" aria-label="备案 (1个项目)">备案</a>
+<a href="https://zhensheng.im/tag/%e6%8c%82%e8%bd%bd" class="tag-cloud-link tag-link-231 tag-link-position-42" style="font-size: 11.230769230769pt;" aria-label="挂载 (2个项目)">挂载</a>
+<a href="https://zhensheng.im/tag/internet-server" class="tag-cloud-link tag-link-504 tag-link-position-43" style="font-size: 11.230769230769pt;" aria-label="服务器 (2个项目)">服务器</a>
+<a href="https://zhensheng.im/tag/%e7%99%be%e5%ba%a6" class="tag-cloud-link tag-link-81 tag-link-position-44" style="font-size: 8pt;" aria-label="百度 (1个项目)">百度</a>
+<a href="https://zhensheng.im/tag/%e7%a1%ac%e7%9b%98%e5%ae%89%e8%a3%85" class="tag-cloud-link tag-link-244 tag-link-position-45" style="font-size: 11.230769230769pt;" aria-label="硬盘安装 (2个项目)">硬盘安装</a></div>
+</aside><aside id="recent-comments-2" class="bwp-widget widget_recent_comments clearfix"><h3 class="bwp-widget-title">近期评论</h3><ul id="recentcomments"><li class="recentcomments"><span class="comment-author-link">牛欢喜</span>发表在《<a href="https://zhensheng.im/2014/07/23/2282/MIAO_LE_GE_MI/comment-page-1#comment-200776">VPN下路由表的编辑，实现部分IP直连</a>》</li><li class="recentcomments"><span class="comment-author-link"><a href='http://zhensheng.im/' rel='external nofollow ugc' class='url'>Zhensheng Yuan</a></span>发表在《<a href="https://zhensheng.im/2019/09/14/3334/MIAO_LE_GE_MI/comment-page-1#comment-200742">2019 九月 广东强网杯 CTF 部分题 Writeup</a>》</li><li class="recentcomments"><span class="comment-author-link">chen xianlong</span>发表在《<a href="https://zhensheng.im/2019/09/14/3334/MIAO_LE_GE_MI/comment-page-1#comment-200741">2019 九月 广东强网杯 CTF 部分题 Writeup</a>》</li><li class="recentcomments"><span class="comment-author-link"><a href='http://zhensheng.im/' rel='external nofollow ugc' class='url'>Zhensheng Yuan</a></span>发表在《<a href="https://zhensheng.im/2018/07/26/3212/MIAO_LE_GE_MI/comment-page-1#comment-200159">东莞城院校园网 &#8211; 网络共享限制解除工具</a>》</li><li class="recentcomments"><span class="comment-author-link"><a href='http://www.arukione.com' rel='external nofollow ugc' class='url'>aruki</a></span>发表在《<a href="https://zhensheng.im/2018/07/26/3212/MIAO_LE_GE_MI/comment-page-1#comment-200157">东莞城院校园网 &#8211; 网络共享限制解除工具</a>》</li></ul></aside><aside id="linkcat-2" class="bwp-widget widget_links clearfix"><h3 class="bwp-widget-title">友情链接</h3>
+	<ul class='xoxo blogroll'>
+<li><a href="http://hd.lc" title="hd的博客" target="_blank">hd的博客</a></li>
+<li><a href="http://kwx.cc/" title="记录平凡小事，展望IT世界。" target="_blank">Kwx Blog</a></li>
+<li><a href="https://wislab.net/" target="_blank">Wis Works</a></li>
+<li><a href="http://qiaodahai.com/" title="个人IT技术网站" target="_blank">乔大海个人网站</a></li>
+<li><a href="http://jybb.me/" title="一个没有人会想起的博客" target="_blank">俊彦博客</a></li>
+
+	</ul>
+</aside>
+<aside id="custom_html-2" class="widget_text bwp-widget widget_custom_html clearfix"><div class="textwidget custom-html-widget"><!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-133410833-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-133410833-1');
+</script>
+</div></aside><aside id="fergcorp_countdown_timer_widget-3" class="bwp-widget widget_fergcorp_countdown_timer_widget clearfix"><h3 class="bwp-widget-title">倒计时</h3><ul><li class = 'fergcorp_countdownTimer_event_li'><span class = 'fergcorp_countdownTimer_event_title'>博客建立在</span>:<br />
+<abbr title = "七月 28th, 2010, 9:28 上午" id = 'xf7600ca6f635cb529c0674d34813c5ca' class = 'fergcorp_countdownTimer_event_time'><span class="fergcorp_countdownTimer_day fergcorp_countdownTimer_timeUnit">3408 日</span> <span class="fergcorp_countdownTimer_hour fergcorp_countdownTimer_timeUnit">16 时</span> <span class="fergcorp_countdownTimer_minute fergcorp_countdownTimer_timeUnit">9 分</span> <span class="fergcorp_countdownTimer_second fergcorp_countdownTimer_timeUnit">5 秒</span>  之前</abbr></li>
+<li class = 'fergcorp_countdownTimer_event_li'><span class = 'fergcorp_countdownTimer_event_title'>离博客建立十周年还有</span>:<br />
+<abbr title = "七月 28th, 2020, 9:28 上午" id = 'xb97f065e0f089a40610201f4c8a93bed' class = 'fergcorp_countdownTimer_event_time'><span class="fergcorp_countdownTimer_day fergcorp_countdownTimer_timeUnit">244 日</span> <span class="fergcorp_countdownTimer_hour fergcorp_countdownTimer_timeUnit">7 时</span> <span class="fergcorp_countdownTimer_minute fergcorp_countdownTimer_timeUnit">50 分</span> <span class="fergcorp_countdownTimer_second fergcorp_countdownTimer_timeUnit">55 秒</span> </abbr></li>
+</ul></aside><aside id="tag_cloud-3" class="bwp-widget widget_tag_cloud clearfix"><h3 class="bwp-widget-title">标签云</h3><div class="tagcloud"><a href="https://zhensheng.im/tag/apache" class="tag-cloud-link tag-link-200 tag-link-position-1" style="font-size: 15.179487179487pt;" aria-label="apache (4个项目)">apache</a>
+<a href="https://zhensheng.im/tag/apc" class="tag-cloud-link tag-link-348 tag-link-position-2" style="font-size: 13.384615384615pt;" aria-label="APC (3个项目)">APC</a>
+<a href="https://zhensheng.im/tag/c" class="tag-cloud-link tag-link-513 tag-link-position-3" style="font-size: 16.615384615385pt;" aria-label="C (5个项目)">C</a>
+<a href="https://zhensheng.im/tag/change" class="tag-cloud-link tag-link-552 tag-link-position-4" style="font-size: 8pt;" aria-label="Change (1个项目)">Change</a>
+<a href="https://zhensheng.im/tag/cli" class="tag-cloud-link tag-link-361 tag-link-position-5" style="font-size: 11.230769230769pt;" aria-label="CLI (2个项目)">CLI</a>
+<a href="https://zhensheng.im/tag/debian" class="tag-cloud-link tag-link-237 tag-link-position-6" style="font-size: 13.384615384615pt;" aria-label="Debian (3个项目)">Debian</a>
+<a href="https://zhensheng.im/tag/directadmin" class="tag-cloud-link tag-link-307 tag-link-position-7" style="font-size: 17.871794871795pt;" aria-label="DirectAdmin (6个项目)">DirectAdmin</a>
+<a href="https://zhensheng.im/tag/freeradius" class="tag-cloud-link tag-link-394 tag-link-position-8" style="font-size: 13.384615384615pt;" aria-label="freeradius (3个项目)">freeradius</a>
+<a href="https://zhensheng.im/tag/ip" class="tag-cloud-link tag-link-322 tag-link-position-9" style="font-size: 13.384615384615pt;" aria-label="IP (3个项目)">IP</a>
+<a href="https://zhensheng.im/tag/ipsec" class="tag-cloud-link tag-link-479 tag-link-position-10" style="font-size: 13.384615384615pt;" aria-label="IPSec (3个项目)">IPSec</a>
+<a href="https://zhensheng.im/tag/iptables" class="tag-cloud-link tag-link-374 tag-link-position-11" style="font-size: 17.871794871795pt;" aria-label="IPTABLES (6个项目)">IPTABLES</a>
+<a href="https://zhensheng.im/tag/ldap" class="tag-cloud-link tag-link-468 tag-link-position-12" style="font-size: 13.384615384615pt;" aria-label="LDAP (3个项目)">LDAP</a>
+<a href="https://zhensheng.im/tag/linux" class="tag-cloud-link tag-link-501 tag-link-position-13" style="font-size: 21.282051282051pt;" aria-label="Linux (10个项目)">Linux</a>
+<a href="https://zhensheng.im/tag/log" class="tag-cloud-link tag-link-417 tag-link-position-14" style="font-size: 11.230769230769pt;" aria-label="log (2个项目)">log</a>
+<a href="https://zhensheng.im/tag/modules" class="tag-cloud-link tag-link-446 tag-link-position-15" style="font-size: 11.230769230769pt;" aria-label="MODULES (2个项目)">MODULES</a>
+<a href="https://zhensheng.im/tag/mysql" class="tag-cloud-link tag-link-217 tag-link-position-16" style="font-size: 16.615384615385pt;" aria-label="MySQL (5个项目)">MySQL</a>
+<a href="https://zhensheng.im/tag/nat" class="tag-cloud-link tag-link-461 tag-link-position-17" style="font-size: 11.230769230769pt;" aria-label="nat (2个项目)">nat</a>
+<a href="https://zhensheng.im/tag/nginx" class="tag-cloud-link tag-link-238 tag-link-position-18" style="font-size: 20.564102564103pt;" aria-label="nginx (9个项目)">nginx</a>
+<a href="https://zhensheng.im/tag/php" class="tag-cloud-link tag-link-218 tag-link-position-19" style="font-size: 22pt;" aria-label="PHP (11个项目)">PHP</a>
+<a href="https://zhensheng.im/tag/pptp" class="tag-cloud-link tag-link-395 tag-link-position-20" style="font-size: 13.384615384615pt;" aria-label="pptp (3个项目)">pptp</a>
+<a href="https://zhensheng.im/tag/qemu" class="tag-cloud-link tag-link-570 tag-link-position-21" style="font-size: 11.230769230769pt;" aria-label="qemu (2个项目)">qemu</a>
+<a href="https://zhensheng.im/tag/qos" class="tag-cloud-link tag-link-535 tag-link-position-22" style="font-size: 11.230769230769pt;" aria-label="QoS (2个项目)">QoS</a>
+<a href="https://zhensheng.im/tag/rm" class="tag-cloud-link tag-link-325 tag-link-position-23" style="font-size: 11.230769230769pt;" aria-label="rm (2个项目)">rm</a>
+<a href="https://zhensheng.im/tag/sae" class="tag-cloud-link tag-link-9 tag-link-position-24" style="font-size: 8pt;" aria-label="SAE (1个项目)">SAE</a>
+<a href="https://zhensheng.im/tag/security" class="tag-cloud-link tag-link-455 tag-link-position-25" style="font-size: 11.230769230769pt;" aria-label="SECURITY (2个项目)">SECURITY</a>
+<a href="https://zhensheng.im/tag/server" class="tag-cloud-link tag-link-243 tag-link-position-26" style="font-size: 16.615384615385pt;" aria-label="server (5个项目)">server</a>
+<a href="https://zhensheng.im/tag/shell-script" class="tag-cloud-link tag-link-396 tag-link-position-27" style="font-size: 11.230769230769pt;" aria-label="shell script (2个项目)">shell script</a>
+<a href="https://zhensheng.im/tag/ssh" class="tag-cloud-link tag-link-251 tag-link-position-28" style="font-size: 13.384615384615pt;" aria-label="SSH (3个项目)">SSH</a>
+<a href="https://zhensheng.im/tag/strongswan" class="tag-cloud-link tag-link-585 tag-link-position-29" style="font-size: 11.230769230769pt;" aria-label="StrongSwan (2个项目)">StrongSwan</a>
+<a href="https://zhensheng.im/tag/ubuntu" class="tag-cloud-link tag-link-241 tag-link-position-30" style="font-size: 15.179487179487pt;" aria-label="ubuntu (4个项目)">ubuntu</a>
+<a href="https://zhensheng.im/tag/varnish" class="tag-cloud-link tag-link-318 tag-link-position-31" style="font-size: 13.384615384615pt;" aria-label="Varnish (3个项目)">Varnish</a>
+<a href="https://zhensheng.im/tag/vpn" class="tag-cloud-link tag-link-106 tag-link-position-32" style="font-size: 15.179487179487pt;" aria-label="VPN (4个项目)">VPN</a>
+<a href="https://zhensheng.im/tag/whmcs" class="tag-cloud-link tag-link-273 tag-link-position-33" style="font-size: 15.179487179487pt;" aria-label="WHMCS (4个项目)">WHMCS</a>
+<a href="https://zhensheng.im/tag/windows" class="tag-cloud-link tag-link-55 tag-link-position-34" style="font-size: 15.179487179487pt;" aria-label="windows (4个项目)">windows</a>
+<a href="https://zhensheng.im/tag/x-forwarded-for" class="tag-cloud-link tag-link-355 tag-link-position-35" style="font-size: 13.384615384615pt;" aria-label="X-Forwarded-For (3个项目)">X-Forwarded-For</a>
+<a href="https://zhensheng.im/tag/%e4%b8%9c%e8%8e%9e" class="tag-cloud-link tag-link-84 tag-link-position-36" style="font-size: 8pt;" aria-label="东莞 (1个项目)">东莞</a>
+<a href="https://zhensheng.im/tag/%e4%b8%9c%e8%8e%9e%e7%90%86%e5%b7%a5%e5%ad%a6%e9%99%a2%e5%9f%8e%e5%b8%82%e5%ad%a6%e9%99%a2" class="tag-cloud-link tag-link-542 tag-link-position-37" style="font-size: 11.230769230769pt;" aria-label="东莞理工学院城市学院 (2个项目)">东莞理工学院城市学院</a>
+<a href="https://zhensheng.im/tag/%e5%8d%9a%e5%ae%a2" class="tag-cloud-link tag-link-26 tag-link-position-38" style="font-size: 11.230769230769pt;" aria-label="博客 (2个项目)">博客</a>
+<a href="https://zhensheng.im/tag/%e5%9b%ba%e4%bb%b6" class="tag-cloud-link tag-link-79 tag-link-position-39" style="font-size: 8pt;" aria-label="固件 (1个项目)">固件</a>
+<a href="https://zhensheng.im/tag/%e5%9b%be%e5%ba%8a" class="tag-cloud-link tag-link-44 tag-link-position-40" style="font-size: 8pt;" aria-label="图床 (1个项目)">图床</a>
+<a href="https://zhensheng.im/tag/%e5%a4%87%e6%a1%88" class="tag-cloud-link tag-link-43 tag-link-position-41" style="font-size: 8pt;" aria-label="备案 (1个项目)">备案</a>
+<a href="https://zhensheng.im/tag/%e6%8c%82%e8%bd%bd" class="tag-cloud-link tag-link-231 tag-link-position-42" style="font-size: 11.230769230769pt;" aria-label="挂载 (2个项目)">挂载</a>
+<a href="https://zhensheng.im/tag/internet-server" class="tag-cloud-link tag-link-504 tag-link-position-43" style="font-size: 11.230769230769pt;" aria-label="服务器 (2个项目)">服务器</a>
+<a href="https://zhensheng.im/tag/%e7%99%be%e5%ba%a6" class="tag-cloud-link tag-link-81 tag-link-position-44" style="font-size: 8pt;" aria-label="百度 (1个项目)">百度</a>
+<a href="https://zhensheng.im/tag/%e7%a1%ac%e7%9b%98%e5%ae%89%e8%a3%85" class="tag-cloud-link tag-link-244 tag-link-position-45" style="font-size: 11.230769230769pt;" aria-label="硬盘安装 (2个项目)">硬盘安装</a></div>
+</aside><aside id="archives-2" class="bwp-widget widget_archive clearfix"><h3 class="bwp-widget-title">文章归档</h3>		<label class="screen-reader-text" for="archives-dropdown-2">文章归档</label>
+		<select id="archives-dropdown-2" name="archive-dropdown">
+			
+			<option value="">选择月份</option>
+				<option value='https://zhensheng.im/2019/11'> 2019年十一月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2019/09'> 2019年九月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2019/02'> 2019年二月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2019/01'> 2019年一月 &nbsp;(4)</option>
+	<option value='https://zhensheng.im/2018/11'> 2018年十一月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2018/07'> 2018年七月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2018/05'> 2018年五月 &nbsp;(4)</option>
+	<option value='https://zhensheng.im/2018/04'> 2018年四月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2017/10'> 2017年十月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2017/08'> 2017年八月 &nbsp;(4)</option>
+	<option value='https://zhensheng.im/2017/05'> 2017年五月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2017/03'> 2017年三月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2016/07'> 2016年七月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2016/06'> 2016年六月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2016/04'> 2016年四月 &nbsp;(5)</option>
+	<option value='https://zhensheng.im/2016/03'> 2016年三月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2016/01'> 2016年一月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2015/12'> 2015年十二月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2015/11'> 2015年十一月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2015/10'> 2015年十月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2015/08'> 2015年八月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2015/07'> 2015年七月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2015/01'> 2015年一月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/12'> 2014年十二月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/10'> 2014年十月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/09'> 2014年九月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/08'> 2014年八月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/07'> 2014年七月 &nbsp;(4)</option>
+	<option value='https://zhensheng.im/2014/05'> 2014年五月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2014/04'> 2014年四月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2014/03'> 2014年三月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2014/02'> 2014年二月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2014/01'> 2014年一月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2013/12'> 2013年十二月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2013/11'> 2013年十一月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2013/10'> 2013年十月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2013/09'> 2013年九月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2013/08'> 2013年八月 &nbsp;(5)</option>
+	<option value='https://zhensheng.im/2013/07'> 2013年七月 &nbsp;(6)</option>
+	<option value='https://zhensheng.im/2013/06'> 2013年六月 &nbsp;(5)</option>
+	<option value='https://zhensheng.im/2013/04'> 2013年四月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2013/03'> 2013年三月 &nbsp;(1)</option>
+	<option value='https://zhensheng.im/2013/02'> 2013年二月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2013/01'> 2013年一月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2012/12'> 2012年十二月 &nbsp;(3)</option>
+	<option value='https://zhensheng.im/2012/07'> 2012年七月 &nbsp;(2)</option>
+	<option value='https://zhensheng.im/2012/05'> 2012年五月 &nbsp;(1)</option>
+
+		</select>
+
+<script type="text/javascript">
+/* <![CDATA[ */
+(function() {
+	var dropdown = document.getElementById( "archives-dropdown-2" );
+	function onSelectChange() {
+		if ( dropdown.options[ dropdown.selectedIndex ].value !== '' ) {
+			document.location.href = this.options[ this.selectedIndex ].value;
+		}
+	}
+	dropdown.onchange = onSelectChange;
+})();
+/* ]]> */
+</script>
+
+		</aside><aside id="categories-3" class="bwp-widget widget_categories clearfix"><h3 class="bwp-widget-title">分类目录</h3>		<ul>
+				<li class="cat-item cat-item-544"><a href="https://zhensheng.im/category/note">NOTE</a> (6)
+</li>
+	<li class="cat-item cat-item-376"><a href="https://zhensheng.im/category/operating-system">操作系统</a> (38)
+<ul class='children'>
+	<li class="cat-item cat-item-51"><a href="https://zhensheng.im/category/operating-system/unix-like">Unix Like</a> (31)
+</li>
+	<li class="cat-item cat-item-445"><a href="https://zhensheng.im/category/operating-system/windows">Windows</a> (5)
+</li>
+	<li class="cat-item cat-item-533"><a href="https://zhensheng.im/category/operating-system/%e7%bd%91%e7%bb%9c">网络</a> (8)
+	<ul class='children'>
+	<li class="cat-item cat-item-536"><a href="https://zhensheng.im/category/operating-system/%e7%bd%91%e7%bb%9c/vpn">VPN</a> (3)
+</li>
+	</ul>
+</li>
+</ul>
+</li>
+	<li class="cat-item cat-item-541"><a href="https://zhensheng.im/category/%e6%95%b0%e6%8d%ae%e5%88%86%e6%9e%90">数据分析</a> (1)
+</li>
+	<li class="cat-item cat-item-229"><a href="https://zhensheng.im/category/internet-server" title="Linux or Windows Server">服务器</a> (47)
+<ul class='children'>
+	<li class="cat-item cat-item-256"><a href="https://zhensheng.im/category/internet-server/devops">运营维护</a> (22)
+</li>
+</ul>
+</li>
+	<li class="cat-item cat-item-12"><a href="https://zhensheng.im/category/unknow">未分类</a> (31)
+</li>
+	<li class="cat-item cat-item-210"><a href="https://zhensheng.im/category/mobile-phone">移动设备</a> (1)
+</li>
+	<li class="cat-item cat-item-510"><a href="https://zhensheng.im/category/programming-languages">编程</a> (13)
+<ul class='children'>
+	<li class="cat-item cat-item-511"><a href="https://zhensheng.im/category/programming-languages/c-cpp">C/CPP</a> (9)
+</li>
+	<li class="cat-item cat-item-512"><a href="https://zhensheng.im/category/programming-languages/php">PHP</a> (5)
+</li>
+</ul>
+</li>
+	<li class="cat-item cat-item-64"><a href="https://zhensheng.im/category/computer-hardware">计算机硬件</a> (4)
+</li>
+	<li class="cat-item cat-item-3"><a href="https://zhensheng.im/category/default">默认分类</a> (13)
+</li>
+		</ul>
+			</aside>
+					</div><!-- /bwp-sidebar-container -->
+				</div><!-- /col2 -->
+				<!-- end: column 2 - sidebar -->
+
+			</div>
+		</div>
+	</div>
+	<!-- end: blog post + sidebar -->
+
+	
+		<!-- footer -->
+		<footer class="bwp-footer">
+			<div class="container">
+				<div class="bwp-footer-container clearfix">
+
+					
+						<!-- footer text -->
+						<div class="bwp-footer-text">
+							感谢访问微宇宙<br>除非特别声明，否则文章<b>一律禁止转载</b>。
+<br>
+<br>
+<a href="http://www.miitbeian.gov.cn" target="_blank" title="工业和信息化部ICP/IP地址/域名信息备案管理系统">粤ICP备16030588号-2</a>						</div>
+						<!-- end: footer text -->
+
+						
+							<!-- footer menu -->
+							<div class="bwp-footer-menu-wrap hidden-xs">
+								<nav class="menu-menu-container"><ul id="menu-menu-2" class="bwp-footer-menu list-unstyled clearfix"><li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2933"><a href="/">首页</a></li>
+<li class="mutheme-user menu-item menu-item-type-post_type menu-item-object-page menu-item-750"><a href="https://zhensheng.im/about">关于</a></li>
+</ul></nav>							</div>
+							<!-- end: footer menu -->
+
+							
+				</div>
+			</div>
+		</footer>
+		<!-- end: footer -->
+
+	</div>
+	<!-- end: main content -->
+
+	
+		<!-- "back to top" button -->
+		<div class="bwp-scroll-top-button hidden-sm hidden-xs">
+			<a rel="nofollow" href="#" id="bwp-scroll-top"><i class="fa fa-caret-up"></i></a>
+		</div>
+		<!-- end: "back to top" button -->
+
+		
+</div>
+<!-- end: global container -->
+
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/plugins/ammi-widgets/assets/owl-carousel/owl.carousel.min.js?ver=1.3.3'></script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/plugins/ammi-widgets/js/ammi-widgets-plugin.js?ver=1.0.0'></script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/themes/ammi/js/bootstrap.min.js?ver=3.4.1'></script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/themes/ammi/js/superfish.min.js?ver=1.7.10'></script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/themes/ammi/assets/magnific-popup/jquery.magnific-popup.min.js?ver=1.1.0'></script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/themes/ammi/js/ie10-viewport-bug-workaround.js?ver=3.4.1'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var ammiData = {"toTopButton":"true"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/themes/ammi/js/ammi-theme.js?ver=2.0.0'></script>
+<script type='text/javascript' src='https://zhensheng.im/wp-includes/js/comment-reply.min.js?ver=5.3'></script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/plugins/enlighter/resources/mootools-core-yc.js?ver=3.10.0'></script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/plugins/enlighter/resources/EnlighterJS.min.js?ver=3.10.0'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var fergcorp_countdown_timer_js_lang = {"year":"%d \u5e74","years":"%d \u5e74","month":"%d \u6708","months":"%d \u6708","week":"%d \u5468","weeks":"%d \u5468","day":"%d \u65e5","days":"%d \u65e5","hour":"%d \u65f6","hours":"%d \u65f6","minute":"%d \u5206","minutes":"%d \u5206","second":"%d \u79d2","seconds":"%d \u79d2","agotime":"%s \u4e4b\u524d","intime":"%s"};
+var fergcorp_countdown_timer_jsEvents = {"xf7600ca6f635cb529c0674d34813c5ca":"1280280480","xb97f065e0f089a40610201f4c8a93bed":"1595899680"};
+var fergcorp_countdown_timer_options = {"showYear":"0","showMonth":"0","showWeek":"0","showDay":"1","showHour":"1","showMinute":"1","showSecond":"1","stripZero":"1"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='https://static.zhensheng.im/wp-content/plugins/countdown-timer/js/fergcorp_countdownTimer_java.js?ver=3.0.7'></script>
+<script async="async" type='text/javascript' src='https://static.zhensheng.im/wp-content/plugins/akismet/_inc/form.js?ver=4.1.3'></script>
+<script type="text/javascript">/* <![CDATA[ */EnlighterJS_Config = {"selector":{"block":"pre.EnlighterJSRAW","inline":"code.EnlighterJSRAW"},"language":"generic","theme":"git","indent":-1,"hover":"hoverEnabled","showLinenumbers":true,"rawButton":true,"infoButton":true,"windowButton":true,"rawcodeDoubleclick":false,"grouping":true,"cryptex":{"enabled":false,"email":"mail@example.tld"}};!function(){var a=function(a){var b="Enlighter Error: ";console.error?console.error(b+a):console.log&&console.log(b+a)};return window.addEvent?"undefined"==typeof EnlighterJS?void a("Javascript Resources not loaded yet!"):"undefined"==typeof EnlighterJS_Config?void a("Configuration not loaded yet!"):void window.addEvent("domready",function(){EnlighterJS.Util.Init(EnlighterJS_Config.selector.block,EnlighterJS_Config.selector.inline,EnlighterJS_Config)}):void a("MooTools Framework not loaded yet!")}();;/* ]]> */</script></body>
+</html>
