@@ -1,0 +1,486 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="origin" />
+    <meta property="og:description" content="1. Introduction autofs&amp;#160;is a program for automatically mounting directories on an as-needed basi" />
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Autofs - mouseleo - 博客园</title>
+    
+    <link rel="stylesheet" href="/css/blog-common.min.css?v=bY1L8C4sDM5eS-FBZ53dCHGUGiTPogsnScmdZ88QTfs" />
+    <link id="MainCss" rel="stylesheet" href="/skins/cleargertrude/bundle-cleargertrude.min.css?v=qOcerEQTAHF_YZGWYnXIdOZ3zf__fQbjAsaHzX-kpoo" />
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/cleargertrude/bundle-cleargertrude-mobile.min.css?v=3HpAq_t-Lu45yjUl-6Fzi0TYj4q-B2F0BQkiWtjIP9Y" />
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/mouseleo/rss" />
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/mouseleo/rsd.xml" />
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/mouseleo/wlwmanifest.xml" />
+    <script src="https://common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script src="/js/blog-common.min.js?v=1B-qSLIoszvzdNFrGPRF7viF6_0WvesF05bpgAW3TOs"></script>
+    <script>
+        var currentBlogId = 401189;
+        var currentBlogApp = 'mouseleo';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+    </script>
+    
+    
+    
+</head>
+<body>
+    <a name="top"></a>
+    
+    <div id="header">
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/mouseleo/">mouseleo</a>
+</h1>
+<p id="tagline">
+
+</p>
+
+</div>
+<div id="main">
+	<div id="post_detail">
+	<div class="post">
+		<h2>
+			
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/mouseleo/p/9820843.html">Autofs</a>
+
+		</h2>
+		<div class="postText">
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <h1 id="Introduction">1. Introduction</h1>
+<p class="line867"><strong>autofs</strong>&nbsp;is a program for automatically mounting directories on an as-needed basis. Auto-mounts are mounted only as they are accessed, and are unmounted after a period of inactivity. Because of this, automounting NFS/Samba shares conserves bandwidth and offers better overall performance compared to static mounts via&nbsp;<strong>fstab</strong>.<span id="line-8" class="anchor"><span id="line-9" class="anchor"></span></span></p>
+<p class="line867">&nbsp;</p>
+<h2 id="Quick_note_on_terms">1.1. Quick note on terms</h2>
+<p class="line874">To avoid confusion, the following terminologies will be used:<span id="line-11" class="anchor"><span id="line-12" class="anchor"></span></span></p>
+<ul>
+<li>
+<p class="line891"><strong>automount</strong>&nbsp;is the program used to configure a mount point for&nbsp;<strong>autofs</strong>. When&nbsp;<strong>autofs</strong>&nbsp;is started, an&nbsp;<strong>automount</strong>&nbsp;daemon is spawned for each map.<span id="line-13" class="anchor"></span></p>
+</li>
+<li>Auto-mount or auto-mounting refers to the process of automatically mounting filesystems.<span id="line-14" class="anchor"></span></li>
+<li>
+<p class="line891"><strong>autofs</strong>&nbsp;is the program that controls the operation of the&nbsp;<strong>automount</strong>&nbsp;daemons.<span id="line-15" class="anchor"><span id="line-16" class="anchor"></span></span></p>
+</li>
+</ul>
+<p class="line867">&nbsp;</p>
+<h1 id="Installation">2. Installation</h1>
+<p class="line862">Install the&nbsp;<strong>autofs</strong>&nbsp;package either by clicking&nbsp;<a class="apt" href="apt:autofs">here</a>&nbsp;or entering the following in a terminal window:<span id="line-18" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1" class="anchor">$ sudo apt-get install autofs</span></pre>
+</li>
+</ul>
+<p class="line867">&nbsp;</p>
+<h1 id="Configuration">3. Configuration</h1>
+<p class="line867"><strong>autofs</strong>&nbsp;can be configured by editing configuration files. There are other ways to configure autofs on a network (see&nbsp;<a href="https://help.ubuntu.com/community/AutofsLDAP">AutofsLDAP</a>), but config files provide the simplest setup.<span id="line-24" class="anchor"><span id="line-25" class="anchor"></span></span></p>
+<p class="line867">&nbsp;</p>
+<h2 id="The_Master_Map_File">3.1. The Master Map File</h2>
+<p class="line862">The master configuration file for&nbsp;<strong>autofs</strong>&nbsp;is&nbsp;<strong>/etc/auto.master</strong>&nbsp;by default. Unless you have a good reason for changing this, leave it as the default.<span id="line-27" class="anchor"><span id="line-28" class="anchor"></span></span></p>
+<p class="line874">Here is the sample file provided by Ubuntu:<span id="line-29" class="anchor"><span id="line-30" class="anchor"></span></span></p>
+<p class="line867">&nbsp;</p>
+<pre><span id="line-1-1" class="anchor">#
+<span id="line-2" class="anchor"># $Id: auto.master,v 1.4 2005/01/04 14:36:54 raven Exp $
+<span id="line-3" class="anchor">#
+<span id="line-4" class="anchor"># Sample auto.master file
+<span id="line-5" class="anchor"># This is an automounter map and it has the following format
+<span id="line-6" class="anchor"># key [ -mount-options-separated-by-comma ] location
+<span id="line-7" class="anchor"># For details of the format look at autofs(5).
+<span id="line-8" class="anchor">#/misc   /etc/auto.misc --timeout=60
+<span id="line-9" class="anchor">#/smb   /etc/auto.smb
+<span id="line-10" class="anchor">#/misc  /etc/auto.misc
+<span id="line-11" class="anchor">#/net    /etc/auto.net</span></span></span></span></span></span></span></span></span></span></span></pre>
+<ul>
+<li>
+<p class="line862">By default, all lines are commented out by using the&nbsp;<strong>#</strong>&nbsp;character.<span id="line-45" class="anchor"><span id="line-46" class="anchor"></span></span></p>
+</li>
+</ul>
+<p class="line862">Each of the lines in&nbsp;<tt>auto.master</tt>&nbsp;describes a mount and the location of its map. These lines have the following format:<span id="line-47" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-2" class="anchor">mount-point [map-type[,format]:] map [options]</span></pre>
+</li>
+</ul>
+<p class="line867">&nbsp;</p>
+<h3 id="Direct_and_Indirect_Maps">3.1.1. Direct and Indirect Maps</h3>
+<p class="line867"><strong>automount</strong>&nbsp;maps can be direct or indirect. Indirect maps, such as those in the&nbsp;<strong>auto.master</strong>&nbsp;file shown above, create-mount points as subdirectories inside the main mount-point. For example, consider the following master map entry:<span id="line-53" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-3" class="anchor">/smb   /etc/auto.smb</span></pre>
+</li>
+</ul>
+<p class="line862">This entry in&nbsp;<tt>auto.master</tt>&nbsp;tells&nbsp;<tt>autofs</tt>&nbsp;to look in&nbsp;<strong>/etc/auto.smb</strong>&nbsp;and create mount-points in the&nbsp;<strong>/smb</strong>&nbsp;directory.<span id="line-57" class="anchor"><span id="line-58" class="anchor"></span></span></p>
+<p class="line862">Direct maps create a mount-point at the path specified in the relevant map file. The&nbsp;<strong>mount-point</strong>&nbsp;entry in&nbsp;<strong>auto.master</strong>&nbsp;is always&nbsp;<strong>/-</strong>. For example, the following line instructs&nbsp;<tt>autofs</tt>&nbsp;to create a mount-point at the place specified in&nbsp;<strong>auto.data</strong>:<span id="line-59" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-4" class="anchor">/-        /etc/auto.data</span></pre>
+</li>
+<li class="gap">If the map file is not specified using a full local or network path, the Name Service Switch configuration will be used to locate the map, e.g.:
+<pre><span id="line-1-5" class="anchor">/-        auto.data</span></pre>
+</li>
+</ul>
+<p class="line867">&nbsp;</p>
+<h2 id="Map_Files">3.2. Map Files</h2>
+<p class="line862">As indicated above, each&nbsp;<strong>autofs</strong>&nbsp;mount has its own map file. These files are usually named using the convention&nbsp;<strong>auto.&lt;X&gt;</strong>, where&nbsp;<strong>&lt;X&gt;</strong>&nbsp;can be anything as long as it matches an entry in&nbsp;<strong>auto.master</strong>&nbsp;and is valid for a file-name.<span id="line-70" class="anchor"><span id="line-71" class="anchor"></span></span></p>
+<p class="line874">Map files take the following format:<span id="line-72" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-6" class="anchor">key [-options] location</span></pre>
+</li>
+</ul>
+<p class="line867">&nbsp;</p>
+<h1 id="EXAMPLE:_Auto-mounting_an_NFS_share">4. EXAMPLE: Auto-mounting an NFS share</h1>
+<p class="line862">In this howto, we will configure autofs to auto-mount an NFS share, using a set of configuration files. This howto assumes that you are already familiar with NFS exports, and that you already have a properly-functioning NFS share on your network. Go to the&nbsp;<a href="https://help.ubuntu.com/community/SettingUpNFSHowTo">NFS Setup Page</a>&nbsp;to learn how to set up such a server.<span id="line-79" class="anchor"><span id="line-80" class="anchor"></span></span></p>
+<p class="line867">&nbsp;</p>
+<h2 id="Edit_.2Fetc.2Fauto.master">4.1. Edit /etc/auto.master</h2>
+<p class="line862">The following step creates a mount point at&nbsp;<strong>/nfs</strong>&nbsp;and configures it according to the settings specified in&nbsp;<strong>/etc/auto.nfs</strong>&nbsp;(which we will create in the next step).<span id="line-82" class="anchor"><span id="line-83" class="anchor"></span></span></p>
+<ol type="1">
+<li>Type the following into a terminal:
+<pre><span id="line-1-7" class="anchor">$ sudo nano /etc/auto.master</span></pre>
+</li>
+<li>
+<p class="line862">Add the following line at the end of&nbsp;<strong>/etc/auto.master</strong>:<span id="line-88" class="anchor"><span id="line-89" class="anchor"><span id="line-90" class="anchor"></span></span></span></p>
+<pre><span id="line-1-8" class="anchor">/nfs   /etc/auto.nfs</span></pre>
+<span id="line-91" class="anchor"><span id="line-92" class="anchor"></span></span></li>
+</ol>
+<p class="line867">&nbsp;</p>
+<h2 id="Create_.2Fetc.2Fauto.nfs">4.2. Create /etc/auto.nfs</h2>
+<p class="line874">Now we will create the file which contains our automounter map:<span id="line-94" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-9" class="anchor">$ sudo nano /etc/auto.nfs</span></pre>
+</li>
+</ul>
+<p class="line862">This file should contain a separate line for each NFS share. The format for a line is {mount point} [{mount options}] {location}. If you have previously configured static mounts in&nbsp;<strong>/etc/fstab</strong>, it may be helpful to refer to those. Remember, the mount points specified here will be relative to the mount point given in&nbsp;<strong>/etc/auto.master</strong>.<span id="line-98" class="anchor"><span id="line-99" class="anchor"></span></span></p>
+<p class="line874">The following line is for shares using older versions of NFS (prior to version 4):<span id="line-100" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-10" class="anchor">server   server:/</span></pre>
+</li>
+</ul>
+<p class="line862">This creates a new mount point at&nbsp;<strong>/nfs/server/</strong>&nbsp;and mounts the NFS root directory exported by the machine whose host-name is&nbsp;<strong>server</strong>.<span id="line-104" class="anchor"><span id="line-105" class="anchor"></span></span></p>
+<p class="line867">&nbsp;</p>
+<h3 id="NFSv4">4.2.1. NFSv4</h3>
+<p class="line874">If your NFS shares use NFSv4, you need to tell autofs about that. In such a case, the above line would appear as follows:<span id="line-107" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-11" class="anchor">server   -fstype=nfs4   server:/</span></pre>
+</li>
+</ul>
+<p class="line862">The client needs the same changes to&nbsp;<strong>/etc/default/nfs-common</strong>&nbsp;to connect to an NFSv4 server.<span id="line-112" class="anchor"><span id="line-113" class="anchor"></span></span></p>
+<ul>
+<li>
+<p class="line862">In&nbsp;<strong>/etc/default/nfs-common</strong>&nbsp;we set:<span id="line-114" class="anchor"><span id="line-115" class="anchor"><span id="line-116" class="anchor"><span id="line-117" class="anchor"></span></span></span></span></p>
+<pre><span id="line-1-12" class="anchor">NEED_IDMAPD=yes
+<span id="line-2-1" class="anchor">NEED_GSSD=no # no is default</span></span></pre>
+<span id="line-118" class="anchor"><span id="line-119" class="anchor"></span></span></li>
+</ul>
+<p class="line867">&nbsp;</p>
+<h2 id="Unmount_static_mounts_and_edit_.2Fetc.2Ffstab">4.3. Unmount static mounts and edit /etc/fstab</h2>
+<p class="line874">If you have previously configured the NFS shares as static mounts, now is the time to unmount them.<span id="line-121" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-13" class="anchor">$ sudo umount /server</span></pre>
+</li>
+</ul>
+<p class="line862">Next, remove (or comment out) their respective entries in&nbsp;<strong>/etc/fstab</strong>.<span id="line-125" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-14" class="anchor">#server:/ /server/ nfs defaults 0 0</span></pre>
+</li>
+</ul>
+<p class="line867">&nbsp;</p>
+<h2 id="Reload_.2Fetc.2Finit.d.2Fautofs">4.4. Reload /etc/init.d/autofs</h2>
+<p class="line874">After entering your changes, run the following command to reload autofs:<span id="line-131" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-15" class="anchor">$ sudo reload autofs</span></pre>
+</li>
+</ul>
+<p class="line874">If working on an older ubuntu version, and that does not work try:<span id="line-136" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-16" class="anchor">$ sudo /etc/init.d/autofs reload</span></pre>
+</li>
+</ul>
+<p class="line874">If working in Natty, and that does not work try:<span id="line-141" class="anchor"><span id="line-142" class="anchor"></span></span></p>
+<ul>
+<li>
+<pre><span id="line-1-17" class="anchor">$ sudo /etc/init.d/autofs restart</span></pre>
+</li>
+</ul>
+<p class="line867">&nbsp;</p>
+<h2 id="Make_sure_it_works">4.5. Make sure it works</h2>
+<p class="line874">In order to access the share and verify that it is working properly, enter the following into a shell:<span id="line-148" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-18" class="anchor">$ ls /nfs/server</span></pre>
+</li>
+</ul>
+<p class="line874">If you see your NFS share listed, congratulations! You have a functioning NFS mount via autofs! If you want to learn some more advanced information, keep reading.<span id="line-152" class="anchor"><span id="line-153" class="anchor"></span></span></p>
+<p class="line867">&nbsp;</p>
+<h1 id="Advanced_Information">5. Advanced Information</h1>
+<p class="line862">Following the example directory structure above, if you were to enter&nbsp;<strong>ls /nfs</strong>&nbsp;into a shell, you might be surprised to see nothing listed. But remember that you need to access a directory before it is auto-mounted. To access the share, enter&nbsp;<strong>ls /nfs/server</strong>. Once it has been accessed, your share will be listed only until it times out. This is good to keep in mind, as it could save you time diagnosing an&nbsp;<strong>autofs</strong>&nbsp;problem that isn't really there.<span id="line-156" class="anchor"><span id="line-157" class="anchor"></span></span></p>
+<p class="line867">&nbsp;</p>
+<h2 id="Note_on_.2Fnet_and_.2Fsmb">5.1. Note on /net and /smb</h2>
+<p class="line862">These two default configurations may be useful for your set-up. If you have a lot of NFS or Samba shares, you may want to uncomment these lines.&nbsp;<strong>/net</strong>&nbsp;enables auto-mounting of file systems elsewhere on the network which are exported by NFS. For example, if you have a server named&nbsp;<strong>fileserver</strong>&nbsp;with an NFS export directory called&nbsp;<strong>/export</strong>, you can mount it by typing in a shell command line&nbsp;<strong>cd /net/fileserver/export</strong>. In an environment with NFS file servers, such a configuration can be useful.&nbsp;<strong>/smb</strong>&nbsp;functions the same way but is for Samba file systems. However, if you need to authenticate before accessing the Samba share,&nbsp;<strong>automount</strong>&nbsp;will not function.<span id="line-159" class="anchor"><span id="line-160" class="anchor"></span></span></p>
+<p class="line867">&nbsp;</p>
+<h2 id="Wildcard_characters">5.2. Wildcard characters</h2>
+<p class="line862">Let's say you have a directory with a number of subdirectories which you want to have auto-mounted individually. An example of this is the&nbsp;<strong>/home</strong>&nbsp;directory, in which case&nbsp;<strong>/etc/auto.master</strong>&nbsp;might contain the following line:<span id="line-162" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-19" class="anchor">/home   /etc/auto.home</span></pre>
+</li>
+</ul>
+<p class="line862">If user1 is logged in, you will want to auto-mount his home directory. However, if you create a mount point for the whole&nbsp;<tt>/home</tt>&nbsp;directory, you will also mount the home directories of every other user at the same time, thus wasting bandwidth. One solution to this would be to create separate entries for each directory, as follows:<span id="line-166" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-20" class="anchor"># /etc/auto.home
+<span id="line-2-2" class="anchor">user1   server:/home/user1
+<span id="line-3-1" class="anchor">user2   server:/home/user2
+<span id="line-4-1" class="anchor">user3   server:/home/user3</span></span></span></span></pre>
+</li>
+</ul>
+<p class="line874">This works, but is cumbersome. Instead, you can use wild-card characters, as follows:<span id="line-173" class="anchor"></span></p>
+<ul>
+<li>
+<pre><span id="line-1-21" class="anchor">*   server:/home/&amp;</span></pre>
+</li>
+</ul>
+<p class="line862">The asterisk (<strong>*</strong>) is used in place of the mount point and the ampersand (<strong>&amp;</strong>) in place of the directory to be mounted. For more detail on the use of wild-cards see&nbsp;<a class="http" href="http://goo.gl/3EHqA4">Using Wild-card Characters as Short-cuts in AutoFS Maps</a>.<span id="line-177" class="anchor"><span id="line-178" class="anchor"></span></span></p>
+<p class="line874">You can also use variables (see autofs(5) man page) to substitute users and other parameters to be able to create generic file for multiple users. Example below is smb map that maps based on user which asks for the share using $USER variable.<span id="line-179" class="anchor"><span id="line-180" class="anchor"></span></span></p>
+<p class="line867">&nbsp;</p>
+<pre><span id="line-1-22" class="anchor">* -fstype=cifs,rw,credentials=/home/$USER/.smbcredentials,iocharset=utf8,uid=$USER,gid=users,file_mode=0700,dir_mode=0700 ://server/$USER
+<span id="line-2-3" class="anchor">share1 -fstype=cifs,rw,credentials=/home/$USER/.smbcredentials,iocharset=utf8,uid=$USER,gid=users ://server/share1
+<span id="line-3-2" class="anchor">share2 -fstype=cifs,rw,credentials=/home/$USER/.smbcredentials,iocharset=utf8,uid=$USER,gid=users ://server/share2</span></span></span></pre>
+<p class="line867">&nbsp;</p>
+<h1 id="Mounting_Other_Types_of_Files_Systems">6. Mounting Other Types of Files Systems</h1>
+<p class="line867">&nbsp;</p>
+<h2 id="CIFS">6.1. CIFS</h2>
+<p class="line862">When specifying a CIFS share in a map file, specify&nbsp;<strong>-fstype=cifs</strong>&nbsp;and precede the share location with a colon (:).<span id="line-191" class="anchor"><span id="line-192" class="anchor"></span></span></p>
+<p class="line874">Example:<span id="line-193" class="anchor"><span id="line-194" class="anchor"><span id="line-195" class="anchor"></span></span></span></p>
+<pre><span id="line-1-23" class="anchor">mntpoint -fstype=cifs ://example.com/shrname</span></pre>
+<p class="line874">Example: Mount read-write, specifying a user and group to own the files:<span id="line-198" class="anchor"><span id="line-199" class="anchor"><span id="line-200" class="anchor"></span></span></span></p>
+<pre><span id="line-1-24" class="anchor">mntpoint -fstype=cifs,rw,uid=myuserid,gid=mygrpid ://example.com/shrname</span></pre>
+<p class="line874">Example: Mount read-write, specifying a username and password to use to connect to the share:<span id="line-203" class="anchor"><span id="line-204" class="anchor"><span id="line-205" class="anchor"></span></span></span></p>
+<pre><span id="line-1-25" class="anchor">mntpoint -fstype=cifs,rw,username=myuser,password=mypass ://example.com/shrname</span></pre>
+<p class="line867">&nbsp;</p>
+<h2 id="FUSE_based_file_systems">6.2. FUSE based file systems</h2>
+<p class="line862">FUSE based file systems are mounted by specifying&nbsp;<strong>-fstype=fuse</strong>. The file-system location specifies the user-space binary used to mount the file system, followed by a hash (<strong>#</strong>), followed by the location.&nbsp;<span id="line-210" class="anchor"><span id="line-211" class="anchor"></span></span></p>
+<p class="line862">When specifying a FUSE file system location in map file, certain characters, notably the hash (<strong>#</strong>) and the colon (<strong>:</strong>), must be escaped by a backslash (<strong>\</strong>). The entire location must be preceded by a colon (<strong>:</strong>).<span id="line-212" class="anchor"><span id="line-213" class="anchor"></span></span></p>
+<p class="line862">Since&nbsp;<strong>automount</strong>&nbsp;performs the mount as&nbsp;<strong>root</strong>&nbsp;it is usually necessary to specify&nbsp;<strong>allow_other</strong>&nbsp;on the mount options to allow your non-root userid to access the share.<span id="line-214" class="anchor"><span id="line-215" class="anchor"><span id="line-216" class="anchor"></span></span></span></p>
+<p class="line867">&nbsp;</p>
+<h3 id="SSHFS_file_system">6.2.1. SSHFS file system</h3>
+<p class="line862">SSHFS is a FUSE based file-system. In an&nbsp;<strong>autofs</strong>&nbsp;mount, the colon (<strong>:</strong>) following the server name must be escaped by a backslash (<strong>\</strong>).<span id="line-219" class="anchor"><span id="line-220" class="anchor"></span></span></p>
+<p class="line862">You should have already set-up password-less authentication via public key encryption.&nbsp;<strong>Be sure that you understand the security implications of this before proceeding.</strong><span id="line-221" class="anchor"><span id="line-222" class="anchor"></span></span></p>
+<p class="line862">Remember,&nbsp;<strong>automount</strong>&nbsp;will mount your SSHFS file-system as root, so you need to:<span id="line-223" class="anchor"></span></p>
+<ol type="1">
+<li>
+<p class="line862">Copy your private key to the&nbsp;<tt>/root/.ssh</tt>&nbsp;directory.&nbsp;<strong>Be sure that you understand the security implications of this before proceeding.</strong><span id="line-224" class="anchor"></span></p>
+</li>
+<li>
+<p class="line862">Add the necessary host keys to&nbsp;<strong>/root/.ssh/known_hosts</strong>.&nbsp;<span id="line-225" class="anchor"></span></p>
+</li>
+<li>Specify the user-name used to connect&nbsp;<span id="line-226" class="anchor"><span id="line-227" class="anchor"></span></span></li>
+</ol>
+<p class="line862">To test mounting your SSHFS file system as&nbsp;<strong>root</strong>&nbsp;issued the following:<span id="line-228" class="anchor"><span id="line-229" class="anchor"><span id="line-230" class="anchor"></span></span></span></p>
+<pre><span id="line-1-26" class="anchor">sudo sshfs user@example.com:/ mountpoint</span></pre>
+<p class="line862">If the mount succeeds without prompting you for a password, you are ready to mount the file-system via&nbsp;<strong>autofs</strong><span id="line-233" class="anchor"><span id="line-234" class="anchor"></span></span></p>
+<p class="line874">Example:<span id="line-235" class="anchor"><span id="line-236" class="anchor"><span id="line-237" class="anchor"></span></span></span></p>
+<pre><span id="line-1-27" class="anchor">mntpoint -fstype=fuse,allow_other :sshfs\#user@example.com\:/path/to/mount</span></pre>
+<p class="line874">Example: Mount read-write, specifying a user and group to own the files:<span id="line-240" class="anchor"><span id="line-241" class="anchor"><span id="line-242" class="anchor"></span></span></span></p>
+<pre><span id="line-1-28" class="anchor">mntpoint -fstype=fuse,rw,uid=1000,gid=1000,allow_other :sshfs\#user@example.com\:/path/to/mount</span></pre>
+<p class="line874">Note that for FUSE mounts, uid and gid must be numeric ids.<span id="line-244" class="anchor"><span id="line-245" class="anchor"></span></span></p>
+<p class="line867">&nbsp;</p>
+<h1 id="Debugging_Auto_Mount_Problems">7. Debugging Auto Mount Problems</h1>
+<p class="line862">If you are having trouble automounting your file systems, it may be useful to run&nbsp;<strong>automount</strong>&nbsp;in the foreground.<span id="line-248" class="anchor"><span id="line-249" class="anchor"></span></span></p>
+<ol type="1">
+<li>
+<p class="line862">Stop the&nbsp;<strong>autofs</strong>&nbsp;daemon<span id="line-250" class="anchor"><span id="line-251" class="anchor"><span id="line-252" class="anchor"></span></span></span></p>
+<pre><span id="line-1-29" class="anchor">sudo service autofs stop</span></pre>
+<span id="line-253" class="anchor"><span id="line-254" class="anchor"></span></span></li>
+<li class="gap">
+<p class="line862">Run&nbsp;<strong>automount</strong>&nbsp;in the foreground with verbose information<span id="line-255" class="anchor"><span id="line-256" class="anchor"><span id="line-257" class="anchor"></span></span></span></p>
+<pre><span id="line-1-30" class="anchor">sudo automount -f -v</span></pre>
+<span id="line-258" class="anchor"><span id="line-259" class="anchor"></span></span></li>
+<li class="gap">From another terminal, try to mount your file-systems by changing directories into the mountpoint.&nbsp;<span id="line-260" class="anchor"><span id="line-261" class="anchor"></span></span></li>
+<li class="gap">Check the output from the first terminal for clues as to why the mount failed or was not attempted.<span id="line-262" class="anchor"><span id="line-263" class="anchor"></span></span></li>
+</ol>
+<p class="line867">&nbsp;</p>
+<h1 id="See_Also">8. See Also</h1>
+<ul>
+<li>
+<p class="line891"><a href="https://help.ubuntu.com/community/Mount">Mount</a>&nbsp;- Information about the mounting process and its configuration in Ubuntu.<span id="line-265" class="anchor"><span id="line-266" class="anchor"></span></span></p>
+</li>
+</ul>
+<p class="line867">&nbsp;</p>
+<h1 id="External_Links">9. External Links</h1>
+<ul>
+<li>
+<p class="line891"><a class="http" href="http://manpages.ubuntu.com/manpages/natty/en/man2/mount.2.html">The mount man page</a>&nbsp;- hosted on the official Ubuntu website.</p>
+</li>
+</ul>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+    <div id="blog_post_info"></div>
+    <div class="clear"></div>
+    <div id="post_next_prev"></div>
+</div></div>
+		<p class="postfoot">
+			posted on 
+<span id="post-date">2018-10-20 10:35</span>&nbsp;
+<a href="https://www.cnblogs.com/mouseleo/">mouseleo</a>&nbsp;
+阅读(<span id="post_view_count">...</span>)&nbsp;
+评论(<span id="post_comment_count">...</span>)&nbsp;
+<a href="https://i.cnblogs.com/EditPosts.aspx?postid=9820843" rel="nofollow">编辑</a>&nbsp;
+<a href="javascript:void(0)" onclick="AddToWz(9820843);return false;">收藏</a>
+		</p>
+	</div>
+	
+	
+	
+<script src="https://common.cnblogs.com/highlight/9.12.0/highlight.min.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 401189, cb_blogApp = 'mouseleo', cb_blogUserGuid = '3ed23e0d-c45f-41c7-4877-08d52fc34315';
+    var cb_entryId = 9820843, cb_entryCreatedDate = '2018-10-20 10:35', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container"></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;"></div>
+    </div>
+    <div id="under_post_news"></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;">
+            <script>
+                if (new Date() >= new Date(2018, 9, 13)) {
+                    googletag.cmd.push(function () { googletag.display("div-gpt-ad-1539008685004-0"); });
+                }
+            </script>
+        </div>
+    </div>
+    <div id="under_post_kb"></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+setTimeout(function() { incrementViewCount(cb_entryId); }, 50);        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div></div>
+
+
+</div>
+<div id="rightmenu">
+	
+		
+<h3>导航</h3>
+<ul>
+<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+</li>
+<li>
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/mouseleo/">
+首页</a>
+</li>
+<li>
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+</li>
+<li>
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/mouseleo">
+联系</a></li>
+<li>
+<a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/mouseleo/rss/">
+订阅</a>
+<a id="blog_nav_rss_image" href="https://www.cnblogs.com/mouseleo/rss/">
+    <img src="/skins/cleargertrude/images/xml.gif" alt="订阅" />
+</a></li>
+<li>
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+</ul>
+
+
+		
+<div id="sidebar_news" class="newsItem">
+            <script>loadBlogNews();</script>
+</div>
+					
+		<div id="blog-calendar" style="display:none"></div><script>loadBlogDefaultCalendar();</script>
+		<h3>统计</h3>
+<ul>
+	<li>随笔 - 
+447</li>
+	<li>文章 - 
+0</li>
+	<li>评论 - 
+2</li>
+	<li>引用 - 
+0</li>
+ </ul>
+
+
+		<div id="blog-sidecolumn"></div>
+                    <script>loadBlogSideColumn();</script>
+		<div id="footer">
+	Powered by: 
+	<br />
+	
+<a href="https://www.cnblogs.com/" id="Footer1_Hyperlink3" style="font-size: 12px; font-family: Verdana">博客园</a>
+	<br />
+	Copyright &copy; 2020 mouseleo
+<br /><span id="poweredby">Powered by .NET Core on Kubernetes</span>
+
+</div>
+
+
+	
+</div>			
+			
+	
+
+
+    
+</body>
+</html>

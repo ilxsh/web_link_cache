@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="/favicon.ico" />
+        <title>[PXE] Linux（centos6）中PXE 服务器搭建，PXE安装、启动及PXE理论详解-Wish_亮的博客-51CTO博客</title>
+    <meta name="keywords" content="pxe安装,linux pxe,pxe启动,pxe服务器搭建,kickstart">
+<meta name="description" content="本篇blog主要讲述了[PXE] linux（centos）PXE无盘服务器搭建，安装，启动及pxe协议详解 ， Kickstart （PXE+DHCP+TFTP+HTTP）">    <link href="https://static1.51cto.com/edu/blog/css/header.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/other.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/right.css?v=3.1.7" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/blog_details.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/highlight.css" rel="stylesheet">
+    <script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="https://static1.51cto.com/edu/center/js/jquery.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/cookie.js"></script><script src="https://static1.51cto.com/edu/blog/js/login.js"></script><script src="https://static1.51cto.com/edu/blog/js/common.js"></script><script src="https://static1.51cto.com/edu/blog/js/mbox.js"></script><script src="https://static1.51cto.com/edu/blog/js/follow.js"></script><script src="https://static1.51cto.com/edu/blog/js/vip.js"></script><script src="https://static1.51cto.com/edu/blog/js/window.js"></script></head>
+<body>
+<img src="https://static1.51cto.com/edu/blog/mobile/images/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/202003/05/9a6121559219477c1b2bb7782f30fe17.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url('https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png') 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=10&pc" target="_blank">
+  <img src="https://s1.51cto.com/images/blog/202003/05/0dbef47925a1b0b7971f1ffe29296707.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li ><a href="https://blog.51cto.com/">首页</a></li>
+      <li ><a href="https://blog.51cto.com/original">文章</a></li>
+      <li ><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com" target="_blank">WOT</a>
+            <a href="http://www.51cto.com" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fitwish%2F2154820&logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fitwish%2F2154820" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="https://static1.51cto.com/edu/blog/images/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index"  target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onClick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="https://static1.51cto.com/edu/blog/mobile/js/lib/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=10&pc" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/202003/05/1ac3351fac07f6ef3802ffa4d5ff09b6.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog126',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="//www.sobot.com/chat/frame/js/entrance.js?sysNum=a8d9379eaf884b4f81a48348979e3b1a" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br/>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box">
+      <link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/mdeShow.css">
+  <link rel="stylesheet" href="https://blog.51cto.com/static/js/ueditor1.4.3/prism.css">
+  <script type="text/javascript" charset="utf-8" src="https://blog.51cto.com/static/js/ueditor1.4.3/prism.js"></script>
+<link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/tinyscrollbar.css"/>
+<script type="text/javascript" src="https://static1.51cto.com/edu/blog/js/jquery.tinyscrollbar.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">[PXE] Linux（centos6）中PXE 服务器搭建，PXE安装、启动及PXE理论详解</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/itwish" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="11439802" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+				</div>
+				<a href="https://blog.51cto.com/itwish" class="name fl" target="_blank" style="margin-right:0;">Wish_亮</a>
+									                	                    <a id="checkFollow1_11439802" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">3</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">70698人阅读</a>
+				<a href="javascript:;" class="time fr">2018-08-05 01:31:43</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">本篇blog主要讲述了[PXE] linux（centos）PXE无盘服务器搭建，安装，启动及pxe协议详解 ， Kickstart （PXE+DHCP+TFTP+HTTP）。<strong style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"><strong><strong><br/></strong></strong></strong></span></p><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"><br/></span></p><p><strong><span style="font-family:微软雅黑, Microsoft YaHei"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">PXE环境概述</span></span></strong></p><hr/><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">作为中小公司的运维，经常会遇到一些机械式的重复工作。如何进行批量一次大批量部署服务器安装？方法： Kickstart （PXE+DHCP+TFTP+HTTP）&nbsp; 或&nbsp; Cobbler</span><br/></p><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">批量装机软件介绍</span><br/></p></li></ul><p style="white-space: normal;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">Redhat系通主要有两种方式：Kickstart和Cobbler。</span></p><p style="white-space: normal;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">Kickstart是一种无人值守的安装方式。它的工作原理是在安装过程中记录人工干预填写的各种参数，并生成一个名为ks.cfg的文件。如果在自动安装过程中出现要填写参数的情况，安装程序首先会去查找ks.cfg文件，如果找到合适的参数，就采用所找到的参数；如果没有找到合适的参数，便会弹出对话框让安装者手工填写。所以，如果ks.cfg文件涵盖了安装过程中所有需要填写的参数，那么安装者完全可以只告诉安装程序从何处下载ks.cfg文件。等安装完毕，安装程序会根据ks.cfg中的设置重启/关闭系统，并结束安装。</span></p><p style="white-space: normal;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">Cobbler集中和简化了通过网络安装操作系统需要使用到的DHCP、TFTP和DNS服务的配置。Cobbler不仅有一个命令行界面，还提供了一个Web界面，大大降低了使用者的入门水平。Cobbler内置了一个轻量级配置管理系统，但它也支持和其它配置管理系统集成。</span></p><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">什么是PXE</span></p></li></ul><p><strong><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"></span></strong></p><p style="white-space: normal;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">PXE，全名Pre-boot Execution Environment，预启动执行环境；</span><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">简单的说，Cobbler是对kickstart的封装，简化安装步骤、使用流程，并降低使用者的门槛。而kickstart实现方式依赖于PXE环境。</span><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">通过网络接口启动计算机，不依赖本地存储设备（如硬盘）或本地已安装的操作系统；</span><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">由Intel和Systemsoft公司于1999年9月20日公布的技术；运行在Client/Server的工作模式；&nbsp; &nbsp;</span><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">PXE客户端会调用网际协议(IP)、用户数据报协议(UDP)、动态主机设定协议(DHCP)、小型文件传输协议(TFTP)等网络协议；</span><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">PXE客户端(client)这个术语是指机器在PXE启动过程中的角色。一个PXE客户端可以是一台服务器、笔记本电脑或者其他装有PXE启动代码的机器（我们电脑的网卡）。</span></p><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"><strong style="white-space: normal;"><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">PXE工作流程图</span></strong></span></p></li></ul><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">PXE client是需要安装Linux的计算机，TFTP Server、DHCP Server及HTTPD Server部署在在PXE Server端。Bootstrap文件、配置文件以及Linux根文件系统都放置在Linux Server上TFTP服务器的根目录下，而ks.cfg 及 系统内核部署在HTTPD server目录。</span></span></span></p><p><strong style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"><strong><strong><strong>&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180809/1533816393401474.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533816393401474.png" alt="image.png"/></strong></strong></strong></strong></p><ol class=" list-paddingleft-2" style="list-style-type: decimal;"><li><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">PXE Client向DHCP发送请求 PXE Client从自己的PXE网卡启动，通过PXE BootROM(自启动芯片)会以UDP(简单用户数据报协议)发送一个广播请求，向本网络中的DHCP服务器索取IP。</span></p></li><li><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">DHCP服务器提供信息 DHCP服务器收到客户端的请求，验证是否来至合法的PXE Client的请求，验证通过它将给客户端一个“提供”响应，这个“提供”响应中包含了为客户端分配的IP地址、pxelinux启动程序(TFTP)位置，以及配置文件所在位置。</span></p></li><li><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">PXE客户端请求下载启动文件 客户端收到服务器的“回应”后，会回应一个帧，以请求传送启动所需文件。这些启动文件包括：pxelinux.0、pxelinux.cfg/default、vmlinuz、initrd.img等文件。</span></p></li><li><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">Boot Server响应客户端请求并传送文件 当服务器收到客户端的请求后，他们之间之后将有更多的信息在客户端与服务器之间作应答, 用以决定启动参数。BootROM由TFTP通讯协议从Boot Server下载启动安装程序所必须的文件(pxelinux.0、pxelinux.cfg/default)。default文件下载完成后，会根据该文件中定义的引导顺序，启动Linux安装程序的引导内核。</span></p></li><li><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">请求下载自动应答文件 客户端通过pxelinux.cfg/default文件成功的引导Linux安装内核后，安装程序首先必须确定你通过什么安装介质来安装linux，如果是通过网络安装(NFS, FTP, HTTP)，则会在这个时候初始化网络，并定位安装源位置。接着会读取default文件中指定的自动应答文件ks.cfg所在位置，根据该位置请求下载该文件。</span></p></li><li><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">客户端安装操作系统 将ks.cfg文件下载回来后，通过该文件找到OS Server，并按照该文件的配置请求下载安装过程需要的软件包。 OS Server和客户端建立连接后，将开始传输软件包，客户端将开始安装操作系统。安装完成后，将提示重新引导计算机。</span><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">&nbsp; &nbsp;</span></p></li></ol><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p><strong style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">PXE必要条件</strong><br/></p></li></ul><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">1.pxe client必须支持pxe用户端功能，并且开机时选择网络启动，这样系统才能以网络的方式进入pxe启动程序<br/></span></p><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">2.pxe服务器必须至少提供DHCP及TFTP的服务才行，且其中<br/></span></p><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;DHCP服务器必须能够除未pxe client分配ip地址外，还需告知tftp所在的位置（即pxelinux.0的文件位置）</span></p><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;"></span><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;TFTP服务器则为pxe client 提供bootloader 及 kernel 等重要文件下载服务</span></p><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">3.使用NFS/HTTP/FTP之一的服务器提供pxe client所需程序及软件来源等通讯协议</span></p><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;"><strong style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px; white-space: normal;">PXE工作流程图：</strong></span></p></li></ul><p>&nbsp; &nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180809/1533816646104436.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533816646104436.png" alt="image.png"/></p><p><strong><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">PXE环境安装DHCP</span></strong></p><hr/><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">动态主机设置协议（Dynamic Host Configuration Protocol，DHCP）是一种使网络管理员能够集中管理和自动分配IP网络地址的通信协议，使用UDP协议工作，DHCP使用统一端口作为BOOTP：服务器端使用67/udp，客户端使用68/udp。主要有两个用途：</span><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">用于内部网络或网络服务供应商自动分配IP地址给用户；用于内部网络管理员作为对所有电脑作中央管理的手段。</span><strong><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"></span></strong><br/></p><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">DHCP协议的工作流程：</span></p><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;客户端在局域网广播DHCPDISCOVER报文，请求获得ip地址、网关、dns地址 等信息；DHCP服务器收到DHCPDISCOVER报文后 ，发送DHCPOFFER 报文进行响应 ；客户端收到DHCPOFFER报文后，发送DHCPREQUEST 报文进行请求 ；最终DHCP 服务器发送 DHCPACK报文进行确认 。</span></p><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">DHCP配置文件dhcp.conf 分为4段：</span></p><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">&nbsp; &nbsp; 1、DHCP属性段：&nbsp;</span><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">log-facility&nbsp; 定义日志等级</span></p><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">&nbsp; &nbsp; 2、全局属性段：&nbsp;</span><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">使用option 关键字定义</span></p><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">&nbsp; &nbsp; 3、子网分配段： 使用subnet&nbsp; 来定义&nbsp; &nbsp;<span style="font-family: 微软雅黑; font-size: 14px;">&nbsp; &nbsp;</span></span><span style="font-family: 微软雅黑; font-size: 14px;"> &nbsp; &nbsp;</span></p><p><span style="font-family: 微软雅黑; font-size: 14px;">&nbsp; &nbsp; 4、主机配置段： 使用host来定义&nbsp;</span></p><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p style=";font-family:微软雅黑;font-size:12px">安装DHCP：</p></li></ul><pre class="brush:js;toolbar:false">[root@PXE&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;dhcp&nbsp;&nbsp;&nbsp;#&nbsp;安装dhcp&nbsp;server
+
+[root@PXE&nbsp;~]#&nbsp;rpm&nbsp;-ql&nbsp;dhcp
+/etc/dhcp
+/etc/dhcp/dhcpd.conf&nbsp;&nbsp;&nbsp;#&nbsp;dhcpd配置文件
+/etc/rc.d/init.d/dhcpd&nbsp;&nbsp;&nbsp;#&nbsp;dhcpd启动文件
+/usr/sbin/dhcpd&nbsp;&nbsp;&nbsp;#&nbsp;启动脚本配置文件
+[root@PXE&nbsp;pxelinux.cfg]#&nbsp;vi&nbsp;/etc/dhcp/dhcpd.conf&nbsp;&nbsp;&nbsp;#&nbsp;调整配置文件
+#&nbsp;dhcpd.conf
+#
+option&nbsp;domain-name&nbsp;&quot;itwish.cn&quot;;
+option&nbsp;domain-name-servers&nbsp;192.168.4.150&nbsp;;
+
+default-lease-time&nbsp;600;
+max-lease-time&nbsp;7200;
+
+log-facility&nbsp;local7;&nbsp;&nbsp;
+
+subnet&nbsp;192.168.4.0&nbsp;netmask&nbsp;255.255.255.0&nbsp;{&nbsp;&nbsp;#&nbsp;定义子网
+&nbsp;&nbsp;range&nbsp;192.168.4.10&nbsp;192.168.4.100;
+&nbsp;&nbsp;option&nbsp;routers&nbsp;192.168.4.1;
+&nbsp;&nbsp;next-server&nbsp;192.168.4.150;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;注：添加&nbsp;tftp服务器地址
+&nbsp;&nbsp;filename=&quot;pxelinux.0&quot;;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#注：告诉TFTP目录下的bootstarp文件
+}
+
+
+#注：配置文件中以&quot;;&quot;&nbsp;号结尾&nbsp;，且需添加next-server&nbsp;和filename&nbsp;项</pre><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">&nbsp;启动dhcp并验证dhcpd进程是否处于监听状态：</span></p></li></ul><pre class="brush:js;toolbar:false">[root@PXE&nbsp;~]#&nbsp;chkconfig&nbsp;--add&nbsp;dhcpd
+
+[root@PXE&nbsp;~]#&nbsp;chkconfig&nbsp;dhcpd&nbsp;on
+
+[root@PXE&nbsp;~]#&nbsp;service&nbsp;dhcpd&nbsp;start
+Starting&nbsp;dhcpd:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;&nbsp;OK&nbsp;&nbsp;]
+
+[root@PXE&nbsp;~]#&nbsp;ps&nbsp;aux&nbsp;|&nbsp;grep&nbsp;dhcpd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;验证dhcpd&nbsp;启动
+dhcpd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;14087&nbsp;&nbsp;0.0&nbsp;&nbsp;0.1&nbsp;&nbsp;48324&nbsp;&nbsp;3572&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ss&nbsp;&nbsp;&nbsp;03:13&nbsp;&nbsp;&nbsp;0:00&nbsp;/usr/sbin/dhcpd&nbsp;-user&nbsp;dhcpd&nbsp;-group&nbsp;dhcpd
+root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;14108&nbsp;&nbsp;0.0&nbsp;&nbsp;0.0&nbsp;103272&nbsp;&nbsp;&nbsp;840&nbsp;pts/0&nbsp;&nbsp;&nbsp;&nbsp;S+&nbsp;&nbsp;&nbsp;03:14&nbsp;&nbsp;&nbsp;0:00&nbsp;grep&nbsp;dhcpd
+
+[root@PXE&nbsp;~]#&nbsp;ss&nbsp;-tunl&nbsp;|&nbsp;grep&nbsp;67
+udp&nbsp;&nbsp;&nbsp;&nbsp;UNCONN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*:67&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*:*</pre><p style=";font-family:微软雅黑;font-size:14px"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;"></span></p><p style=";font-family:微软雅黑;font-size:12px"><span style="font-size: 14px;"></span></p><p style=";font-family:微软雅黑;font-size:12px"><span style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p style=";font-family:微软雅黑;font-size:12px"><strong><span style="font-size: 14px;">PXE 环境安装 TFTP</span></strong></p><hr/><p style=";font-family:微软雅黑;font-size:12px">简单文件传输协议也称小型文件传输协议（Trivial File Transfer Protocol, TFTP），工作在UDP/69 端口，是一种于1981年在RFC 783中定义的简化的文件传输协议（FTP）。<strong><span style="font-size: 14px;"></span></strong><br/></p><p style=";font-family:微软雅黑;font-size:12px"><span style="font-size: 14px;">瞬时（非独立）守护进程：他们无需定义在运行级别下，只需要一次性的定义xinetd的运行级别 </span></p><p style=";font-family:微软雅黑;font-size:12px"><span style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<span style="font-family: 微软雅黑; font-size: 14px;">xinetd——为那些极少接受用户请求的服务，专门提供监听功能，如 监听tftpd进程</span></span></p><p style=";font-family:微软雅黑;font-size:12px"><span style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;独立（standlone）守护进程 ：能自我管理，无须xinet 提供监听服务的进程</span></p><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p style=";font-family:微软雅黑;font-size:12px"><span style="font-size: 14px;">安装TFTP：</span></p></li></ul><pre class="brush:js;toolbar:false">[root@PXE&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;xinetd&nbsp;tftp-server
+
+[root@PXE&nbsp;~]#&nbsp;rpm&nbsp;-ql&nbsp;tftp-server&nbsp;&nbsp;
+/etc/xinetd.d/tftp&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;配置文件路径
+/var/lib/tftpboot&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;默认tftp存储目录
+
+[root@PXE&nbsp;~]#&nbsp;vi&nbsp;/etc/xinetd.d/tftp&nbsp;
+#&nbsp;default:&nbsp;off&nbsp;&nbsp;&nbsp;&nbsp;
+service&nbsp;tftp
+{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;disable&nbsp;=&nbsp;no&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;no&nbsp;表明tftp处于启用状态&nbsp;，yes&nbsp;表示tftp处于禁用状态
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;socket_type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;dgram
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;protocol&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;udp
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wait&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;yes
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;user&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;root
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;server&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;/usr/sbin/in.tftpd
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;server_args&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;-s&nbsp;/var/lib/tftpboot&nbsp;#&nbsp;默认tftp存储目录
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;per_source&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;11
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cps&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;100&nbsp;2
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;flags&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;IPv4
+}
+[root@PXE&nbsp;~]#&nbsp;chkconfig&nbsp;xinetd&nbsp;on
+
+[root@PXE&nbsp;~]#&nbsp;chkconfig&nbsp;tftp&nbsp;on
+
+[root@PXE&nbsp;~]#&nbsp;service&nbsp;xinetd&nbsp;start
+Starting&nbsp;xinetd:&nbsp;
+
+[root@PXE&nbsp;~]#&nbsp;ss&nbsp;-tunl&nbsp;|&nbsp;grep&nbsp;69
+udp&nbsp;&nbsp;&nbsp;&nbsp;UNCONN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*:69&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*:*</pre><p style=";font-family:微软雅黑;font-size:14px"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;"></span></p><ul style="list-style-type: square;" class=" list-paddingleft-2"><li><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">使用 syslinux 提供的bootstart ：</span></p></li></ul><pre class="brush:js;toolbar:false">[root@PXE&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;syslinux
+
+[root@PXE&nbsp;~]#&nbsp;rpm&nbsp;-ql&nbsp;syslinux
+/usr/share/syslinux&nbsp;&nbsp;&nbsp;#&nbsp;pxelinux.0&nbsp;文件存储目录
+
+[root@PXE&nbsp;~]#&nbsp;cp&nbsp;/usr/share/syslinux/pxelinux.0&nbsp;/var/lib/tftpboot/&nbsp;&nbsp;
+#&nbsp;复制pxelinux.0到&nbsp;/var/lib/tftpboot&nbsp;目录&nbsp;
+
+[root@PXE&nbsp;boot]#&nbsp;mount&nbsp;/dev/cdrom&nbsp;/media/&nbsp;&nbsp;#&nbsp;挂载光盘
+mount:&nbsp;block&nbsp;device&nbsp;/dev/sr0&nbsp;is&nbsp;write-protected,&nbsp;mounting&nbsp;read-only</pre><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">配置pxelinux.cfg 文件</span></p></li></ul><pre class="brush:js;toolbar:false">[root@PXE&nbsp;&nbsp;~]#&nbsp;mkdir&nbsp;/var/lib/tftpboot/pxelinux.cfg&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;创建pxelinux.cfg&nbsp;文件夹
+[root@PXE&nbsp;~]#&nbsp;cp&nbsp;isolinux/isolinux.cfg&nbsp;/var/lib/tftpboot/pxelinux.cfg/default&nbsp;&nbsp;
+#&nbsp;把isolinux.cfg引导文件拷贝到tftpd存储目录下的pxelinux.cfg文件中,并命名为default
+
+[root@PXE&nbsp;~]#&nbsp;vi&nbsp;/var/lib/tftpboot/pxelinux.cfg/default&nbsp;&nbsp;&nbsp;#&nbsp;修改linux内核引导文件
+default&nbsp;vesamenu.c32&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;默认启动界面，该文件需要拷贝到tftp存储目录中。
+#prompt&nbsp;1
+timeout&nbsp;600&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;倒计时&nbsp;600就是60&nbsp;秒，改数字为秒数的10倍
+
+display&nbsp;boot.msg&nbsp;&nbsp;#&nbsp;将额外信息写入到boot.msg文件中，该文件需要拷贝到tftp存储目录中。
+
+menu&nbsp;background&nbsp;splash.jpg&nbsp;&nbsp;&nbsp;#&nbsp;菜单背景图，该文件需要拷贝到tftp存储目录中。
+menu&nbsp;title&nbsp;Welcome&nbsp;to&nbsp;CentOS&nbsp;6.6!&nbsp;&nbsp;&nbsp;#&nbsp;菜单主标题
+
+label&nbsp;linux
+&nbsp;&nbsp;menu&nbsp;label&nbsp;^Install&nbsp;or&nbsp;upgrade&nbsp;an&nbsp;PXE&nbsp;system&nbsp;&nbsp;&nbsp;&nbsp;#菜单項目
+&nbsp;&nbsp;menu&nbsp;default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;预设项目
+&nbsp;&nbsp;kernel&nbsp;vmlinuz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;内核&nbsp;vmlinuz，该文件需要拷贝到tftp存储目录中。
+&nbsp;&nbsp;append&nbsp;initrd=initrd.img&nbsp;&nbsp;ks=http://192.168.4.150/ks.cfg&nbsp;&nbsp;&nbsp;
+#&nbsp;核心参数，指定initrd&nbsp;核心文件，该文件需要拷贝到tftp存储目录中。另指定ks文件目录，这儿使用的http协议</pre><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p style=";font-family:微软雅黑;font-size:14px"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">把内核及根文件拷贝到tftpd存储目录 ：参照上菜单配置信息，包括 vesamenu.c32，boot.msg，splash.jpg，vmlinuz，initrd.img 文件做拷贝</span></p></li></ul><pre class="brush:js;toolbar:false;">[root@PXE&nbsp;~]#&nbsp;cp&nbsp;/media/images/pxeboot/{initrd.img,vmlinuz}&nbsp;/var/lib/tftpboot/&nbsp;&nbsp;&nbsp;
+
+[root@PXE&nbsp;~]#&nbsp;cp&nbsp;/media/isolinux/{boot.msg,vesamenu.c32,splash.jpg}&nbsp;/var/lib/tftpboot/</pre><p style=";font-family:微软雅黑;font-size:14px"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"></span></p><p style=";font-family:微软雅黑;font-size:14px"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"></span></p><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;"><strong style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px; white-space: normal;"><br/></strong></span></p><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;"><strong style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px; white-space: normal;">linux PXE环境HTTP部署</strong></span></p><hr/><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;">创建kickstart文件方式：</span><br/></p><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;1、复制模板 /root/anaconda-ks.cfg ，而后使用vim编辑配置</span></p><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;2、使用system-config-kickstart 来生成，建议也使用/root/anaconda-ks.cfg 作为模板来进行</span></p><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;# ksvalidator&nbsp;&nbsp; 查看ks文件语法是否正确&nbsp; &nbsp;&nbsp;</span></p><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;">kickstat文件的组成部分 ：</span></p><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;">&nbsp; &nbsp; 1、命令段： 用于配置系统 ，如：install ，firewall，&nbsp;part，lv 等</span></p><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;">&nbsp; &nbsp; 2、软件包段%packages；指定要安装的程序包组（@组包名）及程序包(程序包名)，每行一个 ；在程序包之前加 “-”号，表示不希望安装</span></p><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;">&nbsp; &nbsp; 3、<span style="font-family: 微软雅黑; font-size: 14px;">%pre&nbsp;<span style="font-family: 微软雅黑; font-size: 14px;">%post</span></span>脚本段：安装过程开始之前、后执行的安装预备式脚本</span></p><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p style=";font-family:微软雅黑;font-size:13px"><span style="font-size: 14px;">httpd安装：<span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">&nbsp;</span></span><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">&nbsp;</span></p></li></ul><pre class="brush:js;toolbar:false">[root@PXE&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;httpd
+
+[root@PXE&nbsp;~]#&nbsp;rpm&nbsp;-ql&nbsp;httpd
+/etc/httpd&nbsp;&nbsp;&nbsp;&nbsp;
+/etc/httpd/conf/httpd.conf&nbsp;&nbsp;&nbsp;#&nbsp;httpd&nbsp;配置文件
+/var/www/html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;httpd&nbsp;默认存储目录
+
+[root@PXE&nbsp;~]#&nbsp;chkconfig&nbsp;httpd&nbsp;on
+
+[root@PXE&nbsp;~]#&nbsp;service&nbsp;httpd&nbsp;start
+Starting&nbsp;httpd:&nbsp;
+
+[root@PXE&nbsp;~]#&nbsp;ss&nbsp;-tunl&nbsp;|grep&nbsp;80
+tcp&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;128&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:::80&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:::*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+[root@PXE&nbsp;~]#&nbsp;ps&nbsp;aux&nbsp;|&nbsp;grep&nbsp;httpd
+root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1877&nbsp;&nbsp;0.0&nbsp;&nbsp;3.3&nbsp;479948&nbsp;20284&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ss&nbsp;&nbsp;&nbsp;08:20&nbsp;&nbsp;&nbsp;0:01&nbsp;/usr/sbin/httpd
+apache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2184&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9908&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;/usr/sbin/httpd
+apache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2185&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;/usr/sbin/httpd
+apache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2188&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;/usr/sbin/httpd
+apache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2189&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;/usr/sbin/httpd
+apache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2190&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;/usr/sbin/httpd
+apache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2191&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;/usr/sbin/httpd
+apache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2192&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;/usr/sbin/httpd
+apache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2193&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;/usr/sbin/httpd
+root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3116&nbsp;&nbsp;0.0&nbsp;&nbsp;0.1&nbsp;103324&nbsp;&nbsp;&nbsp;844&nbsp;pts/0&nbsp;&nbsp;&nbsp;&nbsp;S+&nbsp;&nbsp;&nbsp;19:48&nbsp;&nbsp;&nbsp;0:00&nbsp;grep&nbsp;httpd
+
+[root@PXE&nbsp;~]#&nbsp;cp&nbsp;/root/anaconda-ks.cfg&nbsp;/var/www/html/ks.cfg&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;拷贝模板到/var/www/html&nbsp;目录，并重命名为ks.cfg
+
+[root@PXE&nbsp;~]#&nbsp;chmod&nbsp;o+r&nbsp;/var/www/html/ks.cfg&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;分配权限，为pxe&nbsp;client引导安装使用
+
+[root@PXE&nbsp;isolinux]#&nbsp;cp&nbsp;/media/*&nbsp;/var/www/html/centos/os/&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;拷贝安装系统
+
+[root@PXE&nbsp;os]#&nbsp;grub-crypt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;密码加密，使用grub-crypt&nbsp;默认512位加密方式
+Password:&nbsp;
+Retype&nbsp;password:&nbsp;
+$6$DnceMH60Kiu8TaME$ySd/QOpPtEcLnnoW36bDjb59xr1eJHGUwTTV/4MHoojT.RoXXdsLHMWJXcLCETQNRF2xITSqKHAAUNZq6df0i/</pre><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">以/root/anaconda.cfg 为模板，配置ks.cfg文件 ，配置repo url 和 ks.cfg 。</span></p></li></ul><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">repo引用格式如下图</span></p><p>&nbsp;&nbsp;&nbsp;&nbsp;<span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"><img src="https://s1.51cto.com/images/20180805/1533463773879415.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533463773879415.png" alt="image.png"/></span></p><p><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;针对集群的计算节点设置的，比如设置用户信息、关闭防火墙等，请根据自己需要定制，kickstart文件说明参见：</span><a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/6/html/installation_guide/s1-kickstart2-options" style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px; white-space: normal;">https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/6/html/installation_guide/s1-kickstart2-options</a><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">&nbsp;</span></span></p><pre class="brush:js;toolbar:false">[root@PXE&nbsp;~]#&nbsp;vi&nbsp;/var/www/html/ks.cfg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;调整配置文件
+#&nbsp;Kickstart&nbsp;file&nbsp;automatically&nbsp;generated&nbsp;by&nbsp;anaconda.
+
+#version=DEVEL
+install&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;命令段&nbsp;&nbsp;，安装
+url&nbsp;--url=http://192.168.4.150/centos/os/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;指定网络url安装目录&nbsp;
+lang&nbsp;en_US.UTF-8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;默认字体
+keyboard&nbsp;us&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;键盘类型
+network&nbsp;--onboot&nbsp;yes&nbsp;--device&nbsp;eth0&nbsp;--bootproto&nbsp;dhcp&nbsp;&nbsp;--noipv6&nbsp;&nbsp;
+#&nbsp;指定开机自启，网络接口eth0&nbsp;，dhcp获取网络地址，ipv6&nbsp;禁用
+
+rootpw&nbsp;&nbsp;--iscrypted&nbsp;$6$ZOGP2tA0PI/6SI/X$MlC5bJyXfP9TBN5/0vwoc6dqAqIijOQthEbAZUnIXft85Tj9n4sKWB2PfxrsVfkZ2ibqX63apu8ElmdEvBo9o/&nbsp;&nbsp;&nbsp;
+#&nbsp;root&nbsp;加密密码，使用grub-crypt&nbsp;生成的字符串替代
+
+reboot&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;配置完毕后，重启内核
+firewall&nbsp;--disabled&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;防火墙禁用
+authconfig&nbsp;--enableshadow&nbsp;--passalgo=sha512&nbsp;&nbsp;#&nbsp;登录身份使用&nbsp;sha1&nbsp;的&nbsp;512bits&nbsp;加密算法
+selinux&nbsp;--disabled&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;selinux&nbsp;功能禁用
+timezone&nbsp;Asia/Shanghai&nbsp;#&nbsp;定义上海时区&nbsp;
+bootloader&nbsp;--location=mbr&nbsp;--driveorder=sda&nbsp;--append=&quot;crashkernel=auto&nbsp;rhgb&nbsp;quiet&quot;&nbsp;&nbsp;&nbsp;
+#&nbsp;定义bootloader，grub安装mbr&nbsp;，安装在sda磁盘
+
+#&nbsp;The&nbsp;following&nbsp;is&nbsp;the&nbsp;partition&nbsp;information&nbsp;you&nbsp;requested
+#&nbsp;Note&nbsp;that&nbsp;any&nbsp;partitions&nbsp;you&nbsp;deleted&nbsp;are&nbsp;not&nbsp;expressed
+#&nbsp;here&nbsp;so&nbsp;unless&nbsp;you&nbsp;clear&nbsp;all&nbsp;partitions&nbsp;first,&nbsp;this&nbsp;is
+#&nbsp;not&nbsp;guaranteed&nbsp;to&nbsp;work
+clearpart&nbsp;--all&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;清除磁盘分区表
+text&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;纯文本格式安装显示
+zerombr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;对磁盘进行初始化
+
+part&nbsp;/boot&nbsp;--fstype=ext4&nbsp;--asprimary&nbsp;--size=2000&nbsp;&nbsp;#&nbsp;分区信息&nbsp;，定义boot分区&nbsp;，格式为ext4&nbsp;，大小为2G
+part&nbsp;swap&nbsp;--size=4096&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;分区信息&nbsp;，定义swap分区&nbsp;，大小为4G
+part&nbsp;pv.008003&nbsp;&nbsp;--size=80000&nbsp;&nbsp;#&nbsp;分区信息&nbsp;，定义lv分区&nbsp;pv.008003，大小为80G
+
+volgroup&nbsp;vg0&nbsp;--pesize=8192&nbsp;pv.008003&nbsp;&nbsp;&nbsp;#&nbsp;分区信息&nbsp;，在lv分区pv.008003定义vg0卷组&nbsp;，pe大小为8M
+logvol&nbsp;/&nbsp;--fstype=ext4&nbsp;--name=root&nbsp;--vgname=vg0&nbsp;--size=15000
+logvol&nbsp;/usr&nbsp;--fstype=ext4&nbsp;--name=/usr&nbsp;--vgname=vg0&nbsp;--size=30000
+logvol&nbsp;/var&nbsp;--fstype=ext4&nbsp;--name=/var&nbsp;--vgname=vg0&nbsp;--size=20000
+logvol&nbsp;/home&nbsp;--fstype=ext4&nbsp;--name=/home&nbsp;--vgname=vg0&nbsp;--size=12000
+
+repo&nbsp;--name=&quot;CentOS-6.6&quot;&nbsp;&nbsp;--baseurl=http://192.168.4.150/centos/os/&nbsp;&nbsp;--cost=100&nbsp;&nbsp;
+#&nbsp;定义yum仓库&nbsp;，类别为bashurl&nbsp;，名称为CentOS-6.6
+
+%packages&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;包组段，安装包组及程序包
+@core&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+@server-policy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+@workstation-policy
+%end
+
+[root@PXE&nbsp;~]#&nbsp;yum&nbsp;-y&nbsp;install&nbsp;pykickstart&nbsp;&nbsp;#安装ksvalidator&nbsp;软件
+
+[root@PXE&nbsp;~]#&nbsp;ksvalidator&nbsp;/var/www/html/ks.cfg&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;ksvalidator验证ks.cfg语法是否正确</pre><ul class=" list-paddingleft-2" style="list-style-type: square;"><li><p style=";font-family:微软雅黑;font-size:14px">ks.cfg及repo验证：</p></li></ul><p style=";font-family:微软雅黑;font-size:14px">&nbsp; &nbsp; <img src="https://s1.51cto.com/images/20180805/1533398860706045.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533398860706045.png" alt="image.png"/></p><p style=";font-family:微软雅黑;font-size:14px">&nbsp;&nbsp;&nbsp;&nbsp;注：ks.cfg若不能正常打开，确认是否有读权限</p><p style=";font-family:微软雅黑;font-size:14px">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533398823976228.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533398823976228.png" alt="image.png"/></p><p style=";font-family:微软雅黑;font-size:14px">&nbsp;&nbsp;&nbsp;&nbsp;注： 若不能显示以上连接方式，确认httpd配置文件中，是否开启相关选项。<br/></p><p style=";font-family:微软雅黑;font-size:14px"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px; text-indent: 32px;">至此，PXE服务器环境部署完成，出现问题时，一般需要查看系统日志，如：/var/log/messages，</span>&nbsp;通过日志报错信息进行解决 。&nbsp;&nbsp;</p><p><br/></p><p style=";font-family:微软雅黑;font-size:14px"><strong>Centos PXE环境测试，安装，启动</strong></p><hr/><p style=";font-family:微软雅黑;font-size:14px"><strong><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;"></span></strong>部署环境：vmware 虚拟机</p><p style=";font-family:微软雅黑;font-size:14px"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;PXE服务器：&nbsp; PXE， ip :192.168.4.150<br/></span></p><p style=";font-family:微软雅黑;font-size:14px"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;PXE client :&nbsp; &nbsp; vm&nbsp;&nbsp;</span></p><p style=";font-family:微软雅黑;font-size:14px"><strong><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">实验：</span></strong></p><p style="font-size: 14px;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;; font-size: 14px;">一、配置PXE client 客户端 ，网络需与PXE服务器处于同一网段 192.168.4.150 /24</span></p><p style="font-size: 14px;"><img src="https://s1.51cto.com/images/20180805/1533399829200552.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533399829200552.png" alt="image.png"/>&nbsp; &nbsp;&nbsp;</p><p style="font-size: 14px;"><span style="font-family:微软雅黑, Microsoft YaHei">二、选择开机启动顺序，选择&quot;Network boot from Intel E1000&quot;</span></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533399724100839.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533399724100839.png" alt="image.png"/><br/></p><p style="font-size: 14px;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">三、pxe client获取dhcp地址后 ，获取pxelinux.cfg中配置文件</span></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533400449935806.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533400449935806.png" alt="image.png"/></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533400214856654.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533400214856654.png" alt="image.png"/></p><p style="font-size: 14px;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">四、加载内核和根文件系统</span></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533400913450045.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533400913450045.png" alt="image.png"/></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533401023267868.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533401023267868.png" alt="image.png"/></p><p style="font-size: 14px;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">五、安装networkmanager ，创建磁盘分区</span></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533401245378056.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533401245378056.png" alt="image.png"/>&nbsp;</p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533401430736349.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533401430736349.png" alt="image.png"/></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533401562481796.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533401562481796.png" alt="image.png"/></p><p style="font-size: 14px;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">六、检查包依赖关系，并安装程序。</span></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533401732496409.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533401732496409.png" alt="image.png"/></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533401318359527.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533401318359527.png" alt="image.png"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p><p style="font-size: 14px;"><span style="font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">七、完成安装，重启 ，进入登录界面</span><br/></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533402095225247.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533402095225247.png" alt="image.png"/></p><p style="font-size: 14px;">&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://s1.51cto.com/images/20180805/1533402131253489.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" title="1533402131253489.png" alt="image.png"/></p><p style=";font-family:微软雅黑;font-size:14px"><br/></p><p><span style="font-size: 14px; font-family: 微软雅黑, &quot;Microsoft YaHei&quot;;">至此，pxe 服务器端 部署完成 ，并成功自动化安装pxeclient 端 。</span><br/></p><p style=";font-family:微软雅黑;font-size:14px"><br/></p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者Wish_亮的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+										<div class="appreciate-box">
+					<h2>你的鼓励让我更有动力</h2>
+											<p class="appreciate-btn appreciate-open">赞赏</p>
+										<p class="appreciate-txt">0人进行了赞赏支持</p>
+									</div>
+						<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=pxe%E5%AE%89%E8%A3%85" target="_blank">pxe安装</a>
+																								<a href="https://blog.51cto.com/search/result?q=linux+pxe" target="_blank">linux pxe</a>
+																								<a href="https://blog.51cto.com/search/result?q=pxe%E5%90%AF%E5%8A%A8" target="_blank">pxe启动</a>
+																																					                				<a class="last" href="https://blog.51cto.com/itwish/category9.html" target="_blank"><i></i>Centos 部署服务</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="2154820" userid='11439802'>10</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina" >微博</a>
+					  <a class="bds_sqq" data-cmd="sqq" >QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin" >微信</a>
+					  <img src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2Fitwish%2F2154820">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/itwish/2128257" title="[DNS] Linux（centos6）中dns（bind）服务器安装及dns理论详解">
+						上一篇：[DNS] Linux（cent...</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/itwish/2160492" title="[HTTPD] Linux（Apache）Httpd服务器安装，启动及httpd.conf配置详解">
+						下一篇：[HTTPD] Linux（Ap...</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/itwish" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="11439802" src="https://ucenter.51cto.com/images/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/itwish" target="_blank" style="display:inline-block;">Wish_亮</a>
+										<h3>24篇文章，117W+人气，108粉丝</h3>
+					<h4>ITwish</h4>				</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_11439802" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/itwish" class="header-img" target="_blank">
+						<img  src="https://ucenter.51cto.com/images/noavatar_middle.gif"/>
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可"  maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="11439802">
+					<input type="hidden" class="reply_id" value="2154820">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+							<div class="comment-number" id="comment_pl">
+					<p class="number fl"><span class="comment_number">3</span>条评论</p>
+					<a class="time-last time fr comment-sort" id="sort-desc" flag="desc"  page="1" >按时间倒序</a>
+				    <a class="time-first time fr comment-sort on" id="sort-asc" flag="asc"  page="1" >按时间正序</a>
+				    <div class="clear"></div>
+				</div>
+						<div class="commentList">
+			</div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201804/27/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>502人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="5" href="/cloumn/detail/5" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/28/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>564人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="6" href="/cloumn/detail/6" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/03/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>509人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="13" href="/cloumn/detail/13" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/20/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1921人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="18" href="/cloumn/detail/18" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/06/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTOsummer</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>2318人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="30" href="/cloumn/detail/30" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/itwish/2308810?source=dra" target="_blank">[NTP] Linux NTP服务器搭建部署与NTP时间同步配置</a>
+															<a class="white-space" href="https://blog.51cto.com/itwish/2296284?source=dra" target="_blank">[Zabbix] Linux 环境zabbix 3.4邮件报警配置及zabbix故障处理</a>
+															<a class="white-space" href="https://blog.51cto.com/zero01/2079879?source=drt" target="_blank">搭建ELK日志分析平台（上）—— ELK介绍及搭建 Elasticsearch 分布式集群</a>
+															<a class="white-space" href="https://blog.51cto.com/fengyunshan911/2070818?source=drt" target="_blank">Mysql启报错报The server quit without updating PID file</a>
+															<a class="white-space" href="https://blog.51cto.com/flord/851465?source=drt" target="_blank"> 无线路由器的WMM功能和开启ap隔离，以及开启Short GI有什么用</a>
+															<a class="white-space" href="https://blog.51cto.com/wangchunhai/837529?source=drt" target="_blank">使用iLO远程管理HP系列服务器</a>
+															<a class="white-space" href="https://blog.51cto.com/storysky/1158707?source=drt" target="_blank">用Kibana和logstash快速搭建实时日志查询、收集与分析系统</a>
+															<a class="white-space" href="https://blog.51cto.com/zero01/2082794?source=drt" target="_blank">搭建ELK日志分析平台（下）—— 搭建kibana和logstash服务器</a>
+															<a class="white-space" href="https://blog.51cto.com/13043516/2055574?source=drt" target="_blank">Linux下开启VNCserver服务（远程连接）</a>
+															<a class="white-space" href="https://blog.51cto.com/xiaogongju/2084464?source=drt" target="_blank">centos7手把手教你搭建zabbix监控</a>
+															<a class="white-space" href="https://blog.51cto.com/lavasoft/99151?source=drt" target="_blank">Java线程：创建与启动</a>
+															<a class="white-space" href="https://blog.51cto.com/zero01/2064660?source=drt" target="_blank">CentOS7.4搭建shadowsocks，以及配置BBR加速</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2475952?source=drh" target="_blank">Linux文件系统误装入到Ocfs2文件系统的数据卷上的解决过程</a>
+															<a class="white-space" href="https://blog.51cto.com/14143894/2475838?source=drh" target="_blank">kubeadm安装k8s集群1.17版本</a>
+															<a class="white-space" href="https://blog.51cto.com/lee90/2475806?source=drh" target="_blank">高性能：8-可用于Memory分析的BPF工具【bpf performance tools读书笔记】</a>
+															<a class="white-space" href="https://blog.51cto.com/13972012/2475722?source=drh" target="_blank">memcache缓存服务器概念篇</a>
+															<a class="white-space" href="https://blog.51cto.com/14143894/2475248?source=drh" target="_blank">Ceph持久化存储为k8s应用提供存储方案（3）</a>
+															<a class="white-space" href="https://blog.51cto.com/14653135/2475028?source=drh" target="_blank">pxe网络安装服务器的部署</a>
+															<a class="white-space" href="https://blog.51cto.com/14143894/2474757?source=drh" target="_blank"># IT明星不是梦 #  Ceph持久化存储为k8s应用提供存储方案（1）</a>
+															<a class="white-space" href="https://blog.51cto.com/13760351/2474737?source=drh" target="_blank">Linux 文本处理利器--Awk常用命令</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="https://s1.51cto.com/images/blog/201910/25/e44823f12c0ccbfd99decb605b02ec10.png" style="width:50px;height:50px;"/> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="https://static1.51cto.com/edu/blog/mobile/images/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="2154820" userid='11439802'>10</span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>11</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number">3</font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2Fitwish%2F2154820"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_11439802" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a href="https://blog.51cto.com/itwish" class="b-name fr">Wish_亮</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/itwish" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="11439802" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="https://static1.51cto.com/edu/blog/js/shCores.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '2154820'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'11439802',
+            'blog_id':'2154820'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/itwish';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='11439802'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/itwish'
+    	nickname = 'Wish_亮'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_11439802'),'11439802','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_11439802'),'11439802','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_11439802'),'11439802','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u672c\u7bc7blog\u4e3b\u8981\u8bb2\u8ff0\u4e86[PXE] linux\uff08centos\uff09PXE\u65e0\u76d8\u670d\u52a1\u5668\u642d\u5efa\uff0c\u5b89\u88c5\uff0c\u542f\u52a8\u53capxe\u534f\u8bae\u8be6\u89e3 \uff0c Kickstart \uff08PXE+DHCP+TFTP+HTTP\uff09\u3002<strong style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><strong><strong><br\/><\/strong><\/strong><\/strong><\/span><\/p><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><br\/><\/span><\/p><p><strong><span style=\"font-family:\u5fae\u8f6f\u96c5\u9ed1, Microsoft YaHei\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">PXE\u73af\u5883\u6982\u8ff0<\/span><\/span><\/strong><\/p><hr\/><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u4f5c\u4e3a\u4e2d\u5c0f\u516c\u53f8\u7684\u8fd0\u7ef4\uff0c\u7ecf\u5e38\u4f1a\u9047\u5230\u4e00\u4e9b\u673a\u68b0\u5f0f\u7684\u91cd\u590d\u5de5\u4f5c\u3002\u5982\u4f55\u8fdb\u884c\u6279\u91cf\u4e00\u6b21\u5927\u6279\u91cf\u90e8\u7f72\u670d\u52a1\u5668\u5b89\u88c5\uff1f\u65b9\u6cd5\uff1a Kickstart \uff08PXE+DHCP+TFTP+HTTP\uff09&nbsp; \u6216&nbsp; Cobbler<\/span><br\/><\/p><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u6279\u91cf\u88c5\u673a\u8f6f\u4ef6\u4ecb\u7ecd<\/span><br\/><\/p><\/li><\/ul><p style=\"white-space: normal;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">Redhat\u7cfb\u901a\u4e3b\u8981\u6709\u4e24\u79cd\u65b9\u5f0f\uff1aKickstart\u548cCobbler\u3002<\/span><\/p><p style=\"white-space: normal;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">Kickstart\u662f\u4e00\u79cd\u65e0\u4eba\u503c\u5b88\u7684\u5b89\u88c5\u65b9\u5f0f\u3002\u5b83\u7684\u5de5\u4f5c\u539f\u7406\u662f\u5728\u5b89\u88c5\u8fc7\u7a0b\u4e2d\u8bb0\u5f55\u4eba\u5de5\u5e72\u9884\u586b\u5199\u7684\u5404\u79cd\u53c2\u6570\uff0c\u5e76\u751f\u6210\u4e00\u4e2a\u540d\u4e3aks.cfg\u7684\u6587\u4ef6\u3002\u5982\u679c\u5728\u81ea\u52a8\u5b89\u88c5\u8fc7\u7a0b\u4e2d\u51fa\u73b0\u8981\u586b\u5199\u53c2\u6570\u7684\u60c5\u51b5\uff0c\u5b89\u88c5\u7a0b\u5e8f\u9996\u5148\u4f1a\u53bb\u67e5\u627eks.cfg\u6587\u4ef6\uff0c\u5982\u679c\u627e\u5230\u5408\u9002\u7684\u53c2\u6570\uff0c\u5c31\u91c7\u7528\u6240\u627e\u5230\u7684\u53c2\u6570\uff1b\u5982\u679c\u6ca1\u6709\u627e\u5230\u5408\u9002\u7684\u53c2\u6570\uff0c\u4fbf\u4f1a\u5f39\u51fa\u5bf9\u8bdd\u6846\u8ba9\u5b89\u88c5\u8005\u624b\u5de5\u586b\u5199\u3002\u6240\u4ee5\uff0c\u5982\u679cks.cfg\u6587\u4ef6\u6db5\u76d6\u4e86\u5b89\u88c5\u8fc7\u7a0b\u4e2d\u6240\u6709\u9700\u8981\u586b\u5199\u7684\u53c2\u6570\uff0c\u90a3\u4e48\u5b89\u88c5\u8005\u5b8c\u5168\u53ef\u4ee5\u53ea\u544a\u8bc9\u5b89\u88c5\u7a0b\u5e8f\u4ece\u4f55\u5904\u4e0b\u8f7dks.cfg\u6587\u4ef6\u3002\u7b49\u5b89\u88c5\u5b8c\u6bd5\uff0c\u5b89\u88c5\u7a0b\u5e8f\u4f1a\u6839\u636eks.cfg\u4e2d\u7684\u8bbe\u7f6e\u91cd\u542f\/\u5173\u95ed\u7cfb\u7edf\uff0c\u5e76\u7ed3\u675f\u5b89\u88c5\u3002<\/span><\/p><p style=\"white-space: normal;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">Cobbler\u96c6\u4e2d\u548c\u7b80\u5316\u4e86\u901a\u8fc7\u7f51\u7edc\u5b89\u88c5\u64cd\u4f5c\u7cfb\u7edf\u9700\u8981\u4f7f\u7528\u5230\u7684DHCP\u3001TFTP\u548cDNS\u670d\u52a1\u7684\u914d\u7f6e\u3002Cobbler\u4e0d\u4ec5\u6709\u4e00\u4e2a\u547d\u4ee4\u884c\u754c\u9762\uff0c\u8fd8\u63d0\u4f9b\u4e86\u4e00\u4e2aWeb\u754c\u9762\uff0c\u5927\u5927\u964d\u4f4e\u4e86\u4f7f\u7528\u8005\u7684\u5165\u95e8\u6c34\u5e73\u3002Cobbler\u5185\u7f6e\u4e86\u4e00\u4e2a\u8f7b\u91cf\u7ea7\u914d\u7f6e\u7ba1\u7406\u7cfb\u7edf\uff0c\u4f46\u5b83\u4e5f\u652f\u6301\u548c\u5176\u5b83\u914d\u7f6e\u7ba1\u7406\u7cfb\u7edf\u96c6\u6210\u3002<\/span><\/p><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u4ec0\u4e48\u662fPXE<\/span><\/p><\/li><\/ul><p><strong><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><\/span><\/strong><\/p><p style=\"white-space: normal;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">PXE\uff0c\u5168\u540dPre-boot Execution Environment\uff0c\u9884\u542f\u52a8\u6267\u884c\u73af\u5883\uff1b<\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u7b80\u5355\u7684\u8bf4\uff0cCobbler\u662f\u5bf9kickstart\u7684\u5c01\u88c5\uff0c\u7b80\u5316\u5b89\u88c5\u6b65\u9aa4\u3001\u4f7f\u7528\u6d41\u7a0b\uff0c\u5e76\u964d\u4f4e\u4f7f\u7528\u8005\u7684\u95e8\u69db\u3002\u800ckickstart\u5b9e\u73b0\u65b9\u5f0f\u4f9d\u8d56\u4e8ePXE\u73af\u5883\u3002<\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u901a\u8fc7\u7f51\u7edc\u63a5\u53e3\u542f\u52a8\u8ba1\u7b97\u673a\uff0c\u4e0d\u4f9d\u8d56\u672c\u5730\u5b58\u50a8\u8bbe\u5907\uff08\u5982\u786c\u76d8\uff09\u6216\u672c\u5730\u5df2\u5b89\u88c5\u7684\u64cd\u4f5c\u7cfb\u7edf\uff1b<\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u7531Intel\u548cSystemsoft\u516c\u53f8\u4e8e1999\u5e749\u670820\u65e5\u516c\u5e03\u7684\u6280\u672f\uff1b\u8fd0\u884c\u5728Client\/Server\u7684\u5de5\u4f5c\u6a21\u5f0f\uff1b&nbsp; &nbsp;<\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">PXE\u5ba2\u6237\u7aef\u4f1a\u8c03\u7528\u7f51\u9645\u534f\u8bae(IP)\u3001\u7528\u6237\u6570\u636e\u62a5\u534f\u8bae(UDP)\u3001\u52a8\u6001\u4e3b\u673a\u8bbe\u5b9a\u534f\u8bae(DHCP)\u3001\u5c0f\u578b\u6587\u4ef6\u4f20\u8f93\u534f\u8bae(TFTP)\u7b49\u7f51\u7edc\u534f\u8bae\uff1b<\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">PXE\u5ba2\u6237\u7aef(client)\u8fd9\u4e2a\u672f\u8bed\u662f\u6307\u673a\u5668\u5728PXE\u542f\u52a8\u8fc7\u7a0b\u4e2d\u7684\u89d2\u8272\u3002\u4e00\u4e2aPXE\u5ba2\u6237\u7aef\u53ef\u4ee5\u662f\u4e00\u53f0\u670d\u52a1\u5668\u3001\u7b14\u8bb0\u672c\u7535\u8111\u6216\u8005\u5176\u4ed6\u88c5\u6709PXE\u542f\u52a8\u4ee3\u7801\u7684\u673a\u5668\uff08\u6211\u4eec\u7535\u8111\u7684\u7f51\u5361\uff09\u3002<\/span><\/p><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><strong style=\"white-space: normal;\"><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">PXE\u5de5\u4f5c\u6d41\u7a0b\u56fe<\/span><\/strong><\/span><\/p><\/li><\/ul><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">PXE client\u662f\u9700\u8981\u5b89\u88c5Linux\u7684\u8ba1\u7b97\u673a\uff0cTFTP Server\u3001DHCP Server\u53caHTTPD Server\u90e8\u7f72\u5728\u5728PXE Server\u7aef\u3002Bootstrap\u6587\u4ef6\u3001\u914d\u7f6e\u6587\u4ef6\u4ee5\u53caLinux\u6839\u6587\u4ef6\u7cfb\u7edf\u90fd\u653e\u7f6e\u5728Linux Server\u4e0aTFTP\u670d\u52a1\u5668\u7684\u6839\u76ee\u5f55\u4e0b\uff0c\u800cks.cfg \u53ca \u7cfb\u7edf\u5185\u6838\u90e8\u7f72\u5728HTTPD server\u76ee\u5f55\u3002<\/span><\/span><\/span><\/p><p><strong style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><strong><strong><strong>&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180809\/1533816393401474.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533816393401474.png\" alt=\"image.png\"\/><\/strong><\/strong><\/strong><\/strong><\/p><ol class=\" list-paddingleft-2\" style=\"list-style-type: decimal;\"><li><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">PXE Client\u5411DHCP\u53d1\u9001\u8bf7\u6c42 PXE Client\u4ece\u81ea\u5df1\u7684PXE\u7f51\u5361\u542f\u52a8\uff0c\u901a\u8fc7PXE BootROM(\u81ea\u542f\u52a8\u82af\u7247)\u4f1a\u4ee5UDP(\u7b80\u5355\u7528\u6237\u6570\u636e\u62a5\u534f\u8bae)\u53d1\u9001\u4e00\u4e2a\u5e7f\u64ad\u8bf7\u6c42\uff0c\u5411\u672c\u7f51\u7edc\u4e2d\u7684DHCP\u670d\u52a1\u5668\u7d22\u53d6IP\u3002<\/span><\/p><\/li><li><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">DHCP\u670d\u52a1\u5668\u63d0\u4f9b\u4fe1\u606f DHCP\u670d\u52a1\u5668\u6536\u5230\u5ba2\u6237\u7aef\u7684\u8bf7\u6c42\uff0c\u9a8c\u8bc1\u662f\u5426\u6765\u81f3\u5408\u6cd5\u7684PXE Client\u7684\u8bf7\u6c42\uff0c\u9a8c\u8bc1\u901a\u8fc7\u5b83\u5c06\u7ed9\u5ba2\u6237\u7aef\u4e00\u4e2a\u201c\u63d0\u4f9b\u201d\u54cd\u5e94\uff0c\u8fd9\u4e2a\u201c\u63d0\u4f9b\u201d\u54cd\u5e94\u4e2d\u5305\u542b\u4e86\u4e3a\u5ba2\u6237\u7aef\u5206\u914d\u7684IP\u5730\u5740\u3001pxelinux\u542f\u52a8\u7a0b\u5e8f(TFTP)\u4f4d\u7f6e\uff0c\u4ee5\u53ca\u914d\u7f6e\u6587\u4ef6\u6240\u5728\u4f4d\u7f6e\u3002<\/span><\/p><\/li><li><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">PXE\u5ba2\u6237\u7aef\u8bf7\u6c42\u4e0b\u8f7d\u542f\u52a8\u6587\u4ef6 \u5ba2\u6237\u7aef\u6536\u5230\u670d\u52a1\u5668\u7684\u201c\u56de\u5e94\u201d\u540e\uff0c\u4f1a\u56de\u5e94\u4e00\u4e2a\u5e27\uff0c\u4ee5\u8bf7\u6c42\u4f20\u9001\u542f\u52a8\u6240\u9700\u6587\u4ef6\u3002\u8fd9\u4e9b\u542f\u52a8\u6587\u4ef6\u5305\u62ec\uff1apxelinux.0\u3001pxelinux.cfg\/default\u3001vmlinuz\u3001initrd.img\u7b49\u6587\u4ef6\u3002<\/span><\/p><\/li><li><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">Boot Server\u54cd\u5e94\u5ba2\u6237\u7aef\u8bf7\u6c42\u5e76\u4f20\u9001\u6587\u4ef6 \u5f53\u670d\u52a1\u5668\u6536\u5230\u5ba2\u6237\u7aef\u7684\u8bf7\u6c42\u540e\uff0c\u4ed6\u4eec\u4e4b\u95f4\u4e4b\u540e\u5c06\u6709\u66f4\u591a\u7684\u4fe1\u606f\u5728\u5ba2\u6237\u7aef\u4e0e\u670d\u52a1\u5668\u4e4b\u95f4\u4f5c\u5e94\u7b54, \u7528\u4ee5\u51b3\u5b9a\u542f\u52a8\u53c2\u6570\u3002BootROM\u7531TFTP\u901a\u8baf\u534f\u8bae\u4eceBoot Server\u4e0b\u8f7d\u542f\u52a8\u5b89\u88c5\u7a0b\u5e8f\u6240\u5fc5\u987b\u7684\u6587\u4ef6(pxelinux.0\u3001pxelinux.cfg\/default)\u3002default\u6587\u4ef6\u4e0b\u8f7d\u5b8c\u6210\u540e\uff0c\u4f1a\u6839\u636e\u8be5\u6587\u4ef6\u4e2d\u5b9a\u4e49\u7684\u5f15\u5bfc\u987a\u5e8f\uff0c\u542f\u52a8Linux\u5b89\u88c5\u7a0b\u5e8f\u7684\u5f15\u5bfc\u5185\u6838\u3002<\/span><\/p><\/li><li><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u8bf7\u6c42\u4e0b\u8f7d\u81ea\u52a8\u5e94\u7b54\u6587\u4ef6 \u5ba2\u6237\u7aef\u901a\u8fc7pxelinux.cfg\/default\u6587\u4ef6\u6210\u529f\u7684\u5f15\u5bfcLinux\u5b89\u88c5\u5185\u6838\u540e\uff0c\u5b89\u88c5\u7a0b\u5e8f\u9996\u5148\u5fc5\u987b\u786e\u5b9a\u4f60\u901a\u8fc7\u4ec0\u4e48\u5b89\u88c5\u4ecb\u8d28\u6765\u5b89\u88c5linux\uff0c\u5982\u679c\u662f\u901a\u8fc7\u7f51\u7edc\u5b89\u88c5(NFS, FTP, HTTP)\uff0c\u5219\u4f1a\u5728\u8fd9\u4e2a\u65f6\u5019\u521d\u59cb\u5316\u7f51\u7edc\uff0c\u5e76\u5b9a\u4f4d\u5b89\u88c5\u6e90\u4f4d\u7f6e\u3002\u63a5\u7740\u4f1a\u8bfb\u53d6default\u6587\u4ef6\u4e2d\u6307\u5b9a\u7684\u81ea\u52a8\u5e94\u7b54\u6587\u4ef6ks.cfg\u6240\u5728\u4f4d\u7f6e\uff0c\u6839\u636e\u8be5\u4f4d\u7f6e\u8bf7\u6c42\u4e0b\u8f7d\u8be5\u6587\u4ef6\u3002<\/span><\/p><\/li><li><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u5ba2\u6237\u7aef\u5b89\u88c5\u64cd\u4f5c\u7cfb\u7edf \u5c06ks.cfg\u6587\u4ef6\u4e0b\u8f7d\u56de\u6765\u540e\uff0c\u901a\u8fc7\u8be5\u6587\u4ef6\u627e\u5230OS Server\uff0c\u5e76\u6309\u7167\u8be5\u6587\u4ef6\u7684\u914d\u7f6e\u8bf7\u6c42\u4e0b\u8f7d\u5b89\u88c5\u8fc7\u7a0b\u9700\u8981\u7684\u8f6f\u4ef6\u5305\u3002 OS Server\u548c\u5ba2\u6237\u7aef\u5efa\u7acb\u8fde\u63a5\u540e\uff0c\u5c06\u5f00\u59cb\u4f20\u8f93\u8f6f\u4ef6\u5305\uff0c\u5ba2\u6237\u7aef\u5c06\u5f00\u59cb\u5b89\u88c5\u64cd\u4f5c\u7cfb\u7edf\u3002\u5b89\u88c5\u5b8c\u6210\u540e\uff0c\u5c06\u63d0\u793a\u91cd\u65b0\u5f15\u5bfc\u8ba1\u7b97\u673a\u3002<\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">&nbsp; &nbsp;<\/span><\/p><\/li><\/ol><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p><strong style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">PXE\u5fc5\u8981\u6761\u4ef6<\/strong><br\/><\/p><\/li><\/ul><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">1.pxe client\u5fc5\u987b\u652f\u6301pxe\u7528\u6237\u7aef\u529f\u80fd\uff0c\u5e76\u4e14\u5f00\u673a\u65f6\u9009\u62e9\u7f51\u7edc\u542f\u52a8\uff0c\u8fd9\u6837\u7cfb\u7edf\u624d\u80fd\u4ee5\u7f51\u7edc\u7684\u65b9\u5f0f\u8fdb\u5165pxe\u542f\u52a8\u7a0b\u5e8f<br\/><\/span><\/p><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">2.pxe\u670d\u52a1\u5668\u5fc5\u987b\u81f3\u5c11\u63d0\u4f9bDHCP\u53caTFTP\u7684\u670d\u52a1\u624d\u884c\uff0c\u4e14\u5176\u4e2d<br\/><\/span><\/p><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">&nbsp;&nbsp;&nbsp;&nbsp;DHCP\u670d\u52a1\u5668\u5fc5\u987b\u80fd\u591f\u9664\u672apxe client\u5206\u914dip\u5730\u5740\u5916\uff0c\u8fd8\u9700\u544a\u77e5tftp\u6240\u5728\u7684\u4f4d\u7f6e\uff08\u5373pxelinux.0\u7684\u6587\u4ef6\u4f4d\u7f6e\uff09<\/span><\/p><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\"><\/span><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">&nbsp;&nbsp;&nbsp;&nbsp;TFTP\u670d\u52a1\u5668\u5219\u4e3apxe client \u63d0\u4f9bbootloader \u53ca kernel \u7b49\u91cd\u8981\u6587\u4ef6\u4e0b\u8f7d\u670d\u52a1<\/span><\/p><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">3.\u4f7f\u7528NFS\/HTTP\/FTP\u4e4b\u4e00\u7684\u670d\u52a1\u5668\u63d0\u4f9bpxe client\u6240\u9700\u7a0b\u5e8f\u53ca\u8f6f\u4ef6\u6765\u6e90\u7b49\u901a\u8baf\u534f\u8bae<\/span><\/p><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\"><strong style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px; white-space: normal;\">PXE\u5de5\u4f5c\u6d41\u7a0b\u56fe\uff1a<\/strong><\/span><\/p><\/li><\/ul><p>&nbsp; &nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180809\/1533816646104436.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533816646104436.png\" alt=\"image.png\"\/><\/p><p><strong><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">PXE\u73af\u5883\u5b89\u88c5DHCP<\/span><\/strong><\/p><hr\/><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u52a8\u6001\u4e3b\u673a\u8bbe\u7f6e\u534f\u8bae\uff08Dynamic Host Configuration Protocol\uff0cDHCP\uff09\u662f\u4e00\u79cd\u4f7f\u7f51\u7edc\u7ba1\u7406\u5458\u80fd\u591f\u96c6\u4e2d\u7ba1\u7406\u548c\u81ea\u52a8\u5206\u914dIP\u7f51\u7edc\u5730\u5740\u7684\u901a\u4fe1\u534f\u8bae\uff0c\u4f7f\u7528UDP\u534f\u8bae\u5de5\u4f5c\uff0cDHCP\u4f7f\u7528\u7edf\u4e00\u7aef\u53e3\u4f5c\u4e3aBOOTP\uff1a\u670d\u52a1\u5668\u7aef\u4f7f\u752867\/udp\uff0c\u5ba2\u6237\u7aef\u4f7f\u752868\/udp\u3002\u4e3b\u8981\u6709\u4e24\u4e2a\u7528\u9014\uff1a<\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u7528\u4e8e\u5185\u90e8\u7f51\u7edc\u6216\u7f51\u7edc\u670d\u52a1\u4f9b\u5e94\u5546\u81ea\u52a8\u5206\u914dIP\u5730\u5740\u7ed9\u7528\u6237\uff1b\u7528\u4e8e\u5185\u90e8\u7f51\u7edc\u7ba1\u7406\u5458\u4f5c\u4e3a\u5bf9\u6240\u6709\u7535\u8111\u4f5c\u4e2d\u592e\u7ba1\u7406\u7684\u624b\u6bb5\u3002<\/span><strong><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><\/span><\/strong><br\/><\/p><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">DHCP\u534f\u8bae\u7684\u5de5\u4f5c\u6d41\u7a0b\uff1a<\/span><\/p><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">&nbsp;&nbsp;&nbsp;&nbsp;\u5ba2\u6237\u7aef\u5728\u5c40\u57df\u7f51\u5e7f\u64adDHCPDISCOVER\u62a5\u6587\uff0c\u8bf7\u6c42\u83b7\u5f97ip\u5730\u5740\u3001\u7f51\u5173\u3001dns\u5730\u5740 \u7b49\u4fe1\u606f\uff1bDHCP\u670d\u52a1\u5668\u6536\u5230DHCPDISCOVER\u62a5\u6587\u540e \uff0c\u53d1\u9001DHCPOFFER \u62a5\u6587\u8fdb\u884c\u54cd\u5e94 \uff1b\u5ba2\u6237\u7aef\u6536\u5230DHCPOFFER\u62a5\u6587\u540e\uff0c\u53d1\u9001DHCPREQUEST \u62a5\u6587\u8fdb\u884c\u8bf7\u6c42 \uff1b\u6700\u7ec8DHCP \u670d\u52a1\u5668\u53d1\u9001 DHCPACK\u62a5\u6587\u8fdb\u884c\u786e\u8ba4 \u3002<\/span><\/p><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">DHCP\u914d\u7f6e\u6587\u4ef6dhcp.conf \u5206\u4e3a4\u6bb5\uff1a<\/span><\/p><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">&nbsp; &nbsp; 1\u3001DHCP\u5c5e\u6027\u6bb5\uff1a&nbsp;<\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">log-facility&nbsp; \u5b9a\u4e49\u65e5\u5fd7\u7b49\u7ea7<\/span><\/p><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">&nbsp; &nbsp; 2\u3001\u5168\u5c40\u5c5e\u6027\u6bb5\uff1a&nbsp;<\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u4f7f\u7528option \u5173\u952e\u5b57\u5b9a\u4e49<\/span><\/p><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">&nbsp; &nbsp; 3\u3001\u5b50\u7f51\u5206\u914d\u6bb5\uff1a \u4f7f\u7528subnet&nbsp; \u6765\u5b9a\u4e49&nbsp; &nbsp;<span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1; font-size: 14px;\">&nbsp; &nbsp;<\/span><\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1; font-size: 14px;\"> &nbsp; &nbsp;<\/span><\/p><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1; font-size: 14px;\">&nbsp; &nbsp; 4\u3001\u4e3b\u673a\u914d\u7f6e\u6bb5\uff1a \u4f7f\u7528host\u6765\u5b9a\u4e49&nbsp;<\/span><\/p><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:12px\">\u5b89\u88c5DHCP\uff1a<\/p><\/li><\/ul><pre class=\"brush:js;toolbar:false\">[root@PXE&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;dhcp&nbsp;&nbsp;&nbsp;#&nbsp;\u5b89\u88c5dhcp&nbsp;server\n\n[root@PXE&nbsp;~]#&nbsp;rpm&nbsp;-ql&nbsp;dhcp\n\/etc\/dhcp\n\/etc\/dhcp\/dhcpd.conf&nbsp;&nbsp;&nbsp;#&nbsp;dhcpd\u914d\u7f6e\u6587\u4ef6\n\/etc\/rc.d\/init.d\/dhcpd&nbsp;&nbsp;&nbsp;#&nbsp;dhcpd\u542f\u52a8\u6587\u4ef6\n\/usr\/sbin\/dhcpd&nbsp;&nbsp;&nbsp;#&nbsp;\u542f\u52a8\u811a\u672c\u914d\u7f6e\u6587\u4ef6\n[root@PXE&nbsp;pxelinux.cfg]#&nbsp;vi&nbsp;\/etc\/dhcp\/dhcpd.conf&nbsp;&nbsp;&nbsp;#&nbsp;\u8c03\u6574\u914d\u7f6e\u6587\u4ef6\n#&nbsp;dhcpd.conf\n#\noption&nbsp;domain-name&nbsp;&quot;itwish.cn&quot;;\noption&nbsp;domain-name-servers&nbsp;192.168.4.150&nbsp;;\n\ndefault-lease-time&nbsp;600;\nmax-lease-time&nbsp;7200;\n\nlog-facility&nbsp;local7;&nbsp;&nbsp;\n\nsubnet&nbsp;192.168.4.0&nbsp;netmask&nbsp;255.255.255.0&nbsp;{&nbsp;&nbsp;#&nbsp;\u5b9a\u4e49\u5b50\u7f51\n&nbsp;&nbsp;range&nbsp;192.168.4.10&nbsp;192.168.4.100;\n&nbsp;&nbsp;option&nbsp;routers&nbsp;192.168.4.1;\n&nbsp;&nbsp;next-server&nbsp;192.168.4.150;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u6ce8\uff1a\u6dfb\u52a0&nbsp;tftp\u670d\u52a1\u5668\u5730\u5740\n&nbsp;&nbsp;filename=&quot;pxelinux.0&quot;;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#\u6ce8\uff1a\u544a\u8bc9TFTP\u76ee\u5f55\u4e0b\u7684bootstarp\u6587\u4ef6\n}\n\n\n#\u6ce8\uff1a\u914d\u7f6e\u6587\u4ef6\u4e2d\u4ee5&quot;;&quot;&nbsp;\u53f7\u7ed3\u5c3e&nbsp;\uff0c\u4e14\u9700\u6dfb\u52a0next-server&nbsp;\u548cfilename&nbsp;\u9879<\/pre><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">&nbsp;\u542f\u52a8dhcp\u5e76\u9a8c\u8bc1dhcpd\u8fdb\u7a0b\u662f\u5426\u5904\u4e8e\u76d1\u542c\u72b6\u6001\uff1a<\/span><\/p><\/li><\/ul><pre class=\"brush:js;toolbar:false\">[root@PXE&nbsp;~]#&nbsp;chkconfig&nbsp;--add&nbsp;dhcpd\n\n[root@PXE&nbsp;~]#&nbsp;chkconfig&nbsp;dhcpd&nbsp;on\n\n[root@PXE&nbsp;~]#&nbsp;service&nbsp;dhcpd&nbsp;start\nStarting&nbsp;dhcpd:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;&nbsp;OK&nbsp;&nbsp;]\n\n[root@PXE&nbsp;~]#&nbsp;ps&nbsp;aux&nbsp;|&nbsp;grep&nbsp;dhcpd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u9a8c\u8bc1dhcpd&nbsp;\u542f\u52a8\ndhcpd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;14087&nbsp;&nbsp;0.0&nbsp;&nbsp;0.1&nbsp;&nbsp;48324&nbsp;&nbsp;3572&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ss&nbsp;&nbsp;&nbsp;03:13&nbsp;&nbsp;&nbsp;0:00&nbsp;\/usr\/sbin\/dhcpd&nbsp;-user&nbsp;dhcpd&nbsp;-group&nbsp;dhcpd\nroot&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;14108&nbsp;&nbsp;0.0&nbsp;&nbsp;0.0&nbsp;103272&nbsp;&nbsp;&nbsp;840&nbsp;pts\/0&nbsp;&nbsp;&nbsp;&nbsp;S+&nbsp;&nbsp;&nbsp;03:14&nbsp;&nbsp;&nbsp;0:00&nbsp;grep&nbsp;dhcpd\n\n[root@PXE&nbsp;~]#&nbsp;ss&nbsp;-tunl&nbsp;|&nbsp;grep&nbsp;67\nudp&nbsp;&nbsp;&nbsp;&nbsp;UNCONN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*:67&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*:*<\/pre><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\"><\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:12px\"><span style=\"font-size: 14px;\"><\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:12px\"><span style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:12px\"><strong><span style=\"font-size: 14px;\">PXE \u73af\u5883\u5b89\u88c5 TFTP<\/span><\/strong><\/p><hr\/><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:12px\">\u7b80\u5355\u6587\u4ef6\u4f20\u8f93\u534f\u8bae\u4e5f\u79f0\u5c0f\u578b\u6587\u4ef6\u4f20\u8f93\u534f\u8bae\uff08Trivial File Transfer Protocol, TFTP\uff09\uff0c\u5de5\u4f5c\u5728UDP\/69 \u7aef\u53e3\uff0c\u662f\u4e00\u79cd\u4e8e1981\u5e74\u5728RFC 783\u4e2d\u5b9a\u4e49\u7684\u7b80\u5316\u7684\u6587\u4ef6\u4f20\u8f93\u534f\u8bae\uff08FTP\uff09\u3002<strong><span style=\"font-size: 14px;\"><\/span><\/strong><br\/><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:12px\"><span style=\"font-size: 14px;\">\u77ac\u65f6\uff08\u975e\u72ec\u7acb\uff09\u5b88\u62a4\u8fdb\u7a0b\uff1a\u4ed6\u4eec\u65e0\u9700\u5b9a\u4e49\u5728\u8fd0\u884c\u7ea7\u522b\u4e0b\uff0c\u53ea\u9700\u8981\u4e00\u6b21\u6027\u7684\u5b9a\u4e49xinetd\u7684\u8fd0\u884c\u7ea7\u522b <\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:12px\"><span style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1; font-size: 14px;\">xinetd\u2014\u2014\u4e3a\u90a3\u4e9b\u6781\u5c11\u63a5\u53d7\u7528\u6237\u8bf7\u6c42\u7684\u670d\u52a1\uff0c\u4e13\u95e8\u63d0\u4f9b\u76d1\u542c\u529f\u80fd\uff0c\u5982 \u76d1\u542ctftpd\u8fdb\u7a0b<\/span><\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:12px\"><span style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;\u72ec\u7acb\uff08standlone\uff09\u5b88\u62a4\u8fdb\u7a0b \uff1a\u80fd\u81ea\u6211\u7ba1\u7406\uff0c\u65e0\u987bxinet \u63d0\u4f9b\u76d1\u542c\u670d\u52a1\u7684\u8fdb\u7a0b<\/span><\/p><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:12px\"><span style=\"font-size: 14px;\">\u5b89\u88c5TFTP\uff1a<\/span><\/p><\/li><\/ul><pre class=\"brush:js;toolbar:false\">[root@PXE&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;xinetd&nbsp;tftp-server\n\n[root@PXE&nbsp;~]#&nbsp;rpm&nbsp;-ql&nbsp;tftp-server&nbsp;&nbsp;\n\/etc\/xinetd.d\/tftp&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u914d\u7f6e\u6587\u4ef6\u8def\u5f84\n\/var\/lib\/tftpboot&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u9ed8\u8ba4tftp\u5b58\u50a8\u76ee\u5f55\n\n[root@PXE&nbsp;~]#&nbsp;vi&nbsp;\/etc\/xinetd.d\/tftp&nbsp;\n#&nbsp;default:&nbsp;off&nbsp;&nbsp;&nbsp;&nbsp;\nservice&nbsp;tftp\n{\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;disable&nbsp;=&nbsp;no&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;no&nbsp;\u8868\u660etftp\u5904\u4e8e\u542f\u7528\u72b6\u6001&nbsp;\uff0cyes&nbsp;\u8868\u793atftp\u5904\u4e8e\u7981\u7528\u72b6\u6001\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;socket_type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;dgram\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;protocol&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;udp\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wait&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;yes\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;user&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;root\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;server&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;\/usr\/sbin\/in.tftpd\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;server_args&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;-s&nbsp;\/var\/lib\/tftpboot&nbsp;#&nbsp;\u9ed8\u8ba4tftp\u5b58\u50a8\u76ee\u5f55\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;per_source&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;11\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cps&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;100&nbsp;2\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;flags&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;IPv4\n}\n[root@PXE&nbsp;~]#&nbsp;chkconfig&nbsp;xinetd&nbsp;on\n\n[root@PXE&nbsp;~]#&nbsp;chkconfig&nbsp;tftp&nbsp;on\n\n[root@PXE&nbsp;~]#&nbsp;service&nbsp;xinetd&nbsp;start\nStarting&nbsp;xinetd:&nbsp;\n\n[root@PXE&nbsp;~]#&nbsp;ss&nbsp;-tunl&nbsp;|&nbsp;grep&nbsp;69\nudp&nbsp;&nbsp;&nbsp;&nbsp;UNCONN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*:69&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*:*<\/pre><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\"><\/span><\/p><ul style=\"list-style-type: square;\" class=\" list-paddingleft-2\"><li><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u4f7f\u7528 syslinux \u63d0\u4f9b\u7684bootstart \uff1a<\/span><\/p><\/li><\/ul><pre class=\"brush:js;toolbar:false\">[root@PXE&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;syslinux\n\n[root@PXE&nbsp;~]#&nbsp;rpm&nbsp;-ql&nbsp;syslinux\n\/usr\/share\/syslinux&nbsp;&nbsp;&nbsp;#&nbsp;pxelinux.0&nbsp;\u6587\u4ef6\u5b58\u50a8\u76ee\u5f55\n\n[root@PXE&nbsp;~]#&nbsp;cp&nbsp;\/usr\/share\/syslinux\/pxelinux.0&nbsp;\/var\/lib\/tftpboot\/&nbsp;&nbsp;\n#&nbsp;\u590d\u5236pxelinux.0\u5230&nbsp;\/var\/lib\/tftpboot&nbsp;\u76ee\u5f55&nbsp;\n\n[root@PXE&nbsp;boot]#&nbsp;mount&nbsp;\/dev\/cdrom&nbsp;\/media\/&nbsp;&nbsp;#&nbsp;\u6302\u8f7d\u5149\u76d8\nmount:&nbsp;block&nbsp;device&nbsp;\/dev\/sr0&nbsp;is&nbsp;write-protected,&nbsp;mounting&nbsp;read-only<\/pre><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u914d\u7f6epxelinux.cfg \u6587\u4ef6<\/span><\/p><\/li><\/ul><pre class=\"brush:js;toolbar:false\">[root@PXE&nbsp;&nbsp;~]#&nbsp;mkdir&nbsp;\/var\/lib\/tftpboot\/pxelinux.cfg&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u521b\u5efapxelinux.cfg&nbsp;\u6587\u4ef6\u5939\n[root@PXE&nbsp;~]#&nbsp;cp&nbsp;isolinux\/isolinux.cfg&nbsp;\/var\/lib\/tftpboot\/pxelinux.cfg\/default&nbsp;&nbsp;\n#&nbsp;\u628aisolinux.cfg\u5f15\u5bfc\u6587\u4ef6\u62f7\u8d1d\u5230tftpd\u5b58\u50a8\u76ee\u5f55\u4e0b\u7684pxelinux.cfg\u6587\u4ef6\u4e2d,\u5e76\u547d\u540d\u4e3adefault\n\n[root@PXE&nbsp;~]#&nbsp;vi&nbsp;\/var\/lib\/tftpboot\/pxelinux.cfg\/default&nbsp;&nbsp;&nbsp;#&nbsp;\u4fee\u6539linux\u5185\u6838\u5f15\u5bfc\u6587\u4ef6\ndefault&nbsp;vesamenu.c32&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u9ed8\u8ba4\u542f\u52a8\u754c\u9762\uff0c\u8be5\u6587\u4ef6\u9700\u8981\u62f7\u8d1d\u5230tftp\u5b58\u50a8\u76ee\u5f55\u4e2d\u3002\n#prompt&nbsp;1\ntimeout&nbsp;600&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u5012\u8ba1\u65f6&nbsp;600\u5c31\u662f60&nbsp;\u79d2\uff0c\u6539\u6570\u5b57\u4e3a\u79d2\u6570\u768410\u500d\n\ndisplay&nbsp;boot.msg&nbsp;&nbsp;#&nbsp;\u5c06\u989d\u5916\u4fe1\u606f\u5199\u5165\u5230boot.msg\u6587\u4ef6\u4e2d\uff0c\u8be5\u6587\u4ef6\u9700\u8981\u62f7\u8d1d\u5230tftp\u5b58\u50a8\u76ee\u5f55\u4e2d\u3002\n\nmenu&nbsp;background&nbsp;splash.jpg&nbsp;&nbsp;&nbsp;#&nbsp;\u83dc\u5355\u80cc\u666f\u56fe\uff0c\u8be5\u6587\u4ef6\u9700\u8981\u62f7\u8d1d\u5230tftp\u5b58\u50a8\u76ee\u5f55\u4e2d\u3002\nmenu&nbsp;title&nbsp;Welcome&nbsp;to&nbsp;CentOS&nbsp;6.6!&nbsp;&nbsp;&nbsp;#&nbsp;\u83dc\u5355\u4e3b\u6807\u9898\n\nlabel&nbsp;linux\n&nbsp;&nbsp;menu&nbsp;label&nbsp;^Install&nbsp;or&nbsp;upgrade&nbsp;an&nbsp;PXE&nbsp;system&nbsp;&nbsp;&nbsp;&nbsp;#\u83dc\u5355\u9805\u76ee\n&nbsp;&nbsp;menu&nbsp;default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u9884\u8bbe\u9879\u76ee\n&nbsp;&nbsp;kernel&nbsp;vmlinuz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u5185\u6838&nbsp;vmlinuz\uff0c\u8be5\u6587\u4ef6\u9700\u8981\u62f7\u8d1d\u5230tftp\u5b58\u50a8\u76ee\u5f55\u4e2d\u3002\n&nbsp;&nbsp;append&nbsp;initrd=initrd.img&nbsp;&nbsp;ks=http:\/\/192.168.4.150\/ks.cfg&nbsp;&nbsp;&nbsp;\n#&nbsp;\u6838\u5fc3\u53c2\u6570\uff0c\u6307\u5b9ainitrd&nbsp;\u6838\u5fc3\u6587\u4ef6\uff0c\u8be5\u6587\u4ef6\u9700\u8981\u62f7\u8d1d\u5230tftp\u5b58\u50a8\u76ee\u5f55\u4e2d\u3002\u53e6\u6307\u5b9aks\u6587\u4ef6\u76ee\u5f55\uff0c\u8fd9\u513f\u4f7f\u7528\u7684http\u534f\u8bae<\/pre><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u628a\u5185\u6838\u53ca\u6839\u6587\u4ef6\u62f7\u8d1d\u5230tftpd\u5b58\u50a8\u76ee\u5f55 \uff1a\u53c2\u7167\u4e0a\u83dc\u5355\u914d\u7f6e\u4fe1\u606f\uff0c\u5305\u62ec vesamenu.c32\uff0cboot.msg\uff0csplash.jpg\uff0cvmlinuz\uff0cinitrd.img \u6587\u4ef6\u505a\u62f7\u8d1d<\/span><\/p><\/li><\/ul><pre class=\"brush:js;toolbar:false;\">[root@PXE&nbsp;~]#&nbsp;cp&nbsp;\/media\/images\/pxeboot\/{initrd.img,vmlinuz}&nbsp;\/var\/lib\/tftpboot\/&nbsp;&nbsp;&nbsp;\n\n[root@PXE&nbsp;~]#&nbsp;cp&nbsp;\/media\/isolinux\/{boot.msg,vesamenu.c32,splash.jpg}&nbsp;\/var\/lib\/tftpboot\/<\/pre><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\"><strong style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px; white-space: normal;\"><br\/><\/strong><\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\"><strong style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px; white-space: normal;\">linux PXE\u73af\u5883HTTP\u90e8\u7f72<\/strong><\/span><\/p><hr\/><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\">\u521b\u5efakickstart\u6587\u4ef6\u65b9\u5f0f\uff1a<\/span><br\/><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;1\u3001\u590d\u5236\u6a21\u677f \/root\/anaconda-ks.cfg \uff0c\u800c\u540e\u4f7f\u7528vim\u7f16\u8f91\u914d\u7f6e<\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;2\u3001\u4f7f\u7528system-config-kickstart \u6765\u751f\u6210\uff0c\u5efa\u8bae\u4e5f\u4f7f\u7528\/root\/anaconda-ks.cfg \u4f5c\u4e3a\u6a21\u677f\u6765\u8fdb\u884c<\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;# ksvalidator&nbsp;&nbsp; \u67e5\u770bks\u6587\u4ef6\u8bed\u6cd5\u662f\u5426\u6b63\u786e&nbsp; &nbsp;&nbsp;<\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\">kickstat\u6587\u4ef6\u7684\u7ec4\u6210\u90e8\u5206 \uff1a<\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\">&nbsp; &nbsp; 1\u3001\u547d\u4ee4\u6bb5\uff1a \u7528\u4e8e\u914d\u7f6e\u7cfb\u7edf \uff0c\u5982\uff1ainstall \uff0cfirewall\uff0c&nbsp;part\uff0clv \u7b49<\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\">&nbsp; &nbsp; 2\u3001\u8f6f\u4ef6\u5305\u6bb5%packages\uff1b\u6307\u5b9a\u8981\u5b89\u88c5\u7684\u7a0b\u5e8f\u5305\u7ec4\uff08@\u7ec4\u5305\u540d\uff09\u53ca\u7a0b\u5e8f\u5305(\u7a0b\u5e8f\u5305\u540d)\uff0c\u6bcf\u884c\u4e00\u4e2a \uff1b\u5728\u7a0b\u5e8f\u5305\u4e4b\u524d\u52a0 \u201c-\u201d\u53f7\uff0c\u8868\u793a\u4e0d\u5e0c\u671b\u5b89\u88c5<\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\">&nbsp; &nbsp; 3\u3001<span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1; font-size: 14px;\">%pre&nbsp;<span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1; font-size: 14px;\">%post<\/span><\/span>\u811a\u672c\u6bb5\uff1a\u5b89\u88c5\u8fc7\u7a0b\u5f00\u59cb\u4e4b\u524d\u3001\u540e\u6267\u884c\u7684\u5b89\u88c5\u9884\u5907\u5f0f\u811a\u672c<\/span><\/p><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:13px\"><span style=\"font-size: 14px;\">httpd\u5b89\u88c5\uff1a<span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">&nbsp;<\/span><\/span><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">&nbsp;<\/span><\/p><\/li><\/ul><pre class=\"brush:js;toolbar:false\">[root@PXE&nbsp;~]#&nbsp;yum&nbsp;install&nbsp;httpd\n\n[root@PXE&nbsp;~]#&nbsp;rpm&nbsp;-ql&nbsp;httpd\n\/etc\/httpd&nbsp;&nbsp;&nbsp;&nbsp;\n\/etc\/httpd\/conf\/httpd.conf&nbsp;&nbsp;&nbsp;#&nbsp;httpd&nbsp;\u914d\u7f6e\u6587\u4ef6\n\/var\/www\/html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;httpd&nbsp;\u9ed8\u8ba4\u5b58\u50a8\u76ee\u5f55\n\n[root@PXE&nbsp;~]#&nbsp;chkconfig&nbsp;httpd&nbsp;on\n\n[root@PXE&nbsp;~]#&nbsp;service&nbsp;httpd&nbsp;start\nStarting&nbsp;httpd:&nbsp;\n\n[root@PXE&nbsp;~]#&nbsp;ss&nbsp;-tunl&nbsp;|grep&nbsp;80\ntcp&nbsp;&nbsp;&nbsp;&nbsp;LISTEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;128&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:::80&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:::*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n\n[root@PXE&nbsp;~]#&nbsp;ps&nbsp;aux&nbsp;|&nbsp;grep&nbsp;httpd\nroot&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1877&nbsp;&nbsp;0.0&nbsp;&nbsp;3.3&nbsp;479948&nbsp;20284&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ss&nbsp;&nbsp;&nbsp;08:20&nbsp;&nbsp;&nbsp;0:01&nbsp;\/usr\/sbin\/httpd\napache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2184&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9908&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;\/usr\/sbin\/httpd\napache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2185&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;\/usr\/sbin\/httpd\napache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2188&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;\/usr\/sbin\/httpd\napache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2189&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;\/usr\/sbin\/httpd\napache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2190&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;\/usr\/sbin\/httpd\napache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2191&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;\/usr\/sbin\/httpd\napache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2192&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;\/usr\/sbin\/httpd\napache&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2193&nbsp;&nbsp;0.0&nbsp;&nbsp;1.6&nbsp;480084&nbsp;&nbsp;9884&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;&nbsp;09:07&nbsp;&nbsp;&nbsp;0:00&nbsp;\/usr\/sbin\/httpd\nroot&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3116&nbsp;&nbsp;0.0&nbsp;&nbsp;0.1&nbsp;103324&nbsp;&nbsp;&nbsp;844&nbsp;pts\/0&nbsp;&nbsp;&nbsp;&nbsp;S+&nbsp;&nbsp;&nbsp;19:48&nbsp;&nbsp;&nbsp;0:00&nbsp;grep&nbsp;httpd\n\n[root@PXE&nbsp;~]#&nbsp;cp&nbsp;\/root\/anaconda-ks.cfg&nbsp;\/var\/www\/html\/ks.cfg&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u62f7\u8d1d\u6a21\u677f\u5230\/var\/www\/html&nbsp;\u76ee\u5f55\uff0c\u5e76\u91cd\u547d\u540d\u4e3aks.cfg\n\n[root@PXE&nbsp;~]#&nbsp;chmod&nbsp;o+r&nbsp;\/var\/www\/html\/ks.cfg&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u5206\u914d\u6743\u9650\uff0c\u4e3apxe&nbsp;client\u5f15\u5bfc\u5b89\u88c5\u4f7f\u7528\n\n[root@PXE&nbsp;isolinux]#&nbsp;cp&nbsp;\/media\/*&nbsp;\/var\/www\/html\/centos\/os\/&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u62f7\u8d1d\u5b89\u88c5\u7cfb\u7edf\n\n[root@PXE&nbsp;os]#&nbsp;grub-crypt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u5bc6\u7801\u52a0\u5bc6\uff0c\u4f7f\u7528grub-crypt&nbsp;\u9ed8\u8ba4512\u4f4d\u52a0\u5bc6\u65b9\u5f0f\nPassword:&nbsp;\nRetype&nbsp;password:&nbsp;\n$6$DnceMH60Kiu8TaME$ySd\/QOpPtEcLnnoW36bDjb59xr1eJHGUwTTV\/4MHoojT.RoXXdsLHMWJXcLCETQNRF2xITSqKHAAUNZq6df0i\/<\/pre><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u4ee5\/root\/anaconda.cfg \u4e3a\u6a21\u677f\uff0c\u914d\u7f6eks.cfg\u6587\u4ef6 \uff0c\u914d\u7f6erepo url \u548c ks.cfg \u3002<\/span><\/p><\/li><\/ul><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">repo\u5f15\u7528\u683c\u5f0f\u5982\u4e0b\u56fe<\/span><\/p><p>&nbsp;&nbsp;&nbsp;&nbsp;<span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533463773879415.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533463773879415.png\" alt=\"image.png\"\/><\/span><\/p><p><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;\u9488\u5bf9\u96c6\u7fa4\u7684\u8ba1\u7b97\u8282\u70b9\u8bbe\u7f6e\u7684\uff0c\u6bd4\u5982\u8bbe\u7f6e\u7528\u6237\u4fe1\u606f\u3001\u5173\u95ed\u9632\u706b\u5899\u7b49\uff0c\u8bf7\u6839\u636e\u81ea\u5df1\u9700\u8981\u5b9a\u5236\uff0ckickstart\u6587\u4ef6\u8bf4\u660e\u53c2\u89c1\uff1a<\/span><a href=\"https:\/\/access.redhat.com\/documentation\/zh-cn\/red_hat_enterprise_linux\/6\/html\/installation_guide\/s1-kickstart2-options\" style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px; white-space: normal;\">https:\/\/access.redhat.com\/documentation\/zh-cn\/red_hat_enterprise_linux\/6\/html\/installation_guide\/s1-kickstart2-options<\/a><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">&nbsp;<\/span><\/span><\/p><pre class=\"brush:js;toolbar:false\">[root@PXE&nbsp;~]#&nbsp;vi&nbsp;\/var\/www\/html\/ks.cfg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u8c03\u6574\u914d\u7f6e\u6587\u4ef6\n#&nbsp;Kickstart&nbsp;file&nbsp;automatically&nbsp;generated&nbsp;by&nbsp;anaconda.\n\n#version=DEVEL\ninstall&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u547d\u4ee4\u6bb5&nbsp;&nbsp;\uff0c\u5b89\u88c5\nurl&nbsp;--url=http:\/\/192.168.4.150\/centos\/os\/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u6307\u5b9a\u7f51\u7edcurl\u5b89\u88c5\u76ee\u5f55&nbsp;\nlang&nbsp;en_US.UTF-8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u9ed8\u8ba4\u5b57\u4f53\nkeyboard&nbsp;us&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u952e\u76d8\u7c7b\u578b\nnetwork&nbsp;--onboot&nbsp;yes&nbsp;--device&nbsp;eth0&nbsp;--bootproto&nbsp;dhcp&nbsp;&nbsp;--noipv6&nbsp;&nbsp;\n#&nbsp;\u6307\u5b9a\u5f00\u673a\u81ea\u542f\uff0c\u7f51\u7edc\u63a5\u53e3eth0&nbsp;\uff0cdhcp\u83b7\u53d6\u7f51\u7edc\u5730\u5740\uff0cipv6&nbsp;\u7981\u7528\n\nrootpw&nbsp;&nbsp;--iscrypted&nbsp;$6$ZOGP2tA0PI\/6SI\/X$MlC5bJyXfP9TBN5\/0vwoc6dqAqIijOQthEbAZUnIXft85Tj9n4sKWB2PfxrsVfkZ2ibqX63apu8ElmdEvBo9o\/&nbsp;&nbsp;&nbsp;\n#&nbsp;root&nbsp;\u52a0\u5bc6\u5bc6\u7801\uff0c\u4f7f\u7528grub-crypt&nbsp;\u751f\u6210\u7684\u5b57\u7b26\u4e32\u66ff\u4ee3\n\nreboot&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u914d\u7f6e\u5b8c\u6bd5\u540e\uff0c\u91cd\u542f\u5185\u6838\nfirewall&nbsp;--disabled&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u9632\u706b\u5899\u7981\u7528\nauthconfig&nbsp;--enableshadow&nbsp;--passalgo=sha512&nbsp;&nbsp;#&nbsp;\u767b\u5f55\u8eab\u4efd\u4f7f\u7528&nbsp;sha1&nbsp;\u7684&nbsp;512bits&nbsp;\u52a0\u5bc6\u7b97\u6cd5\nselinux&nbsp;--disabled&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;selinux&nbsp;\u529f\u80fd\u7981\u7528\ntimezone&nbsp;Asia\/Shanghai&nbsp;#&nbsp;\u5b9a\u4e49\u4e0a\u6d77\u65f6\u533a&nbsp;\nbootloader&nbsp;--location=mbr&nbsp;--driveorder=sda&nbsp;--append=&quot;crashkernel=auto&nbsp;rhgb&nbsp;quiet&quot;&nbsp;&nbsp;&nbsp;\n#&nbsp;\u5b9a\u4e49bootloader\uff0cgrub\u5b89\u88c5mbr&nbsp;\uff0c\u5b89\u88c5\u5728sda\u78c1\u76d8\n\n#&nbsp;The&nbsp;following&nbsp;is&nbsp;the&nbsp;partition&nbsp;information&nbsp;you&nbsp;requested\n#&nbsp;Note&nbsp;that&nbsp;any&nbsp;partitions&nbsp;you&nbsp;deleted&nbsp;are&nbsp;not&nbsp;expressed\n#&nbsp;here&nbsp;so&nbsp;unless&nbsp;you&nbsp;clear&nbsp;all&nbsp;partitions&nbsp;first,&nbsp;this&nbsp;is\n#&nbsp;not&nbsp;guaranteed&nbsp;to&nbsp;work\nclearpart&nbsp;--all&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u6e05\u9664\u78c1\u76d8\u5206\u533a\u8868\ntext&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u7eaf\u6587\u672c\u683c\u5f0f\u5b89\u88c5\u663e\u793a\nzerombr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u5bf9\u78c1\u76d8\u8fdb\u884c\u521d\u59cb\u5316\n\npart&nbsp;\/boot&nbsp;--fstype=ext4&nbsp;--asprimary&nbsp;--size=2000&nbsp;&nbsp;#&nbsp;\u5206\u533a\u4fe1\u606f&nbsp;\uff0c\u5b9a\u4e49boot\u5206\u533a&nbsp;\uff0c\u683c\u5f0f\u4e3aext4&nbsp;\uff0c\u5927\u5c0f\u4e3a2G\npart&nbsp;swap&nbsp;--size=4096&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u5206\u533a\u4fe1\u606f&nbsp;\uff0c\u5b9a\u4e49swap\u5206\u533a&nbsp;\uff0c\u5927\u5c0f\u4e3a4G\npart&nbsp;pv.008003&nbsp;&nbsp;--size=80000&nbsp;&nbsp;#&nbsp;\u5206\u533a\u4fe1\u606f&nbsp;\uff0c\u5b9a\u4e49lv\u5206\u533a&nbsp;pv.008003\uff0c\u5927\u5c0f\u4e3a80G\n\nvolgroup&nbsp;vg0&nbsp;--pesize=8192&nbsp;pv.008003&nbsp;&nbsp;&nbsp;#&nbsp;\u5206\u533a\u4fe1\u606f&nbsp;\uff0c\u5728lv\u5206\u533apv.008003\u5b9a\u4e49vg0\u5377\u7ec4&nbsp;\uff0cpe\u5927\u5c0f\u4e3a8M\nlogvol&nbsp;\/&nbsp;--fstype=ext4&nbsp;--name=root&nbsp;--vgname=vg0&nbsp;--size=15000\nlogvol&nbsp;\/usr&nbsp;--fstype=ext4&nbsp;--name=\/usr&nbsp;--vgname=vg0&nbsp;--size=30000\nlogvol&nbsp;\/var&nbsp;--fstype=ext4&nbsp;--name=\/var&nbsp;--vgname=vg0&nbsp;--size=20000\nlogvol&nbsp;\/home&nbsp;--fstype=ext4&nbsp;--name=\/home&nbsp;--vgname=vg0&nbsp;--size=12000\n\nrepo&nbsp;--name=&quot;CentOS-6.6&quot;&nbsp;&nbsp;--baseurl=http:\/\/192.168.4.150\/centos\/os\/&nbsp;&nbsp;--cost=100&nbsp;&nbsp;\n#&nbsp;\u5b9a\u4e49yum\u4ed3\u5e93&nbsp;\uff0c\u7c7b\u522b\u4e3abashurl&nbsp;\uff0c\u540d\u79f0\u4e3aCentOS-6.6\n\n%packages&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;\u5305\u7ec4\u6bb5\uff0c\u5b89\u88c5\u5305\u7ec4\u53ca\u7a0b\u5e8f\u5305\n@core&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n@server-policy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n@workstation-policy\n%end\n\n[root@PXE&nbsp;~]#&nbsp;yum&nbsp;-y&nbsp;install&nbsp;pykickstart&nbsp;&nbsp;#\u5b89\u88c5ksvalidator&nbsp;\u8f6f\u4ef6\n\n[root@PXE&nbsp;~]#&nbsp;ksvalidator&nbsp;\/var\/www\/html\/ks.cfg&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;ksvalidator\u9a8c\u8bc1ks.cfg\u8bed\u6cd5\u662f\u5426\u6b63\u786e<\/pre><ul class=\" list-paddingleft-2\" style=\"list-style-type: square;\"><li><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\">ks.cfg\u53carepo\u9a8c\u8bc1\uff1a<\/p><\/li><\/ul><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\">&nbsp; &nbsp; <img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533398860706045.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533398860706045.png\" alt=\"image.png\"\/><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\">&nbsp;&nbsp;&nbsp;&nbsp;\u6ce8\uff1aks.cfg\u82e5\u4e0d\u80fd\u6b63\u5e38\u6253\u5f00\uff0c\u786e\u8ba4\u662f\u5426\u6709\u8bfb\u6743\u9650<\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533398823976228.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533398823976228.png\" alt=\"image.png\"\/><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\">&nbsp;&nbsp;&nbsp;&nbsp;\u6ce8\uff1a \u82e5\u4e0d\u80fd\u663e\u793a\u4ee5\u4e0a\u8fde\u63a5\u65b9\u5f0f\uff0c\u786e\u8ba4httpd\u914d\u7f6e\u6587\u4ef6\u4e2d\uff0c\u662f\u5426\u5f00\u542f\u76f8\u5173\u9009\u9879\u3002<br\/><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px; text-indent: 32px;\">\u81f3\u6b64\uff0cPXE\u670d\u52a1\u5668\u73af\u5883\u90e8\u7f72\u5b8c\u6210\uff0c\u51fa\u73b0\u95ee\u9898\u65f6\uff0c\u4e00\u822c\u9700\u8981\u67e5\u770b\u7cfb\u7edf\u65e5\u5fd7\uff0c\u5982\uff1a\/var\/log\/messages\uff0c<\/span>&nbsp;\u901a\u8fc7\u65e5\u5fd7\u62a5\u9519\u4fe1\u606f\u8fdb\u884c\u89e3\u51b3 \u3002&nbsp;&nbsp;<\/p><p><br\/><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><strong>Centos PXE\u73af\u5883\u6d4b\u8bd5\uff0c\u5b89\u88c5\uff0c\u542f\u52a8<\/strong><\/p><hr\/><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><strong><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\"><\/span><\/strong>\u90e8\u7f72\u73af\u5883\uff1avmware \u865a\u62df\u673a<\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;PXE\u670d\u52a1\u5668\uff1a&nbsp; PXE\uff0c ip :192.168.4.150<br\/><\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;PXE client :&nbsp; &nbsp; vm&nbsp;&nbsp;<\/span><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><strong><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u5b9e\u9a8c\uff1a<\/span><\/strong><\/p><p style=\"font-size: 14px;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;; font-size: 14px;\">\u4e00\u3001\u914d\u7f6ePXE client \u5ba2\u6237\u7aef \uff0c\u7f51\u7edc\u9700\u4e0ePXE\u670d\u52a1\u5668\u5904\u4e8e\u540c\u4e00\u7f51\u6bb5 192.168.4.150 \/24<\/span><\/p><p style=\"font-size: 14px;\"><img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533399829200552.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533399829200552.png\" alt=\"image.png\"\/>&nbsp; &nbsp;&nbsp;<\/p><p style=\"font-size: 14px;\"><span style=\"font-family:\u5fae\u8f6f\u96c5\u9ed1, Microsoft YaHei\">\u4e8c\u3001\u9009\u62e9\u5f00\u673a\u542f\u52a8\u987a\u5e8f\uff0c\u9009\u62e9&quot;Network boot from Intel E1000&quot;<\/span><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533399724100839.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533399724100839.png\" alt=\"image.png\"\/><br\/><\/p><p style=\"font-size: 14px;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u4e09\u3001pxe client\u83b7\u53d6dhcp\u5730\u5740\u540e \uff0c\u83b7\u53d6pxelinux.cfg\u4e2d\u914d\u7f6e\u6587\u4ef6<\/span><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533400449935806.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533400449935806.png\" alt=\"image.png\"\/><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533400214856654.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533400214856654.png\" alt=\"image.png\"\/><\/p><p style=\"font-size: 14px;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u56db\u3001\u52a0\u8f7d\u5185\u6838\u548c\u6839\u6587\u4ef6\u7cfb\u7edf<\/span><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533400913450045.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533400913450045.png\" alt=\"image.png\"\/><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533401023267868.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533401023267868.png\" alt=\"image.png\"\/><\/p><p style=\"font-size: 14px;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u4e94\u3001\u5b89\u88c5networkmanager \uff0c\u521b\u5efa\u78c1\u76d8\u5206\u533a<\/span><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533401245378056.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533401245378056.png\" alt=\"image.png\"\/>&nbsp;<\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533401430736349.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533401430736349.png\" alt=\"image.png\"\/><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533401562481796.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533401562481796.png\" alt=\"image.png\"\/><\/p><p style=\"font-size: 14px;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u516d\u3001\u68c0\u67e5\u5305\u4f9d\u8d56\u5173\u7cfb\uff0c\u5e76\u5b89\u88c5\u7a0b\u5e8f\u3002<\/span><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533401732496409.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533401732496409.png\" alt=\"image.png\"\/><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533401318359527.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533401318359527.png\" alt=\"image.png\"\/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/p><p style=\"font-size: 14px;\"><span style=\"font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u4e03\u3001\u5b8c\u6210\u5b89\u88c5\uff0c\u91cd\u542f \uff0c\u8fdb\u5165\u767b\u5f55\u754c\u9762<\/span><br\/><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533402095225247.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533402095225247.png\" alt=\"image.png\"\/><\/p><p style=\"font-size: 14px;\">&nbsp;&nbsp;&nbsp;&nbsp;<img src=\"https:\/\/s1.51cto.com\/images\/20180805\/1533402131253489.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1533402131253489.png\" alt=\"image.png\"\/><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><br\/><\/p><p><span style=\"font-size: 14px; font-family: \u5fae\u8f6f\u96c5\u9ed1, &quot;Microsoft YaHei&quot;;\">\u81f3\u6b64\uff0cpxe \u670d\u52a1\u5668\u7aef \u90e8\u7f72\u5b8c\u6210 \uff0c\u5e76\u6210\u529f\u81ea\u52a8\u5316\u5b89\u88c5pxeclient \u7aef \u3002<\/span><br\/><\/p><p style=\";font-family:\u5fae\u8f6f\u96c5\u9ed1;font-size:14px\"><br\/><\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"[PXE] Linux（centos6）中PXE 服务器搭建，PXE安装、启动及PXE理论详解",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1583596219; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="https://static1.51cto.com/edu/blog/js/marked.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/highlight.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail_mp.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail.js"></script><script src="https://static1.51cto.com/edu/blog/js/details_new.js"></script><script src="https://static1.51cto.com/edu/blog/js/copy.js"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="https://log.51cto.com/pageview.php?frompos=blog_art"></iframe>
+</div>
+
+<script src="https://static1.51cto.com/edu/blog/js/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type='text/javascript'>
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="https://static1.51cto.com/edu//blog/js/jquery.cookie.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+</body>
+</html>

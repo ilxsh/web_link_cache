@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,Chrome=1" />
+<meta name="renderer" content="webkit" />
+<title>如何正确的使用docker attach - DockOne.io</title>
+<meta name="keywords" content="正确,使用,docker,attach" />
+<meta name="description" content="如何正确的使用docker attach - 当docker容器在 “-d”守护态运行的时候，比如通过supervisord控制两个程序非守护态运行：
+ssh -D
+tomcat
+那么这个时候，用户就无法直接进入到容器中去，docker attach 容器id 就会一直卡着。
+因为此时容器运行的进程是..."  />
+<base href="http://dockone.io/" /><!--[if IE]></base><![endif]-->
+<link href="http://dockone.io/static/css/default/img/favicon.ico?v=20141205" rel="shortcut icon" type="image/x-icon" />
+
+<link rel="stylesheet" type="text/css" href="http://dockone.io/static/css/bootstrap.css" />
+<link rel="stylesheet" type="text/css" href="http://dockone.io/static/css/icon.css" />
+
+<link href="http://dockone.io/static/css/default/common.css?v=20141205" rel="stylesheet" type="text/css" />
+<link href="http://dockone.io/static/css/default/link.css?v=20141205" rel="stylesheet" type="text/css" />
+<link href="http://dockone.io/static/js/plug_module/style.css?v=20141205" rel="stylesheet" type="text/css" />
+
+
+<script type="text/javascript">
+	var _189A4A5D77265C639953ED06F0B6D8F4="";
+	var G_POST_HASH=_189A4A5D77265C639953ED06F0B6D8F4;
+	var G_INDEX_SCRIPT = "";
+	var G_SITE_NAME = "DockOne.io";
+	var G_BASE_URL = "http://dockone.io";
+	var G_STATIC_URL = "http://dockone.io/static";
+	var G_UPLOAD_URL = "http://dockone.io/uploads";
+	var G_USER_ID = "";
+	var G_USER_NAME = "";
+	var G_UPLOAD_ENABLE = "N";
+	var G_UNREAD_NOTIFICATION = 0;
+	var G_NOTIFICATION_INTERVAL = 100000;
+	var G_CAN_CREATE_TOPIC = "";
+	var G_REQUEST_URL = "/question/";
+
+	</script>
+<script src="http://dockone.io/static/js/jquery.2.js?v=20141205" type="text/javascript"></script>
+<script src="http://dockone.io/static/js/jquery.form.js?v=20141205" type="text/javascript"></script>
+<script src="http://dockone.io/static/js/plug_module/plug-in_module.js?v=20141205" type="text/javascript"></script>
+<script src="http://dockone.io/static/js/aws.js?v=20141205" type="text/javascript"></script>
+<script src="http://dockone.io/static/js/aw_template.js?v=20141205" type="text/javascript"></script>
+<script src="http://dockone.io/static/js/app.js?v=20141205" type="text/javascript"></script>
+<script src="http://dockone.io/static/js/editor/Markdown.Converter.js?v=20141205" type="text/javascript"></script>
+<script src="http://dockone.io/static/js/editor/Markdown.Sanitizer.js?v=20141205" type="text/javascript"></script>
+<script src="http://dockone.io/static/js/editor/Markdown.Editor.js?v=20141205" type="text/javascript"></script>
+<script type="text/javascript" src="http://dockone.io/static/js/compatibility.js"></script>
+<!--[if lte IE 8]>
+	<script type="text/javascript" src="http://dockone.io/static/js/respond.js"></script>
+<![endif]-->
+</head>
+<noscript unselectable="on" id="noscript">
+    <div class="aw-404 aw-404-wrap container">
+        <img src="http://dockone.io/static/common/no-js.jpg">
+        <p>你的浏览器禁用了JavaScript, 请开启后刷新浏览器获得更好的体验!</p>
+    </div>
+</noscript>
+<body>
+	<div class="aw-top-menu-wrap">
+		<div class="container">
+			<!-- logo -->
+			<div class="aw-logo hidden-xs">
+				<a href="http://dockone.io"></a>
+			</div>
+			<!-- end logo -->
+			<!-- 搜索框 -->
+			<div class="aw-search-box  hidden-xs hidden-sm">
+				<form class="navbar-search" action="http://dockone.io/search/" id="global_search_form" method="post">
+					<input class="form-control search-query" type="text" placeholder="搜索问题、话题或人" autocomplete="off" name="q" id="aw-search-query" />
+					<span title="搜索" id="global_search_btns" onClick="$('#global_search_form').submit();"><i class="icon icon-search"></i></span>
+					<div class="aw-dropdown">
+						<div class="mod-body">
+							<p class="title">输入关键字进行搜索</p>
+							<ul class="aw-dropdown-list hide"></ul>
+							<p class="search"><span>搜索:</span><a onClick="$('#global_search_form').submit();"></a></p>
+						</div>
+						<div class="mod-footer">
+							<a href="http://dockone.io/publish" onClick="$('#header_publish').click();" class="pull-right btn btn-mini btn-success publish">发起问题</a>
+						</div>
+					</div>
+				</form>
+			</div>
+			<!-- end 搜索框 -->
+			<!-- 导航 -->
+			<div class="aw-top-nav navbar">
+				<div class="navbar-header">
+			      <button  class="navbar-toggle pull-left">
+			        <span class="icon-bar"></span>
+			        <span class="icon-bar"></span>
+			        <span class="icon-bar"></span>
+			      </button>
+			    </div>
+				<nav role="navigation" class="collapse navbar-collapse bs-navbar-collapse">
+			      <ul class="nav navbar-nav">
+			      	                    <li><a href="" class=""><i class="icon icon-ul"></i> 发现</a></li>
+
+					<!-- <li><a href="http://dockone.io/question/" class="active">问题</a></li>
+
+					<li><a href="http://dockone.io/article/" class="">文章</a></li> -->
+
+					<li><a href="http://dockone.io/topic/" ><i class="icon icon-topic"></i> 话题</a></li>
+										<li><a href="http://dockone.io/help/"><i class="icon icon-bulb"></i> 帮助</a></li>			      </ul>
+			    </nav>
+			</div>
+			<!-- end 导航 -->
+			<!-- 用户栏 -->
+			<div class="aw-user-nav">
+				<!-- 登陆&注册栏 -->
+									<a class="login btn btn-normal btn-primary" href="http://dockone.io/login/">登录</a>
+					<a class="register btn btn-normal btn-success" href="http://dockone.io/account/register/">注册</a>								<!-- end 登陆&注册栏 -->
+			</div>
+			<!-- end 用户栏 -->
+			<!-- 发起 -->
+						<!-- end 发起 -->
+		</div>
+	</div>
+	<div class="aw-container-wrap" style="margin: 15px 0px -15px 25px;">
+	
+	<div class="container">
+		<div class="row">
+                   <a target="_blank"  href="http://dockone.io/article/2692">
+                     <img src="http://static.dockone.io/partner/banner.jpg">
+                     </a>
+        </div>
+  </div>
+</div>
+
+
+<div class="aw-container-wrap">
+		<div class="container">
+		<div class="row">
+			<div class="aw-content-wrap clearfix">
+				<div class="col-sm-12 col-md-9 aw-main-content">
+					<!-- 话题推荐bar -->
+										<!-- 话题推荐bar -->
+					<!-- 话题bar -->
+					<div class="aw-mod aw-topic-bar" id="question_topic_editor" data-type="question" data-id="399">
+						<div class="tag-bar clearfix">
+														<span class="topic-tag" data-id="7">
+								<a href="http://dockone.io/topic/Docker" class="text">Docker</a>
+							</span>
+							
+													</div>
+					</div>
+					<!-- end 话题bar -->
+					<div class="aw-mod aw-question-detail aw-item">
+						<div class="mod-head">
+							<h1>
+								如何正确的使用docker attach							</h1>
+
+													</div>
+						<div class="mod-body">
+							<div class="content markitup-box">
+								<br/>当docker容器在 “-d”守护态运行的时候，比如通过supervisord控制两个程序非守护态运行：<br />
+ssh -D<br />
+tomcat<br />
+那么这个时候，用户就无法直接进入到容器中去，docker attach 容器id 就会一直卡着。<br />
+<br/>因为此时容器运行的进程是ssh，而不是/bin/bash 也没有虚拟终端（-it）参数，所以是进入不到的，<br />
+<br/>那么这种情况下，该如何attach进去并进入到一个/bin/bash里呢？
+															</div>
+																				</div>
+						<div class="mod-footer">
+							<div class="meta">
+								<span class="text-color-999">2015-07-13</span>
+
+								<a data-id="399" data-type="question" class="aw-add-comment text-color-999 " data-comment-count="0" data-first-click="hide"><i class="icon icon-comment"></i>添加评论</a>
+
+								
+																
+																<div class="pull-right more-operate">
+									
+									<!-- <a class="text-color-999"  onclick="AWS.dialog('shareOut', {item_type:'question', item_id:399});"> -->
+									<a class="text-color-999 dropdown-toggle" data-toggle="dropdown">
+										<i class="icon icon-share"></i>分享									</a>
+									<div aria-labelledby="dropdownMenu" role="menu" class="aw-dropdown shareout pull-right">
+										<ul class="aw-dropdown-list">
+											<li><a onclick="AWS.User.share_out('tsina');"><i class="icon icon-weibo"></i> 微博</a></li>
+											<li><a onclick="AWS.User.share_out('qzone');"><i class="icon icon-qzone"></i> QZONE</a></li>
+											<li><a onclick="AWS.User.share_out('weixin');"><i class="icon icon-wechat"></i> 微信</a></li>
+										</ul>
+									</div>
+
+																	</div>
+							</div>
+						</div>
+						<!-- 站内邀请 -->
+						<div class="aw-invite-box hide">
+							<div class="mod-head clearfix">
+								<div class="search-box pull-left">
+									<input id="invite-input" class="form-control" type="text"  placeholder="搜索你想邀请的人..."/>
+									<div class="aw-dropdown">
+										<p class="title">没有找到相关结果</p>
+										<ul class="aw-dropdown-list"></ul>
+									</div>
+									<i class="icon icon-search"></i>
+								</div>
+								<div class="invite-list pull-left hide">
+									已邀请:
+																	</div>
+							</div>
+													</div>
+						<!-- end 站内邀请 -->
+						<!-- 相关链接 -->
+						<div class="aw-question-related-box hide">
+							<form action="http://dockone.io/publish/ajax/save_related_link/" method="post" onsubmit="return false" id="related_link_form">
+								<div class="mod-head">
+									<h2>与内容相关的链接</h2>
+								</div>
+								<div class="mod-body clearfix">
+									<input type="hidden" name="item_id" value="399" />
+									<input type="text" class="form-control pull-left" name="link" value="http://" />
+
+									<a onclick="AWS.ajax_post($('#related_link_form'));" class="pull-left btn btn-success">提交</a>
+								</div>
+							</form>
+						</div>
+						<!-- end 相关链接 -->
+					</div>
+
+										<div class="aw-mod aw-question-comment">
+						<div class="mod-head">
+							<ul class="nav nav-tabs aw-nav-tabs active">
+								
+								<h2 class="hidden-xs">5 个回复</h2>
+							</ul>
+						</div>
+						<div class="mod-body aw-feed-list">
+															<div class="aw-item" uninterested_count="0" force_fold="0" id="answer_list_3009">
+									<div class="mod-head">
+																				<a class="anchor" name="answer_3009"></a>
+										<!-- 用户头像 -->
+										<a class="aw-user-img aw-border-radius-5" href="http://dockone.io/people/zhangxia" data-id="14687"><img src="http://dockone.io/static/common/avatar-mid-img.png" alt="" /></a>										<!-- end 用户头像 -->
+										<div class="title">
+											<p>
+																									<a class="aw-user-name" href="http://dockone.io/people/zhangxia" data-id="14687">张夏</a>
+																																																		 - <span class="text-color-999">快手, ex-IBMer</span>																																					<i class="icon icon-phone"></i>
+																							</p>
+											<p class="text-color-999 aw-agree-by">
+												赞同来自:
+
+																																				<a href="http://dockone.io/people/%E5%B0%84%E6%89%8B%E5%BA%A7%E7%A0%81%E5%86%9C" data-id="14679" class="aw-user-name">射手座码农</a>											</p>
+										</div>
+									</div>
+									<div class="mod-body clearfix">
+										<!-- 评论内容 -->
+										<div class="markitup-box">
+											<br/>attach早已过时了，可用: docker exec -it containerID /bin/bash										</div>
+
+										
+																				<!-- end 评论内容 -->
+									</div>
+									<div class="mod-footer">
+										<!-- 社交操作 -->
+										<div class="meta clearfix">
+											<span class="text-color-999 pull-right">2017-07-16</span>
+											<!-- 投票栏 -->
+											<span class="operate">
+												<a class="agree  disabled" ><i data-placement="right" title="" data-toggle="tooltip" class="icon icon-agree" data-original-title="赞同回复"></i> <b class="count">1</b></a>
+																							</span>
+											<!-- end 投票栏 -->
+											<span class="operate">
+												<a class="aw-add-comment" data-id="3009" data-type="answer" data-comment-count="1" data-first-click="" href="javascript:;"><i class="icon icon-comment"></i> 1</a>
+											</span>
+											<!-- 可显示/隐藏的操作box -->
+											<div class="more-operate">
+												
+																								<div class="btn-group pull-left">
+													<a class="text-color-999 dropdown-toggle" data-toggle="dropdown">
+														<i class="icon icon-share"></i> 分享													</a>
+													<div aria-labelledby="dropdownMenu" role="menu" class="aw-dropdown shareout pull-right">
+														<ul class="aw-dropdown-list">
+															<li><a onclick="AWS.User.share_out('tsina', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-weibo"></i> 微博</a></li>
+															<li><a onclick="AWS.User.share_out('qzone', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-qzone"></i> QZONE</a></li>
+															<li><a onclick="AWS.User.share_out('weixin', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-wechat"></i> 微信</a></li>
+														</ul>
+													</div>
+												</div>
+																							</div>
+											<!-- end 可显示/隐藏的操作box -->
+
+										</div>
+										<!-- end 社交操作 -->
+									</div>
+								</div>
+																<div class="aw-item" uninterested_count="0" force_fold="0" id="answer_list_1082">
+									<div class="mod-head">
+																				<a class="anchor" name="answer_1082"></a>
+										<!-- 用户头像 -->
+										<a class="aw-user-img aw-border-radius-5" href="http://dockone.io/people/xdays" data-id="1605"><img src="http://dockone.io/static/common/avatar-mid-img.png" alt="" /></a>										<!-- end 用户头像 -->
+										<div class="title">
+											<p>
+																									<a class="aw-user-name" href="http://dockone.io/people/xdays" data-id="1605">xdays</a>
+																																																		 - <span class="text-color-999">a DevOps</span>																																			</p>
+											<p class="text-color-999 aw-agree-by hide">
+												赞同来自:
+
+																							</p>
+										</div>
+									</div>
+									<div class="mod-body clearfix">
+										<!-- 评论内容 -->
+										<div class="markitup-box">
+											<br/>可以试试docker exec										</div>
+
+										
+																				<!-- end 评论内容 -->
+									</div>
+									<div class="mod-footer">
+										<!-- 社交操作 -->
+										<div class="meta clearfix">
+											<span class="text-color-999 pull-right">2015-07-13</span>
+											<!-- 投票栏 -->
+											<span class="operate">
+												<a class="agree  disabled" ><i data-placement="right" title="" data-toggle="tooltip" class="icon icon-agree" data-original-title="赞同回复"></i> <b class="count">0</b></a>
+																							</span>
+											<!-- end 投票栏 -->
+											<span class="operate">
+												<a class="aw-add-comment" data-id="1082" data-type="answer" data-comment-count="0" data-first-click="hide" href="javascript:;"><i class="icon icon-comment"></i> 0</a>
+											</span>
+											<!-- 可显示/隐藏的操作box -->
+											<div class="more-operate">
+												
+																								<div class="btn-group pull-left">
+													<a class="text-color-999 dropdown-toggle" data-toggle="dropdown">
+														<i class="icon icon-share"></i> 分享													</a>
+													<div aria-labelledby="dropdownMenu" role="menu" class="aw-dropdown shareout pull-right">
+														<ul class="aw-dropdown-list">
+															<li><a onclick="AWS.User.share_out('tsina', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-weibo"></i> 微博</a></li>
+															<li><a onclick="AWS.User.share_out('qzone', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-qzone"></i> QZONE</a></li>
+															<li><a onclick="AWS.User.share_out('weixin', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-wechat"></i> 微信</a></li>
+														</ul>
+													</div>
+												</div>
+																							</div>
+											<!-- end 可显示/隐藏的操作box -->
+
+										</div>
+										<!-- end 社交操作 -->
+									</div>
+								</div>
+																<div class="aw-item" uninterested_count="0" force_fold="0" id="answer_list_1088">
+									<div class="mod-head">
+																				<a class="anchor" name="answer_1088"></a>
+										<!-- 用户头像 -->
+										<a class="aw-user-img aw-border-radius-5" href="http://dockone.io/people/wonderflow" data-id="767"><img src="http://dockone.io/static/common/avatar-mid-img.png" alt="" /></a>										<!-- end 用户头像 -->
+										<div class="title">
+											<p>
+																									<a class="aw-user-name" href="http://dockone.io/people/wonderflow" data-id="767">wonderflow</a>
+																																																		 - <span class="text-color-999">浙大VLIS实验室</span>																																			</p>
+											<p class="text-color-999 aw-agree-by hide">
+												赞同来自:
+
+																							</p>
+										</div>
+									</div>
+									<div class="mod-body clearfix">
+										<!-- 评论内容 -->
+										<div class="markitup-box">
+											<br/>启动容器后，docker exec  /bin/bash										</div>
+
+										
+																				<!-- end 评论内容 -->
+									</div>
+									<div class="mod-footer">
+										<!-- 社交操作 -->
+										<div class="meta clearfix">
+											<span class="text-color-999 pull-right">2015-07-13</span>
+											<!-- 投票栏 -->
+											<span class="operate">
+												<a class="agree  disabled" ><i data-placement="right" title="" data-toggle="tooltip" class="icon icon-agree" data-original-title="赞同回复"></i> <b class="count">0</b></a>
+																							</span>
+											<!-- end 投票栏 -->
+											<span class="operate">
+												<a class="aw-add-comment" data-id="1088" data-type="answer" data-comment-count="0" data-first-click="hide" href="javascript:;"><i class="icon icon-comment"></i> 0</a>
+											</span>
+											<!-- 可显示/隐藏的操作box -->
+											<div class="more-operate">
+												
+																								<div class="btn-group pull-left">
+													<a class="text-color-999 dropdown-toggle" data-toggle="dropdown">
+														<i class="icon icon-share"></i> 分享													</a>
+													<div aria-labelledby="dropdownMenu" role="menu" class="aw-dropdown shareout pull-right">
+														<ul class="aw-dropdown-list">
+															<li><a onclick="AWS.User.share_out('tsina', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-weibo"></i> 微博</a></li>
+															<li><a onclick="AWS.User.share_out('qzone', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-qzone"></i> QZONE</a></li>
+															<li><a onclick="AWS.User.share_out('weixin', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-wechat"></i> 微信</a></li>
+														</ul>
+													</div>
+												</div>
+																							</div>
+											<!-- end 可显示/隐藏的操作box -->
+
+										</div>
+										<!-- end 社交操作 -->
+									</div>
+								</div>
+																<div class="aw-item" uninterested_count="0" force_fold="0" id="answer_list_1100">
+									<div class="mod-head">
+																				<a class="anchor" name="answer_1100"></a>
+										<!-- 用户头像 -->
+										<a class="aw-user-img aw-border-radius-5" href="http://dockone.io/people/jude" data-id="2205"><img src="http://dockone.io/static/common/avatar-mid-img.png" alt="" /></a>										<!-- end 用户头像 -->
+										<div class="title">
+											<p>
+																									<a class="aw-user-name" href="http://dockone.io/people/jude" data-id="2205">jude</a>
+																																																		 - <span class="text-color-999">opstory</span>																																			</p>
+											<p class="text-color-999 aw-agree-by hide">
+												赞同来自:
+
+																							</p>
+										</div>
+									</div>
+									<div class="mod-body clearfix">
+										<!-- 评论内容 -->
+										<div class="markitup-box">
+											<br/>多谢，但是还不行，执行后直接就退出了。我再想想办法										</div>
+
+										
+																				<!-- end 评论内容 -->
+									</div>
+									<div class="mod-footer">
+										<!-- 社交操作 -->
+										<div class="meta clearfix">
+											<span class="text-color-999 pull-right">2015-07-14</span>
+											<!-- 投票栏 -->
+											<span class="operate">
+												<a class="agree  disabled" ><i data-placement="right" title="" data-toggle="tooltip" class="icon icon-agree" data-original-title="赞同回复"></i> <b class="count">0</b></a>
+																							</span>
+											<!-- end 投票栏 -->
+											<span class="operate">
+												<a class="aw-add-comment" data-id="1100" data-type="answer" data-comment-count="2" data-first-click="" href="javascript:;"><i class="icon icon-comment"></i> 2</a>
+											</span>
+											<!-- 可显示/隐藏的操作box -->
+											<div class="more-operate">
+												
+																								<div class="btn-group pull-left">
+													<a class="text-color-999 dropdown-toggle" data-toggle="dropdown">
+														<i class="icon icon-share"></i> 分享													</a>
+													<div aria-labelledby="dropdownMenu" role="menu" class="aw-dropdown shareout pull-right">
+														<ul class="aw-dropdown-list">
+															<li><a onclick="AWS.User.share_out('tsina', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-weibo"></i> 微博</a></li>
+															<li><a onclick="AWS.User.share_out('qzone', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-qzone"></i> QZONE</a></li>
+															<li><a onclick="AWS.User.share_out('weixin', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-wechat"></i> 微信</a></li>
+														</ul>
+													</div>
+												</div>
+																							</div>
+											<!-- end 可显示/隐藏的操作box -->
+
+										</div>
+										<!-- end 社交操作 -->
+									</div>
+								</div>
+																<div class="aw-item" uninterested_count="0" force_fold="0" id="answer_list_3008">
+									<div class="mod-head">
+																				<a class="anchor" name="answer_3008"></a>
+										<!-- 用户头像 -->
+										<a class="aw-user-img aw-border-radius-5" href="http://dockone.io/people/%E5%B0%84%E6%89%8B%E5%BA%A7%E7%A0%81%E5%86%9C" data-id="14679"><img src="http://dockone.io/static/common/avatar-mid-img.png" alt="" /></a>										<!-- end 用户头像 -->
+										<div class="title">
+											<p>
+																									<a class="aw-user-name" href="http://dockone.io/people/%E5%B0%84%E6%89%8B%E5%BA%A7%E7%A0%81%E5%86%9C" data-id="14679">射手座码农</a>
+																																																																																					</p>
+											<p class="text-color-999 aw-agree-by hide">
+												赞同来自:
+
+																							</p>
+										</div>
+									</div>
+									<div class="mod-body clearfix">
+										<!-- 评论内容 -->
+										<div class="markitup-box">
+											<br/>请问楼主这个问题想到解决办法了吗，我也遇到这个问题，“-d”守护态运行的容器没办法进去，只能不用守护态而是通过“-i -t”+“/bin/bash”的方式进去容器里面操作										</div>
+
+										
+																				<!-- end 评论内容 -->
+									</div>
+									<div class="mod-footer">
+										<!-- 社交操作 -->
+										<div class="meta clearfix">
+											<span class="text-color-999 pull-right">2017-07-15</span>
+											<!-- 投票栏 -->
+											<span class="operate">
+												<a class="agree  disabled" ><i data-placement="right" title="" data-toggle="tooltip" class="icon icon-agree" data-original-title="赞同回复"></i> <b class="count">0</b></a>
+																							</span>
+											<!-- end 投票栏 -->
+											<span class="operate">
+												<a class="aw-add-comment" data-id="3008" data-type="answer" data-comment-count="0" data-first-click="hide" href="javascript:;"><i class="icon icon-comment"></i> 0</a>
+											</span>
+											<!-- 可显示/隐藏的操作box -->
+											<div class="more-operate">
+												
+																								<div class="btn-group pull-left">
+													<a class="text-color-999 dropdown-toggle" data-toggle="dropdown">
+														<i class="icon icon-share"></i> 分享													</a>
+													<div aria-labelledby="dropdownMenu" role="menu" class="aw-dropdown shareout pull-right">
+														<ul class="aw-dropdown-list">
+															<li><a onclick="AWS.User.share_out('tsina', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-weibo"></i> 微博</a></li>
+															<li><a onclick="AWS.User.share_out('qzone', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-qzone"></i> QZONE</a></li>
+															<li><a onclick="AWS.User.share_out('weixin', $(this).parents('.aw-item').find('.markitup-box').text());"><i class="icon icon-wechat"></i> 微信</a></li>
+														</ul>
+													</div>
+												</div>
+																							</div>
+											<!-- end 可显示/隐藏的操作box -->
+
+										</div>
+										<!-- end 社交操作 -->
+									</div>
+								</div>
+																					</div>
+						<div class="mod-footer">
+															<div class="aw-load-more-content hide" id="load_uninterested_answers">
+									<span class="text-color-999 aw-alert-box text-color-999" href="javascript:;" tabindex="-1" onclick="AWS.alert('被折叠的回复是被你或者被大多数用户认为没有帮助的回复');">为什么被折叠?</span>
+									<a href="javascript:;" class="aw-load-more-content"><span class="hide_answers_count">0</span> 个回复被折叠</a>
+								</div>
+
+								<div class="hide aw-feed-list" id="uninterested_answers_list"></div>
+													</div>
+
+											</div>
+										<!-- end 问题详细模块 -->
+
+										<!-- 回复编辑器 -->
+					<div class="aw-mod aw-replay-box question">
+						<a name="answer_form"></a>
+												<p align="center">要回复问题请先<a href="http://dockone.io/login/">登录</a>或<a href="http://dockone.io/account/register/">注册</a></p>
+											</div>
+					<!-- end 回复编辑器 -->
+									</div>
+				<!-- 侧边栏 -->
+				<div class="col-md-3 aw-side-bar hidden-xs hidden-sm">
+					<!-- 发起人 -->
+										<div class="aw-mod">
+						<div class="mod-head">
+							<h3>发起人</h3>
+						</div>
+						<div class="mod-body">
+							<dl>
+								<dt class="pull-left aw-border-radius-5">
+									<a href="http://dockone.io/people/jude"><img alt="jude" src="http://dockone.io/static/common/avatar-mid-img.png" /></a>
+								</dt>
+								<dd class="pull-left">
+									<a class="aw-user-name" href="http://dockone.io/people/jude" data-id="2205">jude</a>
+																											<p>opstory</p>
+								</dd>
+							</dl>
+						</div>
+					</div>
+										<!-- end 发起人 -->
+
+					
+					
+										<!-- 相关问题 -->
+					<div class="aw-mod">
+						<div class="mod-head">
+							<h3>相关问题</h3>
+						</div>
+						<div class="mod-body font-size-12">
+							<ul>
+																<li><a href="http://dockone.io/question/151">Docker如何为企业产生价值？</a></li>
+																<li><a href="http://dockone.io/question/341">大家对国内的Docker meetup活动组织有什么建议和想法？比如希望在哪些城市举办？希望听到什么样的话题？</a></li>
+																<li><a href="http://dockone.io/question/24">请教下代码放在Docker里面还是外面呢</a></li>
+																<li><a href="http://dockone.io/question/10">如何学习Docker</a></li>
+																<li><a href="http://dockone.io/question/408">Docker container 到底应该翻译成什么？容器？集装箱？</a></li>
+																<li><a href="http://dockone.io/question/160">Machine、Swarm、Compose、SocketPlane这些Docker生态圈软件各解决了哪些问题？</a></li>
+																<li><a href="http://dockone.io/question/430">国内有哪些Docker大牛？</a></li>
+																<li><a href="http://dockone.io/question/574">docker书籍</a></li>
+																<li><a href="http://dockone.io/question/199">Docker容器使用--net=host的方式启动的，怎么用ssh去连接容器</a></li>
+																<li><a href="http://dockone.io/question/362">Docker 运行的容器时间不对，怎么解决!</a></li>
+																<li><a href="http://dockone.io/question/187">容器OS的选择与使用</a></li>
+															</ul>
+						</div>
+					</div>
+					<!-- end 相关问题 -->
+					
+					<!-- 问题状态 -->
+					<div class="aw-mod question-status">
+						<div class="mod-head">
+							<h3>问题状态</h3>
+						</div>
+						<div class="mod-body">
+							<ul>
+								<li>最新活动: <span class="aw-text-color-blue">2017-07-16 23:23</span></li>
+								<li>浏览: <span class="aw-text-color-blue">38513</span></li>
+								<li>关注: <span class="aw-text-color-blue">5</span> 人</li>
+
+								<li class="aw-border-radius-5" id="focus_users"></li>
+							</ul>
+						</div>
+					</div>
+					<!-- end 问题状态 -->
+				</div>
+				<!-- end 侧边栏 -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	ATTACH_ACCESS_KEY = '189a4a5d77265c639953ed06f0b6d8f4';
+	ITEM_IDS = '';
+	COMMENT_UNFOLD = '';
+
+	QUESTION_ID = 399;
+	UNINTERESTED_COUNT = 5;
+
+	ANSWER_EDIT_TIME = 30;
+
+	USER_ANSWERED = '';
+
+	UPLOAD_ENABLE = 'N';
+
+</script>
+
+<script type="text/javascript" src="http://dockone.io/static/js/app/question_detail.js"></script>
+
+<div class="aw-footer-wrap">
+    <!--<div class="aw-footer">
+        Copyright © 2020, All Rights Reserved</span>
+
+        <span class="hidden-xs">Powered By <a href="http://www.wecenter.com/?copyright"
+                                              target="blank">WeCenter 3.0.2</a></span>
+
+            </div>-->
+
+
+
+
+
+<head>
+<meta charset="utf-8">
+<title>无标题文档</title>
+<style type="text/css">
+footer{margin:0;padding:0;border:0;font-weight:inherit;font-style:inherit;font-size:100%;font-family:inherit;vertical-align:baseline;background:transparent}html{text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.text-center{text-align:center}
+.icons-weibo,.icons-twitter,.icons-blog,.icons-rss{width:32px;height:32px;background:url(http://dockone.io/static/css/default/img/icon.png) no-repeat}
+.icons-weibo{background-position:0 0}
+.icons-twitter{background-position:-32px 0}
+.icons-rss{background-position:-96px 0}
+.footer{left:0;bottom:0;height:410px;width:99%;text-align:center;background:#332e36;padding-top:50px;padding-bottom:50px;border-top:1px solid #1d111e}
+
+.subscribe-email{margin-bottom:40px}
+.subscribe-email h3{font-size:16px;color:#fff;margin-bottom:4px}
+.subscribe-email p{font-size:12px; color:#747f8c;}
+.subscribe-email .form-email{margin-top:20px;margin:20px auto 0}
+.subscribe-email .input-email{border-radius:3px;width:200px;padding:10px;margin-right:10px}
+.copyright{font-size:14px;line-height:30px;margin-bottom:20px}
+@media screen and (min-width: 48.0625em){
+.copyright{float:left;margin-bottom:0}}
+.copyright .info{font-size:12px}
+.copyright p+p{font-size:12px}@media screen and (min-width: 48.0625em){
+.footer-follow{float:right;margin-top:14px}}
+.footer-follow li{display:inline-block;margin-left:20px}
+.footer-follow a{display:inline-block;text-indent:-999em}.list{width:190px;margin:0 auto}
+
+
+
+
+.footer-follow img{display: none;}
+
+
+.footer-follow li a:hover img{display: block; position: absolute; left:-76px; top:50px;}
+
+
+
+
+
+
+
+
+</style>
+</head>
+
+<body>
+<footer class="footer" style="margin-top: 20px;height:300px !important;">
+  <div class="subscribe-email row text-center">
+    <h3>DockOne，专业的Cloud Native学习社区</h3>
+    <p>关注Cloud Native相关的产品以及开源项目</p>
+      </div>
+  <div class="row cf"  style="margin-left:auto;margin-right:auto; width: 900px !important;">
+    <div class="copyright" style="color:#fff;">
+      <p> 2019 <strong>DockOne.io</strong>. All Rights Reserved. </p>
+      <p class="">DockOne，新圈子，新思路，新视野</p>
+    </div>
+
+    <div class="footer-follow" >
+      <ul class="cf">
+        <li><a class="icons-weibo" href="https://weibo.com/dockerone" title="Weibo" target="_blank">Weibo</a>
+      
+
+        </li>
+        <li><a class="icons-twitter" href="#" title="Wechat" style="position: relative;">Wechat
+
+            <img src="http://dockone.io/static/css/default/img/ewm.jpg" style="height:80px;" /></a>
+            
+
+        </li><li><a class="icons-rss" href="http://dockone.io/feed" title="Feed" target="_blank">Feed</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+
+</div>
+
+<a class="aw-back-top hidden-xs" href="javascript:;" onclick="$.scrollTo(1, 600, {queue:true});"><i
+            class="icon icon-up"></i></a>
+
+<script type="text/javascript">
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F1f6d1a718ac6b6eb3902c92775fb128e' type='text/javascript'%3E%3C/script%3E"));
+</script>
+
+<!-- DO NOT REMOVE -->
+<div id="aw-ajax-box" class="aw-ajax-box"></div>
+
+<div style="display:none;" id="__crond">
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#__crond').html(unescape('%3Cimg%20src%3D%22' + G_BASE_URL + '/crond/run/TIMESTAMP%22%20width%3D%221%22%20height%3D%221%22%20/%3E'));
+        });
+    </script>
+</div>
+
+<!--<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+    document.write(unescape("%3Cdiv%20style%3D%27text-align%3Acenter%27%3E%3Cspan id='cnzz_stat_icon_1273638993'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s22.cnzz.com/z_stat.php%3Fid%3D1273638993%26show%3Dpic' type='text/javascript'%3E%3C/script%3E%3C/div%3E"));</script>-->
+
+<!-- Escape time: 0.042665004730225 --><!-- / DO NOT REMOVE -->
+
+</body>
+</html>
+

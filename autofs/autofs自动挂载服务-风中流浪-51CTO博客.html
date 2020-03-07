@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="/favicon.ico" />
+        <title>autofs自动挂载服务-风中流浪-51CTO博客</title>
+    <meta name="keywords" content="autofs,自动挂载,NFS挂载,smaba挂载,Centos 7">
+<meta name="description" content="我们都知道，将挂载信息写入到/etc/fstab文件中，可实现开机自动挂载。如果远程共享资源过多，则会给网络带宽和服务器的硬件资源带来很大负载。如果挂载的资源长期不使用，也会造成服务器资源的浪费。autofs自动挂载服务是一种Linux系统守护进程，当检测到用户视图访问一个尚未挂载的文件系统时，会自动挂载该文件系统。简单来说，将挂载信息写入/etc/fstab文件中，系统在每次开机时都会自动挂载，">    <link href="https://static1.51cto.com/edu/blog/css/header.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/other.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/right.css?v=3.1.7" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/blog_details.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/highlight.css" rel="stylesheet">
+    <script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="https://static1.51cto.com/edu/center/js/jquery.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/cookie.js"></script><script src="https://static1.51cto.com/edu/blog/js/login.js"></script><script src="https://static1.51cto.com/edu/blog/js/common.js"></script><script src="https://static1.51cto.com/edu/blog/js/mbox.js"></script><script src="https://static1.51cto.com/edu/blog/js/follow.js"></script><script src="https://static1.51cto.com/edu/blog/js/vip.js"></script><script src="https://static1.51cto.com/edu/blog/js/window.js"></script></head>
+<body>
+<img src="https://static1.51cto.com/edu/blog/mobile/images/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/202003/05/9a6121559219477c1b2bb7782f30fe17.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url('https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png') 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=10&pc" target="_blank">
+  <img src="https://s1.51cto.com/images/blog/202003/05/0dbef47925a1b0b7971f1ffe29296707.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li ><a href="https://blog.51cto.com/">首页</a></li>
+      <li ><a href="https://blog.51cto.com/original">文章</a></li>
+      <li ><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏<b></b></a>
+      </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com" target="_blank">WOT</a>
+            <a href="http://www.51cto.com" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fandyxu%2F2171468&logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fandyxu%2F2171468" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="https://static1.51cto.com/edu/blog/images/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index"  target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onClick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="https://static1.51cto.com/edu/blog/mobile/js/lib/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=10&pc" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/202003/05/1ac3351fac07f6ef3802ffa4d5ff09b6.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog126',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="//www.sobot.com/chat/frame/js/entrance.js?sysNum=a8d9379eaf884b4f81a48348979e3b1a" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br/>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box">
+    	<link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/mdeShow.css">
+<link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/tinyscrollbar.css"/>
+<script type="text/javascript" src="https://static1.51cto.com/edu/blog/js/jquery.tinyscrollbar.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">autofs自动挂载服务</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/andyxu" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="2050315" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+				</div>
+				<a href="https://blog.51cto.com/andyxu" class="name fl" target="_blank" style="margin-right:0;">xuad88</a>
+									                	                    <a id="checkFollow1_2050315" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">6322人阅读</a>
+				<a href="javascript:;" class="time fr">2018-09-07 09:05:23</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content">
+					<div class="con artical-content editor-preview-side"><p>我们都知道，将挂载信息写入到/etc/fstab文件中，可实现开机自动挂载。如果远程共享资源过多，则会给网络带宽和服务器的硬件资源带来很大负载。如果挂载的资源长期不使用，也会造成服务器资源的浪费。<br/>autofs自动挂载服务是一种Linux系统守护进程，当检测到用户视图访问一个尚未挂载的文件系统时，会自动挂载该文件系统。简单来说，将挂载信息写入/etc/fstab文件中，系统在每次开机时都会自动挂载，而autofs服务则是在用户需要使用该文件系统时才去动态挂载，从而节约了网络资源和服务器硬件资源的开销。<br/>1、安装autofs服务<br/><code>yum -y install autofs</code><br/>2、卸载已挂载的设备，确保光盘、samba共享目录、NFS共享目录都未曾挂载</p>
+<pre><code>umount /media/cdrom/
+umount /data/test/
+umount /nfsdata/</code></pre>
+<p>3、挂载光盘设备<br/>如果把挂载信息都写入到autofs服务的主配置文件中，会使主配置文件臃肿不堪，不利于管理和维护。因此在autofs的主配置文件中按照“挂载目录的上层目录 子配置文件”的格式填写，具体的挂载信息写入到子配置文件中，方便日后管理和维护。<br/>（1）在主配置文件里添加如下内容<br/><code>vim /etc/auto.master</code><br/><code>/media /etc/cdrom.misc</code><br/>（2）在子配置文件中添加如下内容<br/>子配置文件按照“挂载目录 挂载文件类型及权限 :设备名称”的格式进行填写。<br/><code>vim /etc/cdrom.misc</code><br/><code>cdrom -fstype=iso9660,ro,nosuid,nodev :/dev/cdrom</code><br/><em>注：光盘设备的挂载目录为/media/cdrom，-fstype=ios9660表示以光盘格式挂载，ro、nosuid及nodev是挂载使用的权限，/dev/cdrom是挂载的设备名称。</em><br/>（3）启动autofs服务，并加入开机启动项</p>
+<pre><code>systemctl start autofs
+systemctl enable autofs</code></pre>
+<p>（4）测试<br/><img src="https://s1.51cto.com/images/blog/201809/07/acdc770b47294343b72313235c421eb0.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="autofs自动挂载服务" /><br/>4、挂载samba共享目录<br/>（1）在主配置文件里添加如下内容<br/><code>vim /etc/auto.master</code><br/><code>/data /etc/samba.misc</code><br/>（2）在子配置文件中添加如下内容<br/><code>vim /etc/samba.misc</code><br/><code>test -fstype=cifs,credentials=/root/auth.smb ://192.168.2.211/tools</code><br/>（3）重启autofs服务<br/><code>systemctl restart autofs</code><br/>（4）测试<br/>往/data/test目录下写入一个测试文件<br/><img src="https://s1.51cto.com/images/blog/201809/07/51f48364e0ec9f93f05a48427023ca3e.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="autofs自动挂载服务" /><br/>在samba服务器上查看/data/tools目录下是否生成了该文件<br/><img src="https://s1.51cto.com/images/blog/201809/07/39a9733106b08dad5177c0cd2703a379.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="autofs自动挂载服务" /><br/>5、挂载NFS网络文件系统<br/>（1）在子配置文件中添加如下内容<br/><code>vim /etc/samba.misc</code><br/><code>nfsdata -fstype=nfs 192.168.2.211:/nfsdata</code><br/><em>注：NFS和samba共用一个子配置文件，NFS的挂载目录为/data/nfsdata</em><br/>（2）重启autofs服务<br/><code>systemctl restart autofs</code><br/>（3）测试<br/>往/nfsdata目录下写入一个测试文件<br/><img src="https://s1.51cto.com/images/blog/201809/07/625d97d0cbd39d17514b2c567cd094ac.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="autofs自动挂载服务" /><br/>在NFS服务器上查看/nfsdata目录下是否生成了该文件<br/><img src="https://s1.51cto.com/images/blog/201809/07/c247c788f4e1e955eec8d0b3a29b09d1.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=" alt="autofs自动挂载服务" /></p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者xuad88的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+										<div class="appreciate-box">
+					<h2>好知识，才能预见未来</h2>
+											<p class="appreciate-btn appreciate-open">赞赏</p>
+										<p class="appreciate-txt">0人进行了赞赏支持</p>
+									</div>
+						<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=autofs" target="_blank">autofs</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E8%87%AA%E5%8A%A8%E6%8C%82%E8%BD%BD" target="_blank">自动挂载</a>
+																								<a href="https://blog.51cto.com/search/result?q=NFS%E6%8C%82%E8%BD%BD" target="_blank">NFS挂载</a>
+																																					                				<a class="last" href="https://blog.51cto.com/andyxu/category1.html" target="_blank"><i></i>Linux系统</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="2171468" userid='2050315'>0</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina" >微博</a>
+					  <a class="bds_sqq" data-cmd="sqq" >QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin" >微信</a>
+					  <img src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2Fandyxu%2F2171468">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/andyxu/2171149" title="Centos 7部署NFS网络文件系统">
+						上一篇：Centos 7部署NFS网络文...</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/andyxu/2174652" title="Centos 7部署docker环境、基本命令使用及简单实战">
+						下一篇：Centos 7部署docker...</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/andyxu" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="2050315" src="https://ucenter.51cto.com/images/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/andyxu" target="_blank" style="display:inline-block;">xuad88</a>
+										<h3>77篇文章，147W+人气，118粉丝</h3>
+					<h4>原来时光一直都在，只是我们在飞逝！</h4>				</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_2050315" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/andyxu" class="header-img" target="_blank">
+						<img  src="https://ucenter.51cto.com/images/noavatar_middle.gif"/>
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可"  maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="2050315">
+					<input type="hidden" class="reply_id" value="2171468">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList">
+			</div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201804/27/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>502人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="5" href="/cloumn/detail/5" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/28/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>564人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="6" href="/cloumn/detail/6" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/03/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>509人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="13" href="/cloumn/detail/13" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/20/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1919人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="18" href="/cloumn/detail/18" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/06/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTOsummer</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>2316人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="30" href="/cloumn/detail/30" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/andyxu/2459342?source=dra" target="_blank">Centos 7.6部署elasticsearch集群</a>
+															<a class="white-space" href="https://blog.51cto.com/andyxu/2457182?source=dra" target="_blank">Zabbix3.4监控mongodb状态</a>
+															<a class="white-space" href="https://blog.51cto.com/51ctodown/204397?source=drt" target="_blank">下载豆，了解它，收获它【51CTO下载中心帮助】 </a>
+															<a class="white-space" href="https://blog.51cto.com/191226139/2066936?source=drt" target="_blank">运维自动化-Ansible ( 一 )</a>
+															<a class="white-space" href="https://blog.51cto.com/sofar/1579894?source=drt" target="_blank">自动化运维工具Ansible详细部署</a>
+															<a class="white-space" href="https://blog.51cto.com/3701740/2112464?source=drt" target="_blank">vCenter Server Appliance（VCSA ）6.7部署指南</a>
+															<a class="white-space" href="https://blog.51cto.com/lorysun/1951799?source=drt" target="_blank">VMware Horizon View 7 安装部署</a>
+															<a class="white-space" href="https://blog.51cto.com/xiaogongju/2084464?source=drt" target="_blank">centos7手把手教你搭建zabbix监控</a>
+															<a class="white-space" href="https://blog.51cto.com/simonhu/1588971?source=drt" target="_blank">CentOS 7 网络配置详解</a>
+															<a class="white-space" href="https://blog.51cto.com/13670314/2157265?source=drt" target="_blank">Centos7和Centos6.5密码破解</a>
+															<a class="white-space" href="https://blog.51cto.com/andyboge/2073420?source=drt" target="_blank">centos7的网卡重启方法</a>
+															<a class="white-space" href="https://blog.51cto.com/13525470/2112720?source=drt" target="_blank">自动化运维工具Ansible实战（五）Playbooks剧本使用</a>
+															<a class="white-space" href="https://blog.51cto.com/13972012/2475722?source=drh" target="_blank">memcache缓存服务器概念篇</a>
+															<a class="white-space" href="https://blog.51cto.com/14143894/2475248?source=drh" target="_blank">Ceph持久化存储为k8s应用提供存储方案（3）</a>
+															<a class="white-space" href="https://blog.51cto.com/14653135/2475028?source=drh" target="_blank">pxe网络安装服务器的部署</a>
+															<a class="white-space" href="https://blog.51cto.com/14143894/2474757?source=drh" target="_blank"># IT明星不是梦 #  Ceph持久化存储为k8s应用提供存储方案（1）</a>
+															<a class="white-space" href="https://blog.51cto.com/13760351/2474737?source=drh" target="_blank">Linux 文本处理利器--Awk常用命令</a>
+															<a class="white-space" href="https://blog.51cto.com/wujianwei/2474493?source=drh" target="_blank">Maxscale介绍和应用</a>
+															<a class="white-space" href="https://blog.51cto.com/14157628/2473599?source=drh" target="_blank">Jenkins实现html代码上线与回滚</a>
+															<a class="white-space" href="https://blog.51cto.com/13760351/2473404?source=drh" target="_blank">CentOS 7 部署百万pv项目（高可用架构）</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="https://s1.51cto.com/images/blog/201910/25/e44823f12c0ccbfd99decb605b02ec10.png" style="width:50px;height:50px;"/> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="https://static1.51cto.com/edu/blog/mobile/images/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="2171468" userid='2050315'></span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>1</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2Fandyxu%2F2171468"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_2050315" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a href="https://blog.51cto.com/andyxu" class="b-name fr">xuad88</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/andyxu" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="2050315" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+<script src="https://static1.51cto.com/edu/blog/js/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '2171468'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'2050315',
+            'blog_id':'2171468'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/andyxu';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='2050315'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '0'
+    	nicknameurl = 'https://blog.51cto.com/andyxu'
+    	nickname = 'xuad88'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_2050315'),'2050315','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_2050315'),'2050315','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_2050315'),'2050315','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("\u6211\u4eec\u90fd\u77e5\u9053\uff0c\u5c06\u6302\u8f7d\u4fe1\u606f\u5199\u5165\u5230\/etc\/fstab\u6587\u4ef6\u4e2d\uff0c\u53ef\u5b9e\u73b0\u5f00\u673a\u81ea\u52a8\u6302\u8f7d\u3002\u5982\u679c\u8fdc\u7a0b\u5171\u4eab\u8d44\u6e90\u8fc7\u591a\uff0c\u5219\u4f1a\u7ed9\u7f51\u7edc\u5e26\u5bbd\u548c\u670d\u52a1\u5668\u7684\u786c\u4ef6\u8d44\u6e90\u5e26\u6765\u5f88\u5927\u8d1f\u8f7d\u3002\u5982\u679c\u6302\u8f7d\u7684\u8d44\u6e90\u957f\u671f\u4e0d\u4f7f\u7528\uff0c\u4e5f\u4f1a\u9020\u6210\u670d\u52a1\u5668\u8d44\u6e90\u7684\u6d6a\u8d39\u3002\nautofs\u81ea\u52a8\u6302\u8f7d\u670d\u52a1\u662f\u4e00\u79cdLinux\u7cfb\u7edf\u5b88\u62a4\u8fdb\u7a0b\uff0c\u5f53\u68c0\u6d4b\u5230\u7528\u6237\u89c6\u56fe\u8bbf\u95ee\u4e00\u4e2a\u5c1a\u672a\u6302\u8f7d\u7684\u6587\u4ef6\u7cfb\u7edf\u65f6\uff0c\u4f1a\u81ea\u52a8\u6302\u8f7d\u8be5\u6587\u4ef6\u7cfb\u7edf\u3002\u7b80\u5355\u6765\u8bf4\uff0c\u5c06\u6302\u8f7d\u4fe1\u606f\u5199\u5165\/etc\/fstab\u6587\u4ef6\u4e2d\uff0c\u7cfb\u7edf\u5728\u6bcf\u6b21\u5f00\u673a\u65f6\u90fd\u4f1a\u81ea\u52a8\u6302\u8f7d\uff0c\u800cautofs\u670d\u52a1\u5219\u662f\u5728\u7528\u6237\u9700\u8981\u4f7f\u7528\u8be5\u6587\u4ef6\u7cfb\u7edf\u65f6\u624d\u53bb\u52a8\u6001\u6302\u8f7d\uff0c\u4ece\u800c\u8282\u7ea6\u4e86\u7f51\u7edc\u8d44\u6e90\u548c\u670d\u52a1\u5668\u786c\u4ef6\u8d44\u6e90\u7684\u5f00\u9500\u3002\n1\u3001\u5b89\u88c5autofs\u670d\u52a1\n`yum -y install autofs`\n2\u3001\u5378\u8f7d\u5df2\u6302\u8f7d\u7684\u8bbe\u5907\uff0c\u786e\u4fdd\u5149\u76d8\u3001samba\u5171\u4eab\u76ee\u5f55\u3001NFS\u5171\u4eab\u76ee\u5f55\u90fd\u672a\u66fe\u6302\u8f7d\n```\numount \/media\/cdrom\/\numount \/data\/test\/\numount \/nfsdata\/\n```\n3\u3001\u6302\u8f7d\u5149\u76d8\u8bbe\u5907\n\u5982\u679c\u628a\u6302\u8f7d\u4fe1\u606f\u90fd\u5199\u5165\u5230autofs\u670d\u52a1\u7684\u4e3b\u914d\u7f6e\u6587\u4ef6\u4e2d\uff0c\u4f1a\u4f7f\u4e3b\u914d\u7f6e\u6587\u4ef6\u81c3\u80bf\u4e0d\u582a\uff0c\u4e0d\u5229\u4e8e\u7ba1\u7406\u548c\u7ef4\u62a4\u3002\u56e0\u6b64\u5728autofs\u7684\u4e3b\u914d\u7f6e\u6587\u4ef6\u4e2d\u6309\u7167\u201c\u6302\u8f7d\u76ee\u5f55\u7684\u4e0a\u5c42\u76ee\u5f55 \u5b50\u914d\u7f6e\u6587\u4ef6\u201d\u7684\u683c\u5f0f\u586b\u5199\uff0c\u5177\u4f53\u7684\u6302\u8f7d\u4fe1\u606f\u5199\u5165\u5230\u5b50\u914d\u7f6e\u6587\u4ef6\u4e2d\uff0c\u65b9\u4fbf\u65e5\u540e\u7ba1\u7406\u548c\u7ef4\u62a4\u3002\n\uff081\uff09\u5728\u4e3b\u914d\u7f6e\u6587\u4ef6\u91cc\u6dfb\u52a0\u5982\u4e0b\u5185\u5bb9\n`vim \/etc\/auto.master`\n`\/media \/etc\/cdrom.misc`\n\uff082\uff09\u5728\u5b50\u914d\u7f6e\u6587\u4ef6\u4e2d\u6dfb\u52a0\u5982\u4e0b\u5185\u5bb9\n\u5b50\u914d\u7f6e\u6587\u4ef6\u6309\u7167\u201c\u6302\u8f7d\u76ee\u5f55 \u6302\u8f7d\u6587\u4ef6\u7c7b\u578b\u53ca\u6743\u9650 :\u8bbe\u5907\u540d\u79f0\u201d\u7684\u683c\u5f0f\u8fdb\u884c\u586b\u5199\u3002\n`vim \/etc\/cdrom.misc`\n`cdrom -fstype=iso9660,ro,nosuid,nodev :\/dev\/cdrom`\n*\u6ce8\uff1a\u5149\u76d8\u8bbe\u5907\u7684\u6302\u8f7d\u76ee\u5f55\u4e3a\/media\/cdrom\uff0c-fstype=ios9660\u8868\u793a\u4ee5\u5149\u76d8\u683c\u5f0f\u6302\u8f7d\uff0cro\u3001nosuid\u53canodev\u662f\u6302\u8f7d\u4f7f\u7528\u7684\u6743\u9650\uff0c\/dev\/cdrom\u662f\u6302\u8f7d\u7684\u8bbe\u5907\u540d\u79f0\u3002*\n\uff083\uff09\u542f\u52a8autofs\u670d\u52a1\uff0c\u5e76\u52a0\u5165\u5f00\u673a\u542f\u52a8\u9879\n```\nsystemctl start autofs\nsystemctl enable autofs\n```\n\uff084\uff09\u6d4b\u8bd5\n![](https:\/\/s1.51cto.com\/images\/blog\/201809\/07\/acdc770b47294343b72313235c421eb0.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n4\u3001\u6302\u8f7dsamba\u5171\u4eab\u76ee\u5f55\n\uff081\uff09\u5728\u4e3b\u914d\u7f6e\u6587\u4ef6\u91cc\u6dfb\u52a0\u5982\u4e0b\u5185\u5bb9\n`vim \/etc\/auto.master`\n`\/data \/etc\/samba.misc`\n\uff082\uff09\u5728\u5b50\u914d\u7f6e\u6587\u4ef6\u4e2d\u6dfb\u52a0\u5982\u4e0b\u5185\u5bb9\n`vim \/etc\/samba.misc`\n`test -fstype=cifs,credentials=\/root\/auth.smb :\/\/192.168.2.211\/tools`\n\uff083\uff09\u91cd\u542fautofs\u670d\u52a1\n`systemctl restart autofs`\n\uff084\uff09\u6d4b\u8bd5\n\u5f80\/data\/test\u76ee\u5f55\u4e0b\u5199\u5165\u4e00\u4e2a\u6d4b\u8bd5\u6587\u4ef6\n![](https:\/\/s1.51cto.com\/images\/blog\/201809\/07\/51f48364e0ec9f93f05a48427023ca3e.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u5728samba\u670d\u52a1\u5668\u4e0a\u67e5\u770b\/data\/tools\u76ee\u5f55\u4e0b\u662f\u5426\u751f\u6210\u4e86\u8be5\u6587\u4ef6\n![](https:\/\/s1.51cto.com\/images\/blog\/201809\/07\/39a9733106b08dad5177c0cd2703a379.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n5\u3001\u6302\u8f7dNFS\u7f51\u7edc\u6587\u4ef6\u7cfb\u7edf\n\uff081\uff09\u5728\u5b50\u914d\u7f6e\u6587\u4ef6\u4e2d\u6dfb\u52a0\u5982\u4e0b\u5185\u5bb9\n`vim \/etc\/samba.misc`\n`nfsdata -fstype=nfs 192.168.2.211:\/nfsdata`\n*\u6ce8\uff1aNFS\u548csamba\u5171\u7528\u4e00\u4e2a\u5b50\u914d\u7f6e\u6587\u4ef6\uff0cNFS\u7684\u6302\u8f7d\u76ee\u5f55\u4e3a\/data\/nfsdata*\n\uff082\uff09\u91cd\u542fautofs\u670d\u52a1\n`systemctl restart autofs`\n\uff083\uff09\u6d4b\u8bd5\n\u5f80\/nfsdata\u76ee\u5f55\u4e0b\u5199\u5165\u4e00\u4e2a\u6d4b\u8bd5\u6587\u4ef6\n![](https:\/\/s1.51cto.com\/images\/blog\/201809\/07\/625d97d0cbd39d17514b2c567cd094ac.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u5728NFS\u670d\u52a1\u5668\u4e0a\u67e5\u770b\/nfsdata\u76ee\u5f55\u4e0b\u662f\u5426\u751f\u6210\u4e86\u8be5\u6587\u4ef6\n![](https:\/\/s1.51cto.com\/images\/blog\/201809\/07\/c247c788f4e1e955eec8d0b3a29b09d1.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"autofs自动挂载服务",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1583507602; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="https://static1.51cto.com/edu/blog/js/marked.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/highlight.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail_mp.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail.js"></script><script src="https://static1.51cto.com/edu/blog/js/details_new.js"></script><script src="https://static1.51cto.com/edu/blog/js/copy.js"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="https://log.51cto.com/pageview.php?frompos=blog_art"></iframe>
+</div>
+
+<script src="https://static1.51cto.com/edu/blog/js/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type='text/javascript'>
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="https://static1.51cto.com/edu//blog/js/jquery.cookie.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+</body>
+</html>

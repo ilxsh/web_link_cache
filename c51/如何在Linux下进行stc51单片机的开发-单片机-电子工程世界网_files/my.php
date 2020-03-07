@@ -1,0 +1,1 @@
+document.write("<p><a href=\"http://bbs.eeworld.com.cn/member.php?mod=logging&action=login&referer=http://news.eeworld.com.cn/mcu/2019/ic-news031843535.html\">登录</a><a href=\"http://bbs.eeworld.com.cn/member.php?mod=register_eeworld.php&referer=http://news.eeworld.com.cn/mcu/2019/ic-news031843535.html\">注册</a></p>");

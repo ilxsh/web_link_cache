@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="/favicon.ico" />
+        <title>PXE 的完整版笔记，通俗易懂-han-51CTO博客</title>
+    <meta name="keywords" content="linux,系统运维,Linux,云计算">
+<meta name="description" content="PXE（preboot execute environment预启动执行环境）PXE是intel公司推出的一款通过网络来引导操作系统的协议。广泛应用于网吧无盘系统。只需要将无盘服务器维护好，就能保证网络中的无盘工作站（客户机）的系统能正常运行。PXE服务器需要的支撑软件：DHCP、TFTP、syslinux（提供pxe引导程序文件pxelinux.0）、文件共享（nfs、ftp、http、samb">    <link href="https://static1.51cto.com/edu/blog/css/header.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/other.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/right.css?v=3.1.7" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/blog_details.css" rel="stylesheet"><link href="https://static1.51cto.com/edu/blog/css/highlight.css" rel="stylesheet">
+    <script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="https://static1.51cto.com/edu/center/js/jquery.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/cookie.js"></script><script src="https://static1.51cto.com/edu/blog/js/login.js"></script><script src="https://static1.51cto.com/edu/blog/js/common.js"></script><script src="https://static1.51cto.com/edu/blog/js/mbox.js"></script><script src="https://static1.51cto.com/edu/blog/js/follow.js"></script><script src="https://static1.51cto.com/edu/blog/js/vip.js"></script><script src="https://static1.51cto.com/edu/blog/js/window.js"></script></head>
+<body>
+<img src="https://static1.51cto.com/edu/blog/mobile/images/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s1.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s1.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s1.51cto.com/images/blog/202003/05/9a6121559219477c1b2bb7782f30fe17.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url('https://s1.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png') 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=10&pc" target="_blank">
+  <img src="https://s1.51cto.com/images/blog/202003/05/0dbef47925a1b0b7971f1ffe29296707.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li ><a href="https://blog.51cto.com/">首页</a></li>
+      <li ><a href="https://blog.51cto.com/original">文章</a></li>
+      <li ><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com" target="_blank">WOT</a>
+            <a href="http://www.51cto.com" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2F13588693%2F2355691&logintype=reg" target="_self">注册</a></li>
+          <li class="login"><a href="/site/login?reback=https%3A%2F%2Fblog.51cto.com%2F13588693%2F2355691" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="https://static1.51cto.com/edu/blog/images/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index"  target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onClick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="https://static1.51cto.com/edu/blog/mobile/js/lib/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s1.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=10&pc" class="closeMB" target="_blank" styel="display:block;"><img src="https://s1.51cto.com/images/blog/202003/05/1ac3351fac07f6ef3802ffa4d5ff09b6.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog126',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="//www.sobot.com/chat/frame/js/entrance.js?sysNum=a8d9379eaf884b4f81a48348979e3b1a" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br/>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box">
+      <link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/mdeShow.css">
+  <link rel="stylesheet" href="https://blog.51cto.com/static/js/ueditor1.4.3/prism.css">
+  <script type="text/javascript" charset="utf-8" src="https://blog.51cto.com/static/js/ueditor1.4.3/prism.js"></script>
+<link rel="stylesheet" href="https://static1.51cto.com/edu/blog/css/tinyscrollbar.css"/>
+<script type="text/javascript" src="https://static1.51cto.com/edu/blog/js/jquery.tinyscrollbar.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">PXE 的完整版笔记，通俗易懂</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/13588693" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="13578693" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+				</div>
+				<a href="https://blog.51cto.com/13588693" class="name fl" target="_blank" style="margin-right:0;">qq1422295145</a>
+												<a class="comment comment-num fr"><font class="comment_number">2</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">12113人阅读</a>
+				<a href="javascript:;" class="time fr">2019-02-27 16:30:10</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><p style="text-align: center; text-indent: 2em;"><strong><span style="font-size: 24px;">PXE</span></strong>（preboot execute environment预启动执行环境）</p><p>PXE是intel公司推出的一款通过网络来引导操作系统的协议。广泛应用于网吧无盘系统。只需要将无盘服务器维护好，就能保证网络中的无盘工作站（客户机）的系统能正常运行。</p><p style="text-align: left; text-indent: 2em;"><br/></p><p>PXE服务器需要的支撑软件：DHCP、TFTP、syslinux（提供pxe引导程序文件pxelinux.0）、文件共享（nfs、ftp、http、samba）等。</p><p style="text-align: left; text-indent: 2em;"><br/></p><p>PXE服务器和客户机的工作过程：<br/></p><p>&nbsp;1.PXE客户机发出DHCP请求，向服务器申请IP地址。<br/>&nbsp;2.DHCP服务器响应PXE客户机的请求，自动从IP地址池中分配一个IP地址给PXE客户机，并且告知PXE客户机：TFTP（简单文件传输协议）服务器的IP地址和PXE引导程序文件pxelinux.0。<br/>&nbsp;3.PXE客户机向TFTP服务器发起获取pxelinux.0引导程序文件的请求。<br/>&nbsp;4.TFTP服务器响应PXE客户机的请求，将其共享的pxelinux.0文件传输给PXE客户机。<br/>&nbsp;5.PXE客户机通过网络来启动到系统安装主界面。<br/>&nbsp;6.PXE客户机向文件共享服务器发起获取centos或windows系统安装文件的请求。<br/>&nbsp;7.文件共享服务响应PXE客户机的请求，将共享的系统安装文件传输给PXE客户机。<br/>&nbsp;8.PXE客户机进入到安装提示向导界面，用户需要手动来完成系统的操作</p><p>最后安装系统时可以采用kickstart或者vim工具创建一个系统自动安装的应答文件，并用文件共享服务来共享ks.cfg文件（ks.cfg自动应答文件是记录系统安装的操作步骤，客户机在进行安装时会自动根据ks.cfg文件中的内容来完成安装操作）实现自动安装操作。</p><p style="text-align: left; text-indent: 2em;"><br/></p><p>PXE中各服务器软件的功能：</p><p>&nbsp;DHCP:用来给PXE客户机自动分配TCP/IP设置（包括IP地址、子网掩码、网关、DNS等）。告知PXE客户机“TFTP服务器的IP地址和PXE启动文件名”。<br/>&nbsp;TFTP：是一个迷你的FTP共享协议软件，用来给PXE客户机提供网络启动的引导程序文件pxelinux.0。<br/>&nbsp;syslinux：用来提供pxelinux.0网络引导程序文件。<br/>&nbsp;文件共享：可以是vsftpd、nfs、samba、http等软件来实现文件共享。用来给PXE客户机提供系统安装文件。</p><p style="text-align: left; text-indent: 2em;"><br/></p><p><span style="color: rgb(255, 0, 0);">部署过程详解：以下是在centos7.6系统里进行的操作，且centos系统IP为192.168.11.11</span></p><p><span style="background-color: rgb(255, 255, 0);">部署前提检查Linux防火墙是否关闭和是否关闭selinux功能</span>：</p><p>&nbsp;systemctl &nbsp;stop &nbsp;firewalld &amp;&amp; systemctl &nbsp;status &nbsp;firewalld&nbsp; &nbsp; 关闭防火墙功能和查看防火墙的状态</p><p>&nbsp;setenforce &nbsp;0 &nbsp;&amp;&amp; &nbsp;getenforce &nbsp; &nbsp; &nbsp;关闭Linux安全功能即设置为宽容模式Permissive和查看selinux状态<br/></p><p><span style="color: rgb(255, 0, 0); font-size: 20px;">第一步：部署DHCP服务器：</span></p><p>&nbsp;1.查软件是否已安装：rpm &nbsp;-q &nbsp;dhcp<br/>&nbsp;2.安装dhcp服务器软件：yum &nbsp; install &nbsp;-y &nbsp;dhcp<br/>&nbsp;3.查配置文件列表：rpm &nbsp;-qc &nbsp; dhcp<br/>&nbsp;4.编辑dhcpd.conf配置文件<br/>&nbsp; &nbsp;rpm &nbsp; &nbsp;-qc &nbsp; &nbsp;dhcp<br/>&nbsp; &nbsp;cat &nbsp; &nbsp; /etc/dhcp/dhcpd.conf<br/>&nbsp; &nbsp;cat &nbsp; &nbsp;/usr/share/doc/dhcp*/dhcpd.conf.example</p><p>复制其中的一段内容即：</p><p><br/></p><table><tbody><tr class="firstRow"><td valign="top" rowspan="5" colspan="1" style="word-break: break-all; border-color: rgb(221, 221, 221);"><p>subnet 10.5.5.0 netmask 255.255.255.224 {</p><p>&nbsp; range 10.5.5.26 10.5.5.30;</p><p>&nbsp; option domain-name-servers ns1.internal.example.org;</p><p>&nbsp; option domain-name &quot;internal.example.org&quot;;</p><p>&nbsp; option routers 10.5.5.1;</p><p>&nbsp; option broadcast-address 10.5.5.31;</p><p>&nbsp; default-lease-time 600;</p><p>&nbsp; max-lease-time 7200;</p><p>}</p><br/></td><td valign="top" rowspan="5" colspan="1" style="word-break: break-all; border-color: rgb(221, 221, 221);"><p>定义网络地址和子网掩码</p><p>指定IP地址池的范围（起始和截止IP）</p><p>域名解析服务器的IP地址</p><p>域名</p><p>网关IP地址</p><p>广播地址</p><p>默认租约时间</p><p>最大租约时间</p></td></tr><tr></tr><tr></tr><tr></tr><tr></tr></tbody></table><p>粘贴进DHCP的配置文件内，用vim打开并进行如下修改</p><p><br/></p><p>&nbsp; &nbsp;vim &nbsp; &nbsp; /etc/dhcp/dhcpd.conf<br/></p><table><tbody><tr class="firstRow"><td valign="top" rowspan="5" colspan="1" style="word-break: break-all;"><p>subnet 192.168.11.0 netmask 255.255.255.0 {</p><p>&nbsp; range 192.168.11.21 192.168.11.30;</p><p>&nbsp; option domain-name-servers 8.8.8.8;</p><p>&nbsp; option domain-name &quot;hj.com&quot;;</p><p>&nbsp; option routers 192.168.11.2;</p><p>&nbsp; option broadcast-address 192.168.11.255;</p><p>&nbsp; default-lease-time 6000;</p><p>&nbsp; max-lease-time 72000;</p><p>&nbsp; next-server 192.168.11.11;</p><p>&nbsp; filename &quot;pxelinux.0&quot;;</p><p>}</p><br/></td><td width="212" valign="top" style="word-break: break-all;" rowspan="5" colspan="1"><p><br/></p><p><br/></p><p><br/></p><p><br/></p><p><br/></p><p><br/></p><p><br/></p><p><br/></p><p>TFTP服务器的IP地址</p><p>PXE引导程序文件名<br/></p></td></tr><tr></tr><tr></tr><tr></tr><tr></tr></tbody></table><p>&nbsp;5.启动dhcpd服务，允许服务开机自动启动<br/>&nbsp; &nbsp;systemctl &nbsp; &nbsp; restart &nbsp; &nbsp; dhcpd<br/>&nbsp; &nbsp;systemctl &nbsp; &nbsp; enable &nbsp; &nbsp; dhcpd<br/>&nbsp; &nbsp;systemctl &nbsp; &nbsp; status &nbsp; &nbsp; dhcpd<br/>&nbsp; &nbsp;netstat &nbsp; &nbsp; &nbsp; -atunlp | grep &nbsp; &nbsp;:67 &nbsp; &nbsp; &nbsp; 查67号端口的网络进程序</p><p><span style="color: rgb(255, 0, 0); font-size: 20px;">第二步：部署tftp-server服务器</span></p><p>&nbsp;1.查软件是否已安装：rpm &nbsp;-q &nbsp;tftp-server<br/>&nbsp;2.安装tftp-server服务器软件：yum &nbsp; install &nbsp;-y &nbsp;tftp-server<br/>&nbsp;3.查配置文件列表：rpm &nbsp;-qc &nbsp; tftp-server<br/>&nbsp; &nbsp; /etc/xinetd.d/tftp<br/>&nbsp;4.编辑tftp配置文件<br/>&nbsp; &nbsp; vim &nbsp; /etc/xinetd.d/tftp<br/>&nbsp; &nbsp; &nbsp; &nbsp;将disable的yes改为no<br/>&nbsp;5.启动tftp服务，允许服务开机自动启动 &nbsp;<br/>&nbsp; &nbsp; systemctl &nbsp; &nbsp; &nbsp;restart &nbsp; &nbsp; tftp<br/>&nbsp; &nbsp; systemctl &nbsp; &nbsp; &nbsp; enable &nbsp; &nbsp; tftp<br/>&nbsp; &nbsp; systemctl &nbsp; &nbsp; &nbsp; status &nbsp; &nbsp; &nbsp;tftp<br/>&nbsp; &nbsp; netstat &nbsp; &nbsp; &nbsp;-atulp | grep &nbsp; &nbsp;tftp<br/>&nbsp; &nbsp; netstat &nbsp; &nbsp; &nbsp; -atunlp | grep &nbsp; &nbsp;:69<br/>&nbsp;6.安装提供pxelinux.0的syslinux软件，共享pxe引导程序文件<br/>&nbsp; &nbsp; rpm &nbsp;-q &nbsp;syslinux &nbsp;mlocate<br/>&nbsp; &nbsp; yum &nbsp;install &nbsp;-y &nbsp;syslinux &nbsp;mlocate &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 安装指定的软件<br/>&nbsp; &nbsp; updatedb &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;更新locate文件查找数据库<br/>&nbsp; &nbsp;locate &nbsp;pxelinux.0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 查找pxelinux.0文件<br/>&nbsp;7.共享指定的文件到/var/lib/tftpboot目录中<br/>&nbsp; &nbsp; cd &nbsp; /var/lib/tftpboot &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 切换到tftp-server的默认共享目录<br/>&nbsp; &nbsp; cp &nbsp;-v &nbsp;/usr/share/syslinux/pxelinux.0 &nbsp; ./ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;复制指定的文件到当前目录中<br/>&nbsp; &nbsp; df &nbsp;-hT &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 查看磁盘空间使用状态<br/>&nbsp; &nbsp; cp &nbsp;-v &nbsp;/dvd/isolinux/* &nbsp; &nbsp;./ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 复制光盘挂载点目录中指定的文件到当前目录中<br/>&nbsp; &nbsp; mkdir &nbsp;-v &nbsp;pxelinux.cfg &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;在当前目录中创建pxelinux.cfg目录<br/>&nbsp; &nbsp; cp &nbsp;-v &nbsp;isolinux.cfg &nbsp; pxelinux.cfg/default &nbsp; &nbsp; &nbsp; &nbsp;复制指定的文件到指定目录中并改名为default</p><p><span style="color: rgb(255, 0, 0); font-size: 20px;">第三步：部署文件共享服务器</span><span style="color: rgb(255, 0, 0);">（以vsftp为例）（可用的有vsftpd、nfs、samba、httpd）</span><br/></p><p>&nbsp;1.查软件是否已安装：rpm &nbsp;-q &nbsp;vsftpd<br/>&nbsp;2.安装tftp-server服务器软件：yum &nbsp; install &nbsp;-y &nbsp;vsftpd<br/>&nbsp;3.查配置文件列表：rpm &nbsp;-qc &nbsp; vsftpd<br/>&nbsp;4.启动vsftpd服务，允许开机自动启动服务<br/>&nbsp; &nbsp; systemctl &nbsp;restart &nbsp;vsftpd<br/>&nbsp; &nbsp; systemctl &nbsp;enable &nbsp;vsftpd<br/>&nbsp; &nbsp; systemctl &nbsp;status &nbsp;vsftpd<br/>&nbsp; &nbsp; netstat &nbsp;-atunlp | grep &nbsp;:21 &nbsp; 或 &nbsp;lsof &nbsp;-i &nbsp;:21<br/>&nbsp;5.共享centos7的系统镜像到/var/ftp/dvd目录<br/>&nbsp; &nbsp; mkdir &nbsp;-v &nbsp;/var/ftp/dvd<br/>&nbsp; &nbsp; mount &nbsp;/dev/sr0 &nbsp; /var/ftp/dvd</p><p><span style="color: rgb(255, 0, 0); font-size: 20px;">第四步：kickstart自动安装部署</span><br/></p><p>&nbsp;采用kickstart自动应答程序来实现系统的自动化安装(即静默安装)<br/>&nbsp;方法：使用kickstart程序或vim来创建ks.cfg自动应答文件。用文件共享服务来共享ks.cfg自动应答文件。<br/>&nbsp;技巧：linux系统在安装时会自动生成一个anaconda-ks.cfg配置文件，文件位于/root目录中，anaconda-ks.cfg里面记录的就是用户在安装系统时所做的操作（选择语言环境、硬盘分区、安装的软件包、网卡IP设置、主机名、root用户密码、新建普通用户等）。</p><p>&nbsp;具体实施：<br/>&nbsp; &nbsp;1.修改/root/anaconda-ks.cfg权限为644，复制/root/anaconda-ks.cfg到/var/ftp/ks目录中。<br/>&nbsp; &nbsp; cd &nbsp; &nbsp;/root<br/>&nbsp; &nbsp; chmod &nbsp;-v &nbsp;644 &nbsp;anaconda-ks.cfg<br/>&nbsp; &nbsp; mkdir &nbsp;-v &nbsp;/var/ftp/ks<br/>&nbsp; &nbsp; cp &nbsp;-v &nbsp;anaconda-ks.cfg &nbsp;/var/ftp/ks/ks.cfg <br/> <br/>&nbsp; &nbsp;2.修改/var/lib/tftpboot/pxelinux.cfg/default启动菜单文件<br/>&nbsp; &nbsp; vim &nbsp;/var/lib/tftpboot/pxelinux.cfg/default &nbsp; &nbsp; &nbsp; :set nu 显示行号&nbsp;<br/>&nbsp; &nbsp; 修改63行内容为append &nbsp;initrd=initrd.img &nbsp;method=ftp://192.168.11.11/dvd &nbsp;ks=ftp://192.168.11.11/ks/ks.cfg<br/>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;说明：ks=是指定ks.cfg自动安装应答文件的功能选项<br/>&nbsp; &nbsp;3.修改/var/ftp/ks/ks.cfg文件内容<br/>&nbsp; &nbsp; cat &nbsp;/var/ftp/ks/ks.cfg &nbsp; &nbsp; &nbsp; 查看ks.cfg自动应答文件<br/>&nbsp; &nbsp; 注释cdrom<br/>&nbsp; &nbsp; 改ip=192.168.11.12<br/>&nbsp; &nbsp; 改hostname=han</p><p>&nbsp; &nbsp;4.采用kickstart软件来生成ks.cfg自动应答文件。</p><p>&nbsp; &nbsp; yum &nbsp;search &nbsp;kickstart &nbsp; &nbsp;搜索kickstart关键字的软件<br/>&nbsp; &nbsp; yum &nbsp;install &nbsp;-y &nbsp;system-config-kickstart &nbsp; 安装kickstart软件包<br/>&nbsp; &nbsp; system-config-kickstart &nbsp; &nbsp; 启动kickstart配置程序<br/><br/>&nbsp; &nbsp; &nbsp;注意：yum源的repo文件中的“仓库标识”必须用[development]才能出现软件包信息<br/>&nbsp; &nbsp; &nbsp; &nbsp;修改yum源配置文件：<br/>&nbsp; &nbsp; &nbsp; &nbsp;vim &nbsp; /etc/yum.repos.d/local.repo &nbsp; 文件内容如下<br/>&nbsp; &nbsp; &nbsp; &nbsp;[development]<br/>&nbsp; &nbsp; &nbsp; &nbsp;name=centos 7.5 &nbsp;linux<br/>&nbsp; &nbsp; &nbsp; &nbsp;baseurl=file:///dvd<br/>&nbsp; &nbsp; &nbsp; &nbsp;enabled=1<br/>&nbsp; &nbsp; &nbsp; &nbsp;gpgcheck=0</p><p><span style="color: rgb(255, 0, 0); font-size: 20px;">第五步：PXE客户机的测试</span></p><p>&nbsp; &nbsp;1.在VMware虚拟机软件中新建一台名称为PXE0的centos7_64位系统的虚拟机。<br/>&nbsp; &nbsp;2.给PXE0虚拟机的内存设置成1324M，硬盘20G。（内存设置大小时需注意不能小于应答文件中 size 大小）<br/>&nbsp; &nbsp;3.给PXE0虚拟机创建一个名称为“NOS”的快照。（设置快照是便于多次测试）<br/>&nbsp; &nbsp;4.启动PXE0虚拟机，会自动进行系统安装</p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者qq1422295145的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+									<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=linux" target="_blank">linux</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E7%B3%BB%E7%BB%9F%E8%BF%90%E7%BB%B4" target="_blank">系统运维</a>
+																								<a href="https://blog.51cto.com/search/result?q=Linux" target="_blank">Linux</a>
+																										                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="2355691" userid='13578693'>3</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina" >微博</a>
+					  <a class="bds_sqq" data-cmd="sqq" >QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin" >微信</a>
+					  <img src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2F13588693%2F2355691">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            	            					<a class="fr" href="https://blog.51cto.com/13588693/2355722" title="Linux基本管理七大流程">
+						下一篇：Linux基本管理七大流程</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/13588693" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="13578693" src="https://ucenter.51cto.com/images/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/13588693" target="_blank" style="display:inline-block;">qq1422295145</a>
+										<h3>13篇文章，25W+人气，0粉丝</h3>
+					<h4>梦要自己扛，泪要自己尝</h4>				</div>
+								<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/13588693" class="header-img" target="_blank">
+						<img  src="https://ucenter.51cto.com/images/noavatar_middle.gif"/>
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可"  maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="13578693">
+					<input type="hidden" class="reply_id" value="2355691">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+							<div class="comment-number" id="comment_pl">
+					<p class="number fl"><span class="comment_number">2</span>条评论</p>
+					<a class="time-last time fr comment-sort" id="sort-desc" flag="desc"  page="1" >按时间倒序</a>
+				    <a class="time-first time fr comment-sort on" id="sort-asc" flag="asc"  page="1" >按时间正序</a>
+				    <div class="clear"></div>
+				</div>
+						<div class="commentList">
+			</div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201804/27/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>502人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="5" href="/cloumn/detail/5" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/28/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>564人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="6" href="/cloumn/detail/6" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/03/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>509人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="13" href="/cloumn/detail/13" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201808/20/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1921人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="18" href="/cloumn/detail/18" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="https://s1.51cto.com/images/blog/201811/06/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTOsummer</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>2318人订阅</span></h5>
+								</div>
+								<div class="right fr">
+							        																							<a class="cloumn-subscribe" cid="30" href="/cloumn/detail/30" ask='1' target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/13588693/2392779?source=dra" target="_blank">开源堡垒机---jumpserver</a>
+															<a class="white-space" href="https://blog.51cto.com/13588693/2385718?source=dra" target="_blank">自动化装机-cobbler(补鞋匠)</a>
+															<a class="white-space" href="https://blog.51cto.com/cuimk/1347743?source=drt" target="_blank">iptables交互配置脚本【Linux运维之道之脚本案例】</a>
+															<a class="white-space" href="https://blog.51cto.com/191226139/2066936?source=drt" target="_blank">运维自动化-Ansible ( 一 )</a>
+															<a class="white-space" href="https://blog.51cto.com/14204744/2366896?source=drt" target="_blank">DNS域名系统</a>
+															<a class="white-space" href="https://blog.51cto.com/sofar/1579894?source=drt" target="_blank">自动化运维工具Ansible详细部署</a>
+															<a class="white-space" href="https://blog.51cto.com/467754239/1700828?source=drt" target="_blank">ELK 日志分析系统</a>
+															<a class="white-space" href="https://blog.51cto.com/yulp2010/317398?source=drt" target="_blank">如何查看Linux操作系统版本？</a>
+															<a class="white-space" href="https://blog.51cto.com/13525470/2112720?source=drt" target="_blank">自动化运维工具Ansible实战（五）Playbooks剧本使用</a>
+															<a class="white-space" href="https://blog.51cto.com/sofar/1596960?source=drt" target="_blank">自动化运维工具SaltStack详细部署</a>
+															<a class="white-space" href="https://blog.51cto.com/oldboy/775056?source=drt" target="_blank">2017年Linux运维人员必会开源运维工具体系</a>
+															<a class="white-space" href="https://blog.51cto.com/johnwang/755932?source=drt" target="_blank">一个5年运维工程师的新年回首</a>
+															<a class="white-space" href="https://blog.51cto.com/sun510/2475952?source=drh" target="_blank">Linux文件系统误装入到Ocfs2文件系统的数据卷上的解决过程</a>
+															<a class="white-space" href="https://blog.51cto.com/14143894/2475838?source=drh" target="_blank">kubeadm安装k8s集群1.17版本</a>
+															<a class="white-space" href="https://blog.51cto.com/lee90/2475806?source=drh" target="_blank">高性能：8-可用于Memory分析的BPF工具【bpf performance tools读书笔记】</a>
+															<a class="white-space" href="https://blog.51cto.com/13972012/2475722?source=drh" target="_blank">memcache缓存服务器概念篇</a>
+															<a class="white-space" href="https://blog.51cto.com/14143894/2475248?source=drh" target="_blank">Ceph持久化存储为k8s应用提供存储方案（3）</a>
+															<a class="white-space" href="https://blog.51cto.com/14653135/2475028?source=drh" target="_blank">pxe网络安装服务器的部署</a>
+															<a class="white-space" href="https://blog.51cto.com/14143894/2474757?source=drh" target="_blank"># IT明星不是梦 #  Ceph持久化存储为k8s应用提供存储方案（1）</a>
+															<a class="white-space" href="https://blog.51cto.com/13760351/2474737?source=drh" target="_blank">Linux 文本处理利器--Awk常用命令</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box">
+		<div class="group_git_box">
+                	 <img src="https://s1.51cto.com/images/blog/201910/25/e44823f12c0ccbfd99decb605b02ec10.png" style="width:50px;height:50px;"/> 	
+			<!--<img src="https://s1.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="https://static1.51cto.com/edu/blog/mobile/images/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+	</div>		
+	<div class="the-lowest-bg">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="2355691" userid='13578693'>3</span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>1</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number">2</font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="/qr/qr-url?url=https%3A%2F%2Fblog.51cto.com%2F13588693%2F2355691"></a>
+				</div>
+			</div>
+      						<a href="https://blog.51cto.com/13588693" class="b-name fr">qq1422295145</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/13588693" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="13578693" src="https://ucenter.51cto.com/images/noavatar_middle.gif"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="https://static1.51cto.com/edu/blog/js/shCores.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '2355691'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'13578693',
+            'blog_id':'2355691'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/13588693';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='13578693'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/13588693'
+    	nickname = 'qq1422295145'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<p style=\"text-align: center; text-indent: 2em;\"><strong><span style=\"font-size: 24px;\">PXE<\/span><\/strong>\uff08preboot execute environment\u9884\u542f\u52a8\u6267\u884c\u73af\u5883\uff09<\/p><p>PXE\u662fintel\u516c\u53f8\u63a8\u51fa\u7684\u4e00\u6b3e\u901a\u8fc7\u7f51\u7edc\u6765\u5f15\u5bfc\u64cd\u4f5c\u7cfb\u7edf\u7684\u534f\u8bae\u3002\u5e7f\u6cdb\u5e94\u7528\u4e8e\u7f51\u5427\u65e0\u76d8\u7cfb\u7edf\u3002\u53ea\u9700\u8981\u5c06\u65e0\u76d8\u670d\u52a1\u5668\u7ef4\u62a4\u597d\uff0c\u5c31\u80fd\u4fdd\u8bc1\u7f51\u7edc\u4e2d\u7684\u65e0\u76d8\u5de5\u4f5c\u7ad9\uff08\u5ba2\u6237\u673a\uff09\u7684\u7cfb\u7edf\u80fd\u6b63\u5e38\u8fd0\u884c\u3002<\/p><p style=\"text-align: left; text-indent: 2em;\"><br\/><\/p><p>PXE\u670d\u52a1\u5668\u9700\u8981\u7684\u652f\u6491\u8f6f\u4ef6\uff1aDHCP\u3001TFTP\u3001syslinux\uff08\u63d0\u4f9bpxe\u5f15\u5bfc\u7a0b\u5e8f\u6587\u4ef6pxelinux.0\uff09\u3001\u6587\u4ef6\u5171\u4eab\uff08nfs\u3001ftp\u3001http\u3001samba\uff09\u7b49\u3002<\/p><p style=\"text-align: left; text-indent: 2em;\"><br\/><\/p><p>PXE\u670d\u52a1\u5668\u548c\u5ba2\u6237\u673a\u7684\u5de5\u4f5c\u8fc7\u7a0b\uff1a<br\/><\/p><p>&nbsp;1.PXE\u5ba2\u6237\u673a\u53d1\u51faDHCP\u8bf7\u6c42\uff0c\u5411\u670d\u52a1\u5668\u7533\u8bf7IP\u5730\u5740\u3002<br\/>&nbsp;2.DHCP\u670d\u52a1\u5668\u54cd\u5e94PXE\u5ba2\u6237\u673a\u7684\u8bf7\u6c42\uff0c\u81ea\u52a8\u4eceIP\u5730\u5740\u6c60\u4e2d\u5206\u914d\u4e00\u4e2aIP\u5730\u5740\u7ed9PXE\u5ba2\u6237\u673a\uff0c\u5e76\u4e14\u544a\u77e5PXE\u5ba2\u6237\u673a\uff1aTFTP\uff08\u7b80\u5355\u6587\u4ef6\u4f20\u8f93\u534f\u8bae\uff09\u670d\u52a1\u5668\u7684IP\u5730\u5740\u548cPXE\u5f15\u5bfc\u7a0b\u5e8f\u6587\u4ef6pxelinux.0\u3002<br\/>&nbsp;3.PXE\u5ba2\u6237\u673a\u5411TFTP\u670d\u52a1\u5668\u53d1\u8d77\u83b7\u53d6pxelinux.0\u5f15\u5bfc\u7a0b\u5e8f\u6587\u4ef6\u7684\u8bf7\u6c42\u3002<br\/>&nbsp;4.TFTP\u670d\u52a1\u5668\u54cd\u5e94PXE\u5ba2\u6237\u673a\u7684\u8bf7\u6c42\uff0c\u5c06\u5176\u5171\u4eab\u7684pxelinux.0\u6587\u4ef6\u4f20\u8f93\u7ed9PXE\u5ba2\u6237\u673a\u3002<br\/>&nbsp;5.PXE\u5ba2\u6237\u673a\u901a\u8fc7\u7f51\u7edc\u6765\u542f\u52a8\u5230\u7cfb\u7edf\u5b89\u88c5\u4e3b\u754c\u9762\u3002<br\/>&nbsp;6.PXE\u5ba2\u6237\u673a\u5411\u6587\u4ef6\u5171\u4eab\u670d\u52a1\u5668\u53d1\u8d77\u83b7\u53d6centos\u6216windows\u7cfb\u7edf\u5b89\u88c5\u6587\u4ef6\u7684\u8bf7\u6c42\u3002<br\/>&nbsp;7.\u6587\u4ef6\u5171\u4eab\u670d\u52a1\u54cd\u5e94PXE\u5ba2\u6237\u673a\u7684\u8bf7\u6c42\uff0c\u5c06\u5171\u4eab\u7684\u7cfb\u7edf\u5b89\u88c5\u6587\u4ef6\u4f20\u8f93\u7ed9PXE\u5ba2\u6237\u673a\u3002<br\/>&nbsp;8.PXE\u5ba2\u6237\u673a\u8fdb\u5165\u5230\u5b89\u88c5\u63d0\u793a\u5411\u5bfc\u754c\u9762\uff0c\u7528\u6237\u9700\u8981\u624b\u52a8\u6765\u5b8c\u6210\u7cfb\u7edf\u7684\u64cd\u4f5c<\/p><p>\u6700\u540e\u5b89\u88c5\u7cfb\u7edf\u65f6\u53ef\u4ee5\u91c7\u7528kickstart\u6216\u8005vim\u5de5\u5177\u521b\u5efa\u4e00\u4e2a\u7cfb\u7edf\u81ea\u52a8\u5b89\u88c5\u7684\u5e94\u7b54\u6587\u4ef6\uff0c\u5e76\u7528\u6587\u4ef6\u5171\u4eab\u670d\u52a1\u6765\u5171\u4eabks.cfg\u6587\u4ef6\uff08ks.cfg\u81ea\u52a8\u5e94\u7b54\u6587\u4ef6\u662f\u8bb0\u5f55\u7cfb\u7edf\u5b89\u88c5\u7684\u64cd\u4f5c\u6b65\u9aa4\uff0c\u5ba2\u6237\u673a\u5728\u8fdb\u884c\u5b89\u88c5\u65f6\u4f1a\u81ea\u52a8\u6839\u636eks.cfg\u6587\u4ef6\u4e2d\u7684\u5185\u5bb9\u6765\u5b8c\u6210\u5b89\u88c5\u64cd\u4f5c\uff09\u5b9e\u73b0\u81ea\u52a8\u5b89\u88c5\u64cd\u4f5c\u3002<\/p><p style=\"text-align: left; text-indent: 2em;\"><br\/><\/p><p>PXE\u4e2d\u5404\u670d\u52a1\u5668\u8f6f\u4ef6\u7684\u529f\u80fd\uff1a<\/p><p>&nbsp;DHCP:\u7528\u6765\u7ed9PXE\u5ba2\u6237\u673a\u81ea\u52a8\u5206\u914dTCP\/IP\u8bbe\u7f6e\uff08\u5305\u62ecIP\u5730\u5740\u3001\u5b50\u7f51\u63a9\u7801\u3001\u7f51\u5173\u3001DNS\u7b49\uff09\u3002\u544a\u77e5PXE\u5ba2\u6237\u673a\u201cTFTP\u670d\u52a1\u5668\u7684IP\u5730\u5740\u548cPXE\u542f\u52a8\u6587\u4ef6\u540d\u201d\u3002<br\/>&nbsp;TFTP\uff1a\u662f\u4e00\u4e2a\u8ff7\u4f60\u7684FTP\u5171\u4eab\u534f\u8bae\u8f6f\u4ef6\uff0c\u7528\u6765\u7ed9PXE\u5ba2\u6237\u673a\u63d0\u4f9b\u7f51\u7edc\u542f\u52a8\u7684\u5f15\u5bfc\u7a0b\u5e8f\u6587\u4ef6pxelinux.0\u3002<br\/>&nbsp;syslinux\uff1a\u7528\u6765\u63d0\u4f9bpxelinux.0\u7f51\u7edc\u5f15\u5bfc\u7a0b\u5e8f\u6587\u4ef6\u3002<br\/>&nbsp;\u6587\u4ef6\u5171\u4eab\uff1a\u53ef\u4ee5\u662fvsftpd\u3001nfs\u3001samba\u3001http\u7b49\u8f6f\u4ef6\u6765\u5b9e\u73b0\u6587\u4ef6\u5171\u4eab\u3002\u7528\u6765\u7ed9PXE\u5ba2\u6237\u673a\u63d0\u4f9b\u7cfb\u7edf\u5b89\u88c5\u6587\u4ef6\u3002<\/p><p style=\"text-align: left; text-indent: 2em;\"><br\/><\/p><p><span style=\"color: rgb(255, 0, 0);\">\u90e8\u7f72\u8fc7\u7a0b\u8be6\u89e3\uff1a\u4ee5\u4e0b\u662f\u5728centos7.6\u7cfb\u7edf\u91cc\u8fdb\u884c\u7684\u64cd\u4f5c\uff0c\u4e14centos\u7cfb\u7edfIP\u4e3a192.168.11.11<\/span><\/p><p><span style=\"background-color: rgb(255, 255, 0);\">\u90e8\u7f72\u524d\u63d0\u68c0\u67e5Linux\u9632\u706b\u5899\u662f\u5426\u5173\u95ed\u548c\u662f\u5426\u5173\u95edselinux\u529f\u80fd<\/span>\uff1a<\/p><p>&nbsp;systemctl &nbsp;stop &nbsp;firewalld &amp;&amp; systemctl &nbsp;status &nbsp;firewalld&nbsp; &nbsp; \u5173\u95ed\u9632\u706b\u5899\u529f\u80fd\u548c\u67e5\u770b\u9632\u706b\u5899\u7684\u72b6\u6001<\/p><p>&nbsp;setenforce &nbsp;0 &nbsp;&amp;&amp; &nbsp;getenforce &nbsp; &nbsp; &nbsp;\u5173\u95edLinux\u5b89\u5168\u529f\u80fd\u5373\u8bbe\u7f6e\u4e3a\u5bbd\u5bb9\u6a21\u5f0fPermissive\u548c\u67e5\u770bselinux\u72b6\u6001<br\/><\/p><p><span style=\"color: rgb(255, 0, 0); font-size: 20px;\">\u7b2c\u4e00\u6b65\uff1a\u90e8\u7f72DHCP\u670d\u52a1\u5668\uff1a<\/span><\/p><p>&nbsp;1.\u67e5\u8f6f\u4ef6\u662f\u5426\u5df2\u5b89\u88c5\uff1arpm &nbsp;-q &nbsp;dhcp<br\/>&nbsp;2.\u5b89\u88c5dhcp\u670d\u52a1\u5668\u8f6f\u4ef6\uff1ayum &nbsp; install &nbsp;-y &nbsp;dhcp<br\/>&nbsp;3.\u67e5\u914d\u7f6e\u6587\u4ef6\u5217\u8868\uff1arpm &nbsp;-qc &nbsp; dhcp<br\/>&nbsp;4.\u7f16\u8f91dhcpd.conf\u914d\u7f6e\u6587\u4ef6<br\/>&nbsp; &nbsp;rpm &nbsp; &nbsp;-qc &nbsp; &nbsp;dhcp<br\/>&nbsp; &nbsp;cat &nbsp; &nbsp; \/etc\/dhcp\/dhcpd.conf<br\/>&nbsp; &nbsp;cat &nbsp; &nbsp;\/usr\/share\/doc\/dhcp*\/dhcpd.conf.example<\/p><p>\u590d\u5236\u5176\u4e2d\u7684\u4e00\u6bb5\u5185\u5bb9\u5373\uff1a<\/p><p><br\/><\/p><table><tbody><tr class=\"firstRow\"><td valign=\"top\" rowspan=\"5\" colspan=\"1\" style=\"word-break: break-all; border-color: rgb(221, 221, 221);\"><p>subnet 10.5.5.0 netmask 255.255.255.224 {<\/p><p>&nbsp; range 10.5.5.26 10.5.5.30;<\/p><p>&nbsp; option domain-name-servers ns1.internal.example.org;<\/p><p>&nbsp; option domain-name &quot;internal.example.org&quot;;<\/p><p>&nbsp; option routers 10.5.5.1;<\/p><p>&nbsp; option broadcast-address 10.5.5.31;<\/p><p>&nbsp; default-lease-time 600;<\/p><p>&nbsp; max-lease-time 7200;<\/p><p>}<\/p><br\/><\/td><td valign=\"top\" rowspan=\"5\" colspan=\"1\" style=\"word-break: break-all; border-color: rgb(221, 221, 221);\"><p>\u5b9a\u4e49\u7f51\u7edc\u5730\u5740\u548c\u5b50\u7f51\u63a9\u7801<\/p><p>\u6307\u5b9aIP\u5730\u5740\u6c60\u7684\u8303\u56f4\uff08\u8d77\u59cb\u548c\u622a\u6b62IP\uff09<\/p><p>\u57df\u540d\u89e3\u6790\u670d\u52a1\u5668\u7684IP\u5730\u5740<\/p><p>\u57df\u540d<\/p><p>\u7f51\u5173IP\u5730\u5740<\/p><p>\u5e7f\u64ad\u5730\u5740<\/p><p>\u9ed8\u8ba4\u79df\u7ea6\u65f6\u95f4<\/p><p>\u6700\u5927\u79df\u7ea6\u65f6\u95f4<\/p><\/td><\/tr><tr><\/tr><tr><\/tr><tr><\/tr><tr><\/tr><\/tbody><\/table><p>\u7c98\u8d34\u8fdbDHCP\u7684\u914d\u7f6e\u6587\u4ef6\u5185\uff0c\u7528vim\u6253\u5f00\u5e76\u8fdb\u884c\u5982\u4e0b\u4fee\u6539<\/p><p><br\/><\/p><p>&nbsp; &nbsp;vim &nbsp; &nbsp; \/etc\/dhcp\/dhcpd.conf<br\/><\/p><table><tbody><tr class=\"firstRow\"><td valign=\"top\" rowspan=\"5\" colspan=\"1\" style=\"word-break: break-all;\"><p>subnet 192.168.11.0 netmask 255.255.255.0 {<\/p><p>&nbsp; range 192.168.11.21 192.168.11.30;<\/p><p>&nbsp; option domain-name-servers 8.8.8.8;<\/p><p>&nbsp; option domain-name &quot;hj.com&quot;;<\/p><p>&nbsp; option routers 192.168.11.2;<\/p><p>&nbsp; option broadcast-address 192.168.11.255;<\/p><p>&nbsp; default-lease-time 6000;<\/p><p>&nbsp; max-lease-time 72000;<\/p><p>&nbsp; next-server 192.168.11.11;<\/p><p>&nbsp; filename &quot;pxelinux.0&quot;;<\/p><p>}<\/p><br\/><\/td><td width=\"212\" valign=\"top\" style=\"word-break: break-all;\" rowspan=\"5\" colspan=\"1\"><p><br\/><\/p><p><br\/><\/p><p><br\/><\/p><p><br\/><\/p><p><br\/><\/p><p><br\/><\/p><p><br\/><\/p><p><br\/><\/p><p>TFTP\u670d\u52a1\u5668\u7684IP\u5730\u5740<\/p><p>PXE\u5f15\u5bfc\u7a0b\u5e8f\u6587\u4ef6\u540d<br\/><\/p><\/td><\/tr><tr><\/tr><tr><\/tr><tr><\/tr><tr><\/tr><\/tbody><\/table><p>&nbsp;5.\u542f\u52a8dhcpd\u670d\u52a1\uff0c\u5141\u8bb8\u670d\u52a1\u5f00\u673a\u81ea\u52a8\u542f\u52a8<br\/>&nbsp; &nbsp;systemctl &nbsp; &nbsp; restart &nbsp; &nbsp; dhcpd<br\/>&nbsp; &nbsp;systemctl &nbsp; &nbsp; enable &nbsp; &nbsp; dhcpd<br\/>&nbsp; &nbsp;systemctl &nbsp; &nbsp; status &nbsp; &nbsp; dhcpd<br\/>&nbsp; &nbsp;netstat &nbsp; &nbsp; &nbsp; -atunlp | grep &nbsp; &nbsp;:67 &nbsp; &nbsp; &nbsp; \u67e567\u53f7\u7aef\u53e3\u7684\u7f51\u7edc\u8fdb\u7a0b\u5e8f<\/p><p><span style=\"color: rgb(255, 0, 0); font-size: 20px;\">\u7b2c\u4e8c\u6b65\uff1a\u90e8\u7f72tftp-server\u670d\u52a1\u5668<\/span><\/p><p>&nbsp;1.\u67e5\u8f6f\u4ef6\u662f\u5426\u5df2\u5b89\u88c5\uff1arpm &nbsp;-q &nbsp;tftp-server<br\/>&nbsp;2.\u5b89\u88c5tftp-server\u670d\u52a1\u5668\u8f6f\u4ef6\uff1ayum &nbsp; install &nbsp;-y &nbsp;tftp-server<br\/>&nbsp;3.\u67e5\u914d\u7f6e\u6587\u4ef6\u5217\u8868\uff1arpm &nbsp;-qc &nbsp; tftp-server<br\/>&nbsp; &nbsp; \/etc\/xinetd.d\/tftp<br\/>&nbsp;4.\u7f16\u8f91tftp\u914d\u7f6e\u6587\u4ef6<br\/>&nbsp; &nbsp; vim &nbsp; \/etc\/xinetd.d\/tftp<br\/>&nbsp; &nbsp; &nbsp; &nbsp;\u5c06disable\u7684yes\u6539\u4e3ano<br\/>&nbsp;5.\u542f\u52a8tftp\u670d\u52a1\uff0c\u5141\u8bb8\u670d\u52a1\u5f00\u673a\u81ea\u52a8\u542f\u52a8 &nbsp;<br\/>&nbsp; &nbsp; systemctl &nbsp; &nbsp; &nbsp;restart &nbsp; &nbsp; tftp<br\/>&nbsp; &nbsp; systemctl &nbsp; &nbsp; &nbsp; enable &nbsp; &nbsp; tftp<br\/>&nbsp; &nbsp; systemctl &nbsp; &nbsp; &nbsp; status &nbsp; &nbsp; &nbsp;tftp<br\/>&nbsp; &nbsp; netstat &nbsp; &nbsp; &nbsp;-atulp | grep &nbsp; &nbsp;tftp<br\/>&nbsp; &nbsp; netstat &nbsp; &nbsp; &nbsp; -atunlp | grep &nbsp; &nbsp;:69<br\/>&nbsp;6.\u5b89\u88c5\u63d0\u4f9bpxelinux.0\u7684syslinux\u8f6f\u4ef6\uff0c\u5171\u4eabpxe\u5f15\u5bfc\u7a0b\u5e8f\u6587\u4ef6<br\/>&nbsp; &nbsp; rpm &nbsp;-q &nbsp;syslinux &nbsp;mlocate<br\/>&nbsp; &nbsp; yum &nbsp;install &nbsp;-y &nbsp;syslinux &nbsp;mlocate &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; \u5b89\u88c5\u6307\u5b9a\u7684\u8f6f\u4ef6<br\/>&nbsp; &nbsp; updatedb &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\u66f4\u65b0locate\u6587\u4ef6\u67e5\u627e\u6570\u636e\u5e93<br\/>&nbsp; &nbsp;locate &nbsp;pxelinux.0 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; \u67e5\u627epxelinux.0\u6587\u4ef6<br\/>&nbsp;7.\u5171\u4eab\u6307\u5b9a\u7684\u6587\u4ef6\u5230\/var\/lib\/tftpboot\u76ee\u5f55\u4e2d<br\/>&nbsp; &nbsp; cd &nbsp; \/var\/lib\/tftpboot &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; \u5207\u6362\u5230tftp-server\u7684\u9ed8\u8ba4\u5171\u4eab\u76ee\u5f55<br\/>&nbsp; &nbsp; cp &nbsp;-v &nbsp;\/usr\/share\/syslinux\/pxelinux.0 &nbsp; .\/ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\u590d\u5236\u6307\u5b9a\u7684\u6587\u4ef6\u5230\u5f53\u524d\u76ee\u5f55\u4e2d<br\/>&nbsp; &nbsp; df &nbsp;-hT &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; \u67e5\u770b\u78c1\u76d8\u7a7a\u95f4\u4f7f\u7528\u72b6\u6001<br\/>&nbsp; &nbsp; cp &nbsp;-v &nbsp;\/dvd\/isolinux\/* &nbsp; &nbsp;.\/ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; \u590d\u5236\u5149\u76d8\u6302\u8f7d\u70b9\u76ee\u5f55\u4e2d\u6307\u5b9a\u7684\u6587\u4ef6\u5230\u5f53\u524d\u76ee\u5f55\u4e2d<br\/>&nbsp; &nbsp; mkdir &nbsp;-v &nbsp;pxelinux.cfg &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\u5728\u5f53\u524d\u76ee\u5f55\u4e2d\u521b\u5efapxelinux.cfg\u76ee\u5f55<br\/>&nbsp; &nbsp; cp &nbsp;-v &nbsp;isolinux.cfg &nbsp; pxelinux.cfg\/default &nbsp; &nbsp; &nbsp; &nbsp;\u590d\u5236\u6307\u5b9a\u7684\u6587\u4ef6\u5230\u6307\u5b9a\u76ee\u5f55\u4e2d\u5e76\u6539\u540d\u4e3adefault<\/p><p><span style=\"color: rgb(255, 0, 0); font-size: 20px;\">\u7b2c\u4e09\u6b65\uff1a\u90e8\u7f72\u6587\u4ef6\u5171\u4eab\u670d\u52a1\u5668<\/span><span style=\"color: rgb(255, 0, 0);\">\uff08\u4ee5vsftp\u4e3a\u4f8b\uff09\uff08\u53ef\u7528\u7684\u6709vsftpd\u3001nfs\u3001samba\u3001httpd\uff09<\/span><br\/><\/p><p>&nbsp;1.\u67e5\u8f6f\u4ef6\u662f\u5426\u5df2\u5b89\u88c5\uff1arpm &nbsp;-q &nbsp;vsftpd<br\/>&nbsp;2.\u5b89\u88c5tftp-server\u670d\u52a1\u5668\u8f6f\u4ef6\uff1ayum &nbsp; install &nbsp;-y &nbsp;vsftpd<br\/>&nbsp;3.\u67e5\u914d\u7f6e\u6587\u4ef6\u5217\u8868\uff1arpm &nbsp;-qc &nbsp; vsftpd<br\/>&nbsp;4.\u542f\u52a8vsftpd\u670d\u52a1\uff0c\u5141\u8bb8\u5f00\u673a\u81ea\u52a8\u542f\u52a8\u670d\u52a1<br\/>&nbsp; &nbsp; systemctl &nbsp;restart &nbsp;vsftpd<br\/>&nbsp; &nbsp; systemctl &nbsp;enable &nbsp;vsftpd<br\/>&nbsp; &nbsp; systemctl &nbsp;status &nbsp;vsftpd<br\/>&nbsp; &nbsp; netstat &nbsp;-atunlp | grep &nbsp;:21 &nbsp; \u6216 &nbsp;lsof &nbsp;-i &nbsp;:21<br\/>&nbsp;5.\u5171\u4eabcentos7\u7684\u7cfb\u7edf\u955c\u50cf\u5230\/var\/ftp\/dvd\u76ee\u5f55<br\/>&nbsp; &nbsp; mkdir &nbsp;-v &nbsp;\/var\/ftp\/dvd<br\/>&nbsp; &nbsp; mount &nbsp;\/dev\/sr0 &nbsp; \/var\/ftp\/dvd<\/p><p><span style=\"color: rgb(255, 0, 0); font-size: 20px;\">\u7b2c\u56db\u6b65\uff1akickstart\u81ea\u52a8\u5b89\u88c5\u90e8\u7f72<\/span><br\/><\/p><p>&nbsp;\u91c7\u7528kickstart\u81ea\u52a8\u5e94\u7b54\u7a0b\u5e8f\u6765\u5b9e\u73b0\u7cfb\u7edf\u7684\u81ea\u52a8\u5316\u5b89\u88c5(\u5373\u9759\u9ed8\u5b89\u88c5)<br\/>&nbsp;\u65b9\u6cd5\uff1a\u4f7f\u7528kickstart\u7a0b\u5e8f\u6216vim\u6765\u521b\u5efaks.cfg\u81ea\u52a8\u5e94\u7b54\u6587\u4ef6\u3002\u7528\u6587\u4ef6\u5171\u4eab\u670d\u52a1\u6765\u5171\u4eabks.cfg\u81ea\u52a8\u5e94\u7b54\u6587\u4ef6\u3002<br\/>&nbsp;\u6280\u5de7\uff1alinux\u7cfb\u7edf\u5728\u5b89\u88c5\u65f6\u4f1a\u81ea\u52a8\u751f\u6210\u4e00\u4e2aanaconda-ks.cfg\u914d\u7f6e\u6587\u4ef6\uff0c\u6587\u4ef6\u4f4d\u4e8e\/root\u76ee\u5f55\u4e2d\uff0canaconda-ks.cfg\u91cc\u9762\u8bb0\u5f55\u7684\u5c31\u662f\u7528\u6237\u5728\u5b89\u88c5\u7cfb\u7edf\u65f6\u6240\u505a\u7684\u64cd\u4f5c\uff08\u9009\u62e9\u8bed\u8a00\u73af\u5883\u3001\u786c\u76d8\u5206\u533a\u3001\u5b89\u88c5\u7684\u8f6f\u4ef6\u5305\u3001\u7f51\u5361IP\u8bbe\u7f6e\u3001\u4e3b\u673a\u540d\u3001root\u7528\u6237\u5bc6\u7801\u3001\u65b0\u5efa\u666e\u901a\u7528\u6237\u7b49\uff09\u3002<\/p><p>&nbsp;\u5177\u4f53\u5b9e\u65bd\uff1a<br\/>&nbsp; &nbsp;1.\u4fee\u6539\/root\/anaconda-ks.cfg\u6743\u9650\u4e3a644\uff0c\u590d\u5236\/root\/anaconda-ks.cfg\u5230\/var\/ftp\/ks\u76ee\u5f55\u4e2d\u3002<br\/>&nbsp; &nbsp; cd &nbsp; &nbsp;\/root<br\/>&nbsp; &nbsp; chmod &nbsp;-v &nbsp;644 &nbsp;anaconda-ks.cfg<br\/>&nbsp; &nbsp; mkdir &nbsp;-v &nbsp;\/var\/ftp\/ks<br\/>&nbsp; &nbsp; cp &nbsp;-v &nbsp;anaconda-ks.cfg &nbsp;\/var\/ftp\/ks\/ks.cfg <br\/> <br\/>&nbsp; &nbsp;2.\u4fee\u6539\/var\/lib\/tftpboot\/pxelinux.cfg\/default\u542f\u52a8\u83dc\u5355\u6587\u4ef6<br\/>&nbsp; &nbsp; vim &nbsp;\/var\/lib\/tftpboot\/pxelinux.cfg\/default &nbsp; &nbsp; &nbsp; :set nu \u663e\u793a\u884c\u53f7&nbsp;<br\/>&nbsp; &nbsp; \u4fee\u653963\u884c\u5185\u5bb9\u4e3aappend &nbsp;initrd=initrd.img &nbsp;method=ftp:\/\/192.168.11.11\/dvd &nbsp;ks=ftp:\/\/192.168.11.11\/ks\/ks.cfg<br\/>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\u8bf4\u660e\uff1aks=\u662f\u6307\u5b9aks.cfg\u81ea\u52a8\u5b89\u88c5\u5e94\u7b54\u6587\u4ef6\u7684\u529f\u80fd\u9009\u9879<br\/>&nbsp; &nbsp;3.\u4fee\u6539\/var\/ftp\/ks\/ks.cfg\u6587\u4ef6\u5185\u5bb9<br\/>&nbsp; &nbsp; cat &nbsp;\/var\/ftp\/ks\/ks.cfg &nbsp; &nbsp; &nbsp; \u67e5\u770bks.cfg\u81ea\u52a8\u5e94\u7b54\u6587\u4ef6<br\/>&nbsp; &nbsp; \u6ce8\u91cacdrom<br\/>&nbsp; &nbsp; \u6539ip=192.168.11.12<br\/>&nbsp; &nbsp; \u6539hostname=han<\/p><p>&nbsp; &nbsp;4.\u91c7\u7528kickstart\u8f6f\u4ef6\u6765\u751f\u6210ks.cfg\u81ea\u52a8\u5e94\u7b54\u6587\u4ef6\u3002<\/p><p>&nbsp; &nbsp; yum &nbsp;search &nbsp;kickstart &nbsp; &nbsp;\u641c\u7d22kickstart\u5173\u952e\u5b57\u7684\u8f6f\u4ef6<br\/>&nbsp; &nbsp; yum &nbsp;install &nbsp;-y &nbsp;system-config-kickstart &nbsp; \u5b89\u88c5kickstart\u8f6f\u4ef6\u5305<br\/>&nbsp; &nbsp; system-config-kickstart &nbsp; &nbsp; \u542f\u52a8kickstart\u914d\u7f6e\u7a0b\u5e8f<br\/><br\/>&nbsp; &nbsp; &nbsp;\u6ce8\u610f\uff1ayum\u6e90\u7684repo\u6587\u4ef6\u4e2d\u7684\u201c\u4ed3\u5e93\u6807\u8bc6\u201d\u5fc5\u987b\u7528[development]\u624d\u80fd\u51fa\u73b0\u8f6f\u4ef6\u5305\u4fe1\u606f<br\/>&nbsp; &nbsp; &nbsp; &nbsp;\u4fee\u6539yum\u6e90\u914d\u7f6e\u6587\u4ef6\uff1a<br\/>&nbsp; &nbsp; &nbsp; &nbsp;vim &nbsp; \/etc\/yum.repos.d\/local.repo &nbsp; \u6587\u4ef6\u5185\u5bb9\u5982\u4e0b<br\/>&nbsp; &nbsp; &nbsp; &nbsp;[development]<br\/>&nbsp; &nbsp; &nbsp; &nbsp;name=centos 7.5 &nbsp;linux<br\/>&nbsp; &nbsp; &nbsp; &nbsp;baseurl=file:\/\/\/dvd<br\/>&nbsp; &nbsp; &nbsp; &nbsp;enabled=1<br\/>&nbsp; &nbsp; &nbsp; &nbsp;gpgcheck=0<\/p><p><span style=\"color: rgb(255, 0, 0); font-size: 20px;\">\u7b2c\u4e94\u6b65\uff1aPXE\u5ba2\u6237\u673a\u7684\u6d4b\u8bd5<\/span><\/p><p>&nbsp; &nbsp;1.\u5728VMware\u865a\u62df\u673a\u8f6f\u4ef6\u4e2d\u65b0\u5efa\u4e00\u53f0\u540d\u79f0\u4e3aPXE0\u7684centos7_64\u4f4d\u7cfb\u7edf\u7684\u865a\u62df\u673a\u3002<br\/>&nbsp; &nbsp;2.\u7ed9PXE0\u865a\u62df\u673a\u7684\u5185\u5b58\u8bbe\u7f6e\u62101324M\uff0c\u786c\u76d820G\u3002\uff08\u5185\u5b58\u8bbe\u7f6e\u5927\u5c0f\u65f6\u9700\u6ce8\u610f\u4e0d\u80fd\u5c0f\u4e8e\u5e94\u7b54\u6587\u4ef6\u4e2d size \u5927\u5c0f\uff09<br\/>&nbsp; &nbsp;3.\u7ed9PXE0\u865a\u62df\u673a\u521b\u5efa\u4e00\u4e2a\u540d\u79f0\u4e3a\u201cNOS\u201d\u7684\u5feb\u7167\u3002\uff08\u8bbe\u7f6e\u5feb\u7167\u662f\u4fbf\u4e8e\u591a\u6b21\u6d4b\u8bd5\uff09<br\/>&nbsp; &nbsp;4.\u542f\u52a8PXE0\u865a\u62df\u673a\uff0c\u4f1a\u81ea\u52a8\u8fdb\u884c\u7cfb\u7edf\u5b89\u88c5<\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"PXE 的完整版笔记，通俗易懂",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s1.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1583596316; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})  
+</script>
+</div>
+<script src="https://static1.51cto.com/edu/blog/js/marked.min.js"></script><script src="https://static1.51cto.com/edu/blog/js/highlight.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail_mp.js"></script><script src="https://static1.51cto.com/edu/blog/js/detail.js"></script><script src="https://static1.51cto.com/edu/blog/js/details_new.js"></script><script src="https://static1.51cto.com/edu/blog/js/copy.js"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="https://log.51cto.com/pageview.php?frompos=blog_art"></iframe>
+</div>
+
+<script src="https://static1.51cto.com/edu/blog/js/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type='text/javascript'>
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="https://static1.51cto.com/edu//blog/js/jquery.cookie.js"></script>
+<script src="https://static1.51cto.com/edu/blog/js/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+</body>
+</html>
