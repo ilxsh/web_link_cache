@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+
+<title>无线多操作系统启动之uInitrd阶段NFS挂载篇 – Focusstart | 漏洞人生</title>
+<meta name="keywords" content="">
+<meta name="description" content="去打赏 您的支持将鼓励我们继续创作！ 微信支付 支付宝 用 [微信] 扫描二维码打赏 用 [支付宝] 扫描二维 […]">
+<link rel="stylesheet" type="text/css" media="all" href="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/style.css">
+<link rel="stylesheet" type="text/css" media="all" href="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/jquery.css">
+<link rel="pingback" href="http://www.vuln.cn/xmlrpc.php">
+<link href="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/prism.css" rel="stylesheet">
+<script src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/push.js"></script><script src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/c.js"></script><script src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/wp-emoji-release.js" type="text/javascript" defer="defer"></script><script src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/share.js"></script><link rel="stylesheet" href="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/share_style1_16.css"></head><body><script onload="window['cambrian_sync_loader_success1583685972839557']()" onerror="window['cambrian_sync_loader_fail_1583685972840557']()" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/main.js"></script>
+<script type="text/javascript" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/jquery-1.js"></script>
+<link rel="canonical" href="http://www.vuln.cn/6927">
+<link rel="dns-prefetch" href="http://s.w.org/">
+<link rel="alternate" type="application/rss+xml" title="漏洞人生 » 无线多操作系统启动之uInitrd阶段NFS挂载篇 – Focusstart评论Feed" href="http://www.vuln.cn/6927/feed">
+		<script type="text/javascript">
+			window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/11\/72x72\/","ext":".png","svgUrl":"https:\/\/s.w.org\/images\/core\/emoji\/11\/svg\/","svgExt":".svg","source":{"concatemoji":"http:\/\/www.vuln.cn\/wp-includes\/js\/wp-emoji-release.min.js?ver=4.9.13"}};
+			!function(a,b,c){function d(a,b){var c=String.fromCharCode;l.clearRect(0,0,k.width,k.height),l.fillText(c.apply(this,a),0,0);var d=k.toDataURL();l.clearRect(0,0,k.width,k.height),l.fillText(c.apply(this,b),0,0);var e=k.toDataURL();return d===e}function e(a){var b;if(!l||!l.fillText)return!1;switch(l.textBaseline="top",l.font="600 32px Arial",a){case"flag":return!(b=d([55356,56826,55356,56819],[55356,56826,8203,55356,56819]))&&(b=d([55356,57332,56128,56423,56128,56418,56128,56421,56128,56430,56128,56423,56128,56447],[55356,57332,8203,56128,56423,8203,56128,56418,8203,56128,56421,8203,56128,56430,8203,56128,56423,8203,56128,56447]),!b);case"emoji":return b=d([55358,56760,9792,65039],[55358,56760,8203,9792,65039]),!b}return!1}function f(a){var c=b.createElement("script");c.src=a,c.defer=c.type="text/javascript",b.getElementsByTagName("head")[0].appendChild(c)}var g,h,i,j,k=b.createElement("canvas"),l=k.getContext&&k.getContext("2d");for(j=Array("flag","emoji"),c.supports={everything:!0,everythingExceptFlag:!0},i=0;i<j.length;i++)c.supports[j[i]]=e(j[i]),c.supports.everything=c.supports.everything&&c.supports[j[i]],"flag"!==j[i]&&(c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&c.supports[j[i]]);c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&!c.supports.flag,c.DOMReady=!1,c.readyCallback=function(){c.DOMReady=!0},c.supports.everything||(h=function(){c.readyCallback()},b.addEventListener?(b.addEventListener("DOMContentLoaded",h,!1),a.addEventListener("load",h,!1)):(a.attachEvent("onload",h),b.attachEvent("onreadystatechange",function(){"complete"===b.readyState&&c.readyCallback()})),g=c.source||{},g.concatemoji?f(g.concatemoji):g.wpemoji&&g.twemoji&&(f(g.twemoji),f(g.wpemoji)))}(window,document,window._wpemojiSettings);
+		</script>
+		<style type="text/css">
+img.wp-smiley,
+img.emoji {
+	display: inline !important;
+	border: none !important;
+	box-shadow: none !important;
+	height: 1em !important;
+	width: 1em !important;
+	margin: 0 .07em !important;
+	vertical-align: -0.1em !important;
+	background: none !important;
+	padding: 0 !important;
+}
+</style>
+<link rel="stylesheet" id="nfgc-main-style-css" href="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/style_003.css" type="text/css" media="all">
+<link rel="stylesheet" id="jquery-loading-css" href="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/jquery_002.css" type="text/css" media="all">
+<link rel="stylesheet" id="wshop-css" href="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/wshop.css" type="text/css" media="all">
+<link rel="stylesheet" id="wp-pagenavi-css" href="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/pagenavi-css.css" type="text/css" media="all">
+<script type="text/javascript" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/jquery.js"></script>
+<script type="text/javascript" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/jquery-migrate.js"></script>
+<script type="text/javascript" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/main_002.js"></script>
+<link rel="https://api.w.org/" href="http://www.vuln.cn/wp-json/">
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="http://www.vuln.cn/xmlrpc.php?rsd">
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="http://www.vuln.cn/wp-includes/wlwmanifest.xml"> 
+<link rel="prev" title="无处不在的监控: Hacking Team:WP8 监控代码分析 – 猎豹移动安全中心" href="http://www.vuln.cn/6926">
+<link rel="next" title="无线应用安全剖析  – sanr" href="http://www.vuln.cn/6928">
+<meta name="generator" content="WordPress 4.9.13">
+<link rel="canonical" href="http://www.vuln.cn/6927">
+<link rel="shortlink" href="http://www.vuln.cn/?p=6927">
+<link rel="alternate" type="application/json+oembed" href="http://www.vuln.cn/wp-json/oembed/1.0/embed?url=http%3A%2F%2Fwww.vuln.cn%2F6927">
+<link rel="alternate" type="text/xml+oembed" href="http://www.vuln.cn/wp-json/oembed/1.0/embed?url=http%3A%2F%2Fwww.vuln.cn%2F6927&amp;format=xml">
+<style type="text/css" id="custom-background-css">
+body.custom-background { background-image: url("http://www.vuln.cn/wp-content/uploads/2016/11/wpgo_background2.jpg"); background-position: left top; background-size: auto; background-repeat: repeat; background-attachment: fixed; }
+</style>
+
+
+
+
+<script type="application/ld+json">
+    {
+        "@context": "https://ziyuan.baidu.com/contexts/cambrian.jsonld",
+        "@id": "http://www.vuln.cn/6927",
+        "appid": "1585039594193679",
+        "title": "无线多操作系统启动之uInitrd阶段NFS挂载篇 &#8211; Focusstart",
+        "images": [
+            "/wp-content/uploads/20140714/2014071409424467635.png"
+            ],
+        "description": "去打赏 您的支持将鼓励我们继续创作！ 微信支付 支付宝 用 [微信] 扫描二维码打赏 用 [支付宝] 扫描二维 [&hellip;]",
+        "pubDate": "2016-10-24T00:15:28"
+    }
+</script>
+
+<style type="text/css">
+	body { background-image: url('http://www.vuln.cn/wp-content/uploads/2016/11/wpgo_background2.jpg'); background-color: #f1f1f1; background-repeat: repeat; background-position: top left; background-attachment: fixed; }
+	.header-image { height: 150px; max-width: 1100px; background: url('http://www.vuln.cn/wp-content/uploads/2017/04/cropped-1491197379638.jpg') no-repeat; }
+	.header-image span { display: block; color: #ffffff; }
+</style>
+
+
+
+<div id="wrap">
+	<div id="header">
+		<div class="header-image">
+			<a title="http://www.vuln.cn" href="http://www.vuln.cn/"><span class="site-name">漏洞人生</span><span class="sub-title">生存之道，安全之法，产品之术，代码之器</span></a>
+		</div>
+		<div class="header-nav">
+			<ul id="menu-sofia" class="nav-menu"><li id="menu-item-1260" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-home menu-item-1260"><a href="http://www.vuln.cn/">首页</a></li>
+<li id="menu-item-78" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-has-children menu-item-78"><a href="http://www.vuln.cn/wangzhanjianshe">WEB开发</a>
+<ul class="sub-menu">
+	<li id="menu-item-8566" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-8566"><a href="http://www.vuln.cn/wangzhanjianshe/python">Python</a></li>
+	<li id="menu-item-8578" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-8578"><a href="http://www.vuln.cn/wangzhanjianshe/php">PHP</a></li>
+	<li id="menu-item-1354" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-1354"><a href="http://www.vuln.cn/yunwei/webserver">服务器</a></li>
+	<li id="menu-item-79" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-79"><a href="http://www.vuln.cn/wangzhanjianshe/discuz">discuz</a></li>
+	<li id="menu-item-80" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-80"><a href="http://www.vuln.cn/wangzhanjianshe/wordpress">wordpress</a></li>
+	<li id="menu-item-1944" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1944"><a href="http://www.vuln.cn/tools">在线工具</a></li>
+</ul>
+</li>
+<li id="menu-item-1884" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-has-children menu-item-1884"><a href="http://www.vuln.cn/hack">网络安全</a>
+<ul class="sub-menu">
+	<li id="menu-item-1946" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-1946"><a href="http://www.vuln.cn/shentoujc">渗透教程</a></li>
+	<li id="menu-item-1945" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-1945"><a href="http://www.vuln.cn/shentougj">渗透工具</a></li>
+</ul>
+</li>
+<li id="menu-item-482" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-has-children menu-item-482"><a href="http://www.vuln.cn/hulianwang">互联网</a>
+<ul class="sub-menu">
+	<li id="menu-item-8665" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-8665"><a href="http://www.vuln.cn/hulianwang/pm">产品/运营</a></li>
+	<li id="menu-item-76" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-has-children menu-item-76"><a href="http://www.vuln.cn/seoyouhua">SEO优化</a>
+	<ul class="sub-menu">
+		<li id="menu-item-77" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-77"><a href="http://www.vuln.cn/seochangshi">SEO常识</a></li>
+		<li id="menu-item-1936" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1936"><a href="http://www.vuln.cn/baike">SEO教程大全</a></li>
+	</ul>
+</li>
+</ul>
+</li>
+<li id="menu-item-2737" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-2737"><a href="http://www.vuln.cn/yunwei">网络运维</a></li>
+<li id="menu-item-3016" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-has-children menu-item-3016"><a href="http://www.vuln.cn/wooyundrops">乌云drops</a>
+<ul class="sub-menu">
+	<li id="menu-item-8291" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-8291"><a href="http://www.vuln.cn/wooyun_zone">乌云zone</a></li>
+</ul>
+</li>
+<li id="menu-item-2025" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-2025"><a href="http://www.vuln.cn/life">It’s Life</a></li>
+<li id="menu-item-1318" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-has-children menu-item-1318"><a href="http://www.vuln.cn/yangbinbin">关于博主</a>
+<ul class="sub-menu">
+	<li id="menu-item-63" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-63"><a href="http://www.vuln.cn/leave-message">给我留言</a></li>
+</ul>
+</li>
+</ul>			<ul class="mobile-nav nav-menu">
+				<li><a href="http://www.vuln.cn/">首页</a></li>
+				<li><a href="javascript:;" id="mobile_nav">菜单</a>
+					<ul class="sub-menu" id="mobile_nav_list">
+<li><a href="http://www.vuln.cn/baike">SEO教程大全</a></li>
+<li><a href="http://www.vuln.cn/yunwei">网络运维</a></li><li><a href="http://www.vuln.cn/hack">网络安全</a></li><li><a href="http://www.vuln.cn/wangzhanjianshe">网站建设</a></li><li><a href="http://www.vuln.cn/life">这就是生活</a></li><li><a href="http://www.vuln.cn/leave-message">有问必答</a></li><li><a href="http://www.vuln.cn/yangbinbin">关于我</a></li>					</ul>
+				</li>
+			</ul>
+			<div class="sns-list">
+			<a href="mailto:admin@vuln.cn" class="email ease"></a>			</div>
+			<div class="clr"></div>
+		</div>
+	</div>
+
+
+	<div id="container">
+		<div id="left">
+					<div class="breadcrumb"><span class="home-icon"><a href="http://www.vuln.cn/">首页</a>&nbsp;&gt;&nbsp;<a href="http://www.vuln.cn/wooyundrops">乌云drops - 永久存档</a>&nbsp;&gt;&nbsp;<a href="http://www.vuln.cn/6927">无线多操作系统启动之uInitrd阶段NFS挂载篇 – Focusstart</a></span></div>
+			<div class="wp-content">
+				<div class="post-header">
+					<h3 class="post-title">无线多操作系统启动之uInitrd阶段NFS挂载篇 – Focusstart</h3>
+					<div class="post-info">
+						<span class="publish" title="发布时间">2016-10-24</span>
+												<span class="category" title="分类"><a href="http://www.vuln.cn/wooyundrops" rel="category tag">乌云drops - 永久存档</a></span>
+						<span class="views" title="访问数量">1815次访问</span>
+					</div>
+				</div>
+								<div class="post-content"><div style="float:left"><div class="bdsharebuttonbox bdshare-button-style1-16" data-bd-bind="1583686000697"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone" title="分享到QQ空间"></a><a href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a><a href="#" class="bds_tqq" data-cmd="tqq" title="分享到腾讯微博"></a><a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a><a href="#" class="bds_sqq" data-cmd="sqq" title="分享到QQ好友"></a><a href="#" class="bds_youdao" data-cmd="youdao" title="分享到有道云笔记"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"1","bdSize":"16"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script></div><br><div class="clr"></div><div class="sc_tips">原文地址:<a rel="nofollow" href="http://drops.wooyun.org/tips/2179">http://drops.wooyun.org/tips/2179</a></div>
+<p></p><h2>0x00 背景</h2>
+<hr>
+<p>项目组在无线环境下实现了Ubuntu12.04和Android4.0系统在Pandaboard 
+ES开发板上的无线加载、启动及切换。启动过程中操作系统内核uImage和临时根文件系统uInitrd通过wifi网络加载到SD卡中，SD卡中只有
+轻量级的操作系统引导程序及我们特制的meta 
+OS，系统实际的根文件系统rootfs存储于远程的服务器上，我们使用NFS协议在无线环境下挂载实际的根文件系统完成系统的启动。目前，国内无线多操
+作系统引导技术文档资料较少，支持多操作系统启动的手机主要有两款：一个是西班牙手机厂商Geeksphone开发的一款代号为Revolution的手
+机，另外一个是谷歌发布的Nexus系列。在这分享无线多操作系统启动过程中通过NFS协议挂载远程服务器上实际文件系统的一些经验，一种可行的技术手
+段。目前是在局域网环境，性能有限，仅供大家参考。想分三部分来讲。</p>
+<pre><code>（1）操作系统引导程序Boot Loader的改造；
+（2）系统镜像文件uImage的改造；
+（3）系统启动过程中uInitrd阶段NFS挂载相关问题。
+</code></pre>
+<p><span id="more-6927"></span></p>
+<p>本文主要讲解uInitrd阶段NFS挂载相关问题，以Ubuntu12.04系统为例进行说明，Android系统先留着。</p>
+<p>附上demo图一张：</p>
+<p><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/2014071409424467635.png" alt="enter image description here"></p>
+<h2>0x01 NFS概述</h2>
+<hr>
+<p>NFS，即Network File 
+System网络文件系统协议。NFS协议可以透过网络，让不同的机器、不同的操作系统彼此分享文件。它与Windows系统中的文件资源共享类似，不同
+的是NFS是在UNIX/Linux系统下实现的。NFS协议是通过网络将用户远程服务器上的数据挂载到本地目录，从而实现远程数据本地透明获取与访问的
+一种方式。NFS服务器与客户端挂载示意图如下图所示：</p>
+<p><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/2014071409424434996.jpg" alt="enter image description here"></p>
+<p>服务器将目录<code>/home/gsm/ubuntu</code>设为共享目录，其他的客户端主机可以将该共享目录挂在指定的某个目录下。挂载成功后，就可以在挂载目录下看到与<code>/home/gsm/ubuntu</code>完全一样的子目录和文件。</p>
+<p>要完成uInitrd阶段NFS的挂载，首先了解Linux系统的启动流程。</p>
+<h2>0x02 Linux系统启动流程分析</h2>
+<hr>
+<pre><code>（1）硬件加电自检、初始化；
+（2）读取配置文件并执行操作系统引导程序Boot Loader；
+（3）读取Boot Loader的参数配置文件boot.scr，将内核uImage加载到内存中执行，uImage开始检测硬件与加载驱动程序；
+（4）uImage执行完成后，uInitrd加载到内存中执行，uInitrd解压调用init脚本。注：uInitrd是Linux系统启动过程中使用的临时根文件系统，在Linux启动之前，Boot Loader会将它加载到内存中，内核启动的时候会将这个文件解开作为根文件系统使用；
+（5）init脚本创建相应的文件目录，挂载到相应的文件系统。最后完成交权，切换到系统实际的文件系统。
+</code></pre>
+<p>由Linux系统的启动流程可知要实现智能移动终端通过无线网络将操作系统内核镜像文件uImage和临时根文件系统uInitrd加载到终端上执
+行，并在uInitrd阶段通过NFS协议挂载服务器上的实际根文件系统rootfs，完成系统交权、启动。首先要完成的是Boot 
+Loader的改造（这里略过不讲），Boot 
+Loader读取配置文件将对应系统的uImage和uInitrd加载到内存中执行。然后，需要对系统内核uImage进行改造（略过不讲），最后需要
+对uInitrd进行改造（也就是本文重点要介绍的）。</p>
+<p>主要包括三方面：</p>
+<pre><code>（1）uInitrd无线模块的添加；
+（2）uInitrd启动阶段init脚本的修改；
+（3）NFS挂载脚本以及无线配置函数等相关函数的定义。
+</code></pre>
+<h2>0x03 NFS无线挂载实现</h2>
+<hr>
+<h3>Step 1:</h3>
+<p>Init脚本中有这么几行代码：</p>
+<pre><code>  maybe_break mount  
+   log_begin_msg "Mounting root file system..."  
+   . /scripts/${BOOT}  
+   parse_numeric ${ROOT}  
+   mountroot  
+</code></pre>
+<p>Linux系统本地启动时，/scripts/${BOOT}中的BOOT参数默认为local，所以当系统改为NFS挂载远程文件系统启动时，BOOT参数要改为nfs。将/scripts/local 改为/scripts/nfs，即本地启动改为NFS挂载启动。</p>
+<h3>Step 2:</h3>
+<p>Init脚本中添加wifi配置函数wifi_networking，函数在/scripts/functions文件中定义。</p>
+<pre><code>wifi_networking()
+{
+    wpa_supplicant -B -iwlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf
+    ifconfig wlan0 192.168.1.99 netmask 255.255.255.0 
+    route add default gw 192.168.1.1
+}
+</code></pre>
+<h3>Step 3:</h3>
+<p>修改scripts目录下nfs文件，指定nfsmount目录，设定挂载参数</p>
+<h3>Step 4：</h3>
+<p>在etc/wpa_supplicant/wpa_supplicant.conf中设定wifi参数</p>
+<h3>Step 5：</h3>
+<p>rootfs中配置无线参数；</p>
+<h3>Step 6：</h3>
+<p>当执行到init脚本最后一行代码时run-init ${rootmnt} ${init}，系统的启动交给将要进入的系统的${init}，并输出，完成系统的交权，这里我们将run-init修改为/sbin/init。</p>
+<h2>0x04 NFS协议分析</h2>
+<hr>
+<p>目前制约性能的一些主要因素。在启动过程中通过wireshark抓包分析可以知道，当终端与服务器的连接出现问题的时候，比如无线网络突然出现问
+题的时候，终端将不断地尝试与服务器重新建立连接直到与服务器的连接恢复正常。在每次尝试重连不成功后，连接的时间间隔将成指数级增长。（这里我们使用的
+NFS协议版本为V3，使用的传输协议为TCP/IP协议）</p>
+<p><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/2014071409424522046.png" alt="enter image description here"></p>
+<p>除此之外，在无线网络环境下，数据块丢包是经常出现的，如果出现了一个丢包，这丢失的数据块会被重传。无线网络的不稳定性增加了数据块丢失率。在这
+段期间，NFS客户端将不断地向NFS服务器请求重传丢失的块直至客户端成功收到丢失的块。（以太网有最大传输单元MTU的限制，为1500字节，所以数
+据传输过程会进行分块）</p>
+<p><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/2014071409424576675.png" alt="enter image description here"></p>
+<p><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/2014071409424551122.png" alt="enter image description here"></p>
+<p>对NFS协议有一定研究的欢迎交流，包括NFS协议改进，并发环境以及NFS读写块大小，传输协议使用等参数设置问题。了解pNFS协议的求指导。</p><p></p>
+<link rel="stylesheet" type="text/css" media="screen" href="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/style_002.css">
+<div style="text-align:center"><a class="wbolt-btn wbolt-btn-simple" id="J_wboltDonateBtn">
+    <i class="wbolt-icon-tick"></i>
+    <span>去打赏</span>
+</a>
+</div>
+<div class="wbolt-donate-popup" id="J_popUpWB">
+    <a class="wbolt-btn-close" id="J_closeBtn"><i class="wbolt-icon-close"></i></a>
+    <p><strong>您的支持将鼓励我们继续创作！</strong></p>
+    <div class="wbolt-tab-box" id="J_tabBox">
+        <div class="wbolt-tab-nav">
+                <div class="wbolt-tab-item current"><a><i class="wbolt-icon-wechat"></i> 微信支付</a></div>
+                <div class="wbolt-tab-item"><a><i class="wbolt-icon-alipay"></i> 支付宝</a></div>
+                </div>
+                <div class="wbolt-tab-cont current">
+            <img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/wx.png" width="240" height="240">
+            <p>用 <span class="wbolt-hl">[微信]</span> 扫描二维码打赏</p>
+        </div>
+                        <div class="wbolt-tab-cont">
+            <img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/zfb.jpg" width="240" height="240">
+            <p>用 <span class="wbolt-hl">[支付宝]</span> 扫描二维码打赏</p>
+        </div>
+                
+            </div>
+</div>
+<div class="overlay" id="J_maskWB"></div>
+
+</div>
+
+
+								<div class="post-author">
+					<img alt="无线多操作系统启动之uInitrd阶段NFS挂载篇 – Focusstart" title="扫一扫本文二维码，分享给大家" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/556b235f21a43bae94f715f58071bf48.jpg" class="post-qr">
+					<div class="post-cp">
+						<p>							<b>本文作者</b>：<a title="查看Sofia发布的所有文章" href="http://www.vuln.cn/" class="ease">Sofia</a>
+							 
+						</p>
+						<p><b>版权声明</b>：除非本文有注明出处，否则转载请注明本文来自 http://www.vuln.cn</p>
+						<p><b>本文地址</b>：http://www.vuln.cn/6927</p>
+					</div>
+					<div class="clr"></div>
+				</div>
+								<div class="post-sns" id="post-sns">
+					<div class="sns-left">
+						<span class="share-btns">分享：</span>
+						<a href="http://v.t.sina.com.cn/share/share.php?url=http://www.vuln.cn/6927&amp;title=%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart" target="_blank" rel="nofollow" title="分享到新浪微博" class="sns-wb">&nbsp;</a>
+						<a href="http://v.t.qq.com/share/share.php?title=%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart&amp;url=http://www.vuln.cn/6927&amp;site=http://www.vuln.cn" target="_blank" rel="nofollow" title="分享到腾讯微博" class="sns-txwb">&nbsp;</a>
+						<a href="http://facebook.com/share.php?u=http://www.vuln.cn/6927&amp;t=%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart" target="_blank" rel="nofollow" title="分享到FaceBook" class="sns-fb">&nbsp;</a>
+						<a href="http://share.renren.com/share/buttonshare?link=http://www.vuln.cn/6927&amp;title=%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart" target="_blank" rel="nofollow" title="分享到人人网" class="sns-rr">&nbsp;</a>
+						<a href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=http://www.vuln.cn/6927&amp;title=%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart" target="_blank" rel="nofollow" title="分享到QQ空间" class="sns-qz">&nbsp;</a>
+						<a href="http://fanfou.com/sharer?u=http://www.vuln.cn/6927&amp;t=%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart" target="_blank" rel="nofollow" title="分享到饭否" class="sns-ff">&nbsp;</a>
+						<a href="http://www.douban.com/recommend/?url=http://www.vuln.cn/6927&amp;title=%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart" target="_blank" rel="nofollow" title="分享到豆瓣" class="sns-db">&nbsp;</a>
+						<a href="http://t.163.com/article/user/checkLogin.do?link=http://www.vuln.cn/6927source=http://www.vuln.cn&amp;info=%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstarthttp://www.vuln.cn/6927" target="_blank" rel="nofollow" title="分享到网易微博" class="sns-wy">&nbsp;</a>
+						<a href="http://twitter.com/share?url=http://www.vuln.cn/6927&amp;text=%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart" target="_blank" rel="nofollow" title="分享到Twitter" class="sns-tw">&nbsp;</a>
+					</div>
+					<div class="sns-right">
+						<a href="javascript:;" title="赞一个" class="digg-up" id="digg_up" data-pid="6927">(0)</a>
+						<a href="javascript:;" title="踩，吐槽一下" class="digg-down" id="digg_down" data-pid="6927">(0)</a>
+					</div>
+					<div class="clr"></div>
+				</div>
+			</div>
+			<div class="related-posts">
+				<h2 class="related-title">相关文章</h2>
+				<div class="posts">
+										<div class="clr"></div>
+				</div>
+				<div class="related-pn-posts">
+					<a title="无处不在的监控: Hacking Team:WP8 监控代码分析 - 猎豹移动安全中心" href="http://www.vuln.cn/6926" class="prev ease"><span>上一篇 </span>无处不在的监控: Hacking Team:WP8 监控代码分析 - 猎豹移动安全中心</a>					<a title="无线应用安全剖析  - sanr" href="http://www.vuln.cn/6928" class="next ease">无线应用安全剖析  - sanr<span> 下一篇</span></a>					<div class="clr"></div>
+				</div>
+				<div class="clr"></div>
+			</div>
+			<input type="hidden" id="post_id" value="6927">
+			<div class="post-comment-list" id="post-comment-list">
+	<div class="comment-tab">
+		<a href="javascript:;" class="current">评论(<span id="comment_count">0</span>)</a>
+		<a href="javascript:;" class="comment-traceback">引用(0)</a>
+	</div>
+		<div class="disabled-comment"><span class="cd-icon cm-stop" title="快来抢沙发">沙发有屎，请自行备纸</span></div>
+		<div class="comment-list" id="comment_list">
+		<ul></ul>
+		<div id="comments_paginate"></div>
+	</div>
+	<div class="comment-list pings-list" id="pings_list">
+		<ul></ul>
+	</div>
+		<div class="comment-form-title">发表评论：</div>
+	<div id="reply-form">
+		<div class="popover fade top in">
+		<div class="arrow"></div>
+			<h3 class="popover-title"><span id="reply-text">回复</span> <span id="reply-name"></span><a id="reply-close" href="javascript:;">取消</a></h3>
+			<div class="popover-content" id="reply-content"></div>
+		</div>
+	</div>
+	<form action="http://www.vuln.cn/wp-comments-post.php" method="post" id="reply-from">
+				<input type="hidden" name="v_code" id="v_code" value="">
+		<input type="hidden" name="reply_mail_notify" id="reply_mail_notify" value="">
+		<input type="hidden" name="wpgo_dislike" id="wpgo_dislike" value="">
+		<input type="hidden" id="reply_li_id" value="">
+				<div class="comment-form">
+			<div class="comment-form-content">
+				<div id="editor_tools">
+					<div class="hide" id="smilies_list"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_021.html" data-key=";-)" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_006.html" data-key=":|" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_020.html" data-key=":x" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_007.html" data-key=":twisted:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_013.html" data-key=":smile:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_017.html" data-key=":shock:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_008.html" data-key=":sad:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_015.html" data-key=":roll:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_009.html" data-key=":razz:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_003.html" data-key=":oops:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_016.html" data-key=":o" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/mrgreen.html" data-key=":mrgreen:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_012.html" data-key=":lol:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_014.html" data-key=":idea:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_005.html" data-key=":grin:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_018.html" data-key=":evil:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a.html" data-key=":cry:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_002.html" data-key=":cool:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_004.html" data-key=":arrow:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_019.html" data-key=":???:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_011.html" data-key=":?:" class="face">&nbsp;<img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/a_010.html" data-key=":!:" class="face">&nbsp;</div>
+					<a href="javascript:;" class="smilies" id="editor_smilies">表情</a><a href="javascript:;" class="img" id="editor_img">插入图片</a><a href="javascript:;" class="url" id="editor_url">插入链接</a>
+				</div>
+				<div class="comment-textarea"><textarea name="comment" id="reply_comment"></textarea></div>
+				<div class="comment-input">
+					<div class="cfp cf-l"><span class="cf-realname"></span><input id="reply-author" type="text" name="author" placeholder="昵称" value="昵称"></div>
+					<div class="cfp cf-m"><span class="cf-email"></span><input id="reply-email" type="text" name="email" placeholder="邮箱" value="邮箱"></div>
+					<div class="cfp cf-r"><span class="cf-url"></span><input id="reply-url" type="text" name="url" placeholder="微博或网址" value="微博或网址"></div>
+				</div>
+				<div class="clr"></div>
+			</div>	
+		</div>
+		<div class="comment-form-submit">
+									<span class="mail_notify_box mail_on" id="mail_notify_box" title="是否接收评论回复邮件通知"></span>
+						<input type="submit" class="comment-submit-button" id="reply-submit" value="提交">
+		</div>
+			<input type="hidden" name="comment_post_ID" value="6927" id="comment_post_ID">
+<input type="hidden" name="comment_parent" id="comment_parent" value="0">
+				</form>
+	</div>
+					</div>
+		<div id="right">
+		
+			<li style="display:block;"><div class="slide-box">
+  <h2></h2>
+  <div class="sb-custom">
+    <div style="background-color:#fff; border:0px solid #666666;color:#336666">
+      <div class="zhaopian"> <a href="http://www.vuln.cn/yangbinbin" target="_blank"><img class="home-thumb" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/sofia.png" ;height:"133px"="" width="200"></a></div>
+      <div class="shouye_jianjie">
+        <p> 生活累，一小半源于生存，一大半源于攀比。</p>
+        <div style="border-bottom:1px dotted #B8B8B8"></div>
+        <div style="height: 23px;line-height: 23px;text-align: center;text-indent:0">与我联系：<a href="http://www.vuln.cn/contact-me" target="_self">戳这里&gt;&gt;</a></div>
+      </div>
+      <div style="border-bottom:1px dotted #B8B8B8"></div>
+    </div>
+  </div>
+</div></li><div class="slide-box">
+					<h2>搜索</h2>
+					<div class="sb-custom sb-search">
+						
+<form action="/?s=">
+	<input type="text" name="s" class="key" required="">
+	<input type="submit" value="" class="sub" title="搜索">
+</form>
+					</div>
+			 </div><div class="slide-box sb-tab" id="sb_panel">
+					<ul class="tab-title"><li class="on">热评文章</li><li>随机文章</li><li>最近更新</li><li>最新文章</li></ul><div class="clr"></div><div class="panel current post-items"><a href="http://www.vuln.cn/2947" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/8ae68332398500f8e7fe48c703c41b63.png" title="BurpSuite 1.7.11破解版下载【附多/新版本下载】">
+									<span class="publish">2016-10-5</span>
+									<span>BurpSuite 1.7.11破解版下载【附多/新版本下载】</span>
+								</a><a href="http://www.vuln.cn/8307" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/1.jpg" title="Connectify Dispatch指定程序使用指定网卡[运维神器]">
+									<span class="publish">2016-11-5</span>
+									<span>Connectify Dispatch指定程序使用指定网卡[运维神器]</span>
+								</a><a href="http://www.vuln.cn/872" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/topleft.gif" title="网站备案流程_网站备案需要什么[简单明了解决备案各种问题]">
+									<span class="publish">2014-3-25</span>
+									<span>网站备案流程_网站备案需要什么[简单明了解决备案各种问题]</span>
+								</a><a href="http://www.vuln.cn/8847" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/ee462f76d3e2440f67041f92499c36ae.png" title="最新BurpSuite 1.7.32 破解版[注册机]下载【无后门版】">
+									<span class="publish">2018-2-3</span>
+									<span>最新BurpSuite 1.7.32 破解版[注册机]下载【无后门版】</span>
+								</a><a href="http://www.vuln.cn/2069" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/win7.png" title="特殊方法破解win7系统开机密码【不借用任何工具】">
+									<span class="publish">2015-9-14</span>
+									<span>特殊方法破解win7系统开机密码【不借用任何工具】</span>
+								</a></div><div class="panel post-items"><a href="http://www.vuln.cn/8047" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/wpgo_noimg.png" title="安全漏洞披露平台HackerOne获900万美元A轮融资 ">
+									<span class="publish">2016-11-1</span>
+									<span>安全漏洞披露平台HackerOne获900万美元A轮融资 </span>
+								</a><a href="http://www.vuln.cn/6956" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/2014091814333214146.png" title="浅谈互联网中劫持的一些事情 - 只抽红梅">
+									<span class="publish">2016-10-24</span>
+									<span>浅谈互联网中劫持的一些事情 - 只抽红梅</span>
+								</a><a href="http://www.vuln.cn/6338" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/2014071403202672425.jpeg" title="Memcache安全配置 - 瞌睡龙">
+									<span class="publish">2016-10-24</span>
+									<span>Memcache安全配置 - 瞌睡龙</span>
+								</a><a href="http://www.vuln.cn/8198" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/wpgo_noimg.png" title="[三个白帽子]is_numeric的理解和PHP 脚本多字节字符解析模式带来的安全隐患writeup ">
+									<span class="publish">2016-11-1</span>
+									<span>[三个白帽子]is_numeric的理解和PHP 脚本多字节字符解析模式带来的安全隐患writeup </span>
+								</a><a href="http://www.vuln.cn/6906" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/2016051222500895582112.png" title="提起模糊测试时我们在说什么 - pr0mise">
+									<span class="publish">2016-10-24</span>
+									<span>提起模糊测试时我们在说什么 - pr0mise</span>
+								</a></div><div class="panel post-items"><a href="http://www.vuln.cn/9163" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/361C336B-66D2-441C-AB08-C4548029BE36.jpg" title="云悉指纹内网版（离线版）发布">
+									<span class="publish">2020-3-5</span>
+									<span>云悉指纹内网版（离线版）发布</span>
+								</a><a href="http://www.vuln.cn/9154" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/9e97a471b16c082304ab631cd5196b13.png" title="Centos 7 中高版本 libstdc++.so.6下载地址（解决报错：version’GLIBCXX_3.4.20’）">
+									<span class="publish">2019-8-5</span>
+									<span>Centos 7 中高版本 libstdc++.so.6下载地址（解决报错：version’GLIBCXX_3.4.20’）</span>
+								</a><a href="http://www.vuln.cn/9140" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/e7e3272a1adec825168d3fd2f57e4f44.png" title="Mac 使用体验 - 世上只有两种电脑：苹果电脑和其他电脑">
+									<span class="publish">2019-3-31</span>
+									<span>Mac 使用体验 - 世上只有两种电脑：苹果电脑和其他电脑</span>
+								</a><a href="http://www.vuln.cn/9138" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/d6485f53f7418018f2ce32749caa861f.png" title="Redis Desktop Manager Mac版免编译安装包下载">
+									<span class="publish">2019-3-27</span>
+									<span>Redis Desktop Manager Mac版免编译安装包下载</span>
+								</a><a href="http://www.vuln.cn/9134" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/fe632eb447f21072a9df2d96ac8dc33e.png" title="SSH 配置公钥登录无效仍需输入密码[一个微妙的问题点]">
+									<span class="publish">2019-2-8</span>
+									<span>SSH 配置公钥登录无效仍需输入密码[一个微妙的问题点]</span>
+								</a></div><div class="panel post-items"><a href="http://www.vuln.cn/9163" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/361C336B-66D2-441C-AB08-C4548029BE36.jpg" title="云悉指纹内网版（离线版）发布">
+									<span class="publish">2020-3-5</span>
+									<span>云悉指纹内网版（离线版）发布</span>
+								</a><a href="http://www.vuln.cn/9154" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/9e97a471b16c082304ab631cd5196b13.png" title="Centos 7 中高版本 libstdc++.so.6下载地址（解决报错：version’GLIBCXX_3.4.20’）">
+									<span class="publish">2019-8-5</span>
+									<span>Centos 7 中高版本 libstdc++.so.6下载地址（解决报错：version’GLIBCXX_3.4.20’）</span>
+								</a><a href="http://www.vuln.cn/9140" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/e7e3272a1adec825168d3fd2f57e4f44.png" title="Mac 使用体验 - 世上只有两种电脑：苹果电脑和其他电脑">
+									<span class="publish">2019-3-31</span>
+									<span>Mac 使用体验 - 世上只有两种电脑：苹果电脑和其他电脑</span>
+								</a><a href="http://www.vuln.cn/9138" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/d6485f53f7418018f2ce32749caa861f.png" title="Redis Desktop Manager Mac版免编译安装包下载">
+									<span class="publish">2019-3-27</span>
+									<span>Redis Desktop Manager Mac版免编译安装包下载</span>
+								</a><a href="http://www.vuln.cn/9134" class="_ajx ease sb-border"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/fe632eb447f21072a9df2d96ac8dc33e.png" title="SSH 配置公钥登录无效仍需输入密码[一个微妙的问题点]">
+									<span class="publish">2019-2-8</span>
+									<span>SSH 配置公钥登录无效仍需输入密码[一个微妙的问题点]</span>
+								</a></div></div>	<div class="slide-box new-comment">
+		<h2 class="sb-comment-title">最新评论</h2>
+		
+<a class="author _ajx ease sb-border" href="http://www.vuln.cn/8324#comment-2457" target="_blank">
+	<img alt="" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/915757b300bd27f8ab3fb908ab4cb9ca.jpeg" class="avatar avatar-30 photo" width="30" height="30">
+	<p><span>seven</span>LuoooB@163.com  感谢！！
+</p>
+</a>
+<a class="author _ajx ease sb-border" href="http://www.vuln.cn/8847#comment-2452" target="_blank">
+	<img alt="" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/762c32537dcab9a1c7a82902ad5ac733.jpeg" class="avatar avatar-30 photo" width="30" height="30">
+	<p><span>xiaochuan</span>我也遇到这样的情况，你点开burpsuite_pro_v1.7.32.jar 这个文件，他首先会弹出一个提示，大致内容是你安装的java版本和burpsuite 不兼容，然后说的是你的jdk…
+</p>
+</a>
+<a class="author _ajx ease sb-border" href="http://www.vuln.cn/9140#comment-2449" target="_blank">
+	<img alt="" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/6fd85d67c8622f392ffae91cd3c551f8.jpeg" class="avatar avatar-30 photo" width="30" height="30">
+	<p><span>mia</span>csdn 上看文字，右侧栏会左移 覆盖掉文章掉小半边，博主电脑有遇到过吗？
+</p>
+</a>
+<a class="author _ajx ease sb-border" href="http://www.vuln.cn/leave-message#comment-2445" target="_blank">
+	<img alt="" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/9e1df43487b563a9ba94c94057846968.jpeg" class="avatar avatar-30 photo" width="30" height="30">
+	<p><span>1</span>zend opcache 是否可以逆向PHP代码
+</p>
+</a>
+<a class="author _ajx ease sb-border" href="http://www.vuln.cn/leave-message#comment-2442" target="_blank">
+	<img alt="" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/357b9caca9456082b926346064ac5a47.jpeg" class="avatar avatar-30 photo" width="30" height="30">
+	<p><span>果果冻</span>你好，最近需要实现Just-In-Time / Bind Code Reuse  attacks这类攻击，看了一些文章还是没有思路，有幸看到您这篇关于ROP attack的文章，写得很好，但对于我这…
+</p>
+</a>	</div>
+<div class="slide-box">
+	<h2>热门标签</h2>
+	<div class="sb-tags-wrap sb-border" id="sb-tags">
+		<a href="http://www.vuln.cn/tag/%e6%9c%8d%e5%8a%a1%e5%99%a8" class="tag-cloud-link tag-link-24 tag-link-position-1" style="font-size: 16px;" aria-label="服务器 (26个项目)">服务器</a>
+<a href="http://www.vuln.cn/tag/%e7%99%be%e5%ba%a6%e7%ae%97%e6%b3%95" class="tag-cloud-link tag-link-21 tag-link-position-2" style="font-size: 15.616438356164px;" aria-label="百度算法 (22个项目)">百度算法</a>
+<a href="http://www.vuln.cn/tag/hulianwang" class="tag-cloud-link tag-link-139 tag-link-position-3" style="font-size: 15.506849315068px;" aria-label="互联网 (21个项目)">互联网</a>
+<a href="http://www.vuln.cn/tag/%e4%bc%98%e7%a7%80%e5%b7%a5%e5%85%b7" class="tag-cloud-link tag-link-120 tag-link-position-4" style="font-size: 15.287671232877px;" aria-label="优秀工具 (19个项目)">优秀工具</a>
+<a href="http://www.vuln.cn/tag/hefeiseo" class="tag-cloud-link tag-link-4 tag-link-position-5" style="font-size: 14.630136986301px;" aria-label="合肥seo (14个项目)">合肥seo</a>
+<a href="http://www.vuln.cn/tag/wailian" class="tag-cloud-link tag-link-11 tag-link-position-6" style="font-size: 14.465753424658px;" aria-label="外链 (13个项目)">外链</a>
+<a href="http://www.vuln.cn/tag/%e7%99%be%e5%ba%a6%e6%9d%83%e9%87%8d" class="tag-cloud-link tag-link-26 tag-link-position-7" style="font-size: 14.465753424658px;" aria-label="百度权重 (13个项目)">百度权重</a>
+<a href="http://www.vuln.cn/tag/%e7%bd%91%e7%bb%9c%e8%90%a5%e9%94%80" class="tag-cloud-link tag-link-46 tag-link-position-8" style="font-size: 14.246575342466px;" aria-label="网络营销 (12个项目)">网络营销</a>
+<a href="http://www.vuln.cn/tag/discuz-2" class="tag-cloud-link tag-link-18 tag-link-position-9" style="font-size: 13.86301369863px;" aria-label="discuz (10个项目)">discuz</a>
+<a href="http://www.vuln.cn/tag/%e7%99%be%e5%ba%a6%e6%8e%92%e5%90%8d" class="tag-cloud-link tag-link-30 tag-link-position-10" style="font-size: 13.86301369863px;" aria-label="百度排名 (10个项目)">百度排名</a>
+<a href="http://www.vuln.cn/tag/%e6%90%9c%e7%b4%a2%e5%bc%95%e6%93%8e" class="tag-cloud-link tag-link-31 tag-link-position-11" style="font-size: 13.86301369863px;" aria-label="搜索引擎 (10个项目)">搜索引擎</a>
+<a href="http://www.vuln.cn/tag/%e7%94%9f%e6%b4%bb%e5%a6%82%e6%ad%a4%e5%a4%9a%e5%a8%87" class="tag-cloud-link tag-link-84 tag-link-position-12" style="font-size: 13.86301369863px;" aria-label="生活如此多娇 (10个项目)">生活如此多娇</a>
+<a href="http://www.vuln.cn/tag/python%e6%a8%a1%e5%9d%97" class="tag-cloud-link tag-link-134 tag-link-position-13" style="font-size: 13.86301369863px;" aria-label="python模块 (10个项目)">python模块</a>
+<a href="http://www.vuln.cn/tag/%e6%b8%97%e9%80%8f%e7%a5%9e%e5%99%a8" class="tag-cloud-link tag-link-94 tag-link-position-14" style="font-size: 13.369863013699px;" aria-label="渗透神器 (8个项目)">渗透神器</a>
+<a href="http://www.vuln.cn/tag/php" class="tag-cloud-link tag-link-140 tag-link-position-15" style="font-size: 13.369863013699px;" aria-label="PHP (8个项目)">PHP</a>
+<a href="http://www.vuln.cn/tag/wordpress-2" class="tag-cloud-link tag-link-15 tag-link-position-16" style="font-size: 13.095890410959px;" aria-label="wordpress (7个项目)">wordpress</a>
+<a href="http://www.vuln.cn/tag/%e7%bd%91%e7%ab%99%e8%bf%90%e8%90%a5" class="tag-cloud-link tag-link-22 tag-link-position-17" style="font-size: 13.095890410959px;" aria-label="网站运营 (7个项目)">网站运营</a>
+<a href="http://www.vuln.cn/tag/%e7%99%be%e5%ba%a6%e7%ab%99%e9%95%bf%e5%b9%b3%e5%8f%b0" class="tag-cloud-link tag-link-74 tag-link-position-18" style="font-size: 13.095890410959px;" aria-label="百度站长平台 (7个项目)">百度站长平台</a>
+<a href="http://www.vuln.cn/tag/linux%e5%b7%a5%e5%85%b7" class="tag-cloud-link tag-link-117 tag-link-position-19" style="font-size: 13.095890410959px;" aria-label="linux工具 (7个项目)">linux工具</a>
+<a href="http://www.vuln.cn/tag/%e5%85%b3%e9%94%ae%e8%af%8d" class="tag-cloud-link tag-link-28 tag-link-position-20" style="font-size: 13.095890410959px;" aria-label="关键词 (7个项目)">关键词</a>
+<a href="http://www.vuln.cn/tag/%e7%94%a8%e6%88%b7%e4%bd%93%e9%aa%8c" class="tag-cloud-link tag-link-20 tag-link-position-21" style="font-size: 12.821917808219px;" aria-label="用户体验 (6个项目)">用户体验</a>
+<a href="http://www.vuln.cn/tag/%e7%bd%91%e7%ab%99%e7%bb%93%e6%9e%84" class="tag-cloud-link tag-link-27 tag-link-position-22" style="font-size: 12.821917808219px;" aria-label="网站结构 (6个项目)">网站结构</a>
+<a href="http://www.vuln.cn/tag/linux" class="tag-cloud-link tag-link-98 tag-link-position-23" style="font-size: 12.821917808219px;" aria-label="linux (6个项目)">linux</a>
+<a href="http://www.vuln.cn/tag/%e5%90%8e%e9%97%a8" class="tag-cloud-link tag-link-128 tag-link-position-24" style="font-size: 12.821917808219px;" aria-label="后门 (6个项目)">后门</a>
+<a href="http://www.vuln.cn/tag/%e7%bd%91%e7%ab%99%e6%94%b6%e5%bd%95" class="tag-cloud-link tag-link-17 tag-link-position-25" style="font-size: 12.438356164384px;" aria-label="网站收录 (5个项目)">网站收录</a>
+<a href="http://www.vuln.cn/tag/%e5%9f%9f%e5%90%8d" class="tag-cloud-link tag-link-25 tag-link-position-26" style="font-size: 12.438356164384px;" aria-label="域名 (5个项目)">域名</a>
+<a href="http://www.vuln.cn/tag/sql%e6%b3%a8%e5%85%a5" class="tag-cloud-link tag-link-95 tag-link-position-27" style="font-size: 12.438356164384px;" aria-label="sql注入 (5个项目)">sql注入</a>
+<a href="http://www.vuln.cn/tag/%e6%8a%93%e5%8c%85" class="tag-cloud-link tag-link-103 tag-link-position-28" style="font-size: 12.438356164384px;" aria-label="抓包 (5个项目)">抓包</a>
+<a href="http://www.vuln.cn/tag/wireshark" class="tag-cloud-link tag-link-106 tag-link-position-29" style="font-size: 12.438356164384px;" aria-label="wireshark (5个项目)">wireshark</a>
+<a href="http://www.vuln.cn/tag/%e8%bf%90%e7%bb%b4%e5%b7%a5%e5%85%b7" class="tag-cloud-link tag-link-124 tag-link-position-30" style="font-size: 12.438356164384px;" aria-label="运维工具 (5个项目)">运维工具</a>
+<a href="http://www.vuln.cn/tag/yonghuxuqiu" class="tag-cloud-link tag-link-14 tag-link-position-31" style="font-size: 12px;" aria-label="用户需求 (4个项目)">用户需求</a>
+<a href="http://www.vuln.cn/tag/seo%e8%ae%be%e7%bd%ae" class="tag-cloud-link tag-link-23 tag-link-position-32" style="font-size: 12px;" aria-label="SEO设置 (4个项目)">SEO设置</a>	</div>
+</div>
+	</div>
+<div class="clr"></div>	</div>
+<!--baidu推送-->
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+<!--code_light-->
+<script type="text/javascript" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/prism.js" charset="UTF-8"></script>
+<link rel="stylesheet" type="text/css" media="all" href="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/wechat-reward.css">
+<div id="footer">
+		<div class="footer-info">
+			<div class="copyright">
+				Copyright © 2013-2018 漏洞人生 | Powered by sofia | <a href="http://www.vuln.cn/sitemap.xml" target="_blank">网站地图</a> | 皖ICP备13016361号-2 |			</div>
+		</div>
+		<a href="javascript:;" id="totop" style="display: inline;">返回顶部</a>
+	</div>
+</div>
+<!-- <script type="text/javascript" src="http://www.vuln.cn/wp-content/themes/wpgo/js/jquery-1.8.3.min.js"></script>-->
+<script type="text/javascript">
+	var is_ajax = 'N';
+</script>
+<script type="text/javascript" id="wpgo_global_js" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/wpgo_global.js"></script>
+<div style="display:none;">
+<!--tencent summary-->
+<script type="text/javascript" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/stats" charset="UTF-8"></script>
+
+<script type="text/javascript">
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F251c34cfbfb0a4aa34630bb38bcc085e' type='text/javascript'%3E%3C/script%3E"));
+</script><script src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/h.js" type="text/javascript"></script><a href="http://tongji.baidu.com/hm-web/welcome/ico?s=251c34cfbfb0a4aa34630bb38bcc085e" target="_blank"><img src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/21.gif" width="20" height="20" border="0"></a>
+</div>
+
+       
+
+
+<script type="text/javascript">
+/* <![CDATA[ */
+var wshop_jsapi_params = {"ajax_url":"http:\/\/www.vuln.cn\/wp-admin\/admin-ajax.php","ajax_url_pay":"http:\/\/www.vuln.cn\/wp-admin\/admin-ajax.php?action=wshop_checkout_v2&tab=pay&wshop_checkout_v2=7e7c9acc44&notice_str=6951388568&hash=ecaec08100052eae21eb0807918ccb05","wp_login_url":"http:\/\/www.vuln.cn\/wp-login.php?redirect_to=%23location%23","payment_methods":[{"id":"wpopen_wechat","title":"\u5fae\u4fe1\u652f\u4ed8","icon":"http:\/\/www.vuln.cn\/wp-content\/plugins\/wechat-shop\/assets\/image\/wechat.png"}],"msg_no_payment_method":"\u672a\u627e\u5230\u652f\u4ed8\u7f51\u5173\uff01","msg_err_500":"\u7cfb\u7edf\u9519\u8bef\uff0c\u8bf7\u7a0d\u5019\u91cd\u8bd5\uff01","msg_processing":"\u5904\u7406\u4e2d...","msg_add_to_cart_successfully":"\u4fdd\u5b58\u6210\u529f!"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/wshop.js"></script>
+<script type="text/javascript" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/jquery-loading.js"></script>
+<script type="text/javascript" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/wp-embed.js"></script>
+<div class="wshop-pay-button" id="wshop-modal-payment-gateways" style="display:none;">
+	<div class="cover"></div>
+	<div class="xh-button-box" style="top: 613px; left: 1140px;">
+		<div class="close"></div>
+		<div class="loading"></div>
+		<div class="xh-item" data-id="wpopen_wechat" style="border-bottom:0;"><i style="background: url(http://www.vuln.cn/wp-content/plugins/wechat-shop/assets/image/wechat.png) center no-repeat;"></i><span>微信支付</span></div>	</div>
+</div>
+
+<div class="wshop-pay-button" id="wshop-modal-payment-gateways-1" style="display:none;">
+	<div class="cover"></div>
+    <div class="mod-ct" style="top: 405.5px; left: 1055px;">
+        <div class="amount" id="wshop-modal-payment-gateways-1-amount"></div>
+        <div class="qr-image" align="center">
+        	<img style="width:220px;height:220px" src="" id="wshop-modal-payment-gateways-1-qrcode">
+        </div>
+        <div class="tip">
+            <div class="tip-text">
+            <div style="display:none;" id="shop-modal-payment-gateways-payment-method-pre">   请使用  <i class="icon weixin"></i>微信                     扫码支付</div>
+                <div class="channel center" id="shop-modal-payment-gateways-payment-method">
+                     
+                </div>
+            </div>
+        </div>
+        <a class="xh-close" href="javascript:void(0);"></a>
+    </div>
+</div><script type="text/javascript">if(jQuery){jQuery(function($){$.ajax({url: 'http://www.vuln.cn/wp-admin/admin-ajax.php?action=wshop_cron',dataType: 'jsonp',type: 'post',timeout: 60 * 1000,async: true,cache: false});});}</script><script type="text/javascript" language="javascript" src="%E6%97%A0%E7%BA%BF%E5%A4%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%E4%B9%8BuInitrd%E9%98%B6%E6%AE%B5NFS%E6%8C%82%E8%BD%BD%E7%AF%87%20%E2%80%93%20Focusstart%20|%20%E6%BC%8F%E6%B4%9E%E4%BA%BA%E7%94%9F_files/wbolt.js"></script><div id="fancybox-tmp"></div><div id="fancybox-loading"><div></div></div><div id="fancybox-overlay"></div><div id="fancybox-wrap"><div id="fancybox-outer"><div class="fancybox-bg" id="fancybox-bg-n"></div><div class="fancybox-bg" id="fancybox-bg-ne"></div><div class="fancybox-bg" id="fancybox-bg-e"></div><div class="fancybox-bg" id="fancybox-bg-se"></div><div class="fancybox-bg" id="fancybox-bg-s"></div><div class="fancybox-bg" id="fancybox-bg-sw"></div><div class="fancybox-bg" id="fancybox-bg-w"></div><div class="fancybox-bg" id="fancybox-bg-nw"></div><div id="fancybox-content"></div><a id="fancybox-close"></a><div id="fancybox-title"></div><a href="javascript:;" id="fancybox-left"><span class="fancy-ico" id="fancybox-left-ico"></span></a><a href="javascript:;" id="fancybox-right"><span class="fancy-ico" id="fancybox-right-ico"></span></a></div></div></body></html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head>
+<title>CentOS搭建NAT和DHCP服务，实现共享上网_Linux教程_Linux公社-Linux系统门户网站</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="icon" href="https://www.linuxidc.com/favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="https://www.linuxidc.com/favicon.ico" type="image/x-icon">
+<meta name="description" content="DHCP（Dynamic Host Configuration Protocol，动态主机配置协议）通常被应用在大型的局域网络环境中，主要作用是集中的管理、分配">
+<meta name="keywords" content="CentOS搭建NAT,CentOS搭建DHCP,CentOS搭建NAT和DHCP服务，实现共享上网,Linux,Linux教程,Linux系统,Linux安装,Ubuntu,Fedora,RedHat,SUSE,CentOS,红旗Linux">
+<link rel="canonical" href="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/153294_007.html">
+<meta name="generator" content="Linux公社">
+<meta name="generator" content="Linux">
+<link rel="stylesheet" href="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/style.css" type="text/css">
+<meta name="generator" content="专业的Linux网站">
+<script src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/reactive_library.js"></script><script src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/osd.js"></script><script charset="utf-8" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/s.js"></script><script src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/show_ads_impl.js" id="google_shimpl"></script><script src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/cookie.js"></script><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/jquery.js"></script>
+<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/iwms.js"></script>
+<script type="text/javascript">iwms.urlPrefix="../../";</script>
+
+<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/show.js"></script>
+<link rel="preload" href="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/integrator.js" as="script"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/integrator.js"></script></head>
+<body>
+<div class="topBar">
+	<div class="twidth">
+	
+	<div style="float:right">
+		<a href="http://m.linuxidc.com/" rel="nofollow">手机版</a>
+		<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/language.js"></script> <a id="StranLink" href="javascript:StranBody()" title="點擊以繁體中文方式浏覽">繁體</a>
+	</div>
+	
+	<div id="topUser">你好，游客 <a href="#" onclick="iwms.logPop()">登录</a>
+	<a href="https://www.linuxidc.com/memberreg.aspx" rel="nofollow">注册</a>
+	<a href="https://www.linuxidc.com/search.aspx" rel="nofollow">搜索</a>
+	</div>
+	</div>
+</div>
+<div class="twidth">
+<div id="sitehead">
+<div class="l"></div>
+<div class="r"></div>
+<div class="m">
+	<table width="100%">
+	<tbody><tr align="center"><td width="160">
+	<a href="https://www.linuxidc.com/"><img style="filter: chroma(color=#FFFFFF);" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/logo.jpg" alt="Linux公社" width="155" height="53" border="0"></a>
+	</td><td>
+	<div align="center"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux.js"></script><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/wx1.png" alt="" width="468" height="60">
+</div>
+	</td>
+	</tr></tbody></table>
+</div>
+</div>
+<div id="navbar">
+<div class="l"></div>
+<div class="r"></div>
+<div class="m">
+	<a href="https://www.linuxidc.com/index.htm" class="first">首页</a><a href="https://www.linuxidc.com/it/">Linux新闻</a><a href="https://www.linuxidc.com/Linuxit/" class="thisclass">Linux教程</a><a href="https://www.linuxidc.com/MySql/">数据库技术</a><a href="https://www.linuxidc.com/RedLinux/">Linux编程</a><a href="https://www.linuxidc.com/Apache/">服务器应用</a><a href="https://www.linuxidc.com/Unix/">Linux安全</a><a href="https://www.linuxidc.com/download/">Linux下载</a><a href="https://www.linuxidc.com/theme/">Linux主题</a><a href="https://www.linuxidc.com/Linuxwallpaper/">Linux壁纸</a><a href="https://www.linuxidc.com/linuxsoft/">Linux软件</a><a href="https://www.linuxidc.com/digi/">数码</a><a href="https://www.linuxidc.com/mobile/">手机</a><a href="https://www.linuxidc.com/diannao/">电脑</a>
+
+</div>
+</div>
+
+<div id="navsub">
+<div class="l"></div>
+<div class="r"></div>
+<div class="m">
+	<a href="https://www.linuxidc.com/index.htm">首页</a> → <a href="https://www.linuxidc.com/Linuxit/">Linux教程</a>
+</div>
+</div>
+<div class="linuxe1"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linuxe1.html"></script></div>
+<div class="linux1"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux1.html"></script></div>
+<div class="linuxa"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linuxa.html"></script></div>
+<div class="linuxa1"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linuxa1.html"></script></div>
+<table id="middle" style="table-layout: fixed; height: auto !important;" width="100%" cellspacing="0" cellpadding="0">
+<tbody><tr style="height: auto !important;" valign="top"><td>
+
+	<div class="mframe mR">
+	<div class="tl"></div>
+	<div class="tr"></div>
+	<div class="tm">
+		<div class="moreR">
+			背景：<script type="text/javascript">WriteBg()</script><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/b.gif" style="cursor:pointer;width:7px;height:6px;border:1px solid #999;background:#EDF0F5" alt="#EDF0F5" onclick='ContentBg("#EDF0F5")'> <img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/b.gif" style="cursor:pointer;width:7px;height:6px;border:1px solid #999;background:#FAFBE6" alt="#FAFBE6" onclick='ContentBg("#FAFBE6")'> <img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/b.gif" style="cursor:pointer;width:7px;height:6px;border:1px solid #999;background:#FFF2E2" alt="#FFF2E2" onclick='ContentBg("#FFF2E2")'> <img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/b.gif" style="cursor:pointer;width:7px;height:6px;border:1px solid #999;background:#FDE6E0" alt="#FDE6E0" onclick='ContentBg("#FDE6E0")'> <img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/b.gif" style="cursor:pointer;width:7px;height:6px;border:1px solid #999;background:#F3FFE1" alt="#F3FFE1" onclick='ContentBg("#F3FFE1")'> <img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/b.gif" style="cursor:pointer;width:7px;height:6px;border:1px solid #999;background:#DAFAF3" alt="#DAFAF3" onclick='ContentBg("#DAFAF3")'> <img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/b.gif" style="cursor:pointer;width:7px;height:6px;border:1px solid #999;background:#EAEAEF" alt="#EAEAEF" onclick='ContentBg("#EAEAEF")'> <img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/b.gif" style="cursor:pointer;width:7px;height:6px;border:1px solid #999;background:#FFF" alt="默认" onclick='ContentBg("")'> 
+		</div>
+		<span class="tt">阅读新闻</span>
+	</div>
+	<div class="wrapper">
+	<div class="ml"></div>
+	<div class="mr"></div>
+	<div class="mm" id="bodyTd">
+		<div id="printBody" style="word-break:break-all;">
+			<div style="text-align:center"><h1 class="aTitle">CentOS搭建NAT和DHCP服务，实现共享上网</h1></div>
+			
+			<table width="97%" align="center">
+				<tbody><tr>
+				<td width="140">[日期：2018-07-30]</td>
+				<td align="center">来源：cnblogs.com/connect&nbsp;
+				作者：ngle</td>
+				<td width="160" align="right">[字体：<a href="javascript:ContentSize(16)">大</a> <a href="javascript:ContentSize(0)">中</a> <a href="javascript:ContentSize(12)">小</a>]
+				</td></tr>
+			</tbody></table>
+<div id="li_all">
+<div id="li_1"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux201.js"></script><script type="text/javascript">
+    google_ad_client = 'ca-pub-5195587195407606';
+    google_ad_slot = '9405800700';
+    google_ad_width = 970;
+    google_ad_height = 90;
+</script>
+<!-- Linux公社970x90内容页20190111 -->
+<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/show_ads.js">
+</script><ins id="aswift_0_expand" style="display:inline-table;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:970px;background-color:transparent;" data-ad-slot="9405800700"><ins id="aswift_0_anchor" style="display:block;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:970px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0px;width:970px;height:90px;" width="970" height="90" frameborder="0"></iframe></ins></ins>
+</div>
+<div id="li_2"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux2.html"></script></div>
+</div>
+			<div id="content" style="overflow-x: hidden; word-break: break-all;"><p>什么是NAT？</p>
+<p>NAT（Network address 
+translation）即网络地址转换，作为一种过渡解决手段，可以用来减少对全球合法IP地址的需求。简单的说，NAT就是在内部专用网络中使用内部
+地址，而当内部节点要与外界网络发生联系时，就在边缘路由器或者防火墙处，将内部地址转换成全局地址，从而使得在外部公共网（Internet）上使用一
+个和数个合法IP地址正常传输数据。<br>其中，这里的外网和内网是相对来讲的，下面假设能够访问互联网的网络为外网。<br>什么是DHCP</p>
+<p>DHCP（Dynamic Host Configuration 
+Protocol，动态主机配置协议）通常被应用在大型的局域网络环境中，主要作用是集中的管理、分配IP地址，使网络环境中的主机动态的获得IP地址、
+Gateway地址、DNS服务器地址等信息，并能够提升地址的使用率。<br>实验环境</p>
+<p>&nbsp; &nbsp; VMware Workstations<br>&nbsp; &nbsp; 一台最小化安装的<a href="https://www.linuxidc.com/topicnews.aspx?tid=14" target="_blank" title="CentOS">CentOS</a>7，外网IP（NAT模式）:192.168.204.133，内网网卡vmnet10（相当于仅主机模式，且不自动获取IP）<br>&nbsp; &nbsp; 一台Windows7，内网网卡vmnet10（相当于仅主机模式，且不自动获取IP）</p>
+<p><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/180730132443921.png" alt=""></p>
+<p>检查网络连通性&nbsp;</p>
+<p>CentOS上执行以下命令：</p>
+<p># 检查centos到互联网的网络连通性<br>ping -c 4 www.baidu.com</p>
+<p>ifconfig</p>
+<p><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/180730132443922.png" alt=""></p>
+<p>查看linux上的网卡配置信息，本文中默认ens33为外网网卡，ens37为内网网卡<br>关闭防火墙</p>
+<p>setenforce 0<br>systemctl stop firewalld<br>systemctl disable firewalld</p>
+<p>配置内网网卡</p>
+<p>vim /etc/sysconfig/network-scripts/ifcfg-ens37</p>
+<p>添加如下内容</p>
+<p>TYPE="Ethernet"<br>BOOTPROTO="static"<br>NAME="ens37"<br>DEVICE="ens37"<br>ONBOOT="yes"<br>IPADDR="192.168.0.1"<br>NETMASK="255.255.255.0"<br>DNS1="223.5.5.5"</p>
+<p>重启网卡</p>
+<p>systemctl restart network</p>
+<p>开启Linux路由功能</p>
+<p>iptables -A FORWARD -i ens37 -j ACCEPT<br>iptables -t nat -A POSTROUTING -s 192.168.0.0/24 -o ens33 -j MASQUERADE<br>echo 1 &gt; /proc/sys/net/ipv4/ip_forward<br>cat /proc/sys/net/ipv4/ip_forward</p>
+<p>解释（ens37为内网网卡,ens33为外网网卡）：<br>第一条命令：让发送至内网网卡的数据全部通过<br>第二条命令：修改数据报头信息<br>第三条命令：开启Linux的路由功能<br>第四条命令：查看是否启用了路由功能，1代表启用，0代表禁用<br>具体命令需要根据自己的网卡名称进行修改<br>执行以下命令，设置开机自动配置 Linux路由功能</p><div style="width: 100%; height: auto; clear: none; text-align: center;" class="google-auto-placed ap_container"><ins style="display: block; margin: auto; background-color: transparent;" data-ad-format="auto" class="adsbygoogle adsbygoogle-noablate" data-ad-client="ca-pub-5195587195407606" data-adsbygoogle-status="done"><ins id="aswift_6_expand" style="display:inline-table;border:none;height:200px;margin:0;padding:0;position:relative;visibility:visible;width:991px;background-color:transparent;"><ins id="aswift_6_anchor" style="display:block;border:none;height:200px;margin:0;padding:0;position:relative;visibility:visible;width:991px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_6" name="aswift_6" style="left:0;position:absolute;top:0;border:0px;width:991px;height:200px;" width="991" height="200" frameborder="0"></iframe></ins></ins></ins></div>
+<p>echo -e "<br>iptables -A FORWARD -i ens37 -j ACCEPT<br>iptables -t nat -A POSTROUTING -s 192.168.0.0/24 -o ens33 -j MASQUERADE<br>echo 1 &gt; /proc/sys/net/ipv4/ip_forward<br>" &gt;&gt; /etc/rc.local<br>chmod +x /etc/rc.local</p>
+<p>安装配置DHCP服务</p>
+<p>安装DHCP服务</p>
+<p>yum install -y epel*<br>yum install -y dhcp</p>
+<p>复制DHCP配置文件</p>
+<p>cp /usr/share/doc/dhcp-4.2.5/dhcpd.conf.example /etc/dhcp/dhcpd.conf</p>
+<p>编辑并修改dhcpd.conf配置文件</p>
+<p>vim /etc/dhcp/dhcpd.conf</p>
+<p>查找并修改option domain-name项，修改为vmnet.com<br>查找并修改option domain-name-servers项，修改为223.5.5.5, 114.114.114.114<br>配置文件内容如下</p>
+<p><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/180730132443923.png" alt=""></p>
+<p># A slightly different configuration for an internal subnet.<br>subnet 192.168.0.0 netmask 255.255.255.0 {<br>&nbsp; range 192.168.0.10 192.168.0.100;<br>&nbsp; option domain-name-servers 223.5.5.5, 114.114.114.114;<br>&nbsp; option domain-name "vmnet.com";<br>&nbsp; option routers 192.168.0.1;<br>&nbsp; option broadcast-address 192.168.0.255;<br>&nbsp; default-lease-time 600;<br>&nbsp; max-lease-time 7200;<br>}</p>
+<p>逐行进行解释</p>
+<p>#subnet后跟子网网段，netmask后跟子网掩码<br>subnet 192.168.0.0 netmask 255.255.255.0 {<br>&nbsp; #地址池<br>&nbsp; range 192.168.0.10 192.168.0.100;<br>&nbsp; #DNS服务器地址(多个地址用","隔开)<br>&nbsp; option domain-name-servers 223.5.5.5, 114.114.114.114;<br>&nbsp; #为所分配的域分配域名<br>&nbsp; option domain-name "vmnet.com";<br>&nbsp; #为所分配的主机分发子网掩码<br>&nbsp; option subnet-mask 255.255.255.0;<br>&nbsp; #分发默认网关<br>&nbsp; option routers 192.168.0.1;<br>&nbsp; #分发广播地址<br>&nbsp; option broadcast-address 192.168.0.255;<br>&nbsp; #默认租期时间(秒)<br>&nbsp; default-lease-time 600;<br>&nbsp; #最大租期时间(秒)<br>&nbsp; max-lease-time 7200;<br>}</p>
+<p>启动DHCP服务</p>
+<p>systemctl restart dhcpd<br>systemctl enable dhcpd</p>
+<p>查看启动状态</p>
+<p>systemctl status dhcpd<br>netstat -uap | grep dhcpd</p>
+<p>查看Windows7上的网络信息</p>
+<p>禁用网卡，重新启动，查看网卡信息]</p>
+<p><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/180730132443924.png" alt=""></p>
+<p><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/180730132443925.png" alt=""></p>
+<p>检查访问互联网的连通性</p>
+<p><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/180730132443926.png" alt=""></p>
+<p>可以正常访问百度</p>
+<p><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/180730132443927.png" alt=""></p>
+<p>Linux公社的RSS地址：<a href="https://www.linuxidc.com/rssFeed.aspx">https://www.linuxidc.com/rssFeed.aspx</a></p>
+<p><strong>本文永久更新链接地址</strong>：<a href="https://www.linuxidc.com/Linux/2018-07/153294.htm">https://www.linuxidc.com/Linux/2018-07/153294.htm</a></p><a href="http://www.linuxidc.com/" target="_blank"><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/logo.gif" alt="linux" width="15" height="17"></a></div><a href="http://www.linuxidc.com/" target="_blank">
+<div class="linux3"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux3.html"></script></div>
+</a><div class="linux302"><a href="http://www.linuxidc.com/" target="_blank"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux302.js"></script></a><p style="text-align: center;"><a href="http://www.linuxidc.com/" target="_blank"></a><a href="https://www.linuxidc.com/Linux/2014-08/106019.htm" target="_blank"><span style="color: #ff0000; font-size: medium;"><strong>关注Linux公社（LinuxIDC.com）官方微信与QQ群，随机发放邀请码</strong></span></a></p>
+</div>		
+			
+			
+		</div>
+<div class="linuxfx"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/fx.html"></script></div>	
+<div class="linux8"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux8.js"></script><script type="text/javascript">
+    google_ad_client = 'ca-pub-5195587195407606';
+    google_ad_slot = '9405800700';
+    google_ad_width = 970;
+    google_ad_height = 90;
+</script>
+<!-- Linux公社970x90内容页20190111 -->
+<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/show_ads.js">
+</script><ins id="aswift_1_expand" style="display:inline-table;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:970px;background-color:transparent;" data-ad-slot="9405800700"><ins id="aswift_1_anchor" style="display:block;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:970px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_1" name="aswift_1" style="left:0;position:absolute;top:0;border:0px;width:970px;height:90px;" width="970" height="90" frameborder="0"></iframe></ins></ins>
+</div>
+<div class="linux801"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux801.js"></script><script async="" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/adsbygoogle.js"></script>
+<!-- Google匹配内容 -->
+<ins class="adsbygoogle" style="display:inline-block;width:970px;height:410px" data-ad-client="ca-pub-5195587195407606" data-ad-slot="7446930524" data-adsbygoogle-status="done"><ins id="aswift_2_expand" style="display:inline-table;border:none;height:410px;margin:0;padding:0;position:relative;visibility:visible;width:970px;background-color:transparent;"><ins id="aswift_2_anchor" style="display:block;border:none;height:410px;margin:0;padding:0;position:relative;visibility:visible;width:970px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_2" name="aswift_2" style="left:0;position:absolute;top:0;border:0px;width:970px;height:410px;" width="970" height="410" frameborder="0"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+		<div class="nearNews">
+			<div class="prevNews"><a href="https://www.linuxidc.com/Linux/2018-07/153292.htm">CentOS安装noVNC，以Web方式交付VNC远程连接</a></div>
+			<div class="nextNews"><a href="https://www.linuxidc.com/Linux/2018-07/153298.htm">xShell连接Ubuntu时不显示[root@localhost]等字符,只显示“$”字符解决方法</a></div>
+		</div>
+	</div>
+	</div>
+	<div class="bl"></div>
+	<div class="br"></div>
+	<div class="bm"></div>
+	</div>
+<div class="linux809"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux809.html"></script></div>
+	<div class="mframe mR">
+	<div class="tl"></div>
+	<div class="tr"></div>
+	<div class="tm">
+		<span class="tt">相关资讯</span> &nbsp; &nbsp; &nbsp;
+		<a href="https://www.linuxidc.com/search.aspx?where=nkey&amp;keyword=58546" target="_blank">CentOS搭建NAT</a>&nbsp; <a href="https://www.linuxidc.com/search.aspx?where=nkey&amp;keyword=58547" target="_blank">CentOS搭建DHCP</a>&nbsp; 
+	</div>
+	<div class="wrapper">
+	<div class="ml"></div>
+	<div class="mr"></div>
+	<div class="mm">
+		
+	</div>
+	</div>
+	<div class="bl"></div>
+	<div class="br"></div>
+	<div class="bm"></div>
+	</div>
+<div class="linux808"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux808.html"></script></div>
+	
+	<div class="mframe mR">
+	<div class="tl"></div>
+	<div class="tr"></div>
+	<div class="tm">
+		<span class="tt">本文评论</span>
+		 	　　<a href="https://www.linuxidc.com/remark.aspx?id=153294" target="_blank">查看全部评论</a> <span class="gray">(0)</span>
+	</div>
+	<div class="wrapper">
+	<div class="ml"></div>
+	<div class="mr"></div>
+	<div class="mm">
+		<table style="margin:6px" width="100%">		
+		<tbody><tr><td width="50%">
+			<form action="" name="fmRemarkSt" onsubmit="return remark.post(this);">
+			<input type="hidden" value="1" name="face" disabled="disabled">
+			表情： <img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/b.gif" alt="表情" class="face1" style="cursor:pointer;vertical-align:middle" onclick="remark.dispFace(this)" onmouseout="remark.hideFace()">
+			姓名： <input type="text" name="username" value="匿名" maxlength="15" style="width:60px" class="inputbg" disabled="disabled">
+			<input type="checkbox" id="rmAnonymitySt" onclick="remark.anony(this)" disabled="disabled" checked="checked"><label for="rmAnonymitySt">匿名</label>
+			字数 <input type="text" id="bodyLen" size="3" readonly="readonly" style="border-width:0;background:transparent;vertical-align:middle" value="0" disabled="disabled">
+			<br>
+			<textarea name="body" cols="40" rows="4" onkeydown="remark.dispLen(this)" onkeyup="remark.handle(event,this);remark.dispLen(this)" style="width:39em;height:100px;margin:3px 0;overflow-y:auto" disabled="disabled"></textarea>
+				<br>
+		　　　<input type="checkbox" checked="checked" id="rmAgreeSt" disabled="disabled"><label for="rmAgreeSt">同意评论声明</label>
+		　　　<button type="submit" style="width: 50px; padding: 0px;" disabled="disabled">请登录</button>
+			</form><br>
+			评论声明
+			<ul style="list-style-type:square;margin:5px 0 0 1em;padding:0">
+			<li>尊重网上道德，遵守中华人民共和国的各项有关法律法规</li>
+			<li>承担一切因您的行为而直接或间接导致的民事或刑事法律责任</li>
+			<li>本站管理人员有权保留或删除其管辖留言中的任意内容</li>
+			<li>本站有权在网站内转载或引用您的评论</li>
+			<li>参与本评论即表明您已经阅读并接受上述条款</li>
+			</ul>
+		</td>
+		<td width="50%"><div class="linux799"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux799.js"></script><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/weixin.png" alt="" width="291" height="250">
+</div></td></tr>
+		</tbody></table>
+		<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/remark.js"></script>
+		<script type="text/javascript">
+			remark.maxSize=500;
+			remark.minSize=2;
+			remark.sourceEle=$(document.fmRemarkSt).find("button").get(0);
+			iwms.vCode="CC74440A";
+			iwms.user.name.length==0 ? $i("rmAnonymitySt").click() : $i("rmAnonymitySt").form.username.value=iwms.user.name;
+		</script>
+		<div class="reCont" id="reContainer"></div>
+	</div>
+	</div>
+	<div class="bl"></div>
+	<div class="br"></div>
+	<div class="bm"></div>
+	</div>
+	
+</td><td style="height: auto !important;" width="300" valign="top">
+<div class="linux901"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux901.js"></script><img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/lws.png" alt="" width="300" height="300">
+</div>
+<div class="linux902"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux902.html"></script></div>
+<div class="linux903"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux903.js"></script><script async="" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/adsbygoogle.js"></script>
+<!-- Linux公社右侧上300x250 -->
+<ins class="adsbygoogle" style="display:inline-block;width:300px;height:250px" data-ad-client="ca-pub-5195587195407606" data-ad-slot="1236689426" data-adsbygoogle-status="done"><ins id="aswift_3_expand" style="display:inline-table;border:none;height:250px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><ins id="aswift_3_anchor" style="display:block;border:none;height:250px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_3" name="aswift_3" style="left:0;position:absolute;top:0;border:0px;width:300px;height:250px;" width="300" height="250" frameborder="0"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+<div class="linux905"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux905.html"></script></div>
+	
+	<div class="lframe">
+	<div class="tl"></div>
+	<div class="tr"></div>
+	<div class="tm">
+		<span class="tt">最新资讯</span>
+	</div>
+	<div class="wrapper">
+	<div class="ml"></div>
+	<div class="mr"></div>
+	<div class="mm">
+		<ul class="nl">
+<li><a href="https://www.linuxidc.com/Linux/2018-07/153298.htm" target="_blank" title="xShell连接Ubuntu时不显示[root@localhost]等字符,只显示“$”字符解决方法">xShell连接Ubuntu时不显示[root@localhost]</a></li>
+<li><a href="https://www.linuxidc.com/Linux/2018-07/153297.htm" target="_blank" title="Linux kernel 4.18 RC7释出，正式版将于8月5日发布">Linux kernel 4.18 RC7释出，正式版将于8月</a></li>
+<li><a href="https://www.linuxidc.com/Linux/2018-07/153296.htm" target="_blank" title="Linux下源码安装Nginx（Ubuntu和CentOS通用）">Linux下��码安装Nginx（Ubuntu和CentOS通用</a></li>
+<li><a href="https://www.linuxidc.com/Linux/2018-07/153295.htm" target="_blank" title="2018.07.30 开源资讯：Mozilla 开发类似 Chrome 的网站隔离功能">2018.07.30 开源资讯：Mozilla 开发类似 </a></li>
+<li><a href="https://www.linuxidc.com/Linux/2018-07/153294.htm" target="_blank">CentOS搭建NAT和DHCP服务，实现共享上网</a></li>
+<li><a href="https://www.linuxidc.com/Linux/2018-07/153293.htm" target="_blank" title="配置Nginx反向代理WebSocket，以代理noVNC为例">配置Nginx反向代理WebSocket，以代理noVNC</a></li>
+<li><a href="https://www.linuxidc.com/Linux/2018-07/153292.htm" target="_blank" title="CentOS安装noVNC，以Web方式交付VNC远程连接">CentOS安装noVNC，以Web方式交付VNC远程连</a></li>
+<li><a href="https://www.linuxidc.com/Linux/2018-07/153291.htm" target="_blank">Linux下源码安装并配置Nginx</a></li>
+<li><a href="https://www.linuxidc.com/Linux/2018-07/153290.htm" target="_blank">Python 3.6 的 venv 模块</a></li>
+<li><a href="https://www.linuxidc.com/Linux/2018-07/153289.htm" target="_blank">Linux用户管理、文本处理、安装包管理</a></li>
+</ul>
+	</div>
+	</div>
+	<div class="bl"></div>
+	<div class="br"></div>
+	<div class="bm"></div>
+	</div>
+	<div class="u70"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/u70.html"></script></div>
+	<div class="u80"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/u80.html"></script></div>
+	<div class="u90"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/u90.html"></script></div>
+	<div class="space"></div>
+	<div id="pin" style="position: static; top: 0px;">
+	<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/pin.js"></script><script async="" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/adsbygoogle.js"></script>
+<!-- 右侧粘性自适应 -->
+<ins class="adsbygoogle" style="display: block; height: 600px;" data-ad-client="ca-pub-5195587195407606" data-ad-slot="7669622914" data-ad-format="auto" data-adsbygoogle-status="done"><ins id="aswift_4_expand" style="display:inline-table;border:none;height:600px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><ins id="aswift_4_anchor" style="display:block;border:none;height:600px;margin:0;padding:0;position:relative;visibility:visible;width:300px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_4" name="aswift_4" style="left: 0px; position: absolute; top: 0px; border: 0px none; width: 300px; height: 600px; overflow: visible;" width="300" height="600" frameborder="0"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+
+	</div>
+</td></tr>
+</tbody></table>
+<div class="linux906"><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linux906.html"></script></div>
+<div id="footer">
+<a href="http://www.linuxidc.com/aboutus.htm">Linux公社简介</a> - <a href="http://www.linuxidc.com/adsense.htm">广告服务</a> - <a href="http://www.linuxidc.com/sitemap.aspx">网站地图</a> - <a href="http://www.linuxidc.com/help.htm">帮助信息</a> - <a href="http://www.linuxidc.com/contactus.htm">联系我们</a><br>本站（LinuxIDC）所刊载文章不代表同意其说法或描述，仅为提供更多信息，也不构成任何建议。<br><script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/qq.js"></script>主编：漏网的鱼 联系邮箱:<img src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/email.png" alt="" width="138" height="20"> (如有合作请联系)
+<br>
+<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/foot.js"></script>本站带宽由[<font color="red">300.ai</font>]友情提供<br>关注Linux，关注LinuxIDC.com，<font color="red">请向您的QQ好友宣传LinuxIDC.com</font>，多谢支持！
+<br>Copyright © 2006-2017　<a href="http://www.linuxidc.com/">Linux公社</a>　All rights reserved 浙ICP备07014134号-8
+	<script type="text/javascript">iwms.aId=153294;$(function(){iwms.imgCont=$i('content');iwms.imgResize();InitContStyle();iwms.getVars();})</script>
+	
+</div>
+</div>
+<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linuxren1.js"></script><script type="text/javascript">
+document.body.oncopy = function () { setTimeout( function () { var text = clipboardData.getData("text"); if (text) { text = text + "\r\n本篇文章来源于 Linux公社网站(www.linuxidc.com)  原文链接："+location.href; clipboardData.setData("text", text); } }, 100 ) }
+</script>
+
+<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linuxren2.js"></script>
+<script type="text/javascript" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/linuxren3.js"></script><script src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/h.js" type="text/javascript"></script>
+
+<iframe id="google_osd_static_frame_4343332256259" name="google_osd_static_frame" style="display: none; width: 0px; height: 0px;"></iframe><ins class="adsbygoogle adsbygoogle-noablate" style="display: none !important;" data-adsbygoogle-status="done"><ins id="aswift_5_expand" style="display:inline-table;border:none;height:0px;margin:0;padding:0;position:relative;visibility:visible;width:0px;background-color:transparent;"><ins id="aswift_5_anchor" style="display:block;border:none;height:0px;margin:0;padding:0;position:relative;visibility:visible;width:0px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_5" name="aswift_5" style="left:0;position:absolute;top:0;border:0px;width:0px;height:0px;" frameborder="0"></iframe></ins></ins></ins></body><iframe id="google_esf" name="google_esf" src="CentOS%E6%90%AD%E5%BB%BANAT%E5%92%8CDHCP%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E4%B8%8A%E7%BD%91_Linux%E6%95%99%E7%A8%8B_Linux%E5%85%AC%E7%A4%BE-Linux%E7%B3%BB%E7%BB%9F%E9%97%A8%E6%88%B7%E7%BD%91%E7%AB%99_files/zrt_lookup.html" style="display: none;" data-ad-client="ca-pub-5195587195407606"></iframe></html>

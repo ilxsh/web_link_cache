@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="author" content="binss&lt;i@binss.me&gt;">
+    <meta name="keywords" content="binsite binss 博客">
+    <meta name="description" content="binss的博客，分享学习过程中的一些心得体会">
+    
+    <title>通过WIFI远程唤醒(Wake-on-WLAN) Windows 10 - 博客 - binsite</title>
+
+
+    <link rel="icon" href="https://binsite-10018028.file.myqcloud.com/image/favicon.ico">
+
+    <link rel="stylesheet" href="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/b6d59d3a0f7b.css" type="text/css">
+
+    
+
+    <link rel="stylesheet" href="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/1b1354a5a58e.css" type="text/css">
+
+
+</head>
+
+<body>
+<div id="layout" class="pure-g">
+
+    <a href="#sidebar" id="sidebar_button" class="sidebar-button">
+        <span></span>
+    </a>
+
+    <div class="sidebar pure-u-md-1-4" id="sidebar">
+
+
+        <div class="sidebar-header">
+            <h1 class="site-title">Binsite</h1>
+            <!-- <h2 class="site-desc">Learning and Sharing</h2> -->
+
+            <nav class="nav">
+                <ul class="site-menu-list">
+                    <li class="site-menu-item">
+                        <a class="pure-button" href="https://www.binss.me/">ARTICLE</a>
+                    </li>
+                    <li class="site-menu-item">
+                        <a class="pure-button" href="https://www.binss.me/about">ABOUT</a>
+                    </li>
+                </ul>
+                
+                <ul class="site-menu-list">
+                    <li class="site-menu-item">
+                        
+                        <a class="pure-button" href="https://www.binss.me/login/">LOGIN</a>
+
+                        
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <div class="content pure-u-1 pure-u-md-3-4">
+        <div>
+            
+
+<!-- 停止自动转义 -->
+
+
+
+<div class="pure-g">
+    <div class="pure-u-1-24"></div>
+    <div class="pure-u-22-24 post-body">
+        <div class="post-caption" post-id="110" id="post_caption">通过WIFI远程唤醒(Wake-on-WLAN) Windows 10</div>
+        <div class="post-meta">
+            <span class="post-date">2017-06-04 23:26</span>
+        </div>
+        <div class="post-content">
+            <p class="post-copyright-hidden">本文发自 <a rel="sourece" href="https://www.binss.me/blog/wake-windows-10-laptop-by-WLAN/">http://www.binss.me/blog/wake-windows-10-laptop-by-WLAN/</a>，转载请注明出处。
+            </p>
+            <p>通过WIFI远程唤醒(Wake-on-WLAN)Windows 10</p>
+<h3>Motivation</h3>
+<p>感谢学校的扩招，原本的两人间硬是魔改成三人间，导致个人书桌面积小到两台笔记本都放不下。无奈之下，淘了一个小桌板，正好能放一台笔记本。但随着考试周的临近，购入若干盒泡面准备进行修仙时才发现 没！地！方！放！泡！面！</p>
+<p>无奈之下，只能把Windows本本合上。</p>
+<p><a alt="" class="fancybox" href="https://illustration-10018028.image.myqcloud.com/20170604232604.JPG" src="http://illustration-10018028.file.myqcloud.com/20170604232604.JPG"><img class="pure-img pure-img-responsive" src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/thumbnail_002.jpeg"></a></p>
+<p>反正平时基本上都是远程桌面连上去下迅雷或者推Gal。因此，需要一种机制能够在机器关机的状态下进行远程唤醒，从而进行远程桌面。Google后
+搜到Wake-on-LAN，是一种在机器处于休眠或关机状态下通过网络进行唤醒的技术。但笔记本没有LAN口，是否能够通过WLAN唤醒呢？继续搜索，
+发现也是支持的！</p>
+<h3>Requirement</h3>
+<p>Wake-on-LAN / Wake-on-WLAN 需要主板和BIOS的支持。</p>
+<p>根据Wiki，大概就是机器在休眠或关机时主板和网卡还保持微弱的供电，网卡会监听广播包，并对其进行解析。如果发现符合协议，并且MAC地址就是该网卡的MAC地址，则通知主板进行唤醒。</p>
+<p>这种数据包被称为Magic Packet，格式为：</p>
+<p>FF FF FF FF FF FF MAC地址</p>
+<p>因此通过构造Magic Packet，然后通过UDP进行广播，即可实现唤醒的目的。</p>
+<p>经过测试，在我的机器(XPS 9550)上，只能实现从睡眠(S3)和休眠(S4)状态下唤醒，无法从关机(S5)状态唤醒。</p>
+<p>这符合Dell在 <a href="https://www.dell.com/support/article/us/en/19/SLN216918/newer-dell-system-models-will-not-wake-on-lan-with-deep-sleep-control-set-to-s5?lang=EN" target="_blank">https://www.dell.com/support/article/us/en/19/SLN216918/newer-dell-system-models-will-not-wake-on-lan-with-deep-sleep-control-set-to-s5?lang=EN</a> 的说明：</p>
+<blockquote>
+<p>Newer Dell system models will not Wake-On-LAN with Deep Sleep Control set to S5</p>
+</blockquote>
+<p>也符合Windows在 <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa373229(v=vs.85).aspx#wake-on-lan_behavior" target="_blank">https://msdn.microsoft.com/en-us/library/windows/desktop/aa373229(v=vs.85).aspx#wake-on-lan_behavior</a> 的说明：</p>
+<blockquote>
+<p>WOL is supported from sleep (S3) or hibernate (S4). It is not 
+supported from fast startup or soft off (S5) shutdown states. NICs are 
+not armed for wake in these states because users do not expect their 
+systems to wake up on their own.</p>
+</blockquote>
+<h3>Implementation</h3>
+<ol>
+<li>
+<p>进入BIOS中，开启 Wake on WLAN</p>
+<p><a alt="" class="fancybox" href="https://illustration-10018028.image.myqcloud.com/20170604232625.JPG" src="http://illustration-10018028.file.myqcloud.com/20170604232625.JPG"><img class="pure-img pure-img-responsive" src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/thumbnail_004.jpeg"></a></p>
+</li>
+<li>
+<p>进入Windows中，打开设备管理器，打开无线网卡的属性，在电源管理的tab钩上<code>允许此设备唤醒计算机</code>和<code>只允许幻数据包唤醒计算机</code>后确定。</p>
+<p><a alt="" class="fancybox" href="https://illustration-10018028.image.myqcloud.com/20170604232640.png" src="http://illustration-10018028.file.myqcloud.com/20170604232640.png"><img class="pure-img pure-img-responsive" src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/thumbnail.jpeg"></a></p>
+</li>
+<li>
+<p>如果需要进入休眠(S4)，需要在控制面板的电源选项下点击<code>更改当前不可用的设置</code>，然后把<code>休眠</code>钩上。</p>
+<p><a alt="" class="fancybox" href="https://illustration-10018028.image.myqcloud.com/20170604232650.png" src="http://illustration-10018028.file.myqcloud.com/20170604232650.png"><img class="pure-img pure-img-responsive" src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/thumbnail_003.jpeg"></a></p>
+</li>
+<li>
+<p>在网络连接属性处查询无线网卡的MAC地址和局域网的广播地址</p>
+</li>
+<li>睡眠/休眠，记得把电源插上</li>
+</ol>
+<p>然后在另外一台电脑执行以下脚本，注意把MAC和BROADCAST改成你自己的：</p>
+<pre data-trimmed="true" class="rainbow-show"><table class="rainbow" data-language="python"><tbody><tr class="line line-1"><td class="line-number" data-line-number="1"></td><td class="line-code"><span class="comment"># !/usr/bin/env python</span></td></tr><tr class="line line-2"><td class="line-number" data-line-number="2"></td><td class="line-code"><span class="comment"># -*- coding: utf-8 -*-</span></td></tr><tr class="line line-3"><td class="line-number" data-line-number="3"></td><td class="line-code"><span class="comment">#</span></td></tr><tr class="line line-4"><td class="line-number" data-line-number="4"></td><td class="line-code"><span class="comment"># FileName:      wol.py</span></td></tr><tr class="line line-5"><td class="line-number" data-line-number="5"></td><td class="line-code"><span class="comment"># Author:        binss</span></td></tr><tr class="line line-6"><td class="line-number" data-line-number="6"></td><td class="line-code"><span class="comment"># Create:        2017-06-04 22:32:48</span></td></tr><tr class="line line-7"><td class="line-number" data-line-number="7"></td><td class="line-code"><span class="comment"># Description:   Ref: https://github.com/bentasker/Wake-On-Lan-Python</span></td></tr><tr class="line line-8"><td class="line-number" data-line-number="8"></td><td class="line-code"><span class="comment">#</span></td></tr><tr class="line line-9"><td class="line-number" data-line-number="9"></td><td class="line-code">
+</td></tr><tr class="line line-10"><td class="line-number" data-line-number="10"></td><td class="line-code"><span class="keyword">import</span> socket</td></tr><tr class="line line-11"><td class="line-number" data-line-number="11"></td><td class="line-code"><span class="keyword">import</span> <span class="keyword">struct</span></td></tr><tr class="line line-12"><td class="line-number" data-line-number="12"></td><td class="line-code"><span class="keyword">import</span> time</td></tr><tr class="line line-13"><td class="line-number" data-line-number="13"></td><td class="line-code">
+</td></tr><tr class="line line-14"><td class="line-number" data-line-number="14"></td><td class="line-code">
+</td></tr><tr class="line line-15"><td class="line-number" data-line-number="15"></td><td class="line-code">MAC <span class="keyword operator">=</span> <span class="string">"60-6D-C4-C6-30-48"</span></td></tr><tr class="line line-16"><td class="line-number" data-line-number="16"></td><td class="line-code">BROADCAST <span class="keyword operator">=</span> <span class="string">"192.168.1.255"</span></td></tr><tr class="line line-17"><td class="line-number" data-line-number="17"></td><td class="line-code">
+</td></tr><tr class="line line-18"><td class="line-number" data-line-number="18"></td><td class="line-code">
+</td></tr><tr class="line line-19"><td class="line-number" data-line-number="19"></td><td class="line-code"><span class="storage function">def</span> <span class="entity name function">main</span>():</td></tr><tr class="line line-20"><td class="line-number" data-line-number="20"></td><td class="line-code">    <span class="keyword">if</span> <span class="support function python">len</span>(MAC) <span class="keyword operator">!</span><span class="keyword operator">=</span> <span class="constant numeric">17</span>:</td></tr><tr class="line line-21"><td class="line-number" data-line-number="21"></td><td class="line-code">        <span class="keyword">raise</span> <span class="function call">ValueError</span>(<span class="string">"MAC address should be set as form 'XX-XX-XX-XX-XX-XX'"</span>)</td></tr><tr class="line line-22"><td class="line-number" data-line-number="22"></td><td class="line-code">    mac_address <span class="keyword operator">=</span> MAC.<span class="function call">replace</span>(<span class="string">"-"</span>, <span class="string">''</span>)</td></tr><tr class="line line-23"><td class="line-number" data-line-number="23"></td><td class="line-code">    data <span class="keyword operator">=</span> <span class="string">''</span>.<span class="function call">join</span>([<span class="string">'FFFFFFFFFFFF'</span>, mac_address <span class="keyword operator">*</span> <span class="constant numeric">20</span>])</td></tr><tr class="line line-24"><td class="line-number" data-line-number="24"></td><td class="line-code">    send_data <span class="keyword operator">=</span> b''</td></tr><tr class="line line-25"><td class="line-number" data-line-number="25"></td><td class="line-code">
+</td></tr><tr class="line line-26"><td class="line-number" data-line-number="26"></td><td class="line-code">    <span class="comment"># Split up the hex values and pack.</span></td></tr><tr class="line line-27"><td class="line-number" data-line-number="27"></td><td class="line-code">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="support function python">range</span>(<span class="constant numeric">0</span>, <span class="support function python">len</span>(data), <span class="constant numeric">2</span>):</td></tr><tr class="line line-28"><td class="line-number" data-line-number="28"></td><td class="line-code">        send_data <span class="keyword operator">=</span> b''.<span class="function call">join</span>([send_data, <span class="keyword">struct</span>.<span class="function call">pack</span>(<span class="string">'B'</span>, <span class="support function python">int</span>(data[i: i <span class="keyword operator">+</span> <span class="constant numeric">2</span>], <span class="constant numeric">16</span>))])</td></tr><tr class="line line-29"><td class="line-number" data-line-number="29"></td><td class="line-code">
+</td></tr><tr class="line line-30"><td class="line-number" data-line-number="30"></td><td class="line-code">    <span class="comment"># Broadcast</span></td></tr><tr class="line line-31"><td class="line-number" data-line-number="31"></td><td class="line-code">    <span class="keyword">try</span>:</td></tr><tr class="line line-32"><td class="line-number" data-line-number="32"></td><td class="line-code">        sock <span class="keyword operator">=</span> socket.<span class="function call">socket</span>(socket.AF_INET, socket.SOCK_DGRAM)</td></tr><tr class="line line-33"><td class="line-number" data-line-number="33"></td><td class="line-code">        sock.<span class="function call">setsockopt</span>(socket.SOL_SOCKET, socket.SO_BROADCAST, <span class="constant numeric">1</span>)</td></tr><tr class="line line-34"><td class="line-number" data-line-number="34"></td><td class="line-code">        sock.<span class="function call">sendto</span>(send_data, (BROADCAST, <span class="constant numeric">7</span>))</td></tr><tr class="line line-35"><td class="line-number" data-line-number="35"></td><td class="line-code">        time.<span class="function call">sleep</span>(<span class="constant numeric">1</span>)</td></tr><tr class="line line-36"><td class="line-number" data-line-number="36"></td><td class="line-code">        sock.<span class="function call">sendto</span>(send_data, (BROADCAST, <span class="constant numeric">7</span>))</td></tr><tr class="line line-37"><td class="line-number" data-line-number="37"></td><td class="line-code">        time.<span class="function call">sleep</span>(<span class="constant numeric">1</span>)</td></tr><tr class="line line-38"><td class="line-number" data-line-number="38"></td><td class="line-code">        sock.<span class="function call">sendto</span>(send_data, (BROADCAST, <span class="constant numeric">7</span>))</td></tr><tr class="line line-39"><td class="line-number" data-line-number="39"></td><td class="line-code">        <span class="support function python">print</span>(<span class="string">"Done"</span>)</td></tr><tr class="line line-40"><td class="line-number" data-line-number="40"></td><td class="line-code">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</td></tr><tr class="line line-41"><td class="line-number" data-line-number="41"></td><td class="line-code">        <span class="support function python">print</span>(e)</td></tr><tr class="line line-42"><td class="line-number" data-line-number="42"></td><td class="line-code">
+</td></tr><tr class="line line-43"><td class="line-number" data-line-number="43"></td><td class="line-code">
+</td></tr><tr class="line line-44"><td class="line-number" data-line-number="44"></td><td class="line-code"><span class="keyword">if</span> <span class="support magic">__name__</span> <span class="keyword operator">=</span><span class="keyword operator">=</span> <span class="string">'__main__'</span>:</td></tr><tr class="line line-45"><td class="line-number" data-line-number="45"></td><td class="line-code">    <span class="function call">main</span>()</td></tr></tbody></table></pre>
+<p>执行后就可以发现机器被唤醒了。</p>
+<h3>Troubleshoot</h3>
+<h4>为什么休眠后发现机器立刻被唤醒了？</h4>
+<p>通过<code>powercfg -devicequery wake_armed</code>发现唤醒设备除了无线网卡意外还有一个远程桌面鼠标设备，不知道是干啥的，把鼠标拔掉后解决。</p>
+            <div class="post-copyright">
+                <div>
+                    本文发自 <a rel="sourece" href="https://www.binss.me/blog/wake-windows-10-laptop-by-WLAN/">https://www.binss.me/blog/wake-windows-10-laptop-by-WLAN/</a>
+                </div>
+                <div>
+                    采用 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">知识共享署名-非商业性使用-相同方式共享 4.0</a> 进行许可
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<br><br>
+<hr>
+<br><br>
+
+<div class="pure-g">
+    <div class="pure-u-1-24"></div>
+    <div class="pure-u-22-24 post-comment">
+        
+        
+        <div class="post-comment-title">评论 (9)</div>
+        <button class="pure-button post-comment-button" id="show_comment_button">－</button>
+        <hr>
+
+        <div class="post-comment-list">
+            
+                
+                
+                    <div class="post-comment-item">
+                        
+                        <img src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/user_1.jpg" class="post-comment-item-portrait">
+                        
+                        <div class="post-comment-item-detail">
+                            <p class="post-comment-item-info">
+                                <span class="post-comment-item-no">1F</span>
+                                <span class="post-comment-item-name">小玄</span>
+                                
+                                <span class="post-comment-item-time">2&nbsp;years, 7&nbsp;months ago</span>
+                                <span>
+                                    <a class="post-comment-item-reply" replied-name="小玄" replied-layer="1">回复</a>
+                                </span>
+                            </p>
+                            <p class="post-comment-item-content">很有用啊~~先赞一下！！ 不过有个问题问下。。。看起来这个方法，任何其他电脑都可以远程开启目标电脑是吧。会不会有安全隐患。。。</p>
+                        </div>
+                    </div>
+                
+                    <div class="post-comment-item">
+                        
+                        <img src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/user_1.jpg" class="post-comment-item-portrait">
+                        
+                        <div class="post-comment-item-detail">
+                            <p class="post-comment-item-info">
+                                <span class="post-comment-item-no">2F</span>
+                                <span class="post-comment-item-name">yearlingvirus</span>
+                                
+                                <span class="post-comment-item-time">2&nbsp;years, 7&nbsp;months ago</span>
+                                <span>
+                                    <a class="post-comment-item-reply" replied-name="yearlingvirus" replied-layer="2">回复</a>
+                                </span>
+                            </p>
+                            <p class="post-comment-item-content">很奇怪，同是9550，睡眠1分钟内能够唤醒，之后就无法唤醒了（网卡供电问题？），比较神奇，目前还没有找到解决办法。</p>
+                        </div>
+                    </div>
+                
+                    <div class="post-comment-item">
+                        
+                        <img src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/user_1.jpg" class="post-comment-item-portrait">
+                        
+                        <div class="post-comment-item-detail">
+                            <p class="post-comment-item-info">
+                                <span class="post-comment-item-no">3F</span>
+                                <span class="post-comment-item-name">LXGMAX</span>
+                                
+                                <span class="post-comment-item-time">2&nbsp;years, 7&nbsp;months ago</span>
+                                <span>
+                                    <a class="post-comment-item-reply" replied-name="LXGMAX" replied-layer="3">回复</a>
+                                </span>
+                            </p>
+                            <p class="post-comment-item-content">笔记本自带网卡可以。我的台式用无线网卡不支持==！</p>
+                        </div>
+                    </div>
+                
+                    <div class="post-comment-item">
+                        
+                        <img src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/binss.jpg" class="post-comment-item-portrait">
+                        
+                        <div class="post-comment-item-detail">
+                            <p class="post-comment-item-info">
+                                <span class="post-comment-item-no">4F</span>
+                                <span class="post-comment-item-name">binss</span>
+                                
+                                    <span class="post-comment-item-identify">MOD</span>
+                                
+                                <span class="post-comment-item-time">2&nbsp;years, 6&nbsp;months ago</span>
+                                <span>
+                                    <a class="post-comment-item-reply" replied-name="binss" replied-layer="4">回复</a>
+                                </span>
+                            </p>
+                            <p class="post-comment-item-content">回复 [1F] 小玄：只要你的路由器没把你的内网端口暴露到外网就好</p>
+                        </div>
+                    </div>
+                
+                    <div class="post-comment-item">
+                        
+                        <img src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/binss.jpg" class="post-comment-item-portrait">
+                        
+                        <div class="post-comment-item-detail">
+                            <p class="post-comment-item-info">
+                                <span class="post-comment-item-no">5F</span>
+                                <span class="post-comment-item-name">binss</span>
+                                
+                                    <span class="post-comment-item-identify">MOD</span>
+                                
+                                <span class="post-comment-item-time">2&nbsp;years, 6&nbsp;months ago</span>
+                                <span>
+                                    <a class="post-comment-item-reply" replied-name="binss" replied-layer="5">回复</a>
+                                </span>
+                            </p>
+                            <p class="post-comment-item-content">回复 [2F] yearlingvirus：在之后的若干使用中，确实发现会出现一段时间之后就睡死的状况，目前没能解决- -</p>
+                        </div>
+                    </div>
+                
+                    <div class="post-comment-item">
+                        
+                        <img src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/user_1.jpg" class="post-comment-item-portrait">
+                        
+                        <div class="post-comment-item-detail">
+                            <p class="post-comment-item-info">
+                                <span class="post-comment-item-no">6F</span>
+                                <span class="post-comment-item-name">hehe</span>
+                                
+                                <span class="post-comment-item-time">1&nbsp;year, 9&nbsp;months ago</span>
+                                <span>
+                                    <a class="post-comment-item-reply" replied-name="hehe" replied-layer="6">回复</a>
+                                </span>
+                            </p>
+                            <p class="post-comment-item-content">回复 [5F] binss：要取消“允许计算机关闭此设备以节约电源”的勾选</p>
+                        </div>
+                    </div>
+                
+                    <div class="post-comment-item">
+                        
+                        <img src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/user_1.jpg" class="post-comment-item-portrait">
+                        
+                        <div class="post-comment-item-detail">
+                            <p class="post-comment-item-info">
+                                <span class="post-comment-item-no">7F</span>
+                                <span class="post-comment-item-name">ooook</span>
+                                
+                                <span class="post-comment-item-time">10&nbsp;months, 3&nbsp;weeks ago</span>
+                                <span>
+                                    <a class="post-comment-item-reply" replied-name="ooook" replied-layer="7">回复</a>
+                                </span>
+                            </p>
+                            <p class="post-comment-item-content">厉害</p>
+                        </div>
+                    </div>
+                
+                    <div class="post-comment-item">
+                        
+                        <img src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/user_1.jpg" class="post-comment-item-portrait">
+                        
+                        <div class="post-comment-item-detail">
+                            <p class="post-comment-item-info">
+                                <span class="post-comment-item-no">8F</span>
+                                <span class="post-comment-item-name">bzzzzz</span>
+                                
+                                <span class="post-comment-item-time">6&nbsp;months, 1&nbsp;week ago</span>
+                                <span>
+                                    <a class="post-comment-item-reply" replied-name="bzzzzz" replied-layer="8">回复</a>
+                                </span>
+                            </p>
+                            <p class="post-comment-item-content">我在路由器里把无线网卡 上网状态disable和enable一下就能实现wol了。😓</p>
+                        </div>
+                    </div>
+                
+                    <div class="post-comment-item">
+                        
+                        <img src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/user_1.jpg" class="post-comment-item-portrait">
+                        
+                        <div class="post-comment-item-detail">
+                            <p class="post-comment-item-info">
+                                <span class="post-comment-item-no">9F</span>
+                                <span class="post-comment-item-name">bzzzzz</span>
+                                
+                                <span class="post-comment-item-time">6&nbsp;months, 1&nbsp;week ago</span>
+                                <span>
+                                    <a class="post-comment-item-reply" replied-name="bzzzzz" replied-layer="9">回复</a>
+                                </span>
+                            </p>
+                            <p class="post-comment-item-content">准确说是上网状态设为不允许就已经开机了。鼠标会唤醒还是有用的信息。</p>
+                        </div>
+                    </div>
+                
+            
+        </div>
+
+        
+        <div id="your_comment"></div>
+        <br>
+
+        <div class="post-comment-reply">
+            
+            <div class="post-comment-item">
+                <img src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/user_2.jpg" class="post-comment-item-portrait">
+
+                <form id="comment_form" class="pure-form post-comment-form" role="form" action="/blog/comment/" method="post">
+                    <input type="hidden" name="object_pk" value="110" id="id_object_pk">
+                    <input type="hidden" name="content_type" value="blog.article" id="id_content_type">
+                    <input type="hidden" name="timestamp" value="1583647652" id="id_timestamp">
+                    
+                    
+                    <input type="hidden" name="security_hash" value="515b48824853b43573f666262357608cd6fc9bbb" id="id_security_hash">
+                    <input type="hidden" id="form_csrf" name="csrfmiddlewaretoken" value="i-am-spammer">
+                    <fieldset class="pure-group">
+                    
+                        <input type="text" class="pure-input-1" placeholder="昵称" name="name" id="id_name" required="">
+                        <input type="email" class="pure-input-1" placeholder="Email（可选，用于接收binss的回复提醒）" name="email" id="id_email">
+                    
+                        <input class="pure-input-1" id="id_target" style="display:none;" readonly="readonly">
+                        <input class="pure-input-1" id="id_target_layer" name="target_layer" style="display:none;">
+                        <input class="pure-input-1" id="id_target_name" name="target_name" style="display:none;">
+                        <textarea class="pure-input-1" placeholder="加入讨论" name="comment" id="id_comment" required=""></textarea>
+                        <p style="display:none;">
+                            <label for="id_honeypot">如果你在该字段中输入任何内容，你的评论就会被视为垃圾评论。</label>
+                            <input type="text" name="honeypot" id="id_honeypot">
+                        </p>
+                        <input type="hidden" name="next" value="/blog/wake-windows-10-laptop-by-WLAN/#your_comment">
+                        <button type="submit" class="pure-button pure-input-1 post-comment-button">提交</button>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<div style="display:none">
+    <div name="csrfmiddlewaretoken" value="pk28OREN61vRciSJWT4WGCo1EgbW2Uunb0NktzAJEpMc7A0c1icSs7FhPMkzdOqD"></div>
+</div>
+
+
+            <div class="footer">
+                <div>©2014-2020 <a href="http://www.binss.me/">binsite</a>. All Rights Reserved. <a href="https://www.binss.me/sitemap.xml">Sitemap</a> <a href="https://www.binss.me/blog/feed/">RSS</a></div>
+            </div>
+        </div>
+    </div>
+</div>
+    <script async="" src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/analytics.js"></script><script type="text/javascript" src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/03806a149e73.js"></script>
+    
+
+    <script type="text/javascript" src="%E9%80%9A%E8%BF%87WIFI%E8%BF%9C%E7%A8%8B%E5%94%A4%E9%86%92(Wake-on-WLAN)%20Windows%2010%20-%20%E5%8D%9A%E5%AE%A2%20-%20binsite_files/f7c898fe3b68.js"></script>
+
+
+
+</body></html>
