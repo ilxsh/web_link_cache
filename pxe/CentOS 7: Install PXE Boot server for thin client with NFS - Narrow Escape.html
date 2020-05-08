@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ja-JP"><head>
+    <meta charset="utf-8"/>
+<link rel="dns-prefetch preconnect" href="https://u.jimcdn.com/" crossorigin="anonymous"/>
+<link rel="dns-prefetch preconnect" href="https://assets.jimstatic.com/" crossorigin="anonymous"/>
+<link rel="dns-prefetch preconnect" href="https://image.jimcdn.com" crossorigin="anonymous"/>
+<link rel="dns-prefetch preconnect" href="https://fonts.jimstatic.com" crossorigin="anonymous"/>
+<link rel="dns-prefetch preconnect" href="https://www.google-analytics.com" crossorigin="anonymous"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="description" content=""/>
+<meta name="robots" content="index, follow, archive"/>
+<meta property="st:section" content=""/>
+<meta name="twitter:title" content="CentOS 7: Install PXE Boot server for thin client with NFS"/>
+<meta name="twitter:description" content="This article will run PXE Boot server with NFS for thin client, and run CentOS 7 on client which is connected to PXE Boot server via network. You do not need to install CentOS 7 on client."/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta property="og:url" content="http://www.hiroom2.com/2017/07/07/centos-7-pxeboot-thin-client-nfs-en/"/>
+<meta property="og:title" content="CentOS 7: Install PXE Boot server for thin client with NFS"/>
+<meta property="og:description" content="This article will run PXE Boot server with NFS for thin client, and run CentOS 7 on client which is connected to PXE Boot server via network. You do not need to install CentOS 7 on client."/>
+<meta property="og:type" content="article"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:site_name" content="Narrow Escape"/>
+<meta property="article:published_time" content="2017-07-07 03:23:24"/>
+<meta property="article:tag" content="centos-7"/>
+<meta property="article:tag" content="en"/>
+<meta property="article:tag" content="pxeboot"/>
+<meta property="article:tag" content="201707"/><title>CentOS 7: Install PXE Boot server for thin client with NFS - Narrow Escape</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo="/>
+    <link rel="alternate" type="application/rss+xml" title="ブログ" href="https://www.hiroom2.com/rss/blog"/>    
+<link rel="canonical" href="https://www.hiroom2.com/2017/07/07/centos-7-pxeboot-thin-client-nfs-en/"/>
+
+        <script src="https://assets.jimstatic.com/ckies.js.5d80ddd8bf8162834c88.js"></script>
+
+    <style>html,body{margin:0}.hidden{display:none}.n{padding:5px}#cc-website-title a {text-decoration: none}.cc-m-image-align-1{text-align:left}.cc-m-image-align-2{text-align:right}.cc-m-image-align-3{text-align:center}</style>
+
+
+        <link href="https://u.jimcdn.com/cms/o/sdcc8e67e188f864a/layout/dm_0cfac8763c102aa4dfd820e81b00d864/css/layout.css?t=1526994948" rel="stylesheet" type="text/css" id="jimdo_layout_css"/>
+<script>     /* <![CDATA[ */     /*!  loadCss [c]2014 @scottjehl, Filament Group, Inc.  Licensed MIT */     window.loadCSS = window.loadCss = function(e,n,t){var r,l=window.document,a=l.createElement("link");if(n)r=n;else{var i=(l.body||l.getElementsByTagName("head")[0]).childNodes;r=i[i.length-1]}var o=l.styleSheets;a.rel="stylesheet",a.href=e,a.media="only x",r.parentNode.insertBefore(a,n?r:r.nextSibling);var d=function(e){for(var n=a.href,t=o.length;t--;)if(o[t].href===n)return e.call(a);setTimeout(function(){d(e)})};return a.onloadcssdefined=d,d(function(){a.media=t||"all"}),a};     window.onloadCSS = function(n,o){n.onload=function(){n.onload=null,o&&o.call(n)},"isApplicationInstalled"in navigator&&"onloadcssdefined"in n&&n.onloadcssdefined(o)}     /* ]]> */ </script>     <script>
+// <![CDATA[
+onloadCSS(loadCss('https://assets.jimstatic.com/web.css.ec74bcad89a485bd6a5639535a46c0ba.css') , function() {
+    this.id = 'jimdo_web_css';
+});
+// ]]>
+</script>
+<link href="https://assets.jimstatic.com/web.css.ec74bcad89a485bd6a5639535a46c0ba.css" rel="preload" as="style"/>
+<noscript>
+<link href="https://assets.jimstatic.com/web.css.ec74bcad89a485bd6a5639535a46c0ba.css" rel="stylesheet"/>
+</noscript>
+    <script>
+    //<![CDATA[
+        var jimdoData = {"isTestserver":false,"isLcJimdoCom":false,"isJimdoHelpCenter":false,"isProtectedPage":false,"cstok":"d6d68cfde0285ad2b201a1db145de748582df573","cacheJsKey":"f3f4615df617696e3985f92d13a5aa3ff61692a0","cacheCssKey":"f3f4615df617696e3985f92d13a5aa3ff61692a0","cdnUrl":"https:\/\/assets.jimstatic.com\/","minUrl":"https:\/\/assets.jimstatic.com\/app\/cdn\/min\/file\/","authUrl":"https:\/\/a.jimdo.com\/","webPath":"https:\/\/www.hiroom2.com\/","appUrl":"https:\/\/a.jimdo.com\/","cmsLanguage":"ja_JP","isFreePackage":false,"mobile":false,"isDevkitTemplateUsed":true,"isTemplateResponsive":true,"websiteId":"sdcc8e67e188f864a","pageId":2387995692,"packageId":2,"shop":{"deliveryTimeTexts":{"1":"\u304a\u5c4a\u3051\u65e5\u6570\uff1a1~3\u65e5","2":"\u304a\u5c4a\u3051\u65e5\u6570\uff1a3~5\u65e5","3":"\u304a\u5c4a\u3051\u65e5\u6570\uff1a5~8\u65e5"},"checkoutButtonText":"\u8cfc\u5165","isReady":false,"currencyFormat":{"pattern":"\u00a4#,##0","convertedPattern":"$#,##0","symbols":{"GROUPING_SEPARATOR":",","DECIMAL_SEPARATOR":".","CURRENCY_SYMBOL":"\uffe5"}},"currencyLocale":"ja_JP"},"tr":{"gmap":{"searchNotFound":"\u5165\u529b\u3055\u308c\u305f\u4f4f\u6240\u306f\u5b58\u5728\u3057\u306a\u3044\u304b\u3001\u898b\u3064\u3051\u308b\u3053\u3068\u304c\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f\u3002","routeNotFound":"\u30eb\u30fc\u30c8\u304c\u8a08\u7b97\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f\u3002\u76ee\u7684\u5730\u304c\u9060\u3059\u304e\u308b\u304b\u660e\u78ba\u3067\u306f\u306a\u3044\u53ef\u80fd\u6027\u304c\u3042\u308a\u307e\u3059\u3002"},"shop":{"checkoutSubmit":{"next":"\u6b21\u3078","wait":"\u304a\u5f85\u3061\u304f\u3060\u3055\u3044"},"paypalError":"\u30a8\u30e9\u30fc\u304c\u767a\u751f\u3057\u307e\u3057\u305f\u3002\u518d\u5ea6\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002","cartBar":"\u30b7\u30e7\u30c3\u30d4\u30f3\u30b0\u30ab\u30fc\u30c8\u3092\u78ba\u8a8d","maintenance":"\u7533\u3057\u8a33\u3054\u3056\u3044\u307e\u305b\u3093\u3001\u30e1\u30f3\u30c6\u30ca\u30f3\u30b9\u4e2d\u306e\u305f\u3081\u4e00\u6642\u7684\u306b\u30b7\u30e7\u30c3\u30d7\u304c\u5229\u7528\u3067\u304d\u307e\u305b\u3093\u3002\u3054\u8ff7\u60d1\u3092\u304a\u304b\u3051\u3057\u7533\u3057\u8a33\u3054\u3056\u3044\u307e\u305b\u3093\u304c\u3001\u304a\u6642\u9593\u3092\u3042\u3051\u3066\u518d\u5ea6\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002","addToCartOverlay":{"productInsertedText":"\u30ab\u30fc\u30c8\u306b\u5546\u54c1\u304c\u8ffd\u52a0\u3055\u308c\u307e\u3057\u305f","continueShoppingText":"\u8cb7\u3044\u7269\u3092\u7d9a\u3051\u308b","reloadPageText":"\u66f4\u65b0"},"notReadyText":"\u3053\u3061\u3089\u306e\u30b7\u30e7\u30c3\u30d7\u306f\u73fe\u5728\u6e96\u5099\u4e2d\u306e\u305f\u3081\u3054\u5229\u7528\u3044\u305f\u3060\u3051\u307e\u305b\u3093\u3002\u30b7\u30e7\u30c3\u30d7\u30aa\u30fc\u30ca\u30fc\u306f\u4ee5\u4e0b\u3092\u3054\u78ba\u8a8d\u304f\u3060\u3055\u3044\u3002http:\/\/jp-help.jimdo.com\/shopsetting\/","numLeftText":"\u73fe\u5728\u3053\u306e\u5546\u54c1\u306f {:num} \u307e\u3067\u8cfc\u5165\u3067\u304d\u307e\u3059\u3002","oneLeftText":"\u3053\u306e\u5546\u54c1\u306e\u5728\u5eab\u306f\u6b8b\u308a1\u70b9\u3067\u3059"},"common":{"timeout":"\u30a8\u30e9\u30fc\u304c\u767a\u751f\u3044\u305f\u3057\u307e\u3057\u305f\u3002\u5f8c\u307b\u3069\u518d\u5b9f\u884c\u3057\u3066\u304f\u3060\u3055\u3044\u3002"},"form":{"badRequest":"\u30a8\u30e9\u30fc\u304c\u767a\u751f\u3057\u307e\u3057\u305f\u3002\u5f8c\u307b\u3069\u6539\u3081\u3066\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002"}},"jQuery":"jimdoGen002","isJimdoMobileApp":false,"bgConfig":null,"bgFullscreen":null,"responsiveBreakpointLandscape":767,"responsiveBreakpointPortrait":480,"copyableHeadlineLinks":false,"tocGeneration":false,"googlemapsConsoleKey":false,"loggingForAnalytics":false,"loggingForPredefinedPages":false,"isFacebookPixelIdEnabled":false,"userAccountId":"ca156fa4-d411-434b-b710-e859a06a9e75"};
+    // ]]>
+</script>
+
+    <script type="text/javascript">window.CKIES_OPTIN = true;</script><script type="text/javascript">if (document.cookie.indexOf('ga-disable-UA-43873317-1') != -1 || !window.ckies.useMarketing()) { window['ga-disable-UA-43873317-1'] = true; }if (document.cookie.indexOf('ga-disable-UA-24231192-104') != -1 || !window.ckies.useMarketing()) { window['ga-disable-UA-24231192-104'] = true; }</script> <script> (function(window) { 'use strict'; var regBuff = window.__regModuleBuffer = []; var regModuleBuffer = function() { var args = [].slice.call(arguments); regBuff.push(args); }; if (!window.regModule) { window.regModule = regModuleBuffer; } })(window); </script>
+    <script src="https://assets.jimstatic.com/web.js.8da9df419c17e798fdbb.js" async="true"></script>
+<meta name="google-site-verification" content="p46Kci3r9Z7XL6Du0FXFQAP2w--jYoGnqDTY0q3QGFQ"/>
+<meta name="google-site-verification" content="p46Kci3r9Z7XL6Du0FXFQAP2w--jYoGnqDTY0q3QGFQ"/>
+<meta name="google-site-verification" content="V9cQJAODNeS3YuBLKgKmuptNs5GNtK4F-KV5iCFATc4"/>
+<meta name="msvalidate.01" content="57132DCD2FB2DACAEBF64A16F8E8EE6C"/>
+
+<script async="async" src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+<script type="text/javascript">
+//<![CDATA[
+ (adsbygoogle = window.adsbygoogle || []).push({ google_ad_client: "ca-pub-8608346909202413", enable_page_level_ads: true }); 
+//]]>
+</script>
+    
+</head>
+
+<body class="body cc-page cc-page-blog j-m-gallery-styles j-m-video-styles j-m-hr-styles j-m-header-styles j-m-text-styles j-m-emotionheader-styles j-m-htmlCode-styles j-m-rss-styles j-m-form-styles j-m-table-styles j-m-textWithImage-styles j-m-downloadDocument-styles j-m-imageSubtitle-styles j-m-flickr-styles j-m-googlemaps-styles j-m-blogSelection-styles j-m-comment-styles-disabled j-m-jimdo-styles j-m-profile-styles j-m-guestbook-styles j-m-promotion-styles j-m-twitter-styles j-m-hgrid-styles j-m-shoppingcart-styles j-m-catalog-styles j-m-product-styles-disabled j-m-facebook-styles j-m-sharebuttons-styles j-m-formnew-styles-disabled j-m-callToAction-styles j-m-turbo-styles j-m-spacing-styles j-m-googleplus-styles j-m-dummy-styles j-m-search-styles j-m-booking-styles j-footer-styles cc-pagemode-default cc-content-parent" id="page-2387995692">
+
+<div id="cc-inner" class="cc-content-parent">
+  <!-- _main.sass -->
+  <input type="checkbox" id="jtpl-navigation__checkbox" class="jtpl-navigation__checkbox"/><div class="jtpl-main cc-content-parent">
+
+    <!-- _background-area.sass -->
+    <div class="jtpl-background-area" background-area="fullscreen"></div>
+    <!-- END _background-area.sass -->
+
+    <!-- _header.sass -->
+    <header class="jtpl-header" background-area="stripe" background-area-default=""><div class="jtpl-topbar">
+
+        <!-- _navigation.sass -->
+        <nav class="jtpl-navigation navigation-colors navigation-alignment" data-dropdown="true"><div data-container="navigation"><div class="j-nav-variant-nested"><ul class="cc-nav-level-0 j-nav-level-0"><li id="cc-nav-view-1608997692" class="jmd-nav__list-item-0"><a href="/" data-link-title="Home">Home</a></li><li id="cc-nav-view-1716922192" class="jmd-nav__list-item-0"><a href="/android/" data-link-title="Android">Android</a></li><li id="cc-nav-view-2359523192" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/ubuntu/" data-link-title="Ubuntu">Ubuntu</a><span data-navi-toggle="cc-nav-view-2359523192" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2356922892" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-16-04-ja/" data-link-title="Ubuntu 16.04 ja">Ubuntu 16.04 ja</a></li><li id="cc-nav-view-2356734792" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-16-04-en/" data-link-title="Ubuntu 16.04 en">Ubuntu 16.04 en</a></li><li id="cc-nav-view-2396360792" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-16-10-ja/" data-link-title="Ubuntu 16.10 ja">Ubuntu 16.10 ja</a></li><li id="cc-nav-view-2396360892" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-16-10-en/" data-link-title="Ubuntu 16.10 en">Ubuntu 16.10 en</a></li><li id="cc-nav-view-2396360992" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-17-04-ja/" data-link-title="Ubuntu 17.04 ja">Ubuntu 17.04 ja</a></li><li id="cc-nav-view-2396361092" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-17-04-en/" data-link-title="Ubuntu 17.04 en">Ubuntu 17.04 en</a></li><li id="cc-nav-view-2402975092" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-17-10-ja/" data-link-title="Ubuntu 17.10 ja">Ubuntu 17.10 ja</a></li><li id="cc-nav-view-2402975192" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-17-10-en/" data-link-title="Ubuntu 17.10 en">Ubuntu 17.10 en</a></li><li id="cc-nav-view-2425563092" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-18-04-ja/" data-link-title="Ubuntu 18.04 ja">Ubuntu 18.04 ja</a></li><li id="cc-nav-view-2425563392" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-18-04-en/" data-link-title="Ubuntu 18.04 en">Ubuntu 18.04 en</a></li><li id="cc-nav-view-2446389192" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-18-10-ja/" data-link-title="Ubuntu 18.10 ja">Ubuntu 18.10 ja</a></li><li id="cc-nav-view-2446389292" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-18-10-en/" data-link-title="Ubuntu 18.10 en">Ubuntu 18.10 en</a></li><li id="cc-nav-view-2454519492" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-19-04-ja/" data-link-title="Ubuntu 19.04 ja">Ubuntu 19.04 ja</a></li><li id="cc-nav-view-2454519592" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-19-04-en/" data-link-title="Ubuntu 19.04 en">Ubuntu 19.04 en</a></li></ul></li><li id="cc-nav-view-2359523292" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/debian/" data-link-title="Debian">Debian</a><span data-navi-toggle="cc-nav-view-2359523292" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2357142992" class="jmd-nav__list-item-1"><a href="/debian/debian-8-ja/" data-link-title="Debian 8 ja">Debian 8 ja</a></li><li id="cc-nav-view-2357143092" class="jmd-nav__list-item-1"><a href="/debian/debian-8-en/" data-link-title="Debian 8 en">Debian 8 en</a></li><li id="cc-nav-view-2385465792" class="jmd-nav__list-item-1"><a href="/debian/debian-9-ja/" data-link-title="Debian 9 ja">Debian 9 ja</a></li><li id="cc-nav-view-2385466592" class="jmd-nav__list-item-1"><a href="/debian/debian-9-en/" data-link-title="Debian 9 en">Debian 9 en</a></li></ul></li><li id="cc-nav-view-2359523392" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/fedora/" data-link-title="Fedora">Fedora</a><span data-navi-toggle="cc-nav-view-2359523392" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2358501192" class="jmd-nav__list-item-1"><a href="/fedora/fedora-24-ja/" data-link-title="Fedora 24 ja">Fedora 24 ja</a></li><li id="cc-nav-view-2358501292" class="jmd-nav__list-item-1"><a href="/fedora/fedora-24-en/" data-link-title="Fedora 24 en">Fedora 24 en</a></li><li id="cc-nav-view-2365118892" class="jmd-nav__list-item-1"><a href="/fedora/fedora-25-ja/" data-link-title="Fedora 25 ja">Fedora 25 ja</a></li><li id="cc-nav-view-2365118992" class="jmd-nav__list-item-1"><a href="/fedora/fedora-25-en/" data-link-title="Fedora 25 en">Fedora 25 en</a></li><li id="cc-nav-view-2388863792" class="jmd-nav__list-item-1"><a href="/fedora/fedora-26-ja/" data-link-title="Fedora 26 ja">Fedora 26 ja</a></li><li id="cc-nav-view-2388863892" class="jmd-nav__list-item-1"><a href="/fedora/fedora-26-en/" data-link-title="Fedora 26 en">Fedora 26 en</a></li><li id="cc-nav-view-2403476892" class="jmd-nav__list-item-1"><a href="/fedora/fedora-27-ja/" data-link-title="Fedora 27 ja">Fedora 27 ja</a></li><li id="cc-nav-view-2403476992" class="jmd-nav__list-item-1"><a href="/fedora/fedora-27-en/" data-link-title="Fedora 27 en">Fedora 27 en</a></li><li id="cc-nav-view-2426405992" class="jmd-nav__list-item-1"><a href="/fedora/fedora-28-ja/" data-link-title="Fedora 28 ja">Fedora 28 ja</a></li><li id="cc-nav-view-2426406092" class="jmd-nav__list-item-1"><a href="/fedora/fedora-28-en/" data-link-title="Fedora 28 en">Fedora 28 en</a></li><li id="cc-nav-view-2447572892" class="jmd-nav__list-item-1"><a href="/fedora/fedora-29-ja/" data-link-title="Fedora 29 ja">Fedora 29 ja</a></li><li id="cc-nav-view-2447572992" class="jmd-nav__list-item-1"><a href="/fedora/fedora-29-en/" data-link-title="Fedora 29 en">Fedora 29 en</a></li><li id="cc-nav-view-2455338492" class="jmd-nav__list-item-1"><a href="/fedora/fedora-30-ja/" data-link-title="Fedora 30 ja">Fedora 30 ja</a></li><li id="cc-nav-view-2455338592" class="jmd-nav__list-item-1"><a href="/fedora/fedora-30-en/" data-link-title="Fedora 30 en">Fedora 30 en</a></li></ul></li><li id="cc-nav-view-2359523492" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/centos/" data-link-title="CentOS">CentOS</a><span data-navi-toggle="cc-nav-view-2359523492" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2363096992" class="jmd-nav__list-item-1"><a href="/centos/centos-6-ja/" data-link-title="CentOS 6 ja">CentOS 6 ja</a></li><li id="cc-nav-view-2363097092" class="jmd-nav__list-item-1"><a href="/centos/centos-6-en-1/" data-link-title="CentOS 6 en">CentOS 6 en</a></li><li id="cc-nav-view-2357239592" class="jmd-nav__list-item-1"><a href="/centos/centos-7-ja/" data-link-title="CentOS 7 ja">CentOS 7 ja</a></li><li id="cc-nav-view-2357239692" class="jmd-nav__list-item-1"><a href="/centos/centos-7-en/" data-link-title="CentOS 7 en">CentOS 7 en</a></li></ul></li><li id="cc-nav-view-2359523792" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/linuxmint/" data-link-title="LinuxMint">LinuxMint</a><span data-navi-toggle="cc-nav-view-2359523792" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2359279092" class="jmd-nav__list-item-1"><a href="/linuxmint/linuxmint-18-ja/" data-link-title="LinuxMint 18 ja">LinuxMint 18 ja</a></li><li id="cc-nav-view-2359279192" class="jmd-nav__list-item-1"><a href="/linuxmint/linuxmint-18-en/" data-link-title="LinuxMint 18 en">LinuxMint 18 en</a></li><li id="cc-nav-view-2434277292" class="jmd-nav__list-item-1"><a href="/linuxmint/linuxmint-19-ja/" data-link-title="LinuxMint 19 ja">LinuxMint 19 ja</a></li><li id="cc-nav-view-2434277792" class="jmd-nav__list-item-1"><a href="/linuxmint/linuxmint-19-en/" data-link-title="LinuxMint 19 en">LinuxMint 19 en</a></li></ul></li><li id="cc-nav-view-2359523692" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/archlinux/" data-link-title="ArchLinux">ArchLinux</a><span data-navi-toggle="cc-nav-view-2359523692" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2357613992" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2016-06-01-ja/" data-link-title="ArchLinux 2016.06.01 ja">ArchLinux 2016.06.01 ja</a></li><li id="cc-nav-view-2357614092" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2016-06-01-en/" data-link-title="ArchLinux 2016.06.01 en">ArchLinux 2016.06.01 en</a></li><li id="cc-nav-view-2400548692" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2017-10-01-ja/" data-link-title="ArchLinux 2017.10.01 ja">ArchLinux 2017.10.01 ja</a></li><li id="cc-nav-view-2400548792" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2017-10-01-en/" data-link-title="ArchLinux 2017.10.01 en">ArchLinux 2017.10.01 en</a></li><li id="cc-nav-view-2445083992" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2018-10-01-ja/" data-link-title="ArchLinux 2018.10.01 ja">ArchLinux 2018.10.01 ja</a></li><li id="cc-nav-view-2445084092" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2018-10-01-en/" data-link-title="ArchLinux 2018.10.01 en">ArchLinux 2018.10.01 en</a></li></ul></li><li id="cc-nav-view-2365410692" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/opensuse/" data-link-title="OpenSUSE">OpenSUSE</a><span data-navi-toggle="cc-nav-view-2365410692" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2365410792" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-13-ja/" data-link-title="OpenSUSE 13 ja">OpenSUSE 13 ja</a></li><li id="cc-nav-view-2365410892" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-13-en/" data-link-title="OpenSUSE 13 en">OpenSUSE 13 en</a></li><li id="cc-nav-view-2380026392" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-leap-42-ja/" data-link-title="OpenSUSE Leap 42 ja">OpenSUSE Leap 42 ja</a></li><li id="cc-nav-view-2380026492" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-leap-42-en/" data-link-title="OpenSUSE Leap 42 en">OpenSUSE Leap 42 en</a></li><li id="cc-nav-view-2430514292" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-leap-15-ja/" data-link-title="OpenSUSE Leap 15 ja">OpenSUSE Leap 15 ja</a></li><li id="cc-nav-view-2430514492" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-leap-15-en/" data-link-title="OpenSUSE Leap 15 en">OpenSUSE Leap 15 en</a></li></ul></li><li id="cc-nav-view-2391961992" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/kalilinux/" data-link-title="KaliLinux">KaliLinux</a><span data-navi-toggle="cc-nav-view-2391961992" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2391962092" class="jmd-nav__list-item-1"><a href="/kalilinux/kalilinux-2017-1-ja/" data-link-title="KaliLinux 2017.1 ja">KaliLinux 2017.1 ja</a></li><li id="cc-nav-view-2391962192" class="jmd-nav__list-item-1"><a href="/kalilinux/kalilinux-2017-1-en/" data-link-title="KaliLinux 2017.1 en">KaliLinux 2017.1 en</a></li><li id="cc-nav-view-2437961392" class="jmd-nav__list-item-1"><a href="/kalilinux/kalilinux-2018-2-ja/" data-link-title="KaliLinux 2018.2 ja">KaliLinux 2018.2 ja</a></li><li id="cc-nav-view-2437961492" class="jmd-nav__list-item-1"><a href="/kalilinux/kalilinux-2018-2-en/" data-link-title="KaliLinux 2018.2 en">KaliLinux 2018.2 en</a></li></ul></li><li id="cc-nav-view-2395078792" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/alpinelinux/" data-link-title="AlpineLinux">AlpineLinux</a><span data-navi-toggle="cc-nav-view-2395078792" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2395079192" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-6-ja/" data-link-title="AlpineLinux 3.6 ja">AlpineLinux 3.6 ja</a></li><li id="cc-nav-view-2395079292" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-6-en/" data-link-title="AlpineLinux 3.6 en">AlpineLinux 3.6 en</a></li><li id="cc-nav-view-2403725892" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-7-ja/" data-link-title="AlpineLinux 3.7 ja">AlpineLinux 3.7 ja</a></li><li id="cc-nav-view-2403725992" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-7-en/" data-link-title="AlpineLinux 3.7 en">AlpineLinux 3.7 en</a></li><li id="cc-nav-view-2438853992" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-8-ja/" data-link-title="AlpineLinux 3.8 ja">AlpineLinux 3.8 ja</a></li><li id="cc-nav-view-2438854092" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-8-en/" data-link-title="AlpineLinux 3.8 en">AlpineLinux 3.8 en</a></li></ul></li><li id="cc-nav-view-2398464692" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/parrotsecurity/" data-link-title="ParrotSecurity">ParrotSecurity</a><span data-navi-toggle="cc-nav-view-2398464692" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2398464792" class="jmd-nav__list-item-1"><a href="/parrotsecurity/parrotsecurity-3-8-ja/" data-link-title="ParrotSecurity 3.8 ja">ParrotSecurity 3.8 ja</a></li><li id="cc-nav-view-2398464892" class="jmd-nav__list-item-1"><a href="/parrotsecurity/parrotsecurity-3-8-en/" data-link-title="ParrotSecurity 3.8 en">ParrotSecurity 3.8 en</a></li><li id="cc-nav-view-2440461192" class="jmd-nav__list-item-1"><a href="/parrotsecurity/parrotsecurity-4-2-ja/" data-link-title="ParrotSecurity 4.2 ja">ParrotSecurity 4.2 ja</a></li><li id="cc-nav-view-2440461292" class="jmd-nav__list-item-1"><a href="/parrotsecurity/parrotsecurity-4-2-en/" data-link-title="ParrotSecurity 4.2 en">ParrotSecurity 4.2 en</a></li></ul></li><li id="cc-nav-view-2399776992" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/elementaryos/" data-link-title="ElementaryOS">ElementaryOS</a><span data-navi-toggle="cc-nav-view-2399776992" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2399777092" class="jmd-nav__list-item-1"><a href="/elementaryos/elementaryos-0-4-ja/" data-link-title="ElementaryOS 0.4 ja">ElementaryOS 0.4 ja</a></li><li id="cc-nav-view-2399777192" class="jmd-nav__list-item-1"><a href="/elementaryos/elementaryos-0-4-en/" data-link-title="ElementaryOS 0.4 en">ElementaryOS 0.4 en</a></li></ul></li><li id="cc-nav-view-2403896792" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/docker/" data-link-title="Docker">Docker</a><span data-navi-toggle="cc-nav-view-2403896792" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2403896892" class="jmd-nav__list-item-1"><a href="/docker/docker-ja/" data-link-title="Docker ja">Docker ja</a></li><li id="cc-nav-view-2403896992" class="jmd-nav__list-item-1"><a href="/docker/docker-en/" data-link-title="Docker en">Docker en</a></li></ul></li><li id="cc-nav-view-2359523892" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/other-stuff/" data-link-title="Other stuff">Other stuff</a><span data-navi-toggle="cc-nav-view-2359523892" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-1716922292" class="jmd-nav__list-item-1"><a href="/other-stuff/other-stuff-ja/" data-link-title="Other stuff ja">Other stuff ja</a></li><li id="cc-nav-view-2357010692" class="jmd-nav__list-item-1"><a href="/other-stuff/other-stuff-en/" data-link-title="Other stuff en">Other stuff en</a></li><li id="cc-nav-view-2342803792" class="jmd-nav__list-item-1"><a href="/other-stuff/emacs-ja/" data-link-title="Emacs ja">Emacs ja</a></li><li id="cc-nav-view-2363902692" class="jmd-nav__list-item-1"><a href="/other-stuff/emacs-en/" data-link-title="Emacs en">Emacs en</a></li><li id="cc-nav-view-2264642592" class="jmd-nav__list-item-1"><a href="/other-stuff/sdl2/" data-link-title="SDL2">SDL2</a></li><li id="cc-nav-view-1816930292" class="jmd-nav__list-item-1"><a href="/other-stuff/gcc/" data-link-title="GCC">GCC</a></li><li id="cc-nav-view-1818120592" class="jmd-nav__list-item-1"><a href="/other-stuff/clang/" data-link-title="Clang">Clang</a></li><li id="cc-nav-view-2354907692" class="jmd-nav__list-item-1"><a href="/other-stuff/python-ja/" data-link-title="Python ja">Python ja</a></li><li id="cc-nav-view-2362351092" class="jmd-nav__list-item-1"><a href="/other-stuff/python-en/" data-link-title="Python en">Python en</a></li></ul></li></ul></div></div>
+        </nav><!-- END _navigation.sass --><!-- _mobile-navigation.sass --><label for="jtpl-navigation__checkbox" class="jtpl-navigation__label navigation-colors__menu-icon">
+          <span class="jtpl-navigation__borders navigation-colors__menu-icon"></span>
+        </label>
+        <nav class="jtpl-mobile-navigation navigation-colors navigation-colors--transparency"><div data-container="navigation"><div class="j-nav-variant-nested"><ul class="cc-nav-level-0 j-nav-level-0"><li id="cc-nav-view-1608997692" class="jmd-nav__list-item-0"><a href="/" data-link-title="Home">Home</a></li><li id="cc-nav-view-1716922192" class="jmd-nav__list-item-0"><a href="/android/" data-link-title="Android">Android</a></li><li id="cc-nav-view-2359523192" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/ubuntu/" data-link-title="Ubuntu">Ubuntu</a><span data-navi-toggle="cc-nav-view-2359523192" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2356922892" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-16-04-ja/" data-link-title="Ubuntu 16.04 ja">Ubuntu 16.04 ja</a></li><li id="cc-nav-view-2356734792" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-16-04-en/" data-link-title="Ubuntu 16.04 en">Ubuntu 16.04 en</a></li><li id="cc-nav-view-2396360792" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-16-10-ja/" data-link-title="Ubuntu 16.10 ja">Ubuntu 16.10 ja</a></li><li id="cc-nav-view-2396360892" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-16-10-en/" data-link-title="Ubuntu 16.10 en">Ubuntu 16.10 en</a></li><li id="cc-nav-view-2396360992" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-17-04-ja/" data-link-title="Ubuntu 17.04 ja">Ubuntu 17.04 ja</a></li><li id="cc-nav-view-2396361092" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-17-04-en/" data-link-title="Ubuntu 17.04 en">Ubuntu 17.04 en</a></li><li id="cc-nav-view-2402975092" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-17-10-ja/" data-link-title="Ubuntu 17.10 ja">Ubuntu 17.10 ja</a></li><li id="cc-nav-view-2402975192" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-17-10-en/" data-link-title="Ubuntu 17.10 en">Ubuntu 17.10 en</a></li><li id="cc-nav-view-2425563092" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-18-04-ja/" data-link-title="Ubuntu 18.04 ja">Ubuntu 18.04 ja</a></li><li id="cc-nav-view-2425563392" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-18-04-en/" data-link-title="Ubuntu 18.04 en">Ubuntu 18.04 en</a></li><li id="cc-nav-view-2446389192" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-18-10-ja/" data-link-title="Ubuntu 18.10 ja">Ubuntu 18.10 ja</a></li><li id="cc-nav-view-2446389292" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-18-10-en/" data-link-title="Ubuntu 18.10 en">Ubuntu 18.10 en</a></li><li id="cc-nav-view-2454519492" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-19-04-ja/" data-link-title="Ubuntu 19.04 ja">Ubuntu 19.04 ja</a></li><li id="cc-nav-view-2454519592" class="jmd-nav__list-item-1"><a href="/ubuntu/ubuntu-19-04-en/" data-link-title="Ubuntu 19.04 en">Ubuntu 19.04 en</a></li></ul></li><li id="cc-nav-view-2359523292" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/debian/" data-link-title="Debian">Debian</a><span data-navi-toggle="cc-nav-view-2359523292" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2357142992" class="jmd-nav__list-item-1"><a href="/debian/debian-8-ja/" data-link-title="Debian 8 ja">Debian 8 ja</a></li><li id="cc-nav-view-2357143092" class="jmd-nav__list-item-1"><a href="/debian/debian-8-en/" data-link-title="Debian 8 en">Debian 8 en</a></li><li id="cc-nav-view-2385465792" class="jmd-nav__list-item-1"><a href="/debian/debian-9-ja/" data-link-title="Debian 9 ja">Debian 9 ja</a></li><li id="cc-nav-view-2385466592" class="jmd-nav__list-item-1"><a href="/debian/debian-9-en/" data-link-title="Debian 9 en">Debian 9 en</a></li></ul></li><li id="cc-nav-view-2359523392" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/fedora/" data-link-title="Fedora">Fedora</a><span data-navi-toggle="cc-nav-view-2359523392" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2358501192" class="jmd-nav__list-item-1"><a href="/fedora/fedora-24-ja/" data-link-title="Fedora 24 ja">Fedora 24 ja</a></li><li id="cc-nav-view-2358501292" class="jmd-nav__list-item-1"><a href="/fedora/fedora-24-en/" data-link-title="Fedora 24 en">Fedora 24 en</a></li><li id="cc-nav-view-2365118892" class="jmd-nav__list-item-1"><a href="/fedora/fedora-25-ja/" data-link-title="Fedora 25 ja">Fedora 25 ja</a></li><li id="cc-nav-view-2365118992" class="jmd-nav__list-item-1"><a href="/fedora/fedora-25-en/" data-link-title="Fedora 25 en">Fedora 25 en</a></li><li id="cc-nav-view-2388863792" class="jmd-nav__list-item-1"><a href="/fedora/fedora-26-ja/" data-link-title="Fedora 26 ja">Fedora 26 ja</a></li><li id="cc-nav-view-2388863892" class="jmd-nav__list-item-1"><a href="/fedora/fedora-26-en/" data-link-title="Fedora 26 en">Fedora 26 en</a></li><li id="cc-nav-view-2403476892" class="jmd-nav__list-item-1"><a href="/fedora/fedora-27-ja/" data-link-title="Fedora 27 ja">Fedora 27 ja</a></li><li id="cc-nav-view-2403476992" class="jmd-nav__list-item-1"><a href="/fedora/fedora-27-en/" data-link-title="Fedora 27 en">Fedora 27 en</a></li><li id="cc-nav-view-2426405992" class="jmd-nav__list-item-1"><a href="/fedora/fedora-28-ja/" data-link-title="Fedora 28 ja">Fedora 28 ja</a></li><li id="cc-nav-view-2426406092" class="jmd-nav__list-item-1"><a href="/fedora/fedora-28-en/" data-link-title="Fedora 28 en">Fedora 28 en</a></li><li id="cc-nav-view-2447572892" class="jmd-nav__list-item-1"><a href="/fedora/fedora-29-ja/" data-link-title="Fedora 29 ja">Fedora 29 ja</a></li><li id="cc-nav-view-2447572992" class="jmd-nav__list-item-1"><a href="/fedora/fedora-29-en/" data-link-title="Fedora 29 en">Fedora 29 en</a></li><li id="cc-nav-view-2455338492" class="jmd-nav__list-item-1"><a href="/fedora/fedora-30-ja/" data-link-title="Fedora 30 ja">Fedora 30 ja</a></li><li id="cc-nav-view-2455338592" class="jmd-nav__list-item-1"><a href="/fedora/fedora-30-en/" data-link-title="Fedora 30 en">Fedora 30 en</a></li></ul></li><li id="cc-nav-view-2359523492" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/centos/" data-link-title="CentOS">CentOS</a><span data-navi-toggle="cc-nav-view-2359523492" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2363096992" class="jmd-nav__list-item-1"><a href="/centos/centos-6-ja/" data-link-title="CentOS 6 ja">CentOS 6 ja</a></li><li id="cc-nav-view-2363097092" class="jmd-nav__list-item-1"><a href="/centos/centos-6-en-1/" data-link-title="CentOS 6 en">CentOS 6 en</a></li><li id="cc-nav-view-2357239592" class="jmd-nav__list-item-1"><a href="/centos/centos-7-ja/" data-link-title="CentOS 7 ja">CentOS 7 ja</a></li><li id="cc-nav-view-2357239692" class="jmd-nav__list-item-1"><a href="/centos/centos-7-en/" data-link-title="CentOS 7 en">CentOS 7 en</a></li></ul></li><li id="cc-nav-view-2359523792" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/linuxmint/" data-link-title="LinuxMint">LinuxMint</a><span data-navi-toggle="cc-nav-view-2359523792" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2359279092" class="jmd-nav__list-item-1"><a href="/linuxmint/linuxmint-18-ja/" data-link-title="LinuxMint 18 ja">LinuxMint 18 ja</a></li><li id="cc-nav-view-2359279192" class="jmd-nav__list-item-1"><a href="/linuxmint/linuxmint-18-en/" data-link-title="LinuxMint 18 en">LinuxMint 18 en</a></li><li id="cc-nav-view-2434277292" class="jmd-nav__list-item-1"><a href="/linuxmint/linuxmint-19-ja/" data-link-title="LinuxMint 19 ja">LinuxMint 19 ja</a></li><li id="cc-nav-view-2434277792" class="jmd-nav__list-item-1"><a href="/linuxmint/linuxmint-19-en/" data-link-title="LinuxMint 19 en">LinuxMint 19 en</a></li></ul></li><li id="cc-nav-view-2359523692" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/archlinux/" data-link-title="ArchLinux">ArchLinux</a><span data-navi-toggle="cc-nav-view-2359523692" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2357613992" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2016-06-01-ja/" data-link-title="ArchLinux 2016.06.01 ja">ArchLinux 2016.06.01 ja</a></li><li id="cc-nav-view-2357614092" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2016-06-01-en/" data-link-title="ArchLinux 2016.06.01 en">ArchLinux 2016.06.01 en</a></li><li id="cc-nav-view-2400548692" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2017-10-01-ja/" data-link-title="ArchLinux 2017.10.01 ja">ArchLinux 2017.10.01 ja</a></li><li id="cc-nav-view-2400548792" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2017-10-01-en/" data-link-title="ArchLinux 2017.10.01 en">ArchLinux 2017.10.01 en</a></li><li id="cc-nav-view-2445083992" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2018-10-01-ja/" data-link-title="ArchLinux 2018.10.01 ja">ArchLinux 2018.10.01 ja</a></li><li id="cc-nav-view-2445084092" class="jmd-nav__list-item-1"><a href="/archlinux/archlinux-2018-10-01-en/" data-link-title="ArchLinux 2018.10.01 en">ArchLinux 2018.10.01 en</a></li></ul></li><li id="cc-nav-view-2365410692" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/opensuse/" data-link-title="OpenSUSE">OpenSUSE</a><span data-navi-toggle="cc-nav-view-2365410692" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2365410792" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-13-ja/" data-link-title="OpenSUSE 13 ja">OpenSUSE 13 ja</a></li><li id="cc-nav-view-2365410892" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-13-en/" data-link-title="OpenSUSE 13 en">OpenSUSE 13 en</a></li><li id="cc-nav-view-2380026392" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-leap-42-ja/" data-link-title="OpenSUSE Leap 42 ja">OpenSUSE Leap 42 ja</a></li><li id="cc-nav-view-2380026492" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-leap-42-en/" data-link-title="OpenSUSE Leap 42 en">OpenSUSE Leap 42 en</a></li><li id="cc-nav-view-2430514292" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-leap-15-ja/" data-link-title="OpenSUSE Leap 15 ja">OpenSUSE Leap 15 ja</a></li><li id="cc-nav-view-2430514492" class="jmd-nav__list-item-1"><a href="/opensuse/opensuse-leap-15-en/" data-link-title="OpenSUSE Leap 15 en">OpenSUSE Leap 15 en</a></li></ul></li><li id="cc-nav-view-2391961992" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/kalilinux/" data-link-title="KaliLinux">KaliLinux</a><span data-navi-toggle="cc-nav-view-2391961992" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2391962092" class="jmd-nav__list-item-1"><a href="/kalilinux/kalilinux-2017-1-ja/" data-link-title="KaliLinux 2017.1 ja">KaliLinux 2017.1 ja</a></li><li id="cc-nav-view-2391962192" class="jmd-nav__list-item-1"><a href="/kalilinux/kalilinux-2017-1-en/" data-link-title="KaliLinux 2017.1 en">KaliLinux 2017.1 en</a></li><li id="cc-nav-view-2437961392" class="jmd-nav__list-item-1"><a href="/kalilinux/kalilinux-2018-2-ja/" data-link-title="KaliLinux 2018.2 ja">KaliLinux 2018.2 ja</a></li><li id="cc-nav-view-2437961492" class="jmd-nav__list-item-1"><a href="/kalilinux/kalilinux-2018-2-en/" data-link-title="KaliLinux 2018.2 en">KaliLinux 2018.2 en</a></li></ul></li><li id="cc-nav-view-2395078792" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/alpinelinux/" data-link-title="AlpineLinux">AlpineLinux</a><span data-navi-toggle="cc-nav-view-2395078792" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2395079192" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-6-ja/" data-link-title="AlpineLinux 3.6 ja">AlpineLinux 3.6 ja</a></li><li id="cc-nav-view-2395079292" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-6-en/" data-link-title="AlpineLinux 3.6 en">AlpineLinux 3.6 en</a></li><li id="cc-nav-view-2403725892" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-7-ja/" data-link-title="AlpineLinux 3.7 ja">AlpineLinux 3.7 ja</a></li><li id="cc-nav-view-2403725992" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-7-en/" data-link-title="AlpineLinux 3.7 en">AlpineLinux 3.7 en</a></li><li id="cc-nav-view-2438853992" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-8-ja/" data-link-title="AlpineLinux 3.8 ja">AlpineLinux 3.8 ja</a></li><li id="cc-nav-view-2438854092" class="jmd-nav__list-item-1"><a href="/alpinelinux/alpinelinux-3-8-en/" data-link-title="AlpineLinux 3.8 en">AlpineLinux 3.8 en</a></li></ul></li><li id="cc-nav-view-2398464692" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/parrotsecurity/" data-link-title="ParrotSecurity">ParrotSecurity</a><span data-navi-toggle="cc-nav-view-2398464692" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2398464792" class="jmd-nav__list-item-1"><a href="/parrotsecurity/parrotsecurity-3-8-ja/" data-link-title="ParrotSecurity 3.8 ja">ParrotSecurity 3.8 ja</a></li><li id="cc-nav-view-2398464892" class="jmd-nav__list-item-1"><a href="/parrotsecurity/parrotsecurity-3-8-en/" data-link-title="ParrotSecurity 3.8 en">ParrotSecurity 3.8 en</a></li><li id="cc-nav-view-2440461192" class="jmd-nav__list-item-1"><a href="/parrotsecurity/parrotsecurity-4-2-ja/" data-link-title="ParrotSecurity 4.2 ja">ParrotSecurity 4.2 ja</a></li><li id="cc-nav-view-2440461292" class="jmd-nav__list-item-1"><a href="/parrotsecurity/parrotsecurity-4-2-en/" data-link-title="ParrotSecurity 4.2 en">ParrotSecurity 4.2 en</a></li></ul></li><li id="cc-nav-view-2399776992" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/elementaryos/" data-link-title="ElementaryOS">ElementaryOS</a><span data-navi-toggle="cc-nav-view-2399776992" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2399777092" class="jmd-nav__list-item-1"><a href="/elementaryos/elementaryos-0-4-ja/" data-link-title="ElementaryOS 0.4 ja">ElementaryOS 0.4 ja</a></li><li id="cc-nav-view-2399777192" class="jmd-nav__list-item-1"><a href="/elementaryos/elementaryos-0-4-en/" data-link-title="ElementaryOS 0.4 en">ElementaryOS 0.4 en</a></li></ul></li><li id="cc-nav-view-2403896792" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/docker/" data-link-title="Docker">Docker</a><span data-navi-toggle="cc-nav-view-2403896792" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-2403896892" class="jmd-nav__list-item-1"><a href="/docker/docker-ja/" data-link-title="Docker ja">Docker ja</a></li><li id="cc-nav-view-2403896992" class="jmd-nav__list-item-1"><a href="/docker/docker-en/" data-link-title="Docker en">Docker en</a></li></ul></li><li id="cc-nav-view-2359523892" class="jmd-nav__list-item-0 j-nav-has-children"><a href="/other-stuff/" data-link-title="Other stuff">Other stuff</a><span data-navi-toggle="cc-nav-view-2359523892" class="jmd-nav__toggle-button"></span><ul class="cc-nav-level-1 j-nav-level-1"><li id="cc-nav-view-1716922292" class="jmd-nav__list-item-1"><a href="/other-stuff/other-stuff-ja/" data-link-title="Other stuff ja">Other stuff ja</a></li><li id="cc-nav-view-2357010692" class="jmd-nav__list-item-1"><a href="/other-stuff/other-stuff-en/" data-link-title="Other stuff en">Other stuff en</a></li><li id="cc-nav-view-2342803792" class="jmd-nav__list-item-1"><a href="/other-stuff/emacs-ja/" data-link-title="Emacs ja">Emacs ja</a></li><li id="cc-nav-view-2363902692" class="jmd-nav__list-item-1"><a href="/other-stuff/emacs-en/" data-link-title="Emacs en">Emacs en</a></li><li id="cc-nav-view-2264642592" class="jmd-nav__list-item-1"><a href="/other-stuff/sdl2/" data-link-title="SDL2">SDL2</a></li><li id="cc-nav-view-1816930292" class="jmd-nav__list-item-1"><a href="/other-stuff/gcc/" data-link-title="GCC">GCC</a></li><li id="cc-nav-view-1818120592" class="jmd-nav__list-item-1"><a href="/other-stuff/clang/" data-link-title="Clang">Clang</a></li><li id="cc-nav-view-2354907692" class="jmd-nav__list-item-1"><a href="/other-stuff/python-ja/" data-link-title="Python ja">Python ja</a></li><li id="cc-nav-view-2362351092" class="jmd-nav__list-item-1"><a href="/other-stuff/python-en/" data-link-title="Python en">Python en</a></li></ul></li></ul></div></div>
+        </nav><!-- END _mobile-navigation.sass --><!-- _cart.sass --><div class="jtpl-cart">
+          
+        </div>
+        <!-- END _cart.sass -->
+
+      </div>
+      <div class="jtpl-header__inner">
+        <div class="jtpl-logo">
+          
+        </div>
+        <div class="jtpl-title">
+          <div id="cc-website-title" class="cc-single-module-element"><div id="cc-m-10947799892" class="j-module n j-header"><a href="https://www.hiroom2.com/"><span class="cc-within-single-module-element j-website-title-content" id="cc-m-header-10947799892">Narrow Escape</span></a></div></div>
+        </div>
+      </div>
+    </header><!-- END _header.sass --><!-- _content.sass --><div class="jtpl-section flex-background-options border-options cc-content-parent">
+      <div class="jtpl-section__gutter cc-content-parent">
+        <section class="jtpl-content cc-content-parent"><div class="jtpl-content__shadow"></div>
+          <div class="jtpl-content__inner content-options cc-content-parent">
+            <div id="content_area" data-container="content"><div id="content_start"></div>
+        <article class="j-blog"><div class="n j-blog-meta j-blog-post--header">
+    <div class="j-text j-module n">
+                <span class="j-text j-blog-post--date">
+            07日 7月 2017        </span>
+    </div>
+    <h1 class="j-blog-header j-blog-headline j-blog-post--headline">CentOS 7: Install PXE Boot server for thin client with NFS</h1>
+</div>
+<div class="post j-blog-content">
+        <div id="cc-matrix-3580342392"><div id="cc-m-12839460892" class="j-module n j-text "><p>
+    This article will run PXE Boot server with NFS for thin client, and run CentOS 7 on client which is connected to PXE Boot server via network. You do not need to install CentOS 7 on client.
+</p></div><div id="cc-m-12839460992" class="j-module n j-spacing ">
+    <div class="cc-m-spacer" style="height: 25px;">
+    
+</div>
+
+</div><div id="cc-m-12839461092" class="j-module n j-sharebuttons ">
+<div class="cc-sharebuttons-element cc-sharebuttons-size-32 cc-sharebuttons-style-colored cc-sharebuttons-design-square cc-sharebuttons-align-left">
+
+
+    <a class="cc-sharebuttons-facebook" href="http://www.facebook.com/sharer.php?u=https://www.hiroom2.com/2017/07/07/centos-7-pxeboot-thin-client-nfs-en/&amp;t=CentOS%207%3A%20Install%20PXE%20Boot%20server%20for%20thin%20client%20with%20NFS" title="Facebook" target="_blank"></a><a class="cc-sharebuttons-twitter" href="http://twitter.com/share?text=CentOS%207%3A%20Install%20PXE%20Boot%20server%20for%20thin%20client%20with%20NFS&amp;url=https%3A%2F%2Fwww.hiroom2.com%2F2017%2F07%2F07%2Fcentos-7-pxeboot-thin-client-nfs-en%2F" title="Twitter" target="_blank"></a><a class="cc-sharebuttons-reddit" href="http://reddit.com/submit?url=https://www.hiroom2.com/2017/07/07/centos-7-pxeboot-thin-client-nfs-en/&amp;title=CentOS%207%3A%20Install%20PXE%20Boot%20server%20for%20thin%20client%20with%20NFS" title="Reddit" target="_blank"></a>
+
+</div>
+</div><div id="cc-m-12839461192" class="j-module n j-text "><!--?xml version="1.0" encoding="utf-8"?-->
+
+<div id="content">
+    <div id="table-of-contents">
+        <h2>
+            Table of Contents
+        </h2>
+
+        <div id="text-table-of-contents">
+            <ul>
+                <li>
+                    <a href="#sec-1">1. Install PXE Boot server</a>
+                </li>
+
+                <li>
+                    <a href="#sec-2">2. Run CentOS 7 thin client with NFS</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="outline-container-sec-1" class="outline-2">
+        <h2 id="sec-1">
+            <span class="section-number-2">1</span> Install PXE Boot server
+        </h2>
+
+        <div class="outline-text-2" id="text-1">
+            <p>
+                The following script will install PXE Boot server. Change the variables to your environment.
+            </p>
+
+            <ul class="org-ul">
+                <li>SERVER_IPADDR is IP adress of PXE Boot server.
+                </li>
+
+                <li>DHCP_SERVER_INTERFACESv4 is network interface name for DHCP. DHCP will be provided via this network interface.
+                </li>
+
+                <li>DHCP_SUBNET is network address for DHCP.
+                </li>
+
+                <li>DHCP_NETMASK is subnet for DHCP.
+                </li>
+
+                <li>DHCP_DNS is DNS for DHCP.
+                </li>
+
+                <li>DHCP_ROUTER is gateway for DHCP.
+                </li>
+
+                <li>DHCP_CLIENT_HOSTNAME is hostname of client.
+                </li>
+
+                <li>DHCP_CLIENT_IPADDR is IP address of client.
+                </li>
+
+                <li>DHCP_CLIENT_MACADDR is MAC address of client.
+                </li>
+            </ul>
+
+            <p>
+                NFS root filesystem is set to the following.
+            </p>
+
+            <ul class="org-ul">
+                <li>Set root user password to "centos".
+                </li>
+
+                <li>Create user which name is "centos" and password is "centos".
+                </li>
+            </ul>
+
+            <div class="org-src-container">
+                <pre class="src src-sh" style="background-color: #eeeeee; border: 1px solid Gray; padding: 8px;">
+<span style="color: #cdcd00;">#</span><span style="color: #cdcd00;">!/bin/</span><span style="color: #00cdcd; font-weight: bold;">sh</span>
+
+<span style="color: #0000ee; font-weight: bold;">set</span> -e
+
+<span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">Change the following variable to yours.</span>
+[ -z <span style="color: #00cd00;">"${SERVER_IPADDR}"</span> ] &amp;&amp; <span style="color: #00cd00;">\</span>
+  <span style="color: #cdcd00;">SERVER_IPADDR</span>=$(hostname -I | awk <span style="color: #00cd00;">'{ print $1 }'</span>)
+[ -z <span style="color: #00cd00;">"${DHCP_SUBNET}"</span> ] &amp;&amp; <span style="color: #cdcd00;">DHCP_SUBNET</span>=192.168.11.0
+[ -z <span style="color: #00cd00;">"${DHCP_NETMASK}"</span> ] &amp;&amp; <span style="color: #cdcd00;">DHCP_NETMASK</span>=255.255.255.0
+[ -z <span style="color: #00cd00;">"${DHCP_DOMAIN}"</span> ] &amp;&amp; <span style="color: #cdcd00;">DHCP_DOMAIN</span>=hiroom2.com
+[ -z <span style="color: #00cd00;">"${DHCP_DNS}"</span> ] &amp;&amp; <span style="color: #cdcd00;">DHCP_DNS</span>=<span style="color: #00cd00;">"192.168.11.2, 192.168.11.1"</span>
+[ -z <span style="color: #00cd00;">"${DHCP_ROUTER}"</span> ] &amp;&amp; <span style="color: #cdcd00;">DHCP_ROUTER</span>=192.168.11.1
+[ -z <span style="color: #00cd00;">"${DHCP_CLIENT_HOSTNAME}"</span> ] &amp;&amp; <span style="color: #00cd00;">\</span>
+  <span style="color: #cdcd00;">DHCP_CLIENT_HOSTNAME</span>=centos-7-pxeboot-client
+[ -z <span style="color: #00cd00;">"${DHCP_CLIENT_IPADDR}"</span> ] &amp;&amp; <span style="color: #cdcd00;">DHCP_CLIENT_IPADDR</span>=192.168.11.254
+[ -z <span style="color: #00cd00;">"${DHCP_CLIENT_MACADDR}"</span> ] &amp;&amp; <span style="color: #cdcd00;">DHCP_CLIENT_MACADDR</span>=52:54:00:5e:7a:a4
+
+<span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">The mirror.centos.org is slow. You should use your country mirror server.</span>
+<span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">e.g.) MIRROR_URL=http://ftp.riken.jp/Linux/centos/7/os/x86_64</span>
+[ -z <span style="color: #00cd00;">"${MIRROR_URL}"</span> ] &amp;&amp; <span style="color: #00cd00;">\</span>
+  <span style="color: #cdcd00;">MIRROR_URL</span>=http://mirror.centos.org/centos-7/7/os/x86_64
+
+<span style="color: #0000ee; font-weight: bold;">tftp_server_install</span>()
+{
+  sudo yum install -y tftp-server
+  sudo firewall-cmd --add-service=tftp --permanent
+  sudo firewall-cmd --reload
+  sudo systemctl enable tftp
+  sudo systemctl restart tftp
+}
+
+<span style="color: #0000ee; font-weight: bold;">dhcp_install</span>()
+{
+  sudo yum install -y dhcp
+
+  cat &lt;&lt;EOF | sudo tee /etc/dhcp/dhcpd.conf
+<span style="color: #cdcd00; font-weight: bold;">subnet ${DHCP_SUBNET} netmask ${DHCP_NETMASK} {</span>
+<span style="color: #cdcd00; font-weight: bold;">  option domain-name "${DHCP_DOMAIN}";</span>
+<span style="color: #cdcd00; font-weight: bold;">  option domain-name-servers ${DHCP_DNS};</span>
+<span style="color: #cdcd00; font-weight: bold;">  option routers ${DHCP_ROUTER};</span>
+<span style="color: #cdcd00; font-weight: bold;">  next-server ${SERVER_IPADDR};</span>
+<span style="color: #cdcd00; font-weight: bold;">  filename "pxelinux.0";</span>
+<span style="color: #cdcd00; font-weight: bold;">}</span>
+
+<span style="color: #cdcd00; font-weight: bold;">host ${DHCP_CLIENT_HOSTNAME} {</span>
+<span style="color: #cdcd00; font-weight: bold;">  hardware ethernet ${DHCP_CLIENT_MACADDR};</span>
+<span style="color: #cdcd00; font-weight: bold;">  fixed-address ${DHCP_CLIENT_IPADDR};</span>
+<span style="color: #cdcd00; font-weight: bold;">}</span>
+<span style="color: #cdcd00; font-weight: bold;">EOF</span>
+
+  sudo firewall-cmd --add-service=dhcp --permanent
+  sudo firewall-cmd --reload
+  sudo systemctl enable dhcpd
+  sudo systemctl restart dhcpd
+}
+
+<span style="color: #0000ee; font-weight: bold;">nfs_utils_install</span>()
+{
+  sudo yum install -y nfs-utils
+  sudo firewall-cmd --add-service=nfs --permanent
+  sudo firewall-cmd --reload
+  sudo systemctl enable nfs
+  sudo systemctl restart nfs
+
+  sudo mkdir /var/lib/nfsroot
+  cat &lt;&lt;EOF | sudo tee /etc/exports
+<span style="color: #cdcd00; font-weight: bold;">/var/lib/nfsroot *(rw,sync,no_root_squash,no_subtree_check)</span>
+<span style="color: #cdcd00; font-weight: bold;">EOF</span>
+  sudo exportfs -ra
+
+  <span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">Create root filesystem.</span>
+  <span style="color: #cdcd00;">pkgs</span>=<span style="color: #00cd00;">"</span>
+<span style="color: #00cd00;">@^gnome-desktop-environment</span>
+<span style="color: #00cd00;">@base</span>
+<span style="color: #00cd00;">@core</span>
+<span style="color: #00cd00;">@desktop-debugging</span>
+<span style="color: #00cd00;">@development</span>
+<span style="color: #00cd00;">@dial-up</span>
+<span style="color: #00cd00;">@directory-client</span>
+<span style="color: #00cd00;">@fonts</span>
+<span style="color: #00cd00;">@gnome-apps</span>
+<span style="color: #00cd00;">@gnome-desktop</span>
+<span style="color: #00cd00;">@guest-agents</span>
+<span style="color: #00cd00;">@guest-desktop-agents</span>
+<span style="color: #00cd00;">@input-methods</span>
+<span style="color: #00cd00;">@internet-browser</span>
+<span style="color: #00cd00;">@java-platform</span>
+<span style="color: #00cd00;">@multimedia</span>
+<span style="color: #00cd00;">@network-file-system-client</span>
+<span style="color: #00cd00;">@networkmanager-submodules</span>
+<span style="color: #00cd00;">@print-client</span>
+<span style="color: #00cd00;">@x11</span>
+<span style="color: #00cd00;">"</span>
+  <span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">shellcheck disable=SC2086</span>
+  sudo yum install -y --releasever=7 --installroot=/var/lib/nfsroot ${<span style="color: #cdcd00;">pkgs</span>}
+
+  <span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">https://bugzilla.redhat.com/show_bug.cgi?id=1374427</span>
+  sudo restorecon /var/lib/nfsroot/etc/passwd* /var/lib/nfsroot/usr/bin/passwd
+
+  sudo systemd-nspawn -D /var/lib/nfsroot sh -c <span style="color: #00cd00;">"</span>
+<span style="color: #00cd00;"># Set root password and create user.</span>
+<span style="color: #00cd00;">yes centos | passwd</span>
+<span style="color: #00cd00;">useradd -m -s /bin/bash centos</span>
+<span style="color: #00cd00;">yes centos | passwd centos</span>
+
+<span style="color: #00cd00;"># Locale setting.</span>
+<span style="color: #00cd00;">echo LANG=\"en_US.UTF-8\" | tee /etc/locale.conf</span>
+<span style="color: #00cd00;">"</span>
+}
+
+<span style="color: #0000ee; font-weight: bold;">syslinux_install</span>()
+{
+  sudo yum install -y syslinux
+
+  <span style="color: #0000ee; font-weight: bold;">cd</span> /var/lib/tftpboot
+  sudo cp /usr/share/syslinux/pxelinux.0 .
+  sudo cp -a /usr/share/syslinux .
+
+  sudo wget -q ${<span style="color: #cdcd00;">MIRROR_URL</span>}/isolinux/initrd.img
+  sudo wget -q ${<span style="color: #cdcd00;">MIRROR_URL</span>}/isolinux/vmlinuz
+
+  sudo mkdir pxelinux.cfg
+  cat &lt;&lt;EOF | sudo tee pxelinux.cfg/default
+<span style="color: #cdcd00; font-weight: bold;">path syslinux</span>
+<span style="color: #cdcd00; font-weight: bold;">include menu.cfg</span>
+<span style="color: #cdcd00; font-weight: bold;">default syslinux/vesamenu.c32</span>
+<span style="color: #cdcd00; font-weight: bold;">prompt 0</span>
+<span style="color: #cdcd00; font-weight: bold;">timeout 10</span>
+<span style="color: #cdcd00; font-weight: bold;">EOF</span>
+
+  cat &lt;&lt;EOF | sudo tee menu.cfg
+<span style="color: #cdcd00; font-weight: bold;">menu hshift 13</span>
+<span style="color: #cdcd00; font-weight: bold;">menu width 49</span>
+<span style="color: #cdcd00; font-weight: bold;">menu margin 8</span>
+<span style="color: #cdcd00; font-weight: bold;">menu tabmsg</span>
+
+<span style="color: #cdcd00; font-weight: bold;">menu title Thin client boot menu</span>
+<span style="color: #cdcd00; font-weight: bold;">label centos-7-thin-client</span>
+<span style="color: #cdcd00; font-weight: bold;">  menu label ^CentOS 7 thin client</span>
+<span style="color: #cdcd00; font-weight: bold;">  kernel vmlinuz</span>
+<span style="color: #cdcd00; font-weight: bold;">  append vga=788 initrd=initrd.img ip=dhcp \</span>
+<span style="color: #cdcd00; font-weight: bold;">    root=/dev/nfs nfsroot=${SERVER_IPADDR}:/var/lib/nfsroot rw selinux=0</span>
+<span style="color: #cdcd00; font-weight: bold;">menu end</span>
+<span style="color: #cdcd00; font-weight: bold;">EOF</span>
+}
+
+<span style="color: #0000ee; font-weight: bold;">pxeboot_main</span>()
+{
+  tftp_server_install
+  dhcp_install
+  nfs_utils_install
+  syslinux_install
+}
+
+pxeboot_main
+</pre>
+            </div>
+        </div>
+    </div>
+
+    <div id="outline-container-sec-2" class="outline-2">
+        <h2 id="sec-2">
+            <span class="section-number-2">2</span> Run CentOS 7 thin client with NFS
+        </h2>
+
+        <div class="outline-text-2" id="text-2">
+            <p>
+                This article runs CentOS 7 thin client on virtual machine on KVM. Virtual machine on VirtualBox and real machine too can run CentOS 7 thin client with enabling network boot. Please
+                check your BIOS setting.
+            </p>
+
+            <p>
+                Enable "NIC" of "Boot device order" and make it top of order with virt-manager.
+            </p>
+
+            <div class="figure">
+                <p>
+                    <img src="https://dl-web.dropbox.com/s/w39xk8mf1gqijyp/0001_BootDeviceOrder.png" alt="0001_BootDeviceOrder.png" width="640px" vspace="15px"/>
+                </p>
+            </div>
+
+            <p>
+                iPXE sends DHCP requests, receives DHCP response from PXE Boot server, download and run boot image.
+            </p>
+
+            <div class="figure">
+                <p>
+                    <img src="https://dl-web.dropbox.com/s/bzfycra93r3njix/0002_iPXE.png" alt="0002_iPXE.png" width="640px" vspace="15px"/>
+                </p>
+            </div>
+
+            <p>
+                syslinux's menu is displayed. After 1 second, "CentOS 7 thin client" will be selected automatically.
+            </p>
+
+            <div class="figure">
+                <p>
+                    <img src="https://dl-web.dropbox.com/s/uo7pl404tmlcowx/0003_syslinux.png" alt="0003_syslinux.png" width="640px" vspace="15px"/>
+                </p>
+            </div>
+
+            <p>
+                CentOS 7 thin client is started.
+            </p>
+
+            <div class="figure">
+                <p>
+                    <img src="https://dl-web.dropbox.com/s/cf5fj53eyisiuo2/0004_BootCentos.png" alt="0004_BootCentos.png" width="640px" vspace="15px"/>
+                </p>
+            </div>
+
+            <p>
+                Login is displayed.
+            </p>
+
+            <div class="figure">
+                <p>
+                    <img src="https://dl-web.dropbox.com/s/etpzsqoi999i8oc/0005_Login.png" alt="0005_Login.png" width="640px" vspace="15px"/>
+                </p>
+            </div>
+        </div>
+    </div>
+</div></div><div id="cc-m-12839461292" class="j-module n j-spacing ">
+    <div class="cc-m-spacer" style="height: 50px;">
+    
+</div>
+
+</div><div id="cc-m-12839461392" class="j-module n j-htmlCode "><script async="" src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" type="text/javascript">
+</script><ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-8608346909202413" data-ad-slot="8427145289"/><script type="text/javascript">
+//<![CDATA[
+(adsbygoogle = window.adsbygoogle || []).push({});
+//]]>
+</script></div></div>
+        </div><div class="j-module n j-text j-blog-post--tags-wrapper"><span class="j-blog-post--tags--template" style="display: none;"><span class="j-blog-post--tag">tagPlaceholder</span></span><span class="j-blog-post--tags-label" style="display: inline;">カテゴリ：</span> <span class="j-blog-post--tags-list"><span class="j-blog-post--tag">centos-7</span>, <span class="j-blog-post--tag">en</span>, <span class="j-blog-post--tag">pxeboot</span>, <span class="j-blog-post--tag">201707</span></span></div></article>
+        </div>
+          </div>
+        </section><!-- _sidebar.sass --><aside class="jtpl-sidebar sidebar-options"><div data-container="sidebar"><div id="cc-matrix-1981738392"><div id="cc-m-9031758892" class="j-module n j-htmlCode "><script async="" src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" type="text/javascript">
+</script><ins class="adsbygoogle" style="display:inline-block;width:160px;height:600px" data-ad-client="ca-pub-8608346909202413" data-ad-slot="5209905687"/><script type="text/javascript">
+//<![CDATA[
+(adsbygoogle = window.adsbygoogle || []).push({});
+//]]>
+</script></div><div id="cc-m-12835750092" class="j-module n j-spacing ">
+    <div class="cc-m-spacer" style="height: 50px;">
+    
+</div>
+
+</div><div id="cc-m-12638005392" class="j-module n j-htmlCode "><script async="" src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" type="text/javascript">
+</script><ins class="adsbygoogle" style="display:block" data-ad-format="autorelaxed" data-ad-client="ca-pub-8608346909202413" data-ad-slot="5520045681"/><script type="text/javascript">
+//<![CDATA[
+  (adsbygoogle = window.adsbygoogle || []).push({});
+//]]>
+</script></div></div></div>
+        </aside><!-- END _sidebar.sass -->
+</div>
+    </div>
+    <!-- END _content.sass -->
+
+    <!-- _footer.sass -->
+    <footer class="jtpl-footer footer-options"><div class="jtpl-footer__inner">
+        <div id="contentfooter" data-container="footer">
+
+    
+    <div class="j-meta-links">
+        <a href="//www.hiroom2.com/j/privacy">プライバシーポリシー</a> | <a href="//www.hiroom2.com/j/cookies/policy">Cookie ポリシー</a> | <a href="/sitemap/">サイトマップ</a>    </div>
+
+    <div class="j-admin-links">
+            
+
+<span class="loggedin">
+    <a rel="nofollow" id="logout" target="_top" href="https://cms.e.jimdo.com/app/cms/logout.php">
+        ログアウト    </a>
+    |
+    <a rel="nofollow" id="edit" target="_top" href="https://a.jimdo.com/app/auth/signin/jumpcms/?page=2387995692">編集</a>
+</span>
+        </div>
+
+    
+</div>
+
+      </div>
+    </footer><!-- END _footer.sass -->
+</div>
+  <!-- END _main.sass -->
+
+</div>    <script type="text/javascript">
+//<![CDATA[
+var _gaq = [];
+
+_gaq.push(
+    ['_gat._anonymizeIp'],
+    ['a._setAccount', 'UA-43873317-1'],
+    ['a._trackPageview']
+    ,
+    ['b._setAccount', 'UA-24231192-104'],
+    ['b._setCustomVar', '1', 'websiteid', 'sdcc8e67e188f864a'],
+    ['b._setDomainName', 'none'],
+    ['b._setAllowLinker', true],
+    ['b._trackPageview']
+);
+
+if (window.ckies.useMarketing()) {
+    (function() {
+        var ga = document.createElement('script');
+        ga.type = 'text/javascript';
+        ga.async = true;
+        ga.src = 'https://www.google-analytics.com/ga.js';
+    
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(ga, s);
+    })();
+}
+//]]>
+</script>
+
+
+
+
+</body>
+
+</html>

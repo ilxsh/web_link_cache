@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<title>Tinc VPN 大局域网实现备忘录 - 往日微忆</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, minimum-scale=1">
+<meta name="description" content="随着公网 IPv4 地址的匮乏，如今各处上网大部分都处于宽带商大内网当中，互连和便捷成了最大问题。为了实现单位、家里、手机等设备的无缝连接，较长时间以">
+<meta itemprop="name" content="Tinc VPN 大局域网实现备忘录 - 往日微忆">
+<meta itemprop="description" content="随着公网 IPv4 地址的匮乏，如今各处上网大部分都处于宽带商大内网当中，互连和便捷成了最大问题。为了实现单位、家里、手机等设备的无缝连接，较长时间以">
+<meta itemprop="image" content="https://www.yiwan.pro/yiwan_pictures/octocat_by_litad_01.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@litanid">
+<meta name="twitter:title" content="Tinc VPN 大局域网实现备忘录 - 往日微忆">
+<meta name="twitter:description" content="">
+<link rel="alternate" href="https://www.yiwan.pro/ywfeed.xml" title="往日微忆" type="application/rss+xml">
+<link rel="shortcut icon" href="https://www.yiwan.pro/yiwan_pictures/wrwylogofavicon.png">
+<link rel="apple-touch-icon" href="https://www.yiwan.pro/apple-touch-icon.png">
+<link rel="apple-touch-icon-precomposed" href="https://www.yiwan.pro/apple-touch-icon.png">
+<link rel="stylesheet" href="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/monokai.css">
+<script src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/cookie.js"></script><script src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/osd.js"></script><script src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/show_ads_impl.js" id="google_shimpl"></script><script src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/highlight.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script async="" src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/adsbygoogle.js"></script>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({
+google_ad_client: "ca-pub-2773776622058810",
+enable_page_level_ads: true
+});
+</script>
+<link rel="stylesheet" href="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/hack.css">
+<link rel="stylesheet" href="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/style.css">
+<link rel="preload" href="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/integrator.js" as="script"><script type="text/javascript" src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/integrator.js"></script></head>
+<body>
+<header>
+<div>
+<div id="">
+<a href="https://www.yiwan.pro/"><img src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/wrwylogo613.png" alt="往日微忆" title="往日微忆"></a>
+</div>
+<div id="textlogo">
+<h2 class="blog-motto">走人生漫漫路，记录往日路上点滴，留存仅剩的一点回忆！</h2>
+</div>
+<div class="navbar"><a class="navbutton navmobile" href="#" title="menu"></a></div>
+<nav class="animated">
+<ul>
+<li><a href="https://www.yiwan.pro/">首页</a></li>
+<li><a href="https://www.yiwan.pro/tweetslitanid">推文</a></li>
+<li><a href="https://www.yiwan.pro/about">关于</a></li>
+<li><a href="https://www.yiwan.pro/links">友链</a></li>
+<li>
+<form class="search" method="get" action="https://www.google.com/search">
+<div>
+<input type="text" id="search" name="q" placeholder="搜索">
+</div>
+</form>
+</li>
+</ul>
+</nav>
+</div>
+</header>
+<div id="container" style="height: auto !important;">
+<div id="main" class="post" itemscope="" itemprop="blogPost">
+<article itemprop="articleBody">
+<header class="article-info clearfix">
+<h1 itemprop="name">
+<a href="https://www.yiwan.pro/index.php/ltd_documents/422-tinc-vpn-config-memorandum.html" title="Tinc VPN 大局域网实现备忘录" itemprop="url">Tinc VPN 大局域网实现备忘录</a>
+</h1>
+<p class="article-time">
+<time datetime="2019-08-23 03:37:56 +0000 +0000" itemprop="datePublished">2019年08月23日</time>
+ By
+<a href="https://www.yiwan.pro/" title="辞峡烟斜">辞峡烟斜</a>
+</p>
+</header>
+<div class="article-content">
+<div class="toc-article">
+<strong class="toc-title">文章目录</strong>
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#一-tinc-介绍">一、Tinc 介绍</a></li>
+<li><a href="#二-安装">二、安装</a></li>
+<li><a href="#三-规划">三、规划</a></li>
+<li><a href="#四-详细配置">四、详细配置</a>
+<ul>
+<li><a href="#一-节点lipc1">（一）节点lipc1</a>
+<ul>
+<li><a href="#1-设置-tinc-conf-文件">1.设置 tinc.conf 文件</a></li>
+<li><a href="#2-编辑-hosts-lipc1-文件">2.编辑 hosts/lipc1 文件</a></li>
+<li><a href="#3-执行命令">3.执行命令:</a></li>
+<li><a href="#4-编辑-tinc-up-文件">4.编辑 tinc-up 文件</a></li>
+<li><a href="#5-编辑-tinc-down-文件">5.编辑 tinc-down 文件</a></li>
+<li><a href="#6-更改-tinc-up-tinc-down-文件权限">6.更改 tinc-up、tinc-down 文件权限</a></li>
+</ul></li>
+<li><a href="#二-节点lipc7">（二）节点lipc7</a>
+<ul>
+<li><a href="#1-tinc-conf-文件">1.tinc.conf 文件</a></li>
+<li><a href="#2-hosts-lipc7-文件">2.hosts/lipc7 文件</a></li>
+<li><a href="#3-tinc-up-文件">3.tinc-up 文件</a></li>
+<li><a href="#4-tinc-down-文件">4.tinc-down 文件</a></li>
+</ul></li>
+<li><a href="#三-节点lipc10">（三）节点lipc10</a>
+<ul>
+<li><a href="#1-tinc-conf-文件-1">1.tinc.conf 文件</a></li>
+<li><a href="#2-hosts-lipc10文件">2.hosts/lipc10文件</a></li>
+<li><a href="#3-tinc-up-文件-1">3.tinc-up 文件</a></li>
+<li><a href="#4-tinc-down-文件-1">4.tinc-down 文件</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#五-启动和关闭">五、启动和关闭</a></li>
+<li><a href="#六-android-节点配置">六、Android 节点配置</a></li>
+<li><a href="#七-相关使用经验">七、相关使用经验</a></li>
+</ul></li>
+</ul>
+</nav>
+</div>
+<p>随着公网 IPv4 
+地址的匮乏，如今各处上网大部分都处于宽带商大内网当中，互连和便捷成了最大问题。为了实现单位、家里、手机等设备的无缝连接，较长时间以来，我一直在苦
+苦追寻和试用相关 VPN ，譬如 ZeroTier 、n2n 、Tinc 
+等。我的要求很简单，就是单位电脑和家里电脑可以互连和访问，手机可以随时随地连接单位和家里电脑，众多设备之间最好可以 Peer-to-Peer 
+。ZeroTier 需要第三方节点支持，不受控，n2n 虽说可以 P2P ，但是v1、v2版本又不兼容，实际使用没那么顺畅。Tinc 可以 
+P2P ，虽然配置繁琐一点，但没那么复杂，又多平台支持，经过一段时间试用，基本满足日常需求，实现私人大内网。下面记录相关实现过程。</p>
+<h2 id="一-tinc-介绍">一、Tinc 介绍</h2>
+<p>详细介绍和说明请参阅官网：（<a href="https://www.tinc-vpn.org/" target="_blank" rel="noopener noreferrer"></a><a href="https://www.tinc-vpn.org/">https://www.tinc-vpn.org/</a>），此处粘贴相关介绍如下：</p>
+<p>Tinc VPN 是一个网状结构的虚拟局域网软件，基于P2P的技术，可以实现流量直接到达目标机器，而不像传统 VPN 那样必须经过中间的服务端。适合连接的两个机器速度快于到服务器的速度的情况。</p>
+<p>有如下优点：</p>
+<p>1.加密，身份验证和压缩 可选择使用zlib或LZO压缩所有流量，并使用LibreSSL或OpenSSL对流量进行加密，并使用消息验证代码和序列号保护流量不被更改。</p>
+<p>2.自动全网状路由 无论您如何设置 <a href="https://www.yiwan.pro/index.php/ltd_documents/tag/tinc" title="【查看含有[tinc]标签的文章】" target="_blank">tinc</a> 守护进程以相互连接，VPN流量始终（如果可能）直接发送到目标，而不通过中间跃点。</p>
+<p>3.NAT遍历 只要VPN中的一个节点允许公共IP地址上的传入连接（即使它是动态IP地址），tinc就能够进行NAT遍历，允许对等体之间的直接通信。</p>
+<p>4.轻松扩展您的VPN 当您想要向VPN添加节点时，您只需添加一个额外的配置文件，无需启动新的守护进程或创建和配置新设备或网络接口。</p>
+<p>5.能够桥接以太网段 您可以将多个以太网段链接在一起以像单个段一样工作，从而允许您运行通常仅通过Internet在LAN上运行的应用程序和游戏。</p>
+<p>6.多操作系统运行（支持平台：<a href="https://www.tinc-vpn.org/platforms/" target="_blank" rel="noopener noreferrer"></a><a href="https://www.tinc-vpn.org/platforms/">https://www.tinc-vpn.org/platforms/</a>）并支持IPv6。</p>
+<h2 id="二-安装">二、安装</h2>
+<p>PC端各系统版本在（<a href="https://www.tinc-vpn.org/download/" target="_blank" rel="noopener noreferrer"></a><a href="https://www.tinc-vpn.org/download/">https://www.tinc-vpn.org/download/</a>）下载安装， Android 平台在（<a href="https://tincapp.pacien.org/" target="_blank" rel="noopener noreferrer"></a><a href="https://tincapp.pacien.org/">https://tincapp.pacien.org/</a>）下载安装， iOS 平台在（<a href="https://www.tinc-vpn.org/packages/cydia/">https://www.tinc-vpn.org/packages/cydia/</a>）下载安装。</p>
+<p>以下我的系统环境 Debian 示例，其他平台请详细阅读官方说明文档。</p>
+<p>Debian 系统下，可在终端直接输入命令 <code>aptitude install tinc</code> 安装。</p>
+<h2 id="三-规划">三、规划</h2>
+<p>Tinc 有三种工作模式：路由器Route、交换机Switch及集线器Hub。默认模式是路由器模式。没什么特殊要求的话就直接采用默认模式。</p>
+<p>确定 Tinc 专项局域网网络名称：liTinet，根据自己喜好改。</p>
+<p>确定 Tinc 专项局域网网络网段：10.0.7.0/24</p>
+<p>确定好各节点名称和IP。</p>
+<p>我的网络拓扑及各节点配置具体如下：</p>
+<figure><img src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/ScreenshotPicPick20190822185700001.png" alt="" width="1138"><figcaption>网络拓扑及各节点配置</figcaption>
+</figure>
+<h2 id="四-详细配置">四、详细配置</h2>
+<p>所有节点（不包含移动设备如Android手机）在安装好 tinc 后，均需手动或自动在系统 /etc/tinc/ 文件夹下建立和产生如下目录和文件：</p>
+<p><a href="https://pich.yiwan.pro/YiWan/201908/ScreenshotPicPick20190822190400001.png" data-fancybox="images" class="cboxElement" rel="example_group" 422=""><img class="alignnone size-medium" src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/ScreenshotPicPick20190822190400001.png" width="420" height="400"></a></p>
+<p>每个节点的hosts文件夹内容相同，不同的是外面的文件，nets.boot 文件可以不用改动。</p>
+<p>以下仅以节点lipc1、lipc7、lipc10为例说明具体文件的内容：</p>
+<h3 id="一-节点lipc1">（一）节点lipc1</h3>
+<h4 id="1-设置-tinc-conf-文件">1.设置 tinc.conf 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-string">Name</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc1</span> <span class="hljs-comment">#对应节点主机名字，随便取， Name 是本节点的名字</span>
+<span class="hljs-string">AddressFamily</span> <span class="hljs-string">=</span> <span class="hljs-string">ipv4</span> <span class="hljs-comment">#表示监听哪种协议的端口（默认都监听） #AddressFamily = &lt;ipv4|ipv6|any&gt; (any)</span>
+<span class="hljs-string">BindToAddress</span> <span class="hljs-string">=</span> <span class="hljs-string">*</span> <span class="hljs-number">10070</span> <span class="hljs-comment">#10070为监听端口，与hosts目录下相应文件一致，默认监听端口是655</span>
+<span class="hljs-string">Interface</span> <span class="hljs-string">=</span> <span class="hljs-string">tun0</span> <span class="hljs-comment"># 创建的设备名（类似虚拟网卡）</span>
+<span class="hljs-string">Device</span> <span class="hljs-string">=</span> <span class="hljs-string">/dev/net/tun</span>
+<span class="hljs-comment">#Mode = &lt;router|switch|hub&gt; (router) # 用来指定工作方式（默认是路由器）</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc2</span> <span class="hljs-comment">#主动连接到哪个节点</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc3</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc4</span>
+</code></pre>
+<h4 id="2-编辑-hosts-lipc1-文件">2.编辑 hosts/lipc1 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-string">Address</span> <span class="hljs-string">=</span> <span class="hljs-number">1.1</span><span class="hljs-number">.1</span><span class="hljs-number">.1</span> <span class="hljs-number">10070</span>    <span class="hljs-comment">#公网IP地址，如果没有公网IP或不知道，则不设置，格式为 Address = &lt;IP address|hostname&gt; [&lt;port&gt;] [recommended]</span>
+<span class="hljs-string">Subnet</span> <span class="hljs-string">=</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.1</span><span class="hljs-string">/32</span>  <span class="hljs-comment">#节点所在内网网段，如没有内网网段则设置为单独地址。</span>
+</code></pre>
+<h4 id="3-执行命令">3.执行命令:</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-string">tincd</span> <span class="hljs-bullet">-n</span> <span class="hljs-string">liTinet</span> <span class="hljs-bullet">-K4096</span>       <span class="hljs-comment">#liTinet为设置的Tinc网络名称</span>
+</code></pre>
+<p>为lipc1 生成 RSA 公钥和私钥，这将在 /etc/tinc/liTinet 下创建私钥文件 rsa_key.priv ，并自动追加公钥到上一步创建的 hosts/lipc1 文件，打开 hosts/lipc1 文件，末尾已经添加了公钥。</p>
+<h4 id="4-编辑-tinc-up-文件">4.编辑 tinc-up 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-comment">#!/bin/sh</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">link</span> <span class="hljs-string">set</span> <span class="hljs-string">$INTERFACE</span> <span class="hljs-string">up</span>  <span class="hljs-comment">#启动接口，$INTERFACE = tun0，由 tinc.conf 传入</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">addr</span> <span class="hljs-string">add</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.1</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>  <span class="hljs-string">$INTERFACE</span> <span class="hljs-comment"># 设定tinc网卡地址为 10.0.7.1</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">route</span> <span class="hljs-string">add</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>  <span class="hljs-comment"># 添加路由项，当其地址是网段时则添加。</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">route</span> <span class="hljs-string">add</span> <span class="hljs-number">10.1</span><span class="hljs-number">.12</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+</code></pre>
+<h4 id="5-编辑-tinc-down-文件">5.编辑 tinc-down 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-comment">#!/bin/sh</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">route</span> <span class="hljs-string">del</span> <span class="hljs-number">10.1</span><span class="hljs-number">.12</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">route</span> <span class="hljs-string">del</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">addr</span> <span class="hljs-string">del</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.1</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">link</span> <span class="hljs-string">set</span> <span class="hljs-string">$INTERFACE</span> <span class="hljs-string">down</span>
+</code></pre>
+<p>为 tinc-up 文件的逆向命令。</p>
+<h4 id="6-更改-tinc-up-tinc-down-文件权限">6.更改 tinc-up、tinc-down 文件权限</h4>
+<pre><code class="language-bash hljs">chmod 755 /etc/tinc/liTinet/tinc-*
+</code></pre>
+<h3 id="二-节点lipc7">（二）节点lipc7</h3>
+<p>步骤整体同上，细节不同，因为 lipc7 没有公网，且在内网当中。</p>
+<h4 id="1-tinc-conf-文件">1.tinc.conf 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-string">Name</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc7</span>
+<span class="hljs-string">AddressFamily</span> <span class="hljs-string">=</span> <span class="hljs-string">ipv4</span>
+<span class="hljs-string">Interface</span> <span class="hljs-string">=</span> <span class="hljs-string">tun0</span>
+<span class="hljs-string">Device</span> <span class="hljs-string">=</span> <span class="hljs-string">/dev/net/tun</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc1</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc2</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc3</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc4</span>
+</code></pre>
+<h4 id="2-hosts-lipc7-文件">2.hosts/lipc7 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-string">Subnet</span> <span class="hljs-string">=</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.7</span><span class="hljs-string">/32</span>
+<span class="hljs-string">Subnet</span> <span class="hljs-string">=</span> <span class="hljs-number">10.1</span><span class="hljs-number">.12</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span>  <span class="hljs-comment">#节点同时处于 10.1.12.0/24 网段当中</span>
+</code></pre>
+<h4 id="3-tinc-up-文件">3.tinc-up 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-comment">#!/bin/sh</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">link</span> <span class="hljs-string">set</span> <span class="hljs-string">$INTERFACE</span> <span class="hljs-string">up</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">addr</span> <span class="hljs-string">add</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.7</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">route</span> <span class="hljs-string">add</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>    <span class="hljs-comment">#注意与节点lipc1的不同</span>
+</code></pre>
+<h4 id="4-tinc-down-文件">4.tinc-down 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-comment">#!/bin/sh</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">route</span> <span class="hljs-string">del</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">addr</span> <span class="hljs-string">del</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.7</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">link</span> <span class="hljs-string">set</span> <span class="hljs-string">$INTERFACE</span> <span class="hljs-string">down</span>  
+</code></pre>
+<h3 id="三-节点lipc10">（三）节点lipc10</h3>
+<p>步骤整体同上，lipc10 没有公网，也处于内网当中，但此处不暴露关联所在内网。</p>
+<h4 id="1-tinc-conf-文件-1">1.tinc.conf 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-string">Name</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc10</span>
+<span class="hljs-string">AddressFamily</span> <span class="hljs-string">=</span> <span class="hljs-string">ipv4</span>
+<span class="hljs-string">Interface</span> <span class="hljs-string">=</span> <span class="hljs-string">tun0</span>
+<span class="hljs-string">Device</span> <span class="hljs-string">=</span> <span class="hljs-string">/dev/net/tun</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc1</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc2</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc3</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc4</span>
+</code></pre>
+<h4 id="2-hosts-lipc10文件">2.hosts/lipc10文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-string">Subnet</span> <span class="hljs-string">=</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.10</span><span class="hljs-string">/32</span>
+</code></pre>
+<h4 id="3-tinc-up-文件-1">3.tinc-up 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-comment">#!/bin/sh</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">link</span> <span class="hljs-string">set</span> <span class="hljs-string">$INTERFACE</span> <span class="hljs-string">up</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">addr</span> <span class="hljs-string">add</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.10</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">route</span> <span class="hljs-string">add</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">route</span> <span class="hljs-string">add</span> <span class="hljs-number">10.1</span><span class="hljs-number">.12</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+</code></pre>
+<h4 id="4-tinc-down-文件-1">4.tinc-down 文件</h4>
+<pre><code class="language-yaml hljs"><span class="hljs-comment">#!/bin/sh</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">route</span> <span class="hljs-string">del</span> <span class="hljs-number">10.1</span><span class="hljs-number">.12</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">route</span> <span class="hljs-string">del</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">addr</span> <span class="hljs-string">del</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.10</span> <span class="hljs-string">dev</span> <span class="hljs-string">$INTERFACE</span>
+<span class="hljs-string">ip</span> <span class="hljs-string">link</span> <span class="hljs-string">set</span> <span class="hljs-string">$INTERFACE</span> <span class="hljs-string">down</span>
+</code></pre>
+<h2 id="五-启动和关闭">五、启动和关闭</h2>
+<p>各节点一样。</p>
+<pre><code class="language-bash hljs">tincd -n liTinet -D --debug=3 <span class="hljs-comment"># 以排错方式启动</span>
+tincd -n liTinet -k <span class="hljs-comment"># 关闭</span>
+</code></pre>
+<p>各节点在以排错方式启动后，如无错误，均能 ping 通对方，则表示配置成功，可以设置成为引导时启动。</p>
+<p>设置为引导时启动：</p>
+<pre><code class="language-bash hljs">systemctl <span class="hljs-built_in">enable</span> tinc@liTinet.service
+</code></pre>
+<p>至此，Tinc 大局域网搭建完成。</p>
+<h2 id="六-android-节点配置">六、Android 节点配置</h2>
+<p>Android 节点端配置些许不同，具体见 App 使用说明。</p>
+<p>1.下载安装 Tinc App 后，启动：</p>
+<p><a href="https://pich.yiwan.pro/YiWan/201908/Screenshot20190822200746.jpg" data-fancybox="images" class="cboxElement" rel="example_group" 422=""><img class="alignnone " src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/Screenshot20190822200746.jpg" width="350" height="1824"></a></p>
+<p>选择“生成节点配置和密钥”，设置网络名同上为 liTinet ，节点名为 liad6 ，密码为空或随意。</p>
+<p>2.修改配置目录下 network.conf 文件</p>
+<p>增加修改如下两处即可，其他内容根据实际需要修改：</p>
+<pre><code class="language-yaml hljs"><span class="hljs-string">Address</span> <span class="hljs-string">=</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.6</span><span class="hljs-string">/32</span>
+<span class="hljs-string">Route</span> <span class="hljs-string">=</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span>
+<span class="hljs-string">Route</span> <span class="hljs-string">=</span> <span class="hljs-number">10.1</span><span class="hljs-number">.12</span><span class="hljs-number">.0</span><span class="hljs-string">/24</span>
+</code></pre>
+<p>3.修改配置目录下 tinc.conf 文件</p>
+<pre><code class="language-yaml hljs"><span class="hljs-string">Name</span> <span class="hljs-string">=</span> <span class="hljs-string">liad6</span>
+<span class="hljs-string">Mode</span> <span class="hljs-string">=</span> <span class="hljs-string">router</span>
+<span class="hljs-string">AddressFamily</span> <span class="hljs-string">=</span> <span class="hljs-string">ipv4</span>
+<span class="hljs-string">LocalDiscovery</span> <span class="hljs-string">=</span> <span class="hljs-literal">yes</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc1</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc2</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc3</span>
+<span class="hljs-string">ConnectTo</span> <span class="hljs-string">=</span> <span class="hljs-string">lipc4</span>
+</code></pre>
+<p>4.在配置目录下 hosts/liad6 文件末尾添加</p>
+<pre><code class="language-yaml hljs"><span class="hljs-string">Subnet</span> <span class="hljs-string">=</span> <span class="hljs-number">10.0</span><span class="hljs-number">.7</span><span class="hljs-number">.6</span><span class="hljs-string">/32</span>
+</code></pre>
+<p>其他默认。</p>
+<p>将 liad6 文件拷贝至其他节点 hosts 目录下，其他节点相应的文件也要拷贝到 Android 手机配置目录 hosts 目录下。</p>
+<p><a href="https://pich.yiwan.pro/YiWan/201908/Screenshot20190820155315.jpg" data-fancybox="images" class="cboxElement" rel="example_group" 422=""><img class="alignnone " src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/Screenshot20190820155315.jpg" width="350" height="1891"></a></p>
+<p><a href="https://pich.yiwan.pro/YiWan/201908/Screenshot20190820155323.jpg" data-fancybox="images" class="cboxElement" rel="example_group" 422=""><img class="alignnone " src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/Screenshot20190820155323.jpg" width="350" height="1902"></a></p>
+<p>所有节点重启服务，则可互相访问。</p>
+<p><a href="https://pich.yiwan.pro/YiWan/201908/Screenshot20190820154819.jpg" data-fancybox="images" class="cboxElement" rel="example_group" 422=""><img class="alignnone " src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/Screenshot20190820154819.jpg" width="350" height="1830"></a></p>
+<p><a href="https://pich.yiwan.pro/YiWan/201908/Screenshot20190820154745.jpg" data-fancybox="images" class="cboxElement" rel="example_group" 422=""><img class="alignnone " src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/Screenshot20190820154745.jpg" width="350" height="1880"></a></p>
+<p><a href="https://pich.yiwan.pro/YiWan/201908/Screenshot20190820154859.jpg" data-fancybox="images" class="cboxElement" rel="example_group" 422=""><img class="alignnone " src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/Screenshot20190820154859.jpg" width="350" height="1906"></a></p>
+<h2 id="七-相关使用经验">七、相关使用经验</h2>
+<p>1.如上配置后，除 lipc7 外其他节点八九成是不能直接访问和 ping 通 10.1.12.1 和 10.1.12.6 两台内网主机的，此时可以尝试在路由器 10.1.12.1 上设置经 10.1.12.7 到 10.0.7.0/24 网段的静态路由。</p>
+<p>2.如出现以下错误：</p>
+<p><a href="https://pich.yiwan.pro/YiWan/201908/ScreenshotPicPick20190822195639001.png" data-fancybox="images" class="cboxElement" rel="example_group" 422=""><img class="alignnone size-medium" src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/ScreenshotPicPick20190822195639001.png" width="802" height="187"></a></p>
+<p>则可能相应节点宕机了，尝试重启服务。</p>
+<p>3.原本处于同一物理网络的节点，直接 ping 时延较低，但 ping tinc节点IP时时延较长，此时Tinc网络正在协商路由，过一段时间后再尝试发现时延与直接 ping 相差无几，证明 Tinc 是支持 P2P 的。</p>
+<p><a href="https://pich.yiwan.pro/YiWan/201908/ScreenshotPicPick20190823083912001.png" data-fancybox="images" class="cboxElement" rel="example_group" 422=""><img class="alignnone size-medium" src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/ScreenshotPicPick20190823083912001.png" width="650" height="197"></a></p>
+<p>一分钟不到的 ping 值：</p>
+<p><a href="https://pich.yiwan.pro/YiWan/201908/ScreenshotPicPick20190823084056001.png" data-fancybox="images" class="cboxElement" rel="example_group" 422=""><img class="alignnone size-medium" src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/ScreenshotPicPick20190823084056001.png" width="656" height="203"></a></p>
+<hr>
+<div class="creative-commons">
+<span> <strong>本文地址：</strong><a href="https://www.yiwan.pro/index.php/ltd_documents/422-tinc-vpn-config-memorandum.html">https://www.yiwan.pro/index.php/ltd_documents/422-tinc-vpn-config-memorandum.html</a></span><br>
+<span> <strong>版权声明：</strong>本站作品采用<a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">知识共享署名-非商业性使用-禁止演绎 4.0 国际许可协议</a> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="知识共享许可协议" style="border-width:0;display: inline;margin:auto;height:auto;vertical-align:middle;padding-top:0em;" src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/80x15.html"></a> 进行许可。</span><br>
+</div>
+</div>
+<footer class="article-footer clearfix">
+<div class="article-tags">
+<span></span>
+<a href="https://www.yiwan.pro/tags/tinc">tinc</a>
+</div>
+<div class="article-categories">
+<span></span>
+<a class="article-category-link" href="https://www.yiwan.pro/categories/1024%E4%BA%A4%E9%81%93">1024交道</a>
+</div>
+<div class="article-share" id="share">
+<div data-url="https://www.yiwan.pro/index.php/ltd_documents/422-tinc-vpn-config-memorandum.html" data-title="Tinc VPN 大局域网实现备忘录" data-tsina="" class="share clearfix">
+<a href="#" class="overlay" id="qrcode"></a><div class="qrcode clearfix"><span>扫描二维码分享到微信朋友圈</span><a class="qrclose" href="#share"></a><strong>Loading...Please wait</strong><img id="qrcode-pic" data-src="http://b.bshare.cn/barCode?site=weixin&amp;url=https%3A%2F%2Fwww.yiwan.pro%2Findex.php%2Fltd_documents%2F422-tinc-vpn-config-memorandum.html"></div><a href="#textlogo" class="article-back-to-top" title="Top"></a><a href="https://www.facebook.com/sharer.php?u=https%3A%2F%2Fwww.yiwan.pro%2Findex.php%2Fltd_documents%2F422-tinc-vpn-config-memorandum.html" class="article-share-facebook" target="_blank" title="Facebook"></a><a href="#qrcode" class="article-share-qrcode" title="QRcode"></a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fwww.yiwan.pro%2Findex.php%2Fltd_documents%2F422-tinc-vpn-config-memorandum.html" class="article-share-twitter" target="_blank" title="Twitter"></a><a href="http://service.weibo.com/share/share.php?title=Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95&amp;url=https%3A%2F%2Fwww.yiwan.pro%2Findex.php%2Fltd_documents%2F422-tinc-vpn-config-memorandum.html&amp;ralateUid=&amp;searchPic=true&amp;style=number" class="article-share-weibo" target="_blank" title="Weibo"></a><span title="Share to"></span></div>
+</div>
+</footer>
+</article>
+<section class="comment">
+<div id="disqus_thread"></div>
+</section>
+<script>
+  <!-- detect whether Disuqs can load -->
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '//disqus.com/next/config.json?' + new Date().getTime(), true);
+  xhr.timeout = 3000; 
+
+  xhr.onload = function() { 
+
+
+var disqus_config = function () {
+this.page.url = "https://www.yiwan.pro/index.php/ltd_documents/422-tinc-vpn-config-memorandum.html";
+this.page.identifier = "https://www.yiwan.pro/index.php/ltd_documents/422-tinc-vpn-config-memorandum.html";
+};
+(function() { 
+var d = document, s = d.createElement('script');
+
+s.src = '//yiwanpro.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+}
+  xhr.ontimeout = function() {
+  <!-- cannot load Disqus, skip it. -->
+  return;
+}
+xhr.send(null);
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+</div>
+<div class="openaside" style="top: 80px;"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+<div id="asidepart" style="height: auto !important;">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix" style="height: auto !important;">
+<div class="categorieslist">
+<p class="asidetitle">分类</p>
+<ul>
+<li><a href="https://www.yiwan.pro/categories/1024%e4%ba%a4%e9%81%93" title="1024交道">1024交道<sup>[66]</sup></a></li>
+<li><a href="https://www.yiwan.pro/categories/%e5%8d%81%e8%a8%80%e5%85%ab%e8%af%ad" title="十言八语">十言八语<sup>[115]</sup></a></li>
+<li><a href="https://www.yiwan.pro/categories/%e8%bf%b7%e9%80%94%e7%be%94%e7%be%8a" title="迷途羔羊">迷途羔羊<sup>[11]</sup></a></li>
+<li><a href="https://www.yiwan.pro/categories/%e9%80%8f%e7%9c%bc%e7%9c%8b%e4%b8%96" title="透眼看世">透眼看世<sup>[142]</sup></a></li>
+</ul>
+</div>
+<div class="tagslist">
+<p class="asidetitle">标签</p>
+<div class="tagsidebarscroll">
+<ul class="clearfix">
+<li><a href="https://www.yiwan.pro/tags/3x" title="3x">3x<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/acme" title="acme">acme<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/allinone" title="allinone">allinone<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/android" title="android">android<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/apache" title="apache">apache<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/bcdedit" title="bcdedit">bcdedit<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/cdlinux" title="cdlinux">cdlinux<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/chinanet" title="chinanet">chinanet<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/cloudflare" title="cloudflare">cloudflare<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/cn2" title="cn2">cn2<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/convert" title="convert">convert<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/cs" title="cs">cs<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/debian" title="debian">debian<sup>6</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/easybcd" title="easybcd">easybcd<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/easyboot" title="easyboot">easyboot<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/frp" title="frp">frp<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/g750-t00" title="g750-t00">g750-t00<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/gia" title="gia">gia<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/http" title="http">http<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/https" title="https">https<sup>3</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/hugo" title="hugo">hugo<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/innobackupex" title="innobackupex">innobackupex<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/internet" title="internet">internet<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/iphone" title="iphone">iphone<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/lenovo" title="lenovo">lenovo<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/letsencrypt" title="letsencrypt">letsencrypt<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/linux" title="linux">linux<sup>13</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/linuxmint" title="linuxmint">linuxmint<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/mandriva" title="mandriva">mandriva<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/mariadb" title="mariadb">mariadb<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/mate8" title="mate8">mate8<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/mint" title="mint">mint<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/mysql" title="mysql">mysql<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/nana" title="nana">nana<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/nginx" title="nginx">nginx<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/pacman" title="pacman">pacman<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/photoshop" title="photoshop">photoshop<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/piwigo" title="piwigo">piwigo<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/poco" title="poco">poco<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/ppa" title="ppa">ppa<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/python" title="python">python<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/qq" title="qq">qq<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/rom" title="rom">rom<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/shadowsocks" title="shadowsocks">shadowsocks<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/sigma" title="sigma">sigma<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/ssh" title="ssh">ssh<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/ssl" title="ssl">ssl<sup>4</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/suse" title="suse">suse<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/tinc" title="tinc">tinc<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/twitter" title="twitter">twitter<sup>41</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/ubuntu" title="ubuntu">ubuntu<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/vps" title="vps">vps<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/vultr" title="vultr">vultr<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/wifi" title="wifi">wifi<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/windows-xp" title="windows-xp">windows-xp<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/windows7" title="windows7">windows7<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/windows8.1" title="windows8.1">windows8.1<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/wordpress" title="wordpress">wordpress<sup>3</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/xtrabackup" title="xtrabackup">xtrabackup<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e4%b8%ad%e5%8d%9a" title="中博">中博<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e4%b8%ad%e5%9b%bd" title="中国">中国<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e4%b8%ad%e7%bb%a7" title="中继">中继<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e4%ba%a4%e9%80%9a%e4%ba%8b%e6%95%85" title="交通事故">交通事故<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e4%bc%a0%e9%94%80" title="传销">传销<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e4%bd%8d%e7%bd%ae" title="位置">位置<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e4%bd%b3%e5%8f%a5" title="佳句">佳句<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%81%9a%e4%ba%ba" title="做人">做人<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%85%89%e7%9b%98" title="光盘">光盘<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%86%85%e7%bd%91" title="内网">内网<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%88%b6%e4%bd%9c" title="制作">制作<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%88%b7%e6%9c%ba" title="刷机">刷机<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%8d%8e%e4%b8%ba" title="华为">华为<sup>3</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%8d%8e%e5%b1%b1" title="华山">华山<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%8e%8b%e7%bc%a9" title="压缩">压缩<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%8f%b8%e6%b3%95%e8%80%83%e8%af%95" title="司法考试">司法考试<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%8f%b8%e8%80%83" title="司考">司考<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%90%8e%e8%a1%97%e7%94%b7%e5%ad%a9" title="后街男孩">后街男孩<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%90%af%e5%8a%a8" title="启动">启动<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%94%90%e5%83%a7" title="唐僧">唐僧<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%98%80%e5%92%95" title="嘀咕">嘀咕<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%9b%bd%e5%ba%86" title="国庆">国庆<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%9b%be%e7%89%87" title="图片">图片<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%9c%b0%e9%9c%87" title="地震">地震<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%9d%9a%e6%9e%9c%e4%ba%91" title="坚果云">坚果云<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%a4%96%e9%93%be" title="外链">外链<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%a4%a7%e5%b7%b4" title="大巴">大巴<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%a4%a7%e6%a7%90%e6%a0%91" title="大槐树">大槐树<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%a4%b4%e5%8f%91" title="头发">头发<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%a5%b3%e4%ba%ba" title="女人">女人<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%a6%82%e5%ae%b6" title="如家">如家<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%a9%9a%e5%a7%bb" title="婚姻">婚姻<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%ae%89%e5%85%a8" title="安全">安全<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%ae%89%e8%a3%85" title="安装">安装<sup>3</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%af%b9%e8%81%94" title="对联">对联<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%b0%8fy" title="小y">小y<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%b0%8f%e5%9d%91" title="小坑">小坑<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%b1%8f%e5%b9%95" title="屏幕">屏幕<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e5%bc%80%e8%bd%a6" title="开车">开车<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%80%bb%e7%bb%93" title="总结">总结<sup>4</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%87%bf%e5%8f%a4%e4%bb%8a" title="懿古今">懿古今<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%88%90%e5%8a%9f" title="成功">成功<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%88%90%e9%83%bd" title="成都">成都<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%89%8b%e6%9c%ba" title="手机">手机<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%8a%a5%e8%ad%a6" title="报警">报警<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%8e%92%e7%9f%b3" title="排石">排石<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%8e%a5%e5%90%bb" title="接吻">接吻<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%90%ac%e5%ae%b6" title="搬家">搬家<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%97%85%e6%b8%b8" title="旅游">旅游<sup>4</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%97%a0%e7%ba%bf%e9%a9%b1%e5%8a%a8" title="无线驱动">无线驱动<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%97%a5%e6%9c%ac" title="日本">日本<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%97%a5%e8%ae%b0" title="日记">日记<sup>3</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%98%a5%e8%8a%82" title="春节">春节<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%99%ae%e5%90%89" title="普吉">普吉<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%a6%86%e6%9e%97" title="榆林">榆林<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%a8%b1%e8%8a%b1" title="樱花">樱花<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%ad%a6%e5%bd%93%e5%b1%b1" title="武当山">武当山<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%b1%89%e5%ad%97" title="汉字">汉字<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%b3%b0%e5%9b%bd" title="泰国">泰国<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%b3%b0%e5%b1%b1" title="泰山">泰山<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%b4%aa%e6%b4%9e" title="洪洞">洪洞<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%b5%b7%e5%8d%97" title="海南">海南<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%b5%b7%e6%b7%98" title="海淘">海淘<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%b9%96%e5%8c%97" title="湖北">湖北<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e6%bc%ab%e7%94%bb" title="漫画">漫画<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%81%b0%e6%8c%87%e7%94%b2" title="灰指甲">灰指甲<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%85%a7%e9%a1%be" title="照顾">照顾<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%89%99%e5%a5%97" title="牙套">牙套<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%91%9e%e6%98%9f" title="瑞星">瑞星<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%94%b3%e8%af%89" title="申诉">申诉<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%94%b5%e4%bf%a1" title="电信">电信<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%94%b5%e5%bd%b1" title="电影">电影<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%94%b7%e4%ba%ba" title="男人">男人<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%99%bb%e5%bd%95" title="登录">登录<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%a0%81%e8%a1%a8" title="码表">码表<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%a1%ac%e7%9b%98" title="硬盘">硬盘<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%a5%9e%e8%88%9f" title="神舟">神舟<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%a9%bf%e9%80%8f" title="穿透">穿透<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e7%bd%91%e6%98%93" title="网易">网易<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%81%94%e6%83%b3" title="联想">联想<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%81%94%e9%80%9a" title="联通">联通<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%84%9a%e6%b0%94" title="脚气">脚气<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%87%aa%e6%8b%8d" title="自拍">自拍<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%87%aa%e8%a1%8c%e8%bd%a6" title="自行车">自行车<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%87%aa%e9%a9%be" title="自驾">自驾<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%88%aa%e5%a4%a9" title="航天">航天<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%8a%a6%e8%8a%bd%e5%b1%b1" title="芦芽山">芦芽山<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%8b%8f%e4%b8%89" title="苏三">苏三<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%8d%a3%e8%80%80" title="荣耀">荣耀<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%8d%b7%e5%8f%b6%e5%9d%aa" title="荷叶坪">荷叶坪<sup>3</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%a3%85%e4%bf%ae" title="装修">装修<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%a5%bf%e5%ae%89" title="西安">西安<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%a5%bf%e6%a0%bc%e7%8e%9b" title="西格玛">西格玛<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%b6%8a%e5%8d%97" title="越南">越南<sup>3</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%b7%af%e7%94%b1" title="路由">路由<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e8%bd%a6%e7%a5%b8" title="车祸">车祸<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e9%85%92" title="酒">酒<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e9%87%8d%e5%ba%86" title="重庆">重庆<sup>3</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e9%99%95%e8%a5%bf" title="陕西">陕西<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e9%9d%92%e5%b2%9b" title="青岛">青岛<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e9%9f%b3%e8%8a%82" title="音节">音节<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e9%9f%b6%e5%85%b3" title="韶关">韶关<sup>6</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e9%aa%91%e8%a1%8c" title="骑行">骑行<sup>8</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e9%ac%bc%e5%ad%90" title="鬼子">鬼子<sup>1</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e9%ad%94%e6%96%b9" title="魔方">魔方<sup>2</sup></a></li>
+<li><a href="https://www.yiwan.pro/tags/%e9%bb%84%e5%b2%97%e5%b1%b1" title="黄岗山">黄岗山<sup>1</sup></a></li>
+</ul>
+</div>
+</div>
+<div class="archiveslist">
+<p class="asidetitle">归档</p>
+<div class="archivesidebarscroll">
+<ul class="archive-list">
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2020-04">2020年04月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2020-03">2020年03月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2020-02">2020年02月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2020-01">2020年01月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-12">2019年12月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-11">2019年11月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-10">2019年10月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-09">2019年09月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-08">2019年08月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-07">2019年07月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-06">2019年06月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-05">2019年05月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-04">2019年04月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-03">2019年03月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-02">2019年02月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2019-01">2019年01月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-12">2018年12月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-11">2018年11月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-10">2018年10月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-09">2018年09月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-08">2018年08月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-07">2018年07月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-06">2018年06月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-05">2018年05月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-04">2018年04月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-03">2018年03月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-02">2018年02月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2018-01">2018年01月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-12">2017年12月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-11">2017年11月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-10">2017年10月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-09">2017年09月</a><span class="archive-list-count">3</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-08">2017年08月</a><span class="archive-list-count">6</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-07">2017年07月</a><span class="archive-list-count">2</span>
+</li>
+ <li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-06">2017年06月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-05">2017年05月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-04">2017年04月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-03">2017年03月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-02">2017年02月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2017-01">2017年01月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2016-12">2016年12月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2016-11">2016年11月</a><span class="archive-list-count">3</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2016-10">2016年10月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2016-08">2016年08月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2016-07">2016年07月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2016-06">2016年06月</a><span class="archive-list-count">5</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2016-05">2016年05月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2016-01">2016年01月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2015-12">2015年12月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2015-11">2015年11月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2015-06">2015年06月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2015-04">2015年04月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2015-03">2015年03月</a><span class="archive-list-count">3</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2015-02">2015年02月</a><span class="archive-list-count">3</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2015-01">2015年01月</a><span class="archive-list-count">9</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2014-12">2014年12月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2013-11">2013年11月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2013-04">2013年04月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2013-03">2013年03月</a><span class="archive-list-count">3</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2011-12">2011年12月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2011-11">2011年11月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2011-10">2011年10月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2011-08">2011年08月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2011-07">2011年07月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2011-06">2011年06月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2011-05">2011年05月</a><span class="archive-list-count">3</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2011-03">2011年03月</a><span class="archive-list-count">5</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2011-02">2011年02月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2011-01">2011年01月</a><span class="archive-list-count">5</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2010-12">2010年12月</a><span class="archive-list-count">5</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2010-11">2010年11月</a><span class="archive-list-count">6</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2010-10">2010年10月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2010-09">2010年09月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2010-08">2010年08月</a><span class="archive-list-count">7</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2010-07">2010年07月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2010-06">2010年06月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2010-05">2010年05月</a><span class="archive-list-count">13</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2010-04">2010年04月</a><span class="archive-list-count">11</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2010-01">2010年01月</a><span class="archive-list-count">5</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2009-12">2009年12月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2009-11">2009年11月</a><span class="archive-list-count">6</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2009-10">2009年10月</a><span class="archive-list-count">3</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2009-09">2009年09月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2009-05">2009年05月</a><span class="archive-list-count">3</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2009-04">2009年04月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2009-03">2009年03月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2008-12">2008年12月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2008-11">2008年11月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2008-08">2008年08月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2008-07">2008年07月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2008-06">2008年06月</a><span class="archive-list-count">3</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2008-05">2008年05月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2008-04">2008年04月</a><span class="archive-list-count">6</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2008-03">2008年03月</a><span class="archive-list-count">7</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2008-02">2008年02月</a><span class="archive-list-count">4</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2008-01">2008年01月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2007-12">2007年12月</a><span class="archive-list-count">6</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2007-09">2007年09月</a><span class="archive-list-count">3</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2007-02">2007年02月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2006-12">2006年12月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2006-11">2006年11月</a><span class="archive-list-count">6</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2006-10">2006年10月</a><span class="archive-list-count">2</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2006-08">2006年08月</a><span class="archive-list-count">1</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2006-07">2006年07月</a><span class="archive-list-count">7</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2006-06">2006年06月</a><span class="archive-list-count">7</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2006-05">2006年05月</a><span class="archive-list-count">21</span>
+</li>
+<li class="archive-list-item">
+<a class="archive-list-link" href="https://www.yiwan.pro/blopo/#2006-04">2006年04月</a><span class="archive-list-count">1</span>
+</li>
+</ul>
+</div>
+</div>
+<div class="rsspart">
+<a rel="nofollow" href="https://www.yiwan.pro/ywfeed.xml" type="application/rss+xml" target="_blank">RSS 订阅</a>
+</div><div style="width: 100%; height: auto; clear: both; text-align: center;" class="google-auto-placed"><ins style="display: block; margin: 16px auto 10px; background-color: transparent; height: 280px;" data-ad-format="auto" class="adsbygoogle adsbygoogle-noablate" data-ad-client="ca-pub-2773776622058810" data-adsbygoogle-status="done"><ins id="aswift_1_expand" style="display:inline-table;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:376px;background-color:transparent;"><ins id="aswift_1_anchor" style="display:block;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:376px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_1" name="aswift_1" style="left: 0px; position: absolute; top: 0px; border: 0px none; width: 376px; height: 280px; overflow: visible;" width="376" height="280" frameborder="0"></iframe></ins></ins></ins></div>
+</aside>
+</div>
+</div><ins class="adsbygoogle adsbygoogle-noablate" style="display: none !important;" data-adsbygoogle-status="done"><ins id="aswift_0_expand" style="display:inline-table;border:none;height:0px;margin:0;padding:0;position:relative;visibility:visible;width:0px;background-color:transparent;"><ins id="aswift_0_anchor" style="display:block;border:none;height:0px;margin:0;padding:0;position:relative;visibility:visible;width:0px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0px;width:0px;height:0px;" frameborder="0"></iframe></ins></ins></ins>
+<footer><div id="footer">
+<div class="line">
+<span></span>
+<div style="background:no-repeat url(&quot;https://www.yiwan.pro/yiwan_pictures/octocat_by_litad_01.png&quot;) left top;-webkit-background-size:6.875em 6.875em;-moz-background-size:6.875em 6.875em;background-size:6.875em 6.875em;" class="author"></div>
+</div>
+<section class="info">
+<p> Be myself.<br>Love the wonderful world.<br>Do the right things and be a better man. </p>
+</section>
+<div class="social-font clearfix">
+<a href="https://twitter.com/litanid" target="_blank" title="twitter"></a>
+<a href="https://github.com/litanid" target="_blank" title="github"></a>
+<a href="mailto:litanid@gmail.com" target="_blank" title="email"></a>
+</div>
+<p class="copyright">
+<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259510611'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s95.cnzz.com/z_stat.php%3Fid%3D1259510611%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script><span id="cnzz_stat_icon_1259510611"><a href="https://www.cnzz.com/stat/website.php?web_id=1259510611" target="_blank" title="站长统计"><img src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/pic.gif" vspace="0" hspace="0" border="0"></a></span><script src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/z_stat.js" type="text/javascript"></script><script src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/core.js" charset="utf-8" type="text/javascript"></script><br>
+Powered by <a href="https://gohugo.io/" target="_blank" title="hugo">hugo</a> and Theme by <a href="https://github.com/coderzh/hugo-pacman-theme" target="_blank" title="hugo-pacman-theme">hugo-pacman-theme</a> © 2020
+<a href="https://www.yiwan.pro/" target="_blank" title="辞峡烟斜">辞峡烟斜</a>
+</p>
+</div><div style="width: 100%; height: auto; clear: both; text-align: center;" class="google-auto-placed"><ins style="display: block; margin: 10px auto; background-color: transparent; height: 280px;" data-ad-format="auto" class="adsbygoogle adsbygoogle-noablate" data-ad-client="ca-pub-2773776622058810" data-adsbygoogle-status="done"><ins id="aswift_2_expand" style="display:inline-table;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:1200px;background-color:transparent;"><ins id="aswift_2_anchor" style="display:block;border:none;height:280px;margin:0;padding:0;position:relative;visibility:visible;width:1200px;background-color:transparent;"><iframe marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_2" name="aswift_2" style="left:0;position:absolute;top:0;border:0px;width:1200px;height:280px;" width="1200" height="280" frameborder="0"></iframe></ins></ins></ins></div>
+</footer>
+<script src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/jquery-2.js"></script>
+<script type="text/javascript">
+done = false;
+$(document).ready(function(){
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  $(window).resize(function(){
+    getSize();
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else
+    {
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+    }
+  });
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  $('form.search').on('submit', function (event) {
+    if (false === done) {
+      event.preventDefault();
+      var orgVal = $(this).find('#search').val();
+      $(this).find('#search').val('site:https:\/\/www.yiwan.pro\/ ' + orgVal);
+      done = true;
+      $(this).submit();
+    }
+  });
+});
+</script>
+<script type="text/javascript">
+$(document).ready(function(){
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina');
+  var html = [
+  '<a href="#" class="overlay" id="qrcode"></a>',
+  '<div class="qrcode clearfix"><span>扫描二维码分享到微信朋友圈</span><a class="qrclose" href="#share"></a><strong>Loading...Please wait</strong><img id="qrcode-pic" data-src="http://b.bshare.cn/barCode?site=weixin&url=' + encodedUrl + '"/></div>',
+  '<a href="#textlogo" class="article-back-to-top" title="Top"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="QRcode"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="Weibo"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+  $('.article-share-qrcode').click(function(){
+    var imgSrc = $('#qrcode-pic').attr('data-src');
+    $('#qrcode-pic').attr('src', imgSrc);
+    $('#qrcode-pic').load(function(){
+        $('.qrcode strong').text(' ');
+    });
+  });
+});
+</script>
+
+
+<iframe id="google_osd_static_frame_4015406812187" name="google_osd_static_frame" style="display: none; width: 0px; height: 0px;"></iframe></body><iframe id="google_esf" name="google_esf" src="Tinc%20VPN%20%E5%A4%A7%E5%B1%80%E5%9F%9F%E7%BD%91%E5%AE%9E%E7%8E%B0%E5%A4%87%E5%BF%98%E5%BD%95%20-%20%E5%BE%80%E6%97%A5%E5%BE%AE%E5%BF%86_files/zrt_lookup.html" style="display: none;" data-ad-client="ca-pub-2773776622058810"></iframe></html>

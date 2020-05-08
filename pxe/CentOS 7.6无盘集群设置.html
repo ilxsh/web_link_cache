@@ -1,0 +1,280 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>CentOS 7.6无盘集群设置</title>
+<style type="text/css" media="all">
+@import url(http://hmli.ustc.edu.cn/css/com.css);
+</style>
+</head>
+<body><center>
+<h1>CentOS 7.6无盘集群设置</h1>
+<h2>中国科学技术大学<a href="http://scc.ustc.edu.cn/">超级计算中心</a> 李会民 &lt;<a href="mailto:hmli@ustc.edu.cn">hmli@ustc.edu.cn</a>&gt; 2019-03-10</h2>
+<hr>
+<div style="text-align:left; width: 1080px">
+<p>无盘(diskless)集群，指的是计算节点没有本地硬盘或本地硬盘没有安装操作系统，优点是管理维护方便，可省却计算节点硬盘投资；缺点是对服务节点的存储IO性能及之间的网络稳定性和性能要求高。</p>
+<p>以下仅仅基于CentOS 7.6针对无盘集群系统与普通集群系统不同之处写的，常见的PXE和NIS服务等并不牵扯，请参考相应资料。</p>
+<ul>
+	<li>服务节点：
+    <ul>
+        <li>节点名：dlserver</li>
+        <li>内网IP：192.168.10.254</li>
+    </ul>
+    </li><li>无盘客户节点（以后简称客户节点）：
+    <ul>
+        <li>节点名：dlclient1、dlclient2</li>
+        <li>内网IP：192.168.10.1、192.168.10.2</li>
+    </ul>
+</li></ul>
+<ol>
+    <li>升级系统（减少漏洞等，建议采用新的）：
+         <h5> # yum -y update</h5>
+    </li>
+    <li>安装所需要的软件：
+         <h5># yum -y install nfs-utils tftp-server xinetd dhcp syslinux dracut-network</h5>
+    </li>
+    <li>为后面生成initrd.img时需要打开NFS-root支持做准备，上面dracut-network包安装后在/etc/dracut.conf文件中添加：
+<pre>add_dracutmodules+="nfs"
+</pre></li>
+     <li>关闭SELinux：
+		 <p>修改/etc/selinux/config，设置SELINUX=disabled：
+</p><pre># This file controls the state of SELinux on the system.
+# SELINUX= can take one of these three values:
+#     enforcing - SELinux security policy is enforced.
+#     permissive - SELinux prints warnings instead of enforcing.
+#     disabled - No SELinux policy is loaded.
+SELINUX=disabled
+# SELINUXTYPE= can take one of three values:
+#     targeted - Targeted processes are protected,
+#     minimum - Modification of targeted policy. Only selected processes are protected. 
+#     mls - Multi Level Security protection.
+SELINUXTYPE=targeted 
+</pre><p></p>
+<p>必要时需要重启系统，以便使其生效。</p>
+    </li>
+    <li>配置TFTP服务（通过xinetd启动）：
+         <ul>
+         <li>设置/etc/xinetd.d/tftp文件：
+<pre>service tftp
+{
+    socket_type             = dgram
+    protocol                = udp
+    wait                    = yes
+    user                    = root
+    server                  = /usr/sbin/in.tftpd
+    server_args             = -s /var/lib/tftpboot #-s 表示用/var/lib/tftpboot作为tftp服务的根目录
+    disable                 = no #要修改成no，以便启动
+    per_source              = 11
+    cps                     = 100 2
+    flags                   = IPv4
+}
+</pre></li>
+          <li>重启xinetd服务：
+               <h5># systemctl restart xinetd</h5>
+          </li>
+     </ul>
+     </li><li>配置NFS服务：
+     <ul>
+		 <li>建立客户节点存储的公共目录：
+			 <h5># mkdir /diskless</h5>
+		 </li>
+		 <li>配置NFS共享，修改/etc/exports文件：
+<pre>/diskless 192.168.10.0/24(rw,async,no_root_squash)
+</pre>
+     </li>
+		 <li>重启NFS服务：
+			 <h5> # systemctl restart nfs</h5>
+			 如果NFS服务早已启动，那么可以不重启NFS服务，而是利用下面刷新配置：
+			 <h5> # exportfs -ra</h5>
+		 </li>
+		 <li>配置NFS服务开机自启动：
+			 <h5># systemctl enable nfs</h5>
+		 </li>
+     </ul>
+     </li><li>配置DHCP服务：
+	 <ul>
+		 <li>修改/etc/dhcp/dhcpd.conf文件：
+<pre>default-lease-time 600;
+max-lease-time 7200;
+
+allow booting;
+allow bootp;
+option time-offset              -18000; # Eastern Standard Tim
+
+subnet 192.168.10.0 netmask 255.255.255.0 {
+    option routers                  192.168.10.254;
+    option subnet-mask              255.255.255.0;
+    option domain-search            "scc.ustc.edu.cn";
+    option domain-name-servers      202.38.64.7;
+    option time-offset              -18000;     # Eastern Standard Time
+    range 192.168.10.1 192.168.10.100;
+}
+
+host dlclient1 {
+    option host-name "dlclient1"; #设定系统名
+    hardware ethernet 00:50:56:89:96:d1;
+    fixed-address 192.168.10.1;
+}
+
+host dlclient2 {
+    option host-name "dlclient2";
+    hardware ethernet 00:50:56:89:bb:5f;
+    fixed-address 192.168.10.2;
+}
+
+class "pxeclients" { #PXE启动设置
+    match if substring(option vendor-class-identifier, 0, 9) = "PXEClient";
+    next-server 192.168.10.254;
+    if option architecture-type = 00:07 {
+        filename "uefi/shim.efi"; #x86_64 UEFI引导
+#   } else if option architecture-type = 00:06 {
+#       filename "bootia32.efi"; #ia32 UEFI引导，本文后面未涉及
+    } else {
+        filename "pxelinux.0"; #传统LEGACY引导
+    }
+}
+</pre>
+     </li>
+     <li>重启DHCP服务：
+          <h5># systemctl restart dhcpd</h5>
+	</li>
+     </ul>
+     </li>
+     <li>设置客户节点操作系统文件系统：
+<p>客户节点需要一个完整的操作系统安装后的文件系统，可以采用某个现有的系统复制下或用yum新装一个系统：
+     </p><ul>
+     <li>采用某个现有的系统复制，下面可二选一：
+     <ul>
+		 <li>利用某个其它节点：
+			 <h5> # rsync -a -e ssh --exclude='/proc/*' --exclude='/sys/*' 某节点:/ /diskless/root/</h5>
+		 </li>
+		 <li>利用服务节点本身：
+			 <h5> # rsync -a -e ssh --exclude='/proc/*' --exclude='/sys/*' / /diskless/root/</h5>
+		 </li>
+	 </ul>
+	 </li><li>新装个系统到/diskless/root下（我喜欢这样，比较干净）：
+		 <h5> # yum install @Base kernel dracut-network nfs-utils --installroot=/diskless/root --releasever=/</h5>
+		 <p>yum的--installroot=/diskless/root指明了安装目录、--releasever=/参数指明了安装的系统版本等，详见yum说明。</p>
+	 </li>
+	 <li>给客户节点系统添加删除软件，可以采用：
+		 <h5> # yum install|erase 包名 --installroot=/diskless/root --releasever=/</h5>
+	 </li>
+     </ul>
+<p></p>
+	</li><li>设置客户节点启动内核：
+	<ul>
+		<li>复制现有vmlinuz文件到/var/lib/tftpboot/目录，客户节点DHCP获取到IP后会从这里通过tftp下载：
+			 <h5> # cp /boot/vmlinuz-3.10.0-957.5.1.el7.x86_64 /var/lib/tftpboot/</h5>
+		 </li>
+		 <li>在/var/lib/tftpboot/目录下生成支持NFS-root的initrd文件：
+			 <h5> # dracut --add nfs /var/lib/tftpboot/initramfs-3.10.0-957.5.1.el7.x86_64.img 3.10.0-957.5.1.el7.x86_64</h5>
+		 </li>
+		 <li>设置生成的initrd文件权限为644：
+			 <h5> # chmod 644 /var/lib/tftpboot/initramfs-3.10.0-957.5.1.el7.x86_64.img</h5>
+		 </li>
+	</ul>
+     </li>
+     <li>设置客户节点PXE引导文件：
+     <ul>
+	<li>针对传统LEGACY启动方式：
+		<ul>
+		 <li>复制/usr/share/syslinux/pxelinux.0文件到/var/lib/tftpboot/目录：
+			 <h5> # cp /usr/share/syslinux/pxelinux.0 /var/lib/tftpboot/</h5>
+		 </li>
+		 <li>在TFTP根目录下建立pxelinux.cfg目录：
+			 <h5> # mkdir -p /var/lib/tftpboot/pxelinux.cfg</h5>
+		 </li>
+		 <li>设置客户节点boot默认配置文件/var/lib/tftpboot/pxelinux.cfg/default：
+<pre>default CentOS7.6
+
+label CentOS7.6
+    kernel vmlinuz-3.10.0-957.5.1.el7.x86_64
+    append initrd=initramfs-3.10.0-957.5.1.el7.x86_64.img root=nfs:192.168.10.254:/diskless/root rw
+</pre>
+	</li></ul>
+	</li><li>针对新型UEFI启动方式：
+<ul>
+<ul>
+    <li>下载第一张DVD镜像：<h5># wget http://mirrors.ustc.edu.cn/centos/7.6.1810/isos/x86_64/CentOS-7-x86_64-DVD-1810.iso</h5>
+    </li><li>挂载第一张DVD镜像：<h5># mount -o loop CentOS-7-x86_64-DVD-1810.iso /centos</h5>
+	</li><li><h5># rpm2cpio /centos/Packages/shim-x64-15-1.el7.centos.x86_64.rpm | cpio -dimv</h5>
+	</li><li><h5># rpm2cpio /centos/Packages/grub2-efi-x64-2.02-0.76.el7.centos.x86_64.rpm | cpio -dimv</h5>
+	</li><li>运行上面命令，将在当前目录生成一个boot目录，复制所需文件到/var/lib/tftpboot，之后该boot目录可删除
+	<h5># cp boot/efi/EFI/centos/{shim.efi,grubx64.efi} /var/lib/tftpboot</h5>
+	</li><li>设置/var/lib/tftpboot/uefi/grub.cfg：
+<pre>set timeout=0
+  menuentry 'CentOS 7.6' {
+  linuxefi  vmlinuz-3.10.0-957.5.1.el7.x86_64 root=nfs:192.168.10.254:/diskless/root rw
+  initrdefi initramfs-3.10.0-957.5.1.el7.x86_64.img
+}
+</pre>
+</li></ul>
+
+	</ul>
+	</li></ul>
+     </li><li>设置客户节点私有目录：
+		 <p>除/var与/tmp目录外，基本都可以共享，因此这里仅设置/var与/tmp私有。另外设定/tmp使用客户节点的本地硬盘（无盘客户节点可以不用本地硬盘，这里有的原因是为了Gaussian大IO应用采用本地硬盘，避免主存储IO压力太大）。</p>
+		 <p>生成/diskless/nodes目录，该目录下生成以节点名命名的子目录，如dlclient1和dlclient2，以便存放各自的私有文件：
+		 </p><h5> # cp -a /diskless/root/var /diskless/nodes/dlclient1</h5>
+		 <h5> # cp -a /diskless/root/var /diskless/nodes/dlclient2</h5>
+		 <p></p>
+	</li>
+     <li>设置客户节点启动脚本：
+		 <ul>
+		 <li>修改/diskless/root/etc/rc.local文件：
+<pre>#!/bin/bash
+# THIS FILE IS ADDED FOR COMPATIBILITY PURPOSES
+# Please note that you must run 'chmod +x /etc/rc.d/rc.local' to ensure
+# that this script will be executed during boot.
+
+touch /var/lock/subsys/local
+for DIR in var #利用客户节点启动时获取的节点名$HOSTNAME不同对应不同的服务节点上的客户节点私有目录
+do
+    mount -o rw dlserver:/diskless/nodes/$HOSTNAME/$DIR /$DIR
+done
+mount /dev/sda /tmp
+if [ $? != 0 ]; then #如果加载未成功，认为该节点第一次启动，该硬盘没格式化，因此做格式化
+    mkfs.xfs /dev/sda
+    mount /dev/sda /tmp
+fi
+nisdomainname mydiskless.org #为了NIS服务
+dhclient &amp; #为了客户节点启动dhclient守护进程，自动更新IP，否则过10分钟左右网络会断掉
+</pre>
+     </li>
+     <li>设置客户节点的rc.local开机自启动：
+     <ul>
+          <li>chroot到客户节点系统：
+			  <h5> # chroot /diskless/root</h5>
+          </li>
+          <li>为/etc/rc.d/rc.local文件增加可执行权限：
+			  <h5> # chmod +x /etc/rc.d/rc.local</h5>
+          </li>
+          <li>设置成开机自启动：
+			  <h5> # systemctl enable rc-local</h5>
+          </li>
+          <li>退出chroot环境：
+			  <h5> # exit</h5>
+          </li>
+     </ul>
+</li></ul>
+     </li><li>打开防火墙允许TFTP、NFS、DHCP等服务（双保险简单点）：
+		 <h5> # systemctl stop firewalld</h5>
+		 <h5> # iptables -F</h5>
+     </li>
+<li>设置客户节点硬件启动参数：
+<p>在BIOS等设置为PXE网络启动，并启动，根据客户节点启动时屏幕信息以及服务节点/var/log/messages文件等信息对系统诊断，排除错误。</p>
+<p>无盘节点启动后，运行df命令应显示类似下面信息：
+<img src="CentOS%207.6%E6%97%A0%E7%9B%98%E9%9B%86%E7%BE%A4%E8%AE%BE%E7%BD%AE_files/dlclient1.png" style="text-align:center" width="800">
+<br>
+<img src="CentOS%207.6%E6%97%A0%E7%9B%98%E9%9B%86%E7%BE%A4%E8%AE%BE%E7%BD%AE_files/dlclient2.png" style="text-align:center" width="800">
+</p>
+</li>
+</ol>
+相关资料：
+<ul>
+	<li>RHEL: SETTING UP A REMOTE DISKLESS SYSTEM：<a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/ch-disklesssystems">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/ch-disklesssystems</a></li>
+	<li>基于DHCP、PXE和kickstart自动安装设置CentOS 7.3：<a href="http://hmli.ustc.edu.cn/doc/linux/centos-autoinstall.htm">http://hmli.ustc.edu.cn/doc/linux/centos-autoinstall.htm</a></li>
+	<li>Centos 5.4无盘集群设置：<a href="http://hmli.ustc.edu.cn/doc/linux/centos-diskless.htm">http://hmli.ustc.edu.cn/doc/linux/centos-diskless.htm</a></li>
+</ul>
+</div>
+
+
+</center></body></html>

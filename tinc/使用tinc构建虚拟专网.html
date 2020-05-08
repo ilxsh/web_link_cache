@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/pure-min.css">
+    <link rel="stylesheet" href="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/iconfont.css">
+    <link rel="canonical" href="https://blogs.vicsdf.com/article/4114">
+        <link rel="stylesheet" href="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/agate.css">
+        <link rel="stylesheet" href="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/v1.css">
+    <script src="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/jquery_002.js"></script>
+    <script src="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/jquery.js"></script>
+        <meta name="keywords" content="使用tinc构建虚拟专网">
+    <meta name="description" content="之前写过一篇文章讲如何在家里无缝访问公司网络，用的是frp的方案，但正如使用ngork一样，frp也会莫名其妙地突然不工作，而且几乎没有什么错误信息可供调查。后来知道了有zerotier这个东西，相对来说还是比较稳定的，速度也凑合，免费额度">
+    <title>使用tinc构建虚拟专网</title>
+</head>
+<body>
+<header>
+    <div class="wrap flex">
+        <div class="logo flex-auto">
+            <a href="https://blogs.vicsdf.com/"><img alt="博客汇" src="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/logo.png" height="32"></a>
+        </div>
+    </div>
+</header><section class="content">
+    <div class="wrap flex">
+        <div class="flex-auto article-body">
+            <article class="detail">
+                <h1>使用tinc构建虚拟专网</h1>
+                <div class="c3">
+                    <span class="c3-0">on <a href="https://blogs.vicsdf.com/date/2018-07-16">2018-07-16</a></span> |
+                    <span class="c3-0 author_name">by <a author_id="91" href="https://blogs.vicsdf.com/author/91">类库大魔王/missdeer</a></span>
+                    <span class="c3-2"><a href="#"><i class="iconfont icon-shoucang">0</i></a></span>
+                    <span class="c3-3"><a href="#">关注作者</a></span>
+                </div>
+                <div class="body"><p>之前写过一篇文章讲如何在家里无缝访问公司网络，用的是frp的方案，但正
+如使用ngork一样，frp也会莫名其妙地突然不工作，而且几乎没有什么错误信息可供调查。后来知道了有zerotier这个东西，相对来说还是比较稳
+定的，速度也凑合，免费额度可以在一个网络中添加最多100个设备，但是流量通过别人的服务器总归有点不爽，直到最近知道了tinc这个东西，可用于创建
+点对点的虚拟专网。</p>
+
+<p>经过近一天的折腾，终于把公司两台iMac，家里一台Linux 
+HTPC，以及Linode东京1一台VPS用tinc连起来了。tinc的安装配置使用都非常简单，只不过网上的资料比较零散，有一些还是错的，其实只
+要看linode的一篇文章以及tinc的官方文档，基本能解决所有tinc相关问题。</p>
+
+<p>tinc的工作方式依赖于tuntap，现在的Linux发行版基本上都已经带了tuntap驱动，所以直接从官方仓库使用相应的命令安装tinc就能工作。在macOS上则需要自己安装一个tuntaposx驱动，可以通过<code class="highlighter-rouge">brew cask install tuntap</code>进行安装，也可以自己从网上下载安装包手动安装，甚至可能直接安装一个tunnelblick都会自动装一个驱动。如果用命令行<code class="highlighter-rouge">kextstat |grep -e tun -e tap</code> 看一下是否已经安装成功，如果没有任何输出，则需要自己安装，如果用<code class="highlighter-rouge">brew cask</code>或手动安装失败报错，则看一下<code class="highlighter-rouge">/Library/Extensions</code>目录是否有<code class="highlighter-rouge">tap.kext</code>和<code class="highlighter-rouge">tun.kext</code>两个目录，如果有，则通过以下命令装载：</p>
+
+<pre class="highlight" style="width: 840px;"><code class="hljs nginx"><span class="nb"><span class="hljs-attribute">sudo</span> </span>kextload /LibraryExtensions/tap.kext
+<span class="nb">sudo </span>kextload /LibraryExtensions/tun.kext
+</code></pre>
+
+<p>这时再用<code class="highlighter-rouge">kextstat |grep -e tun -e tap</code>看，估计就有输出了，如果还是没有，则到<code class="highlighter-rouge">System Preferences</code>-<code class="highlighter-rouge">Security &amp; Privacy</code>看看是否被禁止了，若是被禁止了，就强行同意即可。</p>
+
+<p>安装好了tuntap和tinc，就可以开始配置，Linux和macOS下基本是一样的，创建一个目录：</p>
+
+<pre class="highlight" style="width: 840px;"><code class="hljs nginx"><span class="nb"><span class="hljs-attribute">sudo</span> mkdir</span> <span class="nt">-p</span> /etc/tinc/netname/hosts
+</code></pre>
+
+<p>其中<code class="highlighter-rouge">netname</code>是自己随意设定的网络名，一旦设定，所有节点都要使用相同名字，之后在tinc的命令行中也要用到。</p>
+
+<p>在<code class="highlighter-rouge">/etc/tinc/netname</code>目录下创建<code class="highlighter-rouge">tinc.conf</code>和<code class="highlighter-rouge">tinc-up</code>/<code class="highlighter-rouge">tinc-down</code>，
+可以参考linode的文章编写。其中所有节点中必须要至少有一个节点是有公网IP（所有其他节点都能访问到）的，其他节点就都连这个节点进行中转，照
+tinc的理念，其他节点一旦通过中转建立好连接后，会视情况进行点对点直连或仍然继续通过节点中转。可以有多个节点拥有公网IP并进行中转，其他节点也
+可以配置连接多个中转节点。</p>
+
+<p><code class="highlighter-rouge">tinc-up</code>/<code class="highlighter-rouge">tinc-down</code>在Linux下和macOS下的命令也许略有不同，比如我的<code class="highlighter-rouge">tinc-up</code>在Linux下是这样的：</p>
+
+<pre class="highlight" style="width: 840px;"><code class="hljs">
+</code></pre>
+
+<p>在macOS下则是这样的：</p>
+
+<pre class="highlight" style="width: 840px;"><code class="hljs">
+</code></pre>
+
+<p>同样<code class="highlighter-rouge">tinc-down</code>也要使用平台相应的命令</p>
+
+<p>然后在<code class="highlighter-rouge">/etc/tinc/netname/hosts</code>目录下，创建一个与<code class="highlighter-rouge">tinc.conf</code>文件中<code class="highlighter-rouge">Name</code>项的值相同的名字的文件，比如<code class="highlighter-rouge">Name = node1</code>，则创建文件名为<code class="highlighter-rouge">node1</code>。<code class="highlighter-rouge">node1</code>的内容主要大概是这样：</p>
+
+<pre class="highlight" style="width: 840px;"><code class="hljs makefile">Address=my.xxx.com   <span class="hljs-comment"># 公网地址，可以是域名或IP，如果不是中转节点，可以不要这一行</span>
+Subnet=192.168.88.2  <span class="hljs-comment"># 内网地址，可以是一个网段或一个具体IP</span>
+</code></pre>
+
+<p>再之后，通过命令生成密钥：</p>
+
+<pre class="highlight" style="width: 840px;"><code class="hljs nginx"><span class="nb"><span class="hljs-attribute">sudo</span> </span>tincd <span class="nt">-n</span> netname <span class="nt">-K4096</span>  
+</code></pre>
+
+<p>这个命令会生成一个RSA公钥和一个私钥，会询问密钥保存的文件路径，其中要公钥需要添加到hosts文件的末尾，可以直接指定hosts文件路径作为公钥文件路径。</p>
+
+<p>最后，把所有节点上的hosts文件都互相交换，存放一个副本到所有其他节点的<code class="highlighter-rouge">/etc/tinc/netname/hosts</code>目录下，就可以运行tinc daemon命令了：</p>
+
+<pre class="highlight" style="width: 840px;"><code class="hljs nginx"><span class="nb"><span class="hljs-attribute">sudo</span> </span>tincd <span class="nt">-n</span> netname <span class="nt">-D</span> <span class="nt">-d</span> <span class="hljs-number">3</span>
+</code></pre>
+
+<p>第一次运行，可以先加<code class="highlighter-rouge">-D</code>参数，让进程放在前台运行，加<code class="highlighter-rouge">-d 3</code>打印详细的调试日志以供出问题时查看，要杀掉该进程，不推荐直接使用<code class="highlighter-rouge">kill</code>命令，而是提供了相应的方法：</p>
+
+<pre class="highlight" style="width: 840px;"><code class="hljs nginx"><span class="nb"><span class="hljs-attribute">sudo</span> </span>tincd <span class="nt">-n</span> netname <span class="nt">-k</span>
+</code></pre>
+
+<p>这时可以通过<code class="highlighter-rouge">ifconfig</code>命令查看是否多了一个名字为<code class="highlighter-rouge">netname</code>的网络连接，IP则是在<code class="highlighter-rouge">tinc-up</code>设置的。还可以互相ping一下对方IP，没什么问题的话，几个机器应该可以当成在同一个网络里互相访问了，可以把<code class="highlighter-rouge">-D</code>和<code class="highlighter-rouge">-d 3</code>参数去掉：</p>
+
+<pre class="highlight" style="width: 840px;"><code class="hljs nginx"><span class="nb"><span class="hljs-attribute">sudo</span> </span>tincd <span class="nt">-n</span> netname
+</code></pre>
+
+<p>还是比较简单的，唯一比较麻烦的是新加一个节点的话，要在所有节点都同步添加一个hosts文件，如果修改了配置，要用命令更新：</p>
+
+<pre class="highlight" style="width: 840px;"><code class="hljs nginx"><span class="nb"><span class="hljs-attribute">sudo</span> </span>tincd <span class="nt">-n</span> netname <span class="nt">-kHUP</span>
+</code></pre>
+
+<p>用tinc替换了zerotier体验了一下，感觉不错，要是有个GUI的配置工具以及hosts目录同步功能，就完美了！</p>
+
+</div>
+                <div class="source" style="width: 840px;">
+                    <p>文章来源：</p>
+                    <p>Author：类库大魔王/missdeer<br>link：https://blog.minidump.info/2018/07/tinc-virtual-private-network/</p>
+                </div>
+            </article>
+            <div class="more">
+                <div class="next">下一篇：<a href="https://blogs.vicsdf.com/article/4190">tinc后续</a></div>                <div class="prev">上一篇：<a href="https://blogs.vicsdf.com/article/4070">Clang on Windows for Qt</a></div>            </div>
+        </div>
+        <div class="side">
+<!--    <div class="search c">-->
+<!--        <h2>搜索</h2>-->
+<!--        <form class="pure-form" action="--><!--">-->
+<!--            <select class="pure-input-1-4">-->
+<!--                <option>文章</option>-->
+<!--                <option>作者</option>-->
+<!--            </select><input class="pure-input-3-4" placeholder="请输入搜索内容" type="text" required>-->
+<!--        </form>-->
+<!--    </div>-->
+        <div class="c">
+        <h2>添加我喜欢的博客</h2>
+        <form id="add_author" class="pure-form pure-form-stacked" action="javascript:void(0);">
+            <input type="text" class="pure-input-1" placeholder="请填写博客RSS地址" required="" name="blog">
+            <button type="submit" class="pure-button pure-button-primary pure-input-1-3 pure-o-1-3">提交</button>
+        </form>
+    </div>
+    <div class="c">
+        <h2><a class="c5" id="care_edit">编辑</a> 我的关注</h2>
+        <div class="c1 c4">
+                    </div>
+    </div>
+    <div class="c">
+        <h2><a class="c5" href="https://blogs.vicsdf.com/author">更多</a> 推荐博客</h2>
+        <div class="c1 j1"><a author_id="1" href="https://blogs.vicsdf.com/author/1">developerWorks中国</a><a author_id="2" href="https://blogs.vicsdf.com/author/2">阮一峰</a><a author_id="3" href="https://blogs.vicsdf.com/author/3">风雨后见彩虹</a><a author_id="4" href="https://blogs.vicsdf.com/author/4">garfileo</a><a author_id="5" href="https://blogs.vicsdf.com/author/5">大愚</a><a author_id="6" href="https://blogs.vicsdf.com/author/6">naice</a><a author_id="7" href="https://blogs.vicsdf.com/author/7">u3xyz</a><a author_id="8" href="https://blogs.vicsdf.com/author/8">_Icarus</a><a author_id="9" href="https://blogs.vicsdf.com/author/9">plokmju88</a><a author_id="10" href="https://blogs.vicsdf.com/author/10">hvkcoder</a><a author_id="11" href="https://blogs.vicsdf.com/author/11">九死蚕传人bo</a><a author_id="12" href="https://blogs.vicsdf.com/author/12">猫耳</a><a author_id="13" href="https://blogs.vicsdf.com/author/13">xixicat</a><a author_id="14" href="https://blogs.vicsdf.com/author/14">Wall_Breaker</a><a author_id="15" href="https://blogs.vicsdf.com/author/15">风清洋</a><a author_id="16" href="https://blogs.vicsdf.com/author/16">香吉士</a><a author_id="17" href="https://blogs.vicsdf.com/author/17">怀疑真爱的流浪者jason</a><a author_id="18" href="https://blogs.vicsdf.com/author/18">洪旭</a><a author_id="19" href="https://blogs.vicsdf.com/author/19">司徒正美</a><a author_id="20" href="https://blogs.vicsdf.com/author/20">Holden</a>        </div>
+    </div>
+
+</div>
+<script>
+function arrayUnique(e){var t={},o=e.length,i=[];for(var r=0;r<o;r++){if(!t[e[r]]){t[e[r]]=true;i.push(e[r])}}return i}(function(){var e=arrayUnique($.cookie("care")?$.cookie("care").split(","):[]);var t=$("#add_author"),o="/author/add?_s_=6ebe356552c0b958ad075698b04b6bdce5ed2b8f";t.submit(function(){$.post(o,"author="+t[0].blog.value,function(t){if(t.err){jer.error(t.msg)}else{var o=t.res.ids;for(var i=0;i<o.length;i++){e.push(o[i])}$.cookie("care",e.join(","),{expires:1360,path:"/"});jer.success(t.res.msg,function(){window.location.href="/care"})}},"json");t[0].reset()})})();(function(){var e=$("section .side .c4"),t=$("#care_edit"),o=null;var i=[];$("section .side .c4 a").each(function(){i.push($(this).attr("author_id"))});$.cookie("care",i.join(","),{expires:1360,path:"/"});$("section .side .j1 a,.author-list .a1 a").each(function(){$(this).click(r)});$(".content article .c3-3 a").click(function(){var e=$(".content article .author_name a")[0];r.call(e)});function r(){if(i.indexOf($(this).attr("author_id"))!==-1){jer.error("你已经关注了");return false}var t=this.cloneNode(true),r=this.cloneNode(true);var a=$('<i class="iconfont icon-error"></i>');a.click(function(e){n(this.parentNode);e.stopPropagation();return false});a.appendTo($(r));$(r).css({opacity:.01,transition:"none"}).appendTo(e);$(t).css({position:"absolute",zIndex:1,opacity:1,left:$(this).offset().left,top:$(this).offset().top,transition:"all ease-out 0.3s"}).appendTo($(this.parentNode));var c=$(this).parent().hasClass("j1");if(c){$(this).remove()}setTimeout(function(){$(t).css({opacity:1,left:$(r).offset().left-3,top:$(r).offset().top-3})},1);setTimeout(function(){$(r).css("opacity",1);$(t).remove();i.push($(r).attr("author_id"));$.cookie("care",i.join(","),{expires:1360,path:"/"})},300);if(c){clearTimeout(o);o=setTimeout(function(){if(i.length>0){window.location.href="/care"}},2e3)}return false}function n(e){var t=$(e).attr("author_id"),r=[];for(var n=0;n<i.length;n++){if(i[n]!=t){r.push(i[n])}}i=r;$.cookie("care",i.join(","),{expires:1360,path:"/"});$(e).remove();clearTimeout(o);o=setTimeout(function(){console.log(i.length);if(i.length==0){window.location.href="/"}else{window.location.href="/care"}},5e3)}t.click(function(){e.addClass("edit")});$(".content .c4 a i").click(function(e){n(this.parentNode);e.stopPropagation();return false})})();</script>
+    </div>
+</section>
+<script>
+    $('pre').each(function () {
+        if(this.children.length == 0){
+            var c = $(this).html();
+            var css = $(this).attr('class');
+            if(css && css.indexOf('brush:') != -1){
+                var cr = css.split(';');
+                var css = ' class="language-'+(cr[0].replace('brush:',''))+'"';
+            }else{
+                css = '';
+            }
+            $(this).html('<code'+css+'>'+c+'</code>');
+        }
+    });
+    $('code.language-clike').removeClass('language-clike');
+    $('blockquote').each(function () {
+        if(this.children.length == 0){
+            $(this).addClass('blockquote');
+            $(this).html($.trim(this.innerHTML));
+        }
+    });
+    $('.body img').attr('width','').attr('height','').bind('error',function () {
+        $(this).remove();
+    });
+    $('.source').click(function () {
+        window.location.href = 'https://blog.minidump.info/2018/07/tinc-virtual-private-network/';
+    });
+    if(window.innerWidth > 700){
+        $('.body pre,.content .detail .source,.blockquote').css({
+            width: $('.wrap').width() - 360
+        });
+    }else{
+        $('.body pre,.content .detail .source,.blockquote').css({
+            width: window.innerWidth - 10
+        });
+    }
+</script>
+<footer>
+    <p><a href="https://blogs.vicsdf.com/">博客汇</a>是一个基于RSS标准的阅读工具，你可以在这里阅读你喜欢的博客文章. <a href="mailto:contus@qq.com">联系我们</a> <a href="https://s.vicsdf.com/">押韵搜索</a> <a href="https://www.vicsdf.com/">报告汇</a> </p>
+    <p>Copyright ©2017 京ICP备12040723号 2.7ms</p>
+</footer>
+<script src="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/jer.js"></script>
+<script src="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/highlight.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+<link rel="stylesheet" href="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/jws.css">
+<script src="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/jws.js"></script>
+<script>
+        JzhiTai({
+        appId:"p6xi6zoxvvpeg2qgzbszykmtp",
+        name:"游客0a6f47",
+        avatar:"//jzhitai.yxsss.com/pic/21",
+        groupId:"blogsarticle/4114",
+        title:"使用tinc构建虚拟专网",
+        sign:"745ec154098d122dc0763deccf71ae7351de60bf",
+        time:1586712048    });
+
+</script><div class="jzhitai jzhitai-web"><div class="jzhitai-left"><ul><li id="all_users" class="active"><img class="jzhitai-avatar" src="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/group.png"><span>所有人</span></li><li id="id7a693isze00gae966pw94a" style="background-color: transparent; color: rgb(51, 51, 51);"><img class="jzhitai-avatar" src="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/21"><span>游客0a6f47</span></li></ul><div class="power"><a href="https://jzhitai.yxsss.com/" target="_blank">Powered by 聚知台</a></div></div><div class="jzhitai-right"><div class="jzhitai-head"><a title="关闭" class="jzhitai-close jzhitai-rotate90">+</a><span>使用tinc构建虚拟专网</span></div><div class="jzhitai-chat"><ul><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li><li class="jzhitai-jzt"><div>退出聊天室</div></li></ul></div><div class="jzhitai-input"><form action="javascript:void(0);"><input type="hidden" name="sid"><textarea id="jzhitai_f_input" placeholder="按 enter 发送" name="msg"></textarea></form></div></div></div><div class="jzhitai-icon"><img src="%E4%BD%BF%E7%94%A8tinc%E6%9E%84%E5%BB%BA%E8%99%9A%E6%8B%9F%E4%B8%93%E7%BD%91_files/eye.png"> <span>1</span><i style="opacity: 1;"></i></div>
+
+</body></html>

@@ -1,0 +1,345 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>基于DHCP、PXE和kickstart自动安装设置CentOS 7.3</title>
+<style type="text/css" media="all">
+@import url(http://hmli.ustc.edu.cn/css/com.css);
+</style>
+</head>
+<body><center>
+<h1>基于DHCP、PXE和kickstart自动安装设置CentOS 7.3</h1>
+<h2>中国科学技术大学<a href="http://scc.ustc.edu.cn/">超级计算中心</a> 李会民&lt;<a href="mailto:hmli@ustc.edu.cn">hmli@ustc.edu.cn</a>&gt; 2017-03-26</h2>
+<hr>
+<div style="text-align:left; width: 1080px">
+<ol>
+<li>基于DHCP、PXE的kickstart自动安装简介
+<p>通常，在安装操作系统的过程需大量的人机交互过程，为减少交互过程，为提高安装效率，<a href="http://www.redhat.com/">Red Hat Linux</a>开
+始支持称为kickstart的功能，只需事先定义好一个kickstart自动应答配置文件（通常存放在安装服务器上），并让安装程序知道该配置文件的
+位置，在安装过程中安装程序就可以自己从该文件中读取安装配置，这样就避免了繁琐的人机交互，实现无人值守的自动化安装。安装好一机器，安装程序都会创建
+一个kickstart配置文件/root/anaconda-ks.cfg，记录真实安装配置。<a href="http://www.centos.org/">CentOS</a>作为Red Hat Enterprise Linux(RHEL)的衍生版也支持此功能。</p>
+<p></p>
+<p>PXE(Pre-boot Execution 
+Environment)是由Intel设计的协议，它可以使计算机通过网络启动。PXE协议分为client和server两端，PXE 
+client在网卡的ROM中，当计算机引导时，BIOS把PXE client调入内存执行，并显示出命令菜单，经用户选择后，PXE 
+client将放置在远端的操作系统通过网络下载到本地运行。PXE在其启动过程中，客户端请求服务器分配IP地址，之后PXE 
+Client使用TFTP Client通过TFTP(Trivial File Transfer 
+Protocol)协议下载启动安装程序所需的文件。</p>
+<p>PXE网络安装：客户机通过支持PXE的网卡向网络中发送请求DHCP信息的广播请求IP地址等信息，DHCP服务器给客户端提供IP地址和其它信息（TFTP服务器、启动文件等），之后请求并下载安装需要的文件。</p>
+<p align="center"><a href="http://hmli.ustc.edu.cn/doc/linux/pxe/pxe.jpg"><img src="%E5%9F%BA%E4%BA%8EDHCP%E3%80%81PXE%E5%92%8Ckickstart%E8%87%AA%E5%8A%A8%E5%AE%89%E8%A3%85%E8%AE%BE%E7%BD%AECentOS%207.3_files/pxe.jpg" width="400"></a>
+</p></li><li>系统概况
+<ul>
+<li>服务端：
+<ul>
+<li>IP：192.168.100.254
+</li><li>NIS域：mydomain.org
+</li><li>系统：CentOS 6.8 x86_64
+</li></ul>
+</li><li>客户端：
+<ul>
+<li>IP：192.168.100.0/24
+</li><li>NIS域：mydomain.org
+</li><li>系统：CentOS 7.3 x86_64
+</li></ul>
+</li></ul>
+<hr>以下为服务端设置
+</li><li>
+安装所需要的软件：
+<h5># yum -y install dhcp nfs-utils tftp-server</h5>
+
+</li><li>配置tftp：
+<p>tftp提供dhcp获取IP后所需要下载pxelinux.0及default、efidefault等文件的服务。修改配置文件/etc/xinetd.d/tftp：
+</p><pre>service tftp
+{
+	disable = no #默认是yes，改为no
+	socket_type = dgram
+	protocol = udp
+	wait = yes
+	user = root
+	server = /usr/sbin/in.tftpd
+	server_args = -s /tftpboot #-s 表示用/tftpboot作为tftp目录的根目录
+	per_source = 11
+	cps = 100 2
+	flags = IPv4
+}
+</pre>
+重启xinetd服务：
+<h5># systemctl restart xinetd</h5>
+</li><li>配置NFS服务：<br>
+建立ks.cfg等基本引导文件所需要的公共目录/tftpboot及CentOS镜像挂载目录/centos：
+<h5># mkdir /tftpboot /centos</h5>
+配置NFS共享，允许192.168.100.0/24 IP地址客户端访问，修改配置文件/etc/exports：
+<pre>/centos 192.168.100.0/24(ro,async,no_root_squash)
+/tftpboot 192.168.100.0/24(rw,async,no_root_squash)
+</pre>
+重启NFS：
+<h5># systemctl restart nfs</h5>
+查看NFS状态：
+<h5># exportfs</h5>
+正常的话，应有类似输出：
+<pre>/centos       	192.168.100.0/255.255.255.0
+/tftpboot     	192.168.100.0/255.255.255.0
+</pre>
+</li><li>配置kickstart安装文件
+<p>可以使用某台CentOS <font color="red">7</font>（注意不是6）的/root/anaconda-ks.cfg作为模板手动修改，也可以使用system-config-kickstart命令配置ks.cfg文件：
+</p><ul>
+<li>在某台CentOS <font color="red">7</font>（注意不是6）系统上安装所需包：<h5># yum -y install system-config-kickstart</h5>
+</li><li>在某台CentOS <font color="red">7</font>（注意不是6）系统上运行图形界面进行设置：<h5># system-config-kickstart</h5>
+</li><li>载入/root/anaconda-ks.cfg作为模板：文件-&gt;打开文件，选择/root/anaconda-ks.cfg，在此界面上进行配置并保存后，放到服务端/tftpboot/ks.cfg。
+<p align="center"><a href="http://hmli.ustc.edu.cn/doc/linux/pxe/ks.png"><img src="%E5%9F%BA%E4%BA%8EDHCP%E3%80%81PXE%E5%92%8Ckickstart%E8%87%AA%E5%8A%A8%E5%AE%89%E8%A3%85%E8%AE%BE%E7%BD%AECentOS%207.3_files/ks.png" width="400"></a></p>
+</li><li>修改/tftpboot/ks.cfg或/tftpboot/nodes/&lt;ip&gt;-kickstart（参见后面PXE引导部分），增减所需安装的软件包等：
+<pre>#platform=x86, AMD64, 或 Intel EM64T
+#version=CentOS7
+# Install OS instead of upgrade #全新安装而不是升级
+install
+# Keyboard layouts
+keyboard 'us'
+# Root password
+rootpw --iscrypted $1$y10oqPAp$qCWLZ7KzL/QgFYlg3C2R10 #采用加密记录
+#rootpw --plaintext 123456 #采用明文记录
+# System language
+lang en_US
+# Firewall configuration #屏蔽防火墙
+firewall --disabled
+# System authorization information #设定NIS信息
+auth  --useshadow  --passalgo=sha512 --enablenis --nisdomain=mydomain.org --nisserver=192.168.100.254
+# Use text mode install #安装方式，文本界面，图形的话graphy
+text
+# SELinux configuration #关闭SELinux
+selinux --disabled
+# Do not configure the X Window System #不配置X图形界面
+skipx
+
+# Use NFS installation media #设定安装方式
+nfs --server=192.168.100.254 --dir=/centos
+# Use http installation source
+#url --url=http://192.168.100.254/centos/7/
+# Network information #采用DHCP获取IP
+network  --bootproto=dhcp
+# Reboot after installation #安装后自动重启，如果BIOS中设置从PXE首先启动，那么会重复安装，请注意，安装后应设置为从先硬盘启动
+reboot
+# System timezone
+timezone Asia/Shanghai
+# System bootloader configuration
+bootloader --location=mbr
+# Partition clearing information #清除原有分区
+clearpart --all
+# Disk partitioning information
+part / --fstype="xfs" --size=10000
+part /boot --fstype="xfs" --size=200
+#part /boot/efi --fstype=efi --size=200 #UEFI引导安装时需要，传统LEGACY引导时可屏蔽此选项
+part swap --fstype="swap" --size=8000
+part /tmp --fstype="xfs" --grow --size=1
+
+%packages #设定所需要的软件包，按需要调整
+@base #@表示一组软件包
+@network-server
+@performance
+@system-admin-tools
+sdparm
+tree
+tuned
+tuned-utils
+ypbind
+nfs-utils
+vim-enhanced
+#-表示从默认软件包的需要去除的软件包
+-lvm2
+-nano
+-pcmciautils
+-plymouth
+-rfkill
+-rsync
+-system-config-firewall-tui
+-system-config-network-tui
+-unzip
+-vconfig
+-wireless-tools
+%end #%packages结尾
+
+%pre #预案装脚本，非必须
+date
+%end #%pre结尾
+
+%post #安装后脚本，非必须
+cat &gt;&gt;/root/.bashrc &lt;<eof alias="" rm="rm -i" cp="cp -i" mv="mv -i" eof="" echo="" "192.168.100.254:="" centots="" mnt="" nfs="" defaults"="">&gt;/etc/fstab
+%end #%post结尾
+</eof></pre>
+以上为针对集群的计算节点设置的，比如设置NIS用户信息、关闭防火墙等，请根据自己需要定制，kickstart文件说明参见：
+<a href="https://access.redhat.com/documentation/zh-CN/Red_Hat_Enterprise_Linux/7/html/Installation_Guide/sect-kickstart-syntax.html">https://access.redhat.com/documentation/zh-CN/Red_Hat_Enterprise_Linux/7/html/Installation_Guide/sect-kickstart-syntax.html</a>
+</li><li>验证ks文件的正确性（可选）：
+<ul>
+<li>在CentOS <font color="red">7</font>系统安装pykickstart包：
+<h5># yum -y install pykickstart</h5>
+</li><li>在CentOS <font color="red">7</font>系统验证上传到此系统的ks文件：
+<h5>ksvalidator ks.cfg</h5>
+如果没任何输出，表示没问题。
+</li><li>在CentOS <font color="red">7</font>系统查看CentOS 6与7的ks版本区别：
+<h5>ksverdiff -f RHEL6 -to RHEL7</h5>
+</li></ul>
+</li></ul>
+
+</li><li>PXE引导配置
+    <p>PXE启动映像文件由syslinux软件包提供，CentOS镜像中已提供。
+</p><ol>
+	<!--<li>安装syslinux以获取pxelinux.0等：<h5> #yum -y install syslinux</h5> -->
+    <li>下载第一张DVD镜像：<h5># wget http://mirrors.ustc.edu.cn/centos/7.3.1611/isos/x86_64/CentOS-7-x86_64-DVD-1611.iso</h5>
+    </li><li>挂载第一张DVD镜像：<h5># mount -o loop CentOS-7-x86_64-DVD-1611.iso /centos</h5>
+    </li><li>将pxelinux.0等复制到/tftpboot：<h5># cp /centos/isolinux/{boot.cat,boot.msg,grub.conf,isolinux.bin,splash.png,TRANS.TBL,vesamenu.c32} /tftpboot</h5>
+    </li><li>将安装光盘目录中的启动文件复制到/tftpboot：<h5># cp /centos/images/pxeboot/{vmlinuz,initrd.img} /tftpboot</h5>
+	针对UEFI还需要：
+<ul>
+<li><h5># rpm2cpio /centos/Packages/shim-0.9-2.el7.x86_64.rpm | cpio -dimv</h5>
+</li><li><h5># rpm2cpio /centos/Packages/grub2-efi-2.02-0.44.el7.centos.x86_64.rpm | cpio -dimv</h5>
+</li><li>运行上面命令，将在当前目录生成一个boot目录，复制所需文件到/tftpboot，之后boot目录可删除
+<h5># cp boot/efi/EFI/centos/{shim.efi,grubx64.efi} /tftpboot</h5>
+</li></ul>
+    </li><li>创建存放引导客户端的配置文件，具体采用哪种引导，需要在BIOS中设置，这样启动时调用相应的引导文件。如果确定使用某-种，可以只设置下面对应的那种即可。
+<ul>
+	<li>传统LEGACY引导：
+<ul>
+<li><h5># mkdir /tftpboot/pxelinux.cfg &amp;&amp; cp /centos/isolinux/isolinux.cfg /tftpboot/pxelinux.cfg/default</h5>
+    </li><li>修改配置/tftpboot/pxelinux.cfg/default：
+<pre>default linux
+#prompt 1# 不要提示，直接进行安装
+timeout 60 #提示时的等待时间
+
+display boot.msg
+
+menu background splash.png
+menu title Welcome to CentOS 7.3 x86_64!
+
+label linux
+	menu label ^Install CentOS Linux 7 x86_64
+	menu default #注意，这里设置默认启动
+	kernel vmlinuz
+	append initrd=initrd.img inst.ks=nfs:192.168.100.254:/tftpboot/nodes/ inst.repo=nfs:192.168.100.254:/centos ip=dhcp nameserver=202.38.64.7
+	#append initrd=initrd.img inst.ks=nfs:192.168.100.254:/tftpboot/ks.cfg inst.repo=nfs:192.168.100.254:/centos ip=dhcp nameserver=202.38.64.7
+#主要为上面设置ks文件、内核引导参数等
+
+#以下check和local内容可不用，只要上面内容即可
+label check #可选
+	menu label Test this ^media &amp; install CentOS Linux 7 x86_64
+# menu default #注意，需屏蔽掉此项默认启动
+	kernel vmlinuz
+	append initrd=initrd.img inst.stage2=hd:LABEL=CentOS\x207\x20x86_64 rd.live.check quiet
+
+label local #可选项，设置从硬盘启动
+	menu label Boot from ^local drive
+	localboot 0
+</pre>
+inst.ks可以为以下两者之一：
+<ul>
+<li>文件路径：如nfs:192.168.100.254:/tftpboot/ks.cfg，则每个安装都使用此配置文件，参见<a href="http://hmli.ustc.edu.cn/doc/linux/pxe/ks.cfg">ks.cfg</a>
+</li><li>以/结尾的目录路径：如nfs:192.168.100.254:/tftpboot/nodes/，则每个安装使用
+/tftpboot/nodes/分配到的IP-kickstart作为配置文件，如/tftpboot/nodes/192.168.100.148-
+kickstart，这样可以为每个不同的IP设置不同的安装选项，参见<a href="http://hmli.ustc.edu.cn/doc/linux/pxe/192.168.100.148-kickstart">192.168.100.148-kickstart</a>
+</li></ul>
+注：nfs服务还可以换用http或ftp等服务提供，此时需要将nfs:&lt;ip&gt;:&lt;path&gt;替换为（注意:分隔）
+<ul>
+<li>inst.repo=cdrom 采用cdrom
+</li><li>inst.repo=cdrom:&lt;device&gt; 采用特定cdrom
+</li><li>inst.repo=hd:&lt;device&gt;:&lt;path&gt; 采用硬盘上的目录，需要ISO文件
+</li><li>inst.repo=[http,https,ftp]://&lt;host&gt;/&lt;path&gt; 采用http、https 、ftp协议（注意//分隔）
+</li></ul>
+</li></ul>
+</li><li>UEFI引导：
+<ul><li>创建默认配置/tftpboot/efidefault：
+<pre>default=0
+timeout=1
+splashimage=(nd)/splash.png
+title Install CentOS-7.3-x86_64 (UEFI) use Kickstart File
+root (nd)
+kernel /vmlinuz
+initrd=initrd.img inst.ks=nfs:192.168.100.254:/tftpboot/nodes/ inst.repo=nfs:192.168.100.254:/centos ip=dhcp nameserver=202.38.64.7
+#initrd=initrd.img inst.ks=nfs:192.168.100.254:/tftpboot/ks.cfg inst.repo=nfs:192.168.100.254:/centos ip=dhcp nameserver=202.38.64.7
+</pre>
+也可以添加类似传统LEGACY引导的其他内容。</li>
+<li>创建默认配置/tftpboot/grub.conf：
+<pre>default=0
+splashimage=@SPLASHPATH@
+timeout 1
+hiddenmenu
+title Install CentOS Linux 7.3
+menuentry 'RHEL 7.3' {
+	linuxefi vmlinuz ip=dhcp
+	inst.repo=nfs:192.168.100.254:/centos/
+	initrdefi initrd.img
+}
+</pre>
+</li></ul>
+</li></ul>
+</li></ol>
+参见：<a href="http://media.readthedocs.org/pdf/anaconda-installer/latest/anaconda-installer.pdf">http://media.readthedocs.org/pdf/anaconda-installer/latest/anaconda-installer.pdf</a>
+</li><li>配置DHCP
+<p>修改配置设定提供DHCP的网卡/etc/sysconfig/dhcpd：
+</p><pre>DHCPDARGS=eth0
+</pre>
+<p>这里使用与客户端网络相连的eth0提供DHCP服务，此处不设置也没关系，会根据下面dhcpd.conf中的subnet使用对应的网卡。</p>
+<p>设定DHCP分配IP段及PXE服务，修改/etc/dhcp/dhcpd.conf：
+</p><pre>#option definitions common to all supported networks...
+option domain-name "mydomain.org"; #域名
+option domain-name-servers ns1.ustc.edu.cn; #域名服务器
+
+default-lease-time 600;
+max-lease-time 7200;
+
+subnet 192.168.100.0 netmask 255.255.255.0 {
+	option routers             192.168.100.254;
+	option subnet-mask         255.255.255.0;
+	option nis-domain          "mydomain.org";
+	option domain-name         "mydomain.org";
+	option domain-name-servers 202.38.64.7;
+
+	option time-offset              -18000; # Eastern Standard Time
+	range dynamic-bootp 192.168.100.1 192.168.100.253;
+	default-lease-time 21600;
+	max-lease-time 43200;
+
+	host node148 {
+		hardware ethernet a0:42:3f:33:49:5f;
+		fixed-address 192.168.100.148;
+	}
+}
+
+option space PXE;
+option PXE.mtftp-ip    code 1 = ip-address;
+option PXE.mtftp-cport code 2 = unsigned integer 16;
+option PXE.mtftp-sport code 3 = unsigned integer 16;
+option PXE.mtftp-tmout code 4 = unsigned integer 8;
+option PXE.mtftp-delay code 5 = unsigned integer 8;
+option architecture-type code 93 = unsigned integer 16; # RFC4578
+
+class "pxeclients" {
+	match if substring(option vendor-class-identifier, 0, 9) = "PXEClient";
+	next-server 192.168.100.254;
+	if option architecture-type = 00:07 {
+		filename "shim.efi"; #x86_64 UEFI引导
+#	} else if option architecture-type = 00:06 {
+#		filename "bootia32.efi"; #ia32 UEFI引导，本文后面未涉及
+	} else {
+		filename "pxelinux.0"; #传统LEGACY引导
+	}
+}
+</pre>
+<p>如不知道客户端MAC地址，不设置固定IP，那么将会自动分配随机地址，客户端系统装好后可以修改客户端配置设置成固定IP。
+
+</p><p>重启动DHCP服务：
+</p><h5># systemctl restart dhcpd</h5>
+
+服务端配置到此结束，下面开始客户端安装。
+<hr>
+</li><li>启动客户端进行自动安装
+设置从网卡PXE启动，一般需要设置BIOS或者在启动时设置按某键（比如F12）从网卡PXE启动。
+<ul><li>出现下面界面，表示从网卡PXE启动正常，正在申请IP，如果获取不到，请检查服务端DHCP服务或者两者之间网络是否正常
+<p align="center"><a href="http://hmli.ustc.edu.cn/doc/linux/pxe/dhcp.png"><img src="%E5%9F%BA%E4%BA%8EDHCP%E3%80%81PXE%E5%92%8Ckickstart%E8%87%AA%E5%8A%A8%E5%AE%89%E8%A3%85%E8%AE%BE%E7%BD%AECentOS%207.3_files/dhcp.png" width="400"></a></p>
+</li><li>出现下面界面，表示PXE和tftp服务器正常，已经获取/tftpboot/pxelinux.0和/tftpboot/pxelinux.cfg/default或/tftpboot/shim.efi和/tftpboot/efidefault
+<p align="center"><a href="http://hmli.ustc.edu.cn/doc/linux/pxe/pxe.png"><img src="%E5%9F%BA%E4%BA%8EDHCP%E3%80%81PXE%E5%92%8Ckickstart%E8%87%AA%E5%8A%A8%E5%AE%89%E8%A3%85%E8%AE%BE%E7%BD%AECentOS%207.3_files/pxe.png" width="400"></a></p>
+</li><li>利用&lt;TAB&gt;键可以查看内容引导参数是否正确，必要时可修改<br>
+<p align="center"><a href="http://hmli.ustc.edu.cn/doc/linux/pxe/pxe-tab.png"><img src="%E5%9F%BA%E4%BA%8EDHCP%E3%80%81PXE%E5%92%8Ckickstart%E8%87%AA%E5%8A%A8%E5%AE%89%E8%A3%85%E8%AE%BE%E7%BD%AECentOS%207.3_files/pxe-tab.png" width="400"></a></p>
+</li></ul>
+</li><li>问题解决
+<p>出现问题时，一般需要查看系统日志，如：/var/log/messages。
+</p></li></ol>
+</div>
+
+
+</center></body></html>
