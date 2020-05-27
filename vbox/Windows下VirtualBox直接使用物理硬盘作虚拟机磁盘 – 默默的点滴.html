@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html class="js" lang="zh-CN"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width">
+	<link rel="profile" href="http://gmpg.org/xfn/11">
+	<link rel="pingback" href="https://www.mobibrw.com/xmlrpc.php">
+	<!--[if lt IE 9]>
+	<script src="https://www.mobibrw.com/wp-content/themes/twentyfifteen/js/html5.js?ver=3.7.0"></script>
+	<![endif]-->
+	<!-- 解决从Edge中选择 使用Internet Explorer打开的时候，此时并未从服务器请求数据，而是使用Edge缓存的数据，这样导致没有设置兼容模式,另外 WP SupCache也可能返回Chrome或者FireFox刚刚请求过的页面，而Internet Explorer 11本身又存在没有正确处理X-UA-Compatible的情况，Internet Explorer 11 自身可能会由于某些原因忽略设置，此时需要强制设置一下来强行修正渲染 -->
+			<script src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/hm.js"></script><script type="text/javascript">
+				try{
+				    if(navigator){
+				      var ua = navigator.userAgent;
+				      if ( ua && (ua.indexOf("Trident") != -1) && (ua.indexOf("rv:11") != -1) ){
+				        var meta = document.createElement("meta");
+				        meta.setAttribute("http-equiv", "X-UA-Compatible");
+				        meta.setAttribute("content", "IE=9,chrome=1");
+				        var head = parent.document.getElementsByTagName("head");
+				        if(head){
+				          head[0].appendChild(meta);
+				        }
+				      }
+				    }
+				}catch(e){
+					
+				}
+			</script>
+<script>(function(html){html.className = html.className.replace(/\bno-js\b/,'js')})(document.documentElement);</script>
+<title>Windows下VirtualBox直接使用物理硬盘作虚拟机磁盘 – 默默的点滴</title>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+    displayMath: [ ['$$','$$'], ["\\[","\\]"] ]
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre','code', 'a', 'annotation', 'annotation-xml'],
+    ignoreHtmlClass: 'tex2jax_ignore|crayon-.*', // 'crayon-' 开头的类，属于Wordpress代码高亮库，这部分不需要处理，否则会导致显示不正确,这部分是正则式，多条之间用'|'分割
+    processHtmlClass: 'tex2jax_process'
+  },
+  //禁用右键菜单	
+  renderActions: {
+    addMenu: [0, '', '']
+  }
+};
+</script>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net/">
+<link rel="dns-prefetch" href="https://s.w.org/">
+<link rel="alternate" type="application/rss+xml" title="默默的点滴 » Feed" href="https://www.mobibrw.com/feed">
+<link rel="alternate" type="application/rss+xml" title="默默的点滴 » 评论Feed" href="https://www.mobibrw.com/comments/feed">
+<link rel="alternate" type="application/rss+xml" title="默默的点滴 » Windows下VirtualBox直接使用物理硬盘作虚拟机磁盘评论Feed" href="https://www.mobibrw.com/2015/2441/feed">
+<link rel="stylesheet" id="crayon-css" href="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/crayon.css" media="all">
+<link rel="stylesheet" id="crayon-theme-secrets-of-rock-css" href="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/secrets-of-rock.css" media="all">
+<link rel="stylesheet" id="crayon-font-monaco-css" href="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/monaco.css" media="all">
+<link rel="stylesheet" id="wp-block-library-css" href="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/style.css" media="all">
+<link rel="stylesheet" id="wp-block-library-theme-css" href="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/theme.css" media="all">
+<link rel="stylesheet" id="genericons-css" href="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/genericons.css" media="all">
+<link rel="stylesheet" id="twentyfifteen-style-css" href="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/style_002.css" media="all">
+<link rel="stylesheet" id="twentyfifteen-block-style-css" href="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/blocks.css" media="all">
+<!--[if lt IE 9]>
+<link rel='stylesheet' id='twentyfifteen-ie-css'  href='https://www.mobibrw.com/wp-content/themes/twentyfifteen/css/ie.css?ver=20170916' media='all' />
+<![endif]-->
+<!--[if lt IE 8]>
+<link rel='stylesheet' id='twentyfifteen-ie7-css'  href='https://www.mobibrw.com/wp-content/themes/twentyfifteen/css/ie7.css?ver=20141210' media='all' />
+<![endif]-->
+<link rel="stylesheet" id="tablepress-default-css" href="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/default.css" media="all">
+<script src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/jquery.js"></script>
+<script src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/jquery-migrate.js"></script>
+<script>
+var CrayonSyntaxSettings = {"version":"_2.7.2_beta","is_admin":"0","ajaxurl":"https:\/\/www.mobibrw.com\/wp-admin\/admin-ajax.php","prefix":"crayon-","setting":"crayon-setting","selected":"crayon-setting-selected","changed":"crayon-setting-changed","special":"crayon-setting-special","orig_value":"data-orig-value","debug":""};
+var CrayonSyntaxStrings = {"copy":"Press %s to Copy, %s to Paste","minimize":"Click To Expand Code"};
+</script>
+<script src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/crayon.js"></script>
+<link rel="https://api.w.org/" href="https://www.mobibrw.com/wp-json/">
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://www.mobibrw.com/xmlrpc.php?rsd">
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="https://www.mobibrw.com/wp-includes/wlwmanifest.xml"> 
+<link rel="prev" title="使用grunt压缩代码&amp;配置多个任务" href="https://www.mobibrw.com/2015/2432">
+<link rel="next" title="LMbench 3.0移植到Android并测试内存带宽" href="https://www.mobibrw.com/2015/2446">
+
+<link rel="canonical" href="https://www.mobibrw.com/2015/2441">
+<link rel="shortlink" href="https://www.mobibrw.com/?p=2441">
+<link rel="alternate" type="application/json+oembed" href="https://www.mobibrw.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.mobibrw.com%2F2015%2F2441">
+<link rel="alternate" type="text/xml+oembed" href="https://www.mobibrw.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.mobibrw.com%2F2015%2F2441&amp;format=xml">
+<!-- Analytics by WP-Statistics v12.6.12 - https://wp-statistics.com/ -->
+<style type="text/css"></style><style>.recentcomments a{display:inline !important;padding:0 !important;margin:0 !important;}</style><style type="text/css">.CtxtMenu_InfoClose {  top:.2em; right:.2em;}
+.CtxtMenu_InfoContent {  overflow:auto; text-align:left; font-size:80%;  padding:.4em .6em; border:1px inset; margin:1em 0px;  max-height:20em; max-width:30em; background-color:#EEEEEE;  white-space:normal;}
+.CtxtMenu_Info.CtxtMenu_MousePost {outline:none;}
+.CtxtMenu_Info {  position:fixed; left:50%; width:auto; text-align:center;  border:3px outset; padding:1em 2em; background-color:#DDDDDD;  color:black;  cursor:default; font-family:message-box; font-size:120%;  font-style:normal; text-indent:0; text-transform:none;  line-height:normal; letter-spacing:normal; word-spacing:normal;  word-wrap:normal; white-space:nowrap; float:none; z-index:201;  border-radius: 15px;                     /* Opera 10.5 and IE9 */  -webkit-border-radius:15px;               /* Safari and Chrome */  -moz-border-radius:15px;                  /* Firefox */  -khtml-border-radius:15px;                /* Konqueror */  box-shadow:0px 10px 20px #808080;         /* Opera 10.5 and IE9 */  -webkit-box-shadow:0px 10px 20px #808080; /* Safari 3 & Chrome */  -moz-box-shadow:0px 10px 20px #808080;    /* Forefox 3.5 */  -khtml-box-shadow:0px 10px 20px #808080;  /* Konqueror */  filter:progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color="gray", Positive="true"); /* IE */}
+</style><style type="text/css">.CtxtMenu_MenuClose {  position:absolute;  cursor:pointer;  display:inline-block;  border:2px solid #AAA;  border-radius:18px;  -webkit-border-radius: 18px;             /* Safari and Chrome */  -moz-border-radius: 18px;                /* Firefox */  -khtml-border-radius: 18px;              /* Konqueror */  font-family: "Courier New", Courier;  font-size:24px;  color:#F0F0F0}
+.CtxtMenu_MenuClose span {  display:block; background-color:#AAA; border:1.5px solid;  border-radius:18px;  -webkit-border-radius: 18px;             /* Safari and Chrome */  -moz-border-radius: 18px;                /* Firefox */  -khtml-border-radius: 18px;              /* Konqueror */  line-height:0;  padding:8px 0 6px     /* may need to be browser-specific */}
+.CtxtMenu_MenuClose:hover {  color:white!important;  border:2px solid #CCC!important}
+.CtxtMenu_MenuClose:hover span {  background-color:#CCC!important}
+.CtxtMenu_MenuClose:hover:focus {  outline:none}
+</style><style type="text/css">.CtxtMenu_Menu {  position:absolute;  background-color:white;  color:black;  width:auto; padding:5px 0px;  border:1px solid #CCCCCC; margin:0; cursor:default;  font: menu; text-align:left; text-indent:0; text-transform:none;  line-height:normal; letter-spacing:normal; word-spacing:normal;  word-wrap:normal; white-space:nowrap; float:none; z-index:201;  border-radius: 5px;                     /* Opera 10.5 and IE9 */  -webkit-border-radius: 5px;             /* Safari and Chrome */  -moz-border-radius: 5px;                /* Firefox */  -khtml-border-radius: 5px;              /* Konqueror */  box-shadow:0px 10px 20px #808080;         /* Opera 10.5 and IE9 */  -webkit-box-shadow:0px 10px 20px #808080; /* Safari 3 & Chrome */  -moz-box-shadow:0px 10px 20px #808080;    /* Forefox 3.5 */  -khtml-box-shadow:0px 10px 20px #808080;  /* Konqueror */}
+.CtxtMenu_MenuItem {  padding: 1px 2em;  background:transparent;}
+.CtxtMenu_MenuArrow {  position:absolute; right:.5em; padding-top:.25em; color:#666666;  font-family: null; font-size: .75em}
+.CtxtMenu_MenuActive .CtxtMenu_MenuArrow {color:white}
+.CtxtMenu_MenuArrow.CtxtMenu_RTL {left:.5em; right:auto}
+.CtxtMenu_MenuCheck {  position:absolute; left:.7em;  font-family: null}
+.CtxtMenu_MenuCheck.CtxtMenu_RTL { right:.7em; left:auto }
+.CtxtMenu_MenuRadioCheck {  position:absolute; left: .7em;}
+.CtxtMenu_MenuRadioCheck.CtxtMenu_RTL {  right: .7em; left:auto}
+.CtxtMenu_MenuInputBox {  padding-left: 1em; right:.5em; color:#666666;  font-family: null;}
+.CtxtMenu_MenuInputBox.CtxtMenu_RTL {  left: .1em;}
+.CtxtMenu_MenuComboBox {  left:.1em; padding-bottom:.5em;}
+.CtxtMenu_MenuLabel {  padding: 1px 2em 3px 1.33em;  font-style:italic}
+.CtxtMenu_MenuRule {  border-top: 1px solid #DDDDDD;  margin: 4px 3px;}
+.CtxtMenu_MenuDisabled {  color:GrayText}
+.CtxtMenu_MenuActive {  background-color: #606872;  color: white;}
+.CtxtMenu_MenuDisabled:focus {  background-color: #E8E8E8}
+.CtxtMenu_MenuLabel:focus {  background-color: #E8E8E8}
+.CtxtMenu_ContextMenu:focus {  outline:none}
+.CtxtMenu_ContextMenu .CtxtMenu_MenuItem:focus {  outline:none}
+.CtxtMenu_Menu .CtxtMenu_MenuClose {  top:-10px; left:-10px}
+</style></head>
+
+<body class="post-template-default single single-post postid-2441 single-format-standard wp-embed-responsive">
+<div id="page" class="hfeed site">
+	<a class="skip-link screen-reader-text" href="#content">跳至内容</a>
+
+	<div id="sidebar" class="sidebar" style="position: relative;">
+		<header id="masthead" class="site-header" role="banner">
+			<div class="site-branding">
+										<p class="site-title"><a href="https://www.mobibrw.com/" rel="home">默默的点滴</a></p>
+												<p class="site-description">智障儿童欢乐多</p>
+										<button class="secondary-toggle">菜单和挂件</button>
+			</div><!-- .site-branding -->
+		</header><!-- .site-header -->
+
+			<div id="secondary" class="secondary">
+
+		
+		
+					<div id="widget-area" class="widget-area" role="complementary">
+				<aside id="search-3" class="widget widget_search"><form role="search" method="get" class="search-form" action="https://www.mobibrw.com/">
+				<label>
+					<span class="screen-reader-text">搜索：</span>
+					<input type="search" class="search-field" placeholder="搜索…" name="s">
+				</label>
+				<input type="submit" class="search-submit screen-reader-text" value="搜索">
+			</form></aside><aside id="calendar-2" class="widget widget_calendar"><div id="calendar_wrap" class="calendar_wrap"><table id="wp-calendar" class="wp-calendar-table">
+	<caption>2020年四月</caption>
+	<thead>
+	<tr>
+		<th scope="col" title="星期一">一</th>
+		<th scope="col" title="星期二">二</th>
+		<th scope="col" title="星期三">三</th>
+		<th scope="col" title="星期四">四</th>
+		<th scope="col" title="星期五">五</th>
+		<th scope="col" title="星期六">六</th>
+		<th scope="col" title="星期日">日</th>
+	</tr>
+	</thead>
+	<tbody>
+	<tr>
+		<td colspan="2" class="pad">&nbsp;</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
+	</tr>
+	<tr>
+		<td>6</td><td>7</td><td><a href="https://www.mobibrw.com/date/2020/04/08" aria-label="于2020年4月8日上发布的文章">8</a></td><td>9</td><td>10</td><td>11</td><td>12</td>
+	</tr>
+	<tr>
+		<td><a href="https://www.mobibrw.com/date/2020/04/13" aria-label="于2020年4月13日上发布的文章">13</a></td><td>14</td><td>15</td><td>16</td><td><a href="https://www.mobibrw.com/date/2020/04/17" aria-label="于2020年4月17日上发布的文章">17</a></td><td id="today">18</td><td>19</td>
+	</tr>
+	<tr>
+		<td>20</td><td>21</td><td>22</td><td>23</td><td>24</td><td>25</td><td>26</td>
+	</tr>
+	<tr>
+		<td>27</td><td>28</td><td>29</td><td>30</td>
+		<td class="pad" colspan="3">&nbsp;</td>
+	</tr>
+	</tbody>
+	</table><nav aria-label="上个月及下个月" class="wp-calendar-nav">
+		<span class="wp-calendar-nav-prev"><a href="https://www.mobibrw.com/date/2020/03">« 3月</a></span>
+		<span class="pad">&nbsp;</span>
+		<span class="wp-calendar-nav-next">&nbsp;</span>
+	</nav></div></aside>		<aside id="recent-posts-3" class="widget widget_recent_entries">		<h2 class="widget-title">近期文章</h2>		<ul>
+											<li>
+					<a href="https://www.mobibrw.com/2020/24053">Android Studio 3.6.2编译报错“GC overhead limit exceeded”</a>
+									</li>
+											<li>
+					<a href="https://www.mobibrw.com/2020/24016">macOS Catalina(10.15.4)/IntelliJ IDEA 2018.3/Tomcat 9.0.33/Maven项目调试报错"Caused by: java.util.zip.ZipException: zip file is empty"</a>
+									</li>
+											<li>
+					<a href="https://www.mobibrw.com/2020/23989">ubuntu 18.04系统/var/log/auth.log文件不存在</a>
+									</li>
+											<li>
+					<a href="https://www.mobibrw.com/2020/23933">ubuntu 18.04编译OpenSCAD源代码</a>
+									</li>
+											<li>
+					<a href="https://www.mobibrw.com/2020/23914">ubuntu 18.04使用apt-get安装eclipse无法启动</a>
+									</li>
+					</ul>
+		</aside><aside id="recent-comments-3" class="widget widget_recent_comments"><h2 class="widget-title">近期评论</h2><ul id="recentcomments"><li class="recentcomments"><span class="comment-author-link">肖宁</span>发表在《<a href="https://www.mobibrw.com/2018/10678/comment-page-1#comment-3684">ubuntu 16.04系统LimeSDR使用srsLTE搭建LTE实验环境</a>》</li><li class="recentcomments"><span class="comment-author-link">默默</span>发表在《<a href="https://www.mobibrw.com/2018/10678/comment-page-1#comment-3683">ubuntu 16.04系统LimeSDR使用srsLTE搭建LTE实验环境</a>》</li><li class="recentcomments"><span class="comment-author-link">肖宁</span>发表在《<a href="https://www.mobibrw.com/2018/10678/comment-page-1#comment-3682">ubuntu 16.04系统LimeSDR使用srsLTE搭建LTE实验环境</a>》</li><li class="recentcomments"><span class="comment-author-link">默默</span>发表在《<a href="https://www.mobibrw.com/2019/21684/comment-page-1#comment-3681">Android Studio 3.5.2最小化接入weex 0.28.0实践</a>》</li><li class="recentcomments"><span class="comment-author-link">默默</span>发表在《<a href="https://www.mobibrw.com/2018/10678/comment-page-1#comment-3680">ubuntu 16.04系统LimeSDR使用srsLTE搭建LTE实验环境</a>》</li></ul></aside><aside id="categories-3" class="widget widget_categories"><h2 class="widget-title">分类目录</h2>		<ul>
+				<li class="cat-item cat-item-52"><a href="https://www.mobibrw.com/category/3d%e6%89%93%e5%8d%b0">3D打印</a> (6)
+</li>
+	<li class="cat-item cat-item-4"><a href="https://www.mobibrw.com/category/android" title="Android是一种基于Linux的自由及开放源代码的操作系统，主要使用于移动设备，如智能手机和平板电脑，由Google公司和开放手机联盟领导及开发。">Android</a> (161)
+</li>
+	<li class="cat-item cat-item-36"><a href="https://www.mobibrw.com/category/android-studio">Android Studio</a> (61)
+</li>
+	<li class="cat-item cat-item-21"><a href="https://www.mobibrw.com/category/apache" title="Apache是世界使用排名第一的Web服务器软件。它可以运行在几乎所有广泛使用的计算机平台上，由于其跨平台和安全性被广泛使用，是最流行的Web服务器端软件之一。">Apache</a> (27)
+</li>
+	<li class="cat-item cat-item-75"><a href="https://www.mobibrw.com/category/apache-archiva">Apache Archiva</a> (5)
+</li>
+	<li class="cat-item cat-item-8"><a href="https://www.mobibrw.com/category/arduino" title="Arduino 是一款便捷灵活、方便上手的开源电子原型平台，包含硬件（各种型号的arduino板）和软件（arduino IDE)。它适用于艺术家、设计师、爱好者和对于“互动”有兴趣的朋友们">Arduino</a> (8)
+</li>
+	<li class="cat-item cat-item-207"><a href="https://www.mobibrw.com/category/arm">ARM</a> (3)
+</li>
+	<li class="cat-item cat-item-6"><a href="https://www.mobibrw.com/category/asp" title="ASP是Active Server Page的缩写，意为“动态服务器页面”。ASP是微软公司开发的代替CGI脚本程序的一种应用，它可以与数据库和其它程序进行交互，是一种简单、方便的编程工具。ASP的网页文件的格式是 .asp。现在常用于各种动态网站中。">ASP</a> (2)
+</li>
+	<li class="cat-item cat-item-35"><a href="https://www.mobibrw.com/category/bho">BHO</a> (2)
+</li>
+	<li class="cat-item cat-item-17"><a href="https://www.mobibrw.com/category/brew" title="Mac下命令行安装应用的软件，方便软件的安装">Brew</a> (10)
+</li>
+	<li class="cat-item cat-item-42"><a href="https://www.mobibrw.com/category/c">C++</a> (20)
+</li>
+	<li class="cat-item cat-item-76"><a href="https://www.mobibrw.com/category/caffe">Caffe</a> (10)
+</li>
+	<li class="cat-item cat-item-194"><a href="https://www.mobibrw.com/category/cc1310">CC1310</a> (7)
+</li>
+	<li class="cat-item cat-item-47"><a href="https://www.mobibrw.com/category/cc3d">CC3D</a> (1)
+</li>
+	<li class="cat-item cat-item-182"><a href="https://www.mobibrw.com/category/chrome-extension" title="Chrome Extension">Chrome Extension</a> (4)
+</li>
+	<li class="cat-item cat-item-175"><a href="https://www.mobibrw.com/category/webext/chrome%e6%89%a9%e5%b1%95" title="Chrome扩展">Chrome扩展</a> (11)
+</li>
+	<li class="cat-item cat-item-202"><a href="https://www.mobibrw.com/category/clockwork">Clockwork</a> (1)
+</li>
+	<li class="cat-item cat-item-50"><a href="https://www.mobibrw.com/category/cygwin">Cygwin</a> (1)
+</li>
+	<li class="cat-item cat-item-27"><a href="https://www.mobibrw.com/category/ddk">DDK</a> (1)
+</li>
+	<li class="cat-item cat-item-32"><a href="https://www.mobibrw.com/category/debian">Debian</a> (15)
+</li>
+	<li class="cat-item cat-item-38"><a href="https://www.mobibrw.com/category/deep-learning">Deep Learning</a> (16)
+</li>
+	<li class="cat-item cat-item-62"><a href="https://www.mobibrw.com/category/dia">Dia</a> (1)
+</li>
+	<li class="cat-item cat-item-24"><a href="https://www.mobibrw.com/category/eclipse">Eclipse</a> (10)
+</li>
+	<li class="cat-item cat-item-78"><a href="https://www.mobibrw.com/category/ffmpeg">FFMPEG</a> (2)
+</li>
+	<li class="cat-item cat-item-67"><a href="https://www.mobibrw.com/category/firefox">FireFox</a> (2)
+</li>
+	<li class="cat-item cat-item-40"><a href="https://www.mobibrw.com/category/freenas">FreeNAS</a> (1)
+</li>
+	<li class="cat-item cat-item-49"><a href="https://www.mobibrw.com/category/git">Git</a> (16)
+</li>
+	<li class="cat-item cat-item-26"><a href="https://www.mobibrw.com/category/gradle">Gradle</a> (4)
+</li>
+	<li class="cat-item cat-item-61"><a href="https://www.mobibrw.com/category/hp-gen8" title="HP ProLiant MicroServer Gen8惠普服务器是一款采用小巧、静音和时尚设计的服务器，是朗思通普小型企业首台服务器解决方案的理想之选。 它具有易于使用和维护的外形尺寸，帮助小型企业减少开支，同时提升生产率、效率和安全性。">HP Gen8</a> (5)
+</li>
+	<li class="cat-item cat-item-71"><a href="https://www.mobibrw.com/category/html">Html</a> (6)
+</li>
+	<li class="cat-item cat-item-60"><a href="https://www.mobibrw.com/category/intellij-idea" title="IDEA 全称 IntelliJ IDEA，是java语言开发的集成环境，IntelliJ在业界被公认为最好的java开发工具之一，尤其在智能代码助手，代码自动提示，重构，J2EE支持、各类版本工具(git，svn，github等)，JUnit，CVS整合，代码分析，创新的GUI设计等方面的功能可以说是超常的。IDEA是JetBrains公司的产品，这家公司总部位于捷克共和国的首都布拉格，开发人员以严谨著称的东欧程序员为主。它的旗舰版本还支持HTML，CSS，PHP，MySQL，Python等。免费版只支持Java等极少数语言。">IntelliJ IDEA</a> (9)
+</li>
+	<li class="cat-item cat-item-2"><a href="https://www.mobibrw.com/category/ios" title="苹果iOS是由苹果公司开发的移动操作系统。苹果公司最早于2007年1月9日的Macworld大会上公布这个系统，最初是设计给iPhone使用的，后来陆续套用到iPod touch、iPad以及Apple TV等产品上。iOS与苹果的Mac OS X操作系统一样，它也是以Darwin为基础的，因此同样属于类Unix的商业操作系统。原本这个系统名为iPhone OS，直到2010WWDC大会上宣布改名为iOS。">IOS</a> (8)
+</li>
+	<li class="cat-item cat-item-63"><a href="https://www.mobibrw.com/category/ipfire">IPFire</a> (7)
+</li>
+	<li class="cat-item cat-item-12"><a href="https://www.mobibrw.com/category/java" title="Java是一种可以撰写跨平台应用软件的面向对象的程序设计语言，是由Sun Microsystems公司于1995年5月推出的Java程序设计语言和Java平台（即JavaSE, JavaEE, JavaME）的总称。Java 技术具有卓越的通用性、高效性、平台移植性和安全性，广泛应用于个人PC、数据中心、游戏控制台、科学超级计算机、移动电话和互联网，同时拥有全球最大的开发者专业社群。在全球云计算和移动互联网的产业环境下，Java更具备了显著优势和广阔前景。">Java</a> (40)
+</li>
+	<li class="cat-item cat-item-54"><a href="https://www.mobibrw.com/category/javascript">JavaScript</a> (22)
+</li>
+	<li class="cat-item cat-item-39"><a href="https://www.mobibrw.com/category/jira">JIRA</a> (1)
+</li>
+	<li class="cat-item cat-item-57"><a href="https://www.mobibrw.com/category/jmock">JMock</a> (4)
+</li>
+	<li class="cat-item cat-item-72"><a href="https://www.mobibrw.com/category/junit">Junit</a> (1)
+</li>
+	<li class="cat-item cat-item-56"><a href="https://www.mobibrw.com/category/kindle">Kindle</a> (3)
+</li>
+	<li class="cat-item cat-item-169"><a href="https://www.mobibrw.com/category/kinect">Kinect</a> (2)
+</li>
+	<li class="cat-item cat-item-5"><a href="https://www.mobibrw.com/category/linux" title="Linux是一套免费使用和自由传播的类Unix操作系统，是一个基于POSIX和UNIX的多用户、多任务、支持多线程和多CPU的操作系统。它能运行主要的UNIX工具软件、应用程序和网络协议。它支持32位和64位硬件。Linux继承了Unix以网络为核心的设计思想，是一个性能稳定的多用户网络操作系统。它主要用于基于Intel x86系列CPU的计算机上。这个系统是由全世界各地的成千上万的程序员设计和实现的。其目的是建立不受任何商品化软件的版权制约的、全世界都能自由使用的Unix兼容产品。">Linux</a> (117)
+</li>
+	<li class="cat-item cat-item-190"><a href="https://www.mobibrw.com/category/lte">LTE</a> (18)
+</li>
+	<li class="cat-item cat-item-196"><a href="https://www.mobibrw.com/category/lua">Lua</a> (2)
+</li>
+	<li class="cat-item cat-item-7"><a href="https://www.mobibrw.com/category/macos" title="Mac是苹果自1984年起以“Macintosh”开始的个人消费型计算机，如：iMac、Mac mini、Macbook air、Macbook pro、Mac pro等计算机。使用独立的Mac os系统，最新的OS X系列基于NeXT系统开发，不支持兼容。是一套完备而独立的生态系统。">macOS</a> (84)
+</li>
+	<li class="cat-item cat-item-23"><a href="https://www.mobibrw.com/category/maven" title="Maven是基于项目对象模型(POM)，可以通过一小段描述信息来管理项目的构建，报告和文档的软件项目管理工具。">Maven</a> (7)
+</li>
+	<li class="cat-item cat-item-59"><a href="https://www.mobibrw.com/category/mockito">Mockito</a> (4)
+</li>
+	<li class="cat-item cat-item-192"><a href="https://www.mobibrw.com/category/mysql">MySQL</a> (5)
+</li>
+	<li class="cat-item cat-item-209"><a href="https://www.mobibrw.com/category/nas">NAS</a> (9)
+</li>
+	<li class="cat-item cat-item-30"><a href="https://www.mobibrw.com/category/ndis">NDIS</a> (2)
+</li>
+	<li class="cat-item cat-item-68"><a href="https://www.mobibrw.com/category/ofbiz">OFBiz</a> (1)
+</li>
+	<li class="cat-item cat-item-74"><a href="https://www.mobibrw.com/category/opengrok">OpenGrok</a> (2)
+</li>
+	<li class="cat-item cat-item-45"><a href="https://www.mobibrw.com/category/openmdiavault">Openmdiavault</a> (13)
+</li>
+	<li class="cat-item cat-item-53"><a href="https://www.mobibrw.com/category/openscad">OpenSCAD</a> (5)
+</li>
+	<li class="cat-item cat-item-11"><a href="https://www.mobibrw.com/category/php" title="PHP（PHP: Hypertext Preprocessor的缩写，中文名：“PHP：超文本预处理器”）是一种通用开源脚本语言。语法吸收了C语言、Java和Perl的特点，入门门槛较低，易于学习，使用广泛，主要适用于Web开发领域。PHP的文件后缀名为*.php。">PHP</a> (13)
+</li>
+	<li class="cat-item cat-item-16"><a href="https://www.mobibrw.com/category/postgis" title="PostGIS是对象关系型数据库系统PostgreSQL的一个扩展，PostGIS提供如下空间信息服务功能:空间对象、空间索引、空间操作函数和空间操作符。同时，PostGIS遵循OpenGIS的规范。">PostGIS</a> (2)
+</li>
+	<li class="cat-item cat-item-15"><a href="https://www.mobibrw.com/category/postgresql" title="PostgreSQL是以加州大学伯克利分校计算机系开发的 POSTGRES，现在已经更名为POSTGRES，版本 4.2为基础的对象关系型数据库管理系统（ORDBMS）。PostgreSQL支持大部分 SQL标准并且提供了许多其他现代特性：复杂查询、外键、触发器、视图、事务完整性、MVCC。同样，PostgreSQL 可以用许多方法扩展，比如， 通过增加新的数据类型、函数、操作符、聚集函数、索引方法、过程语言。并且，因为许可证的灵活，任何人都可以以任何目的免费使用、修改、和分发 PostgreSQL，不管是私用、商用、还是学术研究使用。">PostgreSql</a> (3)
+</li>
+	<li class="cat-item cat-item-58"><a href="https://www.mobibrw.com/category/powermockito">PowerMockito</a> (1)
+</li>
+	<li class="cat-item cat-item-10"><a href="https://www.mobibrw.com/category/python" title="Python（KK 英语发音：/ˈpaɪθən/）, 是一种面向对象、直译式计算机程序设计语言，由Guido van Rossum于1989年底发明，第一个公开发行版发行于1991年。Python语法简洁而清晰，具有丰富和强大的类库。它常被昵称为胶水语言，它能够很轻松的把用其他语言制作的各种模块（尤其是C/C++）轻松地联结在一起。">Python</a> (49)
+</li>
+	<li class="cat-item cat-item-205"><a href="https://www.mobibrw.com/category/qemu">Qemu</a> (1)
+</li>
+	<li class="cat-item cat-item-41"><a href="https://www.mobibrw.com/category/quic">QUIC</a> (3)
+</li>
+	<li class="cat-item cat-item-212"><a href="https://www.mobibrw.com/category/robot">Robot</a> (1)
+</li>
+	<li class="cat-item cat-item-167"><a href="https://www.mobibrw.com/category/ros">ROS</a> (13)
+</li>
+	<li class="cat-item cat-item-173"><a href="https://www.mobibrw.com/category/rtp-rtcp-rtsp">RTP/RTCP/RTSP</a> (2)
+</li>
+	<li class="cat-item cat-item-188"><a href="https://www.mobibrw.com/category/software-defined-radio">Software defined Radio</a> (28)
+</li>
+	<li class="cat-item cat-item-73"><a href="https://www.mobibrw.com/category/spring">Spring</a> (4)
+</li>
+	<li class="cat-item cat-item-198"><a href="https://www.mobibrw.com/category/stm32">STM32</a> (2)
+</li>
+	<li class="cat-item cat-item-22"><a href="https://www.mobibrw.com/category/struts2" title="Struts 2是Struts的下一代产品，是在 struts 1和WebWork的技术基础上进行了合并的全新的Struts 2框架。">Struts2</a> (11)
+</li>
+	<li class="cat-item cat-item-51"><a href="https://www.mobibrw.com/category/subversion">Subversion</a> (6)
+</li>
+	<li class="cat-item cat-item-20"><a href="https://www.mobibrw.com/category/tomcat" title="Tomcat是Apache 软件基金会（Apache Software Foundation）的Jakarta 项目中的一个核心项目，由Apache、Sun 和其他一些公司及个人共同开发而成。由于有了Sun 的参与和支持，最新的Servlet 和JSP 规范总是能在Tomcat 中得到体现，Tomcat 5支持最新的Servlet 2.4 和JSP 2.0 规范。因为Tomcat 技术先进、性能稳定，而且免费，因而深受Java 爱好者的喜爱并得到了部分软件开发商的认可，成为目前比较流行的Web 应用服务器。">Tomcat</a> (17)
+</li>
+	<li class="cat-item cat-item-19"><a href="https://www.mobibrw.com/category/ubuntu" title="Ubuntu（友邦拓，网友也喜欢称之为“乌班图”）是一个以桌面应用为主的Linux操作系统，其名称来自非洲南部祖鲁语或豪萨语的“ubuntu”一词，意思是“人性”、“我的存在是因为大家的存在”，是非洲传统的一种价值观，类似华人社会的“仁爱”思想.">Ubuntu</a> (192)
+</li>
+	<li class="cat-item cat-item-171"><a href="https://www.mobibrw.com/category/usb">USB</a> (3)
+</li>
+	<li class="cat-item cat-item-43"><a href="https://www.mobibrw.com/category/vc">VC++</a> (6)
+</li>
+	<li class="cat-item cat-item-25"><a href="https://www.mobibrw.com/category/virtualbox">VirtualBox</a> (12)
+</li>
+	<li class="cat-item cat-item-44"><a href="https://www.mobibrw.com/category/visual-studio">Visual Studio</a> (4)
+</li>
+	<li class="cat-item cat-item-200"><a href="https://www.mobibrw.com/category/vulkan" title="Vulkan是一个跨平台的2D和3D绘图应用程序接口（API），最早由科纳斯组织在2015年游戏开发者大会（GDC）上发表。
+科纳斯最先把VulkanAPI称为“次世代OpenGL行动”（nextgenerationOpenGLinitiative）或“glNext”，但在正式宣布Vulkan之后这些名字就没有再使用了。就像OpenGL，Vulkan针对实时3D程序（如电子游戏）设计，Vulkan并计划提供高性能和低CPU管理负担（overhead），这也是Direct3D12和AMD的Mantle的目标。Vulkan兼容Mantle的一个分支，并使用了Mantle的一些组件">Vulkan</a> (20)
+</li>
+	<li class="cat-item cat-item-29"><a href="https://www.mobibrw.com/category/wd-mycloud">WD MyCloud</a> (29)
+</li>
+	<li class="cat-item cat-item-66"><a href="https://www.mobibrw.com/category/websocket">WebSocket</a> (3)
+</li>
+	<li class="cat-item cat-item-34"><a href="https://www.mobibrw.com/category/wifi">WiFi</a> (7)
+</li>
+	<li class="cat-item cat-item-28"><a href="https://www.mobibrw.com/category/windows">Windows</a> (60)
+</li>
+	<li class="cat-item cat-item-65"><a href="https://www.mobibrw.com/category/wireshark">WireShark</a> (1)
+</li>
+	<li class="cat-item cat-item-13"><a href="https://www.mobibrw.com/category/wordpress" title="使用PHP语言开发的博客平台，支持在PHP和MySQL的服务器上架设自己的博客">WordPress</a> (57)
+</li>
+	<li class="cat-item cat-item-80"><a href="https://www.mobibrw.com/category/xbox">XBox</a> (1)
+</li>
+	<li class="cat-item cat-item-48"><a href="https://www.mobibrw.com/category/%e5%9b%9b%e8%bd%b4%e9%a3%9e%e8%a1%8c%e5%99%a8">四轴飞行器</a> (1)
+</li>
+	<li class="cat-item cat-item-33"><a href="https://www.mobibrw.com/category/%e5%af%86%e7%a0%81%e5%ad%a6">密码学</a> (5)
+</li>
+	<li class="cat-item cat-item-46"><a href="https://www.mobibrw.com/category/%e6%95%b0%e5%ad%a6">数学</a> (16)
+</li>
+	<li class="cat-item cat-item-70"><a href="https://www.mobibrw.com/category/%e6%9c%ba%e5%99%a8%e8%a7%86%e8%a7%89">机器视觉</a> (20)
+</li>
+	<li class="cat-item cat-item-9"><a href="https://www.mobibrw.com/category/%e6%9d%82%e8%ae%b0" title="杂记">杂记</a> (82)
+</li>
+	<li class="cat-item cat-item-31"><a href="https://www.mobibrw.com/category/%e6%a0%91%e8%8e%93%e6%b4%be">树莓派</a> (37)
+</li>
+	<li class="cat-item cat-item-3"><a href="https://www.mobibrw.com/category/%e6%b1%87%e7%bc%96" title="汇编语言">汇编</a> (2)
+</li>
+	<li class="cat-item cat-item-79"><a href="https://www.mobibrw.com/category/%e6%b1%bd%e8%bd%a6">汽车</a> (2)
+</li>
+	<li class="cat-item cat-item-180"><a href="https://www.mobibrw.com/category/webext" title="浏览器扩展">浏览器扩展</a> (3)
+</li>
+	<li class="cat-item cat-item-165"><a href="https://www.mobibrw.com/category/%e7%89%a9%e8%81%94%e7%bd%91">物联网</a> (28)
+</li>
+	<li class="cat-item cat-item-37"><a href="https://www.mobibrw.com/category/%e7%a5%9e%e7%bb%8f%e7%bd%91%e7%bb%9c">神经网络</a> (31)
+</li>
+	<li class="cat-item cat-item-18"><a href="https://www.mobibrw.com/category/%e7%ae%97%e6%b3%95">算法</a> (25)
+</li>
+	<li class="cat-item cat-item-69"><a href="https://www.mobibrw.com/category/%e7%a1%ac%e4%bb%b6">网络&amp;硬件</a> (45)
+</li>
+		</ul>
+			</aside><aside id="meta-3" class="widget widget_meta"><h2 class="widget-title">功能</h2>			<ul>
+						<li><a href="https://www.mobibrw.com/wp-login.php">登录</a></li>
+			<li><a href="https://www.mobibrw.com/feed">项目feed</a></li>
+			<li><a href="https://www.mobibrw.com/comments/feed">评论feed</a></li>
+			<li><a href="https://cn.wordpress.org/">WordPress.org</a></li>			</ul>
+			</aside><aside id="linkcat-14" class="widget widget_links"><h2 class="widget-title">友情链接</h2>
+	<ul class="xoxo blogroll">
+<li><a href="http://www.mobibrw.com/Android_4.2.2/" rel="me">Android源代码(4.2.2)</a></li>
+<li><a href="http://www.mobibrw.com/Android_7.0.0_r21/" rel="me">Android源代码(7.0.0_r21)</a></li>
+<li><a href="http://www.mobibrw.com/Chromium/" rel="me">Chrome源代码浏览</a></li>
+<li><a href="http://www.mythroad.net/" rel="friend met co-worker colleague" target="_blank">冬冬的博客</a></li>
+<li><a href="http://mobibrw.com/Tools/" rel="me">开发小工具</a></li>
+<li><a href="https://www.kechuang.org/">科创论坛</a></li>
+<li><a href="http://www.mobibrw.com/HtmlGames/" rel="me">网页小游戏</a></li>
+<li><a href="https://www.mobibrw.com/?p=10973" rel="me">网页自动填充</a></li>
+<li><a href="https://www.logcg.com/">落格博客</a></li>
+
+	</ul>
+</aside>
+			</div><!-- .widget-area -->
+		
+	</div><!-- .secondary -->
+
+	</div><!-- .sidebar -->
+
+	<div id="content" class="site-content">
+
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main" role="main">
+
+		
+<article id="post-2441" class="post-2441 post type-post status-publish format-standard hentry category-virtualbox">
+	
+	<header class="entry-header">
+		<h1 class="entry-title">Windows下VirtualBox直接使用物理硬盘作虚拟机磁盘</h1>	</header><!-- .entry-header -->
+
+	<div class="entry-content">
+		<p><video id="speakit_video" style="display:none" src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/text2audio"><source id="speakit_src" type="video/mp4"></video><br>
+      <script type="text/javascript">
+        var speakitOff = 0;
+        var speakitUri = "https://tts.baidu.com/text2audio?cuid=baiduid&lan=zh&ctp=1&pdt=311&tex=";
+        var speakitCtx = eval(["\u76ee\u524dVirtualBox\u53ea\u80fd\u7528\u547d\u4ee4\u884c\u6765\u5efa\u7acb\u78c1\u76d8\u624d\u53ef\u4ee5\u4f7f\u7528\u7269\u7406\u786c\u76d8\u3002\u6211\u4eec\u5047\u5b9aVirtualBox\u5b89\u88c5\u5728DProgram FilesOracleVirtualBox\u8fd9\u4e2a\u76ee\u5f55\u4e0b\u9762\uff0c\u8981\u5728DUsersVirtualBox VMsUbuntu\u76ee\u5f55\u4e0b\u9762\u751f\u6210\u6587\u4ef6\uff0c\u5219\u6267\u884c\u5982\u4e0b\u547d\u4ee4crayon5e9b1917d2982212970467PhysicalDrive1 \u8868\u793a\u673a\u5668\u4e0a\u7684\u7b2c\u4e8c\u5757\u786c\u76d8\uff0cPhysicalDrive0\u662f\u7b2c\u4e00\u5757\uff0cPhysicalDrive2\u662f\u7b2c\u4e09\u5757\uff0c\u4ee5\u6b64\u7c7b\u63a8\u3002\u5728Windows \u7684\u78c1\u76d8\u7ba1\u7406\u4e2d\u80fd\u770b\u5230\u786c\u76d8\u7684\u5206\u533a\u8def\u5f84\u3002\u5982\u4e0b\u56fe\u6240\u793a\u7136\u540e\u65b0\u5efa\u865a\u62df\u673a\uff0c\u9009\u62e9\u4f7f\u7528\u5df2\u6709\u7684\u865a\u62df\u786c\u76d8\u6587\u4ef6\uff0c\u627e\u5230\u521a\u521a\u521b\u5efa\u7684 Ubuntuvmdk \u5373\u53ef\u3002\u5bf9\u4e8eWindows 8110\u7cfb\u7edf\uff0c\u4ee5\u4e0a\u7684\u547d\u4ee4\u9700\u8981\u4ee5\u7ba1\u7406\u5458\u542f\u52a8\u547d\u4ee4\u884c\u7684\u65b9\u5f0f\u4e0b\u542f\u52a8\u5e76\u6267\u884c\uff0c\u5426\u5219\u4f1a\u62a5\u544a\u627e\u4e0d\u5230\u78c1\u76d8\u3002\u53e6\u5916\u542f\u52a8Virtual Box\u7684\u65f6\u5019\uff0c\u540c\u6837\u9700\u8981\u4ee5\u7ba1\u7406\u5458\u7684\u8eab\u4efd\u8fd0\u884c\uff0c\u5426\u5219\u4f1a\u51fa\u73b0VERRACCESSDENIED\u9519\u8bef\uff0c\u5982\u4e0b\u56fe\u6240\u793a"]);
+        var speakitAud = document.getElementById("speakit_video");
+        if (speakitCtx.length > 0) {
+          speakitAud.src = speakitUri + speakitCtx[speakitOff];
+        }
+        function playSpeakItContent() {
+          var speakitAudBtn = document.getElementById("speakit_btn");
+          if (speakitAud.paused && speakitCtx.length > 0) {
+            speakitAudBtn.src = "https://www.mobibrw.com/wp-content/plugins/speak-it/images/pause.png"; //暂停图片
+            speakitAud.src = speakitUri + speakitCtx[speakitOff];
+            speakitAud.onended = function() {
+              speakitOff = speakitOff + 1;
+              if (speakitOff < speakitCtx.length) { 
+               speakitAud.src = speakitUri + speakitCtx[speakitOff];
+               speakitAud.play();
+              } else {
+                if (!speakitAud.paused) {
+                  speakitAud.pause();
+                }
+                speakitOff = 0;
+                speakitAudBtn.src = "https://www.mobibrw.com/wp-content/plugins/speak-it/images/play.png"; //暂停图片
+              }
+			};
+			speakitAud.play();
+          } else {
+            if (!speakitAud.paused) {
+              speakitAud.pause();
+            }
+            speakitAudBtn.src = "https://www.mobibrw.com/wp-content/plugins/speak-it/images/play.png"; //播放图片
+          }
+        }
+      </script><br>
+      <span style="float: left; margin-right: 10px; cursor: pointer;"><br>
+        <a href="javascript:playSpeakItContent();"><img src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/play.png" id="speakit_btn" width="25" height="25" border="0"></a><br>
+      </span>目前VirtualBox只能用命令行来建立磁盘才可以使用物理硬盘。</p>
+<p>我们假定VirtualBox安装在“D:\Program Files\Oracle\VirtualBox”这个目录下面，要在“D:\Users\VirtualBox VMs\Ubuntu\”目录下面生成文件，则执行如下命令：</p><!-- Crayon Syntax Highlighter v_2.7.2_beta -->
+
+		<div id="crayon-5e9b1917d2982212970467" class="crayon-syntax crayon-theme-secrets-of-rock crayon-font-monaco crayon-os-pc print-yes notranslate" data-settings=" minimize scroll-mouseover" style="margin-top: 12px; margin-bottom: 12px; font-size: 12px !important; line-height: 15px !important; height: auto;">
+		
+			<div class="crayon-toolbar" data-settings=" show" style="font-size: 12px !important;height: 18px !important; line-height: 18px !important;"><span class="crayon-title"></span>
+			<div class="crayon-tools" style="font-size: 12px !important;height: 18px !important; line-height: 18px !important;"><div class="crayon-button crayon-nums-button crayon-pressed" title="Toggle Line Numbers"><div class="crayon-button-icon" style="background-size: 48px 128px; background-image: url(&quot;https://www.mobibrw.com/wp-content/plugins/crayon-syntax-highlighter/css/images/toolbar/buttons@2x.png&quot;);"></div></div><div class="crayon-button crayon-plain-button" title="Toggle Plain Code"><div class="crayon-button-icon" style="background-size: 48px 128px; background-image: url(&quot;https://www.mobibrw.com/wp-content/plugins/crayon-syntax-highlighter/css/images/toolbar/buttons@2x.png&quot;);"></div></div><div class="crayon-button crayon-wrap-button" title="Toggle Line Wrap"><div class="crayon-button-icon" style="background-size: 48px 128px; background-image: url(&quot;https://www.mobibrw.com/wp-content/plugins/crayon-syntax-highlighter/css/images/toolbar/buttons@2x.png&quot;);"></div></div><div class="crayon-button crayon-expand-button" title="Expand Code"><div class="crayon-button-icon" style="background-size: 48px 128px; background-image: url(&quot;https://www.mobibrw.com/wp-content/plugins/crayon-syntax-highlighter/css/images/toolbar/buttons@2x.png&quot;);"></div></div><div class="crayon-button crayon-copy-button" title="Copy"><div class="crayon-button-icon" style="background-size: 48px 128px; background-image: url(&quot;https://www.mobibrw.com/wp-content/plugins/crayon-syntax-highlighter/css/images/toolbar/buttons@2x.png&quot;);"></div></div><div class="crayon-button crayon-popup-button" title="Open Code In New Window"><div class="crayon-button-icon" style="background-size: 48px 128px; background-image: url(&quot;https://www.mobibrw.com/wp-content/plugins/crayon-syntax-highlighter/css/images/toolbar/buttons@2x.png&quot;);"></div></div><span class="crayon-language">Shell</span></div></div>
+			<div class="crayon-info" style="min-height: 16.8px !important; line-height: 16.8px !important;"></div>
+			<div class="crayon-plain-wrap"><textarea class="crayon-plain print-no" data-settings="dblclick" readonly="readonly" style="-moz-tab-size: 4; font-size: 12px !important; line-height: 15px !important; z-index: 0; opacity: 0; overflow: hidden;" wrap="soft">"D:\Program
+ Files\Oracle\VirtualBox\VBoxManage.exe" internalcommands createrawvmdk 
+-filename "D:\Users\VirtualBox VMs\Ubuntu\Ubuntu.vmdk" -rawdisk 
+\\.\PhysicalDrive1</textarea></div>
+			<div class="crayon-main" style="position: relative; z-index: 1; overflow: hidden;">
+				<table class="crayon-table" style="">
+					<tbody><tr class="crayon-row">
+				<td class="crayon-nums " data-settings="show">
+					<div class="crayon-nums-content" style="font-size: 12px !important; line-height: 15px !important;"><div class="crayon-num" data-line="crayon-5e9b1917d2982212970467-1">1</div></div>
+				</td>
+						<td class="crayon-code"><div class="crayon-pre" style="font-size: 12px !important; line-height: 15px !important; -moz-tab-size:4; -o-tab-size:4; -webkit-tab-size:4; tab-size:4;"><div class="crayon-line" id="crayon-5e9b1917d2982212970467-1"><span class="crayon-s">"D:\Program Files\Oracle\VirtualBox\VBoxManage.exe"</span><span class="crayon-h"> </span><span class="crayon-e">internalcommands </span><span class="crayon-v">createrawvmdk</span><span class="crayon-h"> </span><span class="crayon-o">-</span><span class="crayon-i">filename</span><span class="crayon-h"> </span><span class="crayon-s">"D:\Users\VirtualBox VMs\Ubuntu\Ubuntu.vmdk"</span><span class="crayon-h"> </span><span class="crayon-o">-</span><span class="crayon-i">rawdisk</span><span class="crayon-h"> </span><span class="crayon-sy">\</span><span class="crayon-sy">\</span><span class="crayon-sy">.</span><span class="crayon-sy">\</span><span class="crayon-v">PhysicalDrive1</span></div></div></td>
+					</tr>
+				</tbody></table>
+			</div>
+		</div>
+<!-- [Format Time: 0.0001 seconds] -->
+<p><strong>\\.\PhysicalDrive1</strong> 表示机器上的第二块硬盘，\\.\PhysicalDrive0是第一块，\\.\PhysicalDrive2是第三块，以此类推。</p>
+<p>在Windows 的磁盘管理中能看到硬盘的分区路径。如下图所示：<a href="https://www.mobibrw.com/wp-content/uploads/2015/11/ComputerManger.jpg"><img class="alignnone size-full wp-image-2442" src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/ComputerManger.jpg" alt="ComputerManger" srcset="https://www.mobibrw.com/wp-content/uploads/2015/11/ComputerManger.jpg 975w, https://www.mobibrw.com/wp-content/uploads/2015/11/ComputerManger-150x107.jpg 150w, https://www.mobibrw.com/wp-content/uploads/2015/11/ComputerManger-300x215.jpg 300w, https://www.mobibrw.com/wp-content/uploads/2015/11/ComputerManger-400x286.jpg 400w" sizes="(max-width: 975px) 100vw, 975px" width="975" height="698"></a></p>
+<p>然后新建虚拟机，选择"使用已有的虚拟硬盘文件"，找到刚刚创建的 Ubuntu.vmdk 即可。</p>
+<p>对于Windows 8.1/10系统，以上的命令需要<strong>以管理员启动命令行</strong>的方式下启动并执行，否则会报告找不到磁盘。另外启动Virtual Box的时候，同样需要<strong>以管理员</strong>的身份运行，否则会出现<code>VERR_ACCESS_DENIED</code>错误，如下图所示：</p>
+<p><img class="alignnone size-full wp-image-3260" src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/VERR_ACCESS_DENIED.png" alt="VERR_ACCESS_DENIED" srcset="https://www.mobibrw.com/wp-content/uploads/2015/11/VERR_ACCESS_DENIED.png 352w, https://www.mobibrw.com/wp-content/uploads/2015/11/VERR_ACCESS_DENIED-139x150.png 139w, https://www.mobibrw.com/wp-content/uploads/2015/11/VERR_ACCESS_DENIED-277x300.png 277w" sizes="(max-width: 352px) 100vw, 352px" width="352" height="381"></p>
+	</div><!-- .entry-content -->
+
+	
+<div class="author-info">
+	<h2 class="author-heading">发布者</h2>
+	<div class="author-avatar">
+			</div><!-- .author-avatar -->
+
+	<div class="author-description">
+		<h3 class="author-title">默默</h3>
+
+		<p class="author-bio">
+			默默码农			<a class="author-link" href="https://www.mobibrw.com/author/longsky" rel="author">
+				查看默默的所有文章			</a>
+		</p><!-- .author-bio -->
+
+	</div><!-- .author-description -->
+</div><!-- .author-info -->
+
+	<footer class="entry-footer">
+		<span class="posted-on"><span class="screen-reader-text">发布于 </span><a href="https://www.mobibrw.com/2015/2441" rel="bookmark"><time class="entry-date published" datetime="2015-11-02T16:34:03+08:00">2015 年 11 月 2 日</time><time class="updated" datetime="2016-02-05T01:56:32+08:00">2016 年 2 月 5 日</time></a></span><span class="byline"><span class="author vcard"><span class="screen-reader-text">作者 </span><a class="url fn n" href="https://www.mobibrw.com/author/longsky">默默</a></span></span><span class="cat-links"><span class="screen-reader-text">分类 </span><a href="https://www.mobibrw.com/category/virtualbox" rel="category tag">VirtualBox</a></span>				<span class="show-view">
+			2,728 浏览		</span>
+	</footer><!-- .entry-footer -->
+
+</article><!-- #post-## -->
+
+
+<div id="comments" class="comments-area">
+
+	
+	
+		<div id="respond" class="comment-respond">
+		<h3 id="reply-title" class="comment-reply-title">发表评论 <small><a rel="nofollow" id="cancel-comment-reply-link" href="https://www.mobibrw.com/2015/2441#respond" style="display:none;">取消回复</a></small></h3><form action="https://www.mobibrw.com/wp-comments-post.php" method="post" id="commentform" class="comment-form" novalidate=""><p class="comment-notes"><span id="email-notes">电子邮件地址不会被公开。</span> 必填项已用<span class="required">*</span>标注</p><p class="comment-form-comment"><label for="comment">评论</label> <div class="QapTcha"><div class="bgSlider"><div class="Slider ui-draggable" style="position: relative;"></div></div><div class="Icons"></div><div class=" TxtStatus dropError">发表评论前，请滑动滚动条解锁</div><div class="clr"></div><a class="dis" href="http://blog.30c.org/">三十岁</a><input name="Fv2T2Cu73c4nYxvmytbFah_vhCRteXPH" value="ZYKC43J" type="hidden"></div><textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" required="required"></textarea></p><p class="comment-form-author"><label for="author">姓名 <span class="required">*</span></label> <input id="author" name="author" type="text" size="30" maxlength="245" required="required"></p>
+<p class="comment-form-email"><label for="email">电子邮件 <span class="required">*</span></label> <input id="email" name="email" type="email" size="30" maxlength="100" aria-describedby="email-notes" required="required"></p>
+<p class="comment-form-url"><label for="url">站点</label> <input id="url" name="url" type="url" size="30" maxlength="200"></p>
+<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="发表评论" disabled="disabled"> <input type="hidden" name="comment_post_ID" value="2441" id="comment_post_ID">
+<input type="hidden" name="comment_parent" id="comment_parent" value="0">
+</p></form>	</div><!-- #respond -->
+	
+</div><!-- .comments-area -->
+
+	<nav class="navigation post-navigation" role="navigation" aria-label="文章">
+		<h2 class="screen-reader-text">文章导航</h2>
+		<div class="nav-links"><div class="nav-previous"><a href="https://www.mobibrw.com/2015/2432" rel="prev"><span class="meta-nav" aria-hidden="true">上一篇</span> <span class="screen-reader-text">上篇文章：</span> <span class="post-title">使用grunt压缩代码&amp;配置多个任务</span></a></div><div class="nav-next"><a href="https://www.mobibrw.com/2015/2446" rel="next"><span class="meta-nav" aria-hidden="true">下一篇</span> <span class="screen-reader-text">下篇文章：</span> <span class="post-title">LMbench 3.0移植到Android并测试内存带宽</span></a></div></div>
+	</nav>
+		</main><!-- .site-main -->
+	</div><!-- .content-area -->
+
+
+	</div><!-- .site-content -->
+
+	<footer id="colophon" class="site-footer" role="contentinfo">
+		<div class="site-info">
+			<a href="http://www.beian.miit.gov.cn/" rel="nofollow" title="工业和信息化部ICP/IP地址/域名信息备案管理系统">浙ICP备12020288号-1</a>
+		</div><!-- .site-info -->
+	</footer><!-- .site-footer -->
+
+</div><!-- .site -->
+
+<link rel="stylesheet" href="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/myQaptcha.css" type="text/css">
+<script type="text/javascript">function loadJS(filename){var fileref=document.createElement("script");fileref.setAttribute("type","text/javascript");fileref.setAttribute("src", filename); document.getElementsByTagName("head")[0].appendChild(fileref);} if (typeof jQuery == "undefined") loadJS("http://libs.baidu.com/jquery/2.0.0/jquery.min.js"); </script><script type="text/javascript" src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/jquery-ui.js"></script>
+<script type="text/javascript" src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/jquery_002.js"></script>
+<script type="text/javascript">var myQaptchaJqueryPage="https://www.mobibrw.com/wp-content/plugins/myqaptcha/jquery/myQaptcha.jquery.php";</script>
+<script type="text/javascript" src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/myqaptcha.js"></script>
+<script type="text/javascript">var newQapTcha = document.createElement("div");newQapTcha.className="QapTcha";var tagIDComment=document.getElementById("comment");if(tagIDComment){tagIDComment.parentNode.insertBefore(newQapTcha,tagIDComment);}else{var allTagP = document.getElementsByTagName("p");for(var p=0;p<allTagP.length;p++){var allTagTA = allTagP[p].getElementsByTagName("textarea");if(allTagTA.length>0){allTagP[p].parentNode.insertBefore(newQapTcha,allTagP[p]);}}}jQuery(document).ready(function(){jQuery('.QapTcha').QapTcha({disabledSubmit:true,autoRevert:true});});</script>
+<script src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/tex-chtml.js"></script>
+<script>
+var viewsCacheL10n = {"admin_ajax_url":"https:\/\/www.mobibrw.com\/wp-admin\/admin-ajax.php","post_id":"2441"};
+</script>
+<script src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/postviews-cache.js"></script>
+<script src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/skip-link-focus-fix.js"></script>
+<script src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/comment-reply.js"></script>
+<script>
+var screenReaderText = {"expand":"<span class=\"screen-reader-text\">\u5c55\u5f00\u5b50\u83dc\u5355<\/span>","collapse":"<span class=\"screen-reader-text\">\u6298\u53e0\u5b50\u83dc\u5355<\/span>"};
+</script>
+<script src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/functions.js"></script>
+<script src="Windows%E4%B8%8BVirtualBox%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98%E4%BD%9C%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%20%E2%80%93%20%E9%BB%98%E9%BB%98%E7%9A%84%E7%82%B9%E6%BB%B4_files/wp-embed.js"></script>
+
+<!--百度统计代码 -->
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?4b980258bf6c17162c8b866d36aa54d1";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+
+
+
+</body></html>

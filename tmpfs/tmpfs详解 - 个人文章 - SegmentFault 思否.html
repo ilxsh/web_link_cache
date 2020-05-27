@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+    <head>
+        <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+            <meta content="IE=edge, chrome=1" http-equiv="X-UA-Compatible">
+        <meta content="webkit" name="renderer">
+        <meta content="15317273575564615446375" property="qc:admins">
+        <meta property="og:image" content="https://assets.segmentfault.com/v-5e573987/global/img/static/touch-icon.png">
+        <meta content="LkzCRJ7rPEUwt6fVey2vhxiw1vQ" name="alexaVerifyID">
+        <meta content="app-id=958101793, app-argument=" name="apple-itunes-app">
+                <title>tmpfs详解 - 个人文章 - SegmentFault 思否</title>
+    
+            <meta name="description" content="在平常工作中，我们经常需要查看Linux服务器磁盘挂载使用情况，可以使用df命令，不知大家注意到没有，我们使用此命令除了会查看到系统盘以及数据盘挂载情况，还会看到一个tmpfs也在挂载。">
+    
+            <meta name="keywords" content="shell,centos,linux">
+    
+        <link href="/opensearch.xml" rel="search" title="SegmentFault" type="application/opensearchdescription+xml">
+        <link rel="shortcut icon" href="https://assets.segmentfault.com/v-5e573987/global/img/favicon.ico">
+        <link rel="apple-touch-icon" href="https://assets.segmentfault.com/v-5e573987/global/img/static/touch-icon.png">
+
+        <meta content="#00965e" name="msapplication-TileColor">
+        <meta name="msapplication-square150x150logo" content="https://assets.segmentfault.com/v-5e573987/global/img/static/touch-icon.png">
+        <meta content="bcf7fd80dca60d53d46d5b46e1b990ca" name="baidu_union_verify">
+
+    
+        <link href="/feeds/questions" rel="alternate" title="SegmentFault 最新问题" type="application/atom+xml">
+        <link href="/feeds/blogs" rel="alternate" title="SegmentFault 最新文章" type="application/atom+xml">
+    
+    
+    
+    
+    
+            <link rel="stylesheet" href="https://assets.segmentfault.com/v-5e573987/css/global.css">
+        <link rel="stylesheet" href="https://assets.segmentfault.com/v-5e573987/css/vendors.css">
+        
+            <link rel="stylesheet" href="https://assets.segmentfault.com/v-5e573987/css/detail.css">
+    
+    
+        <script>
+var _oa = [], OA_google = true;
+
+function OA_script(src, cb) {
+    var s = document.createElement('script'), m = document.getElementsByTagName('script')[0];
+    
+    if (cb) {
+        s.onload = cb;
+    }
+    
+    s.async = 1;
+    s.defer = 1;
+    s.src = src;
+    m.parentNode.insertBefore(s, m);
+}
+
+function OA_show(name) {
+    _oa.push(name);
+    document.write('<div id="OA_holder_' + name + '"></div>');
+}
+
+OA_script('https://sponsor.segmentfault.com/spcjs.php?id=1&block=1&repu=0&tag=shell&v=5e67172c');
+</script>
+
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-918487-8"></script>
+
+            <!-- 推荐引擎 -->
+        <script charset="utf-8" id="ParadigmSDK" src="https://nbrecsys.4paradigm.com/sdk/js/ParadigmSDK_v2.js" data="216" defSI="594">
+        </script>
+        <script>
+            ParadigmSDK.init("46e957bd9dea4acdaa15b4b64aff728f");
+            ParadigmSDK.trackDetailPageShow();
+        </script>
+                </head>
+    <body>
+
+    <img style="height: 0; width: 0; display: none" src="https://assets.segmentfault.com/v-5e573987/global/img/static/touch-icon.png">
+
+<div id="gridMapHoverBox" style="position:absolute; border: 1px solid #00965e; z-index: 99; font-size: 10px; background:#fff"></div>
+
+<nav id="sf-header" class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container">
+        <a class="navbar-brand text-hide sf-header-logo" href="/">SegmentFault</a>
+
+                    <a class="btn btn-primary d-lg-none ml-auto mr-2" href="/user/login">注册登录</a>
+        
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown"
+                aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+                <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav font-weight-bold">
+                <li class="nav-item">
+                    <a href="/" class="nav-link ">首页</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/questions" class="nav-link ">问答</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/blogs" class="nav-link active">专栏</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/lives" class="nav-link ">课程</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/events" class="nav-link ">活动</a>
+                </li>
+                <li class="nav-item dropdown hover-down">
+                    <a href="###" id="navbarDiscover" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link  dropdown-toggle ">发现</a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDiscover">
+                        <a class="dropdown-item" href="/groups">圈子</a>
+                        <a class="dropdown-item" href="/tags">标签</a>
+                        <a class="dropdown-item" href="/groups?tab=jobs">酷工作</a>
+                        <a class="dropdown-item" href="/users">排行榜</a>
+                        <a class="dropdown-item" href="/badges">徽章</a>
+                        <a class="dropdown-item" href="/notes">笔记</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="https://docs.segmentfault.com" target="_blank">开发手册</a>
+                        <a class="dropdown-item" href="https://business.segmentfault.com/ads?utm_source=sf-header"
+                           target="_blank">广告投放<i class="ml-2 text-warning fas fa-external-link-square"></i></a>
+                    </div>
+                </li>
+            </ul>
+
+            <form class="form-inline my-2 my-lg-0 flex-fill d-none d-xl-block px-4" action="/search">
+                <input class="form-control w-100" id="searchBox" name="q" type="search" value="" placeholder="搜索关键字" aria-label="搜索">
+            </form>
+
+            <ul class="navbar-nav navbar-user ml-auto align-items-lg-center">
+                                    <li class="nav-item d-none d-lg-flex">
+                        <a href="/user/login" class="btn btn-link mr-2 require-login">立即登录</a>
+                    </li>
+                    <li class="nav-item d-none d-lg-flex">
+                        <a href="/user/register" class="btn btn-primary require-login">免费注册</a>
+                    </li>
+                            </ul>
+        </div>
+    </div>
+</nav>
+    <input id="articleId" value="1190000014737366" class="hidden"/>
+    <div class="d-none d-xl-flex justify-content-center">
+        <script type="text/javascript">
+          OA_show(2);
+        </script>
+    </div>
+    <div class="position-relative">
+        <div class="container my-sm-4 my-1" id="sf-article">
+            <div class="row">
+                                <div class="col-12 col-xl w-0">
+                    <div class="card border-0 mb-4">
+                        <div class="card-body p-lg-30">
+                            <div class="d-flex justify-content-between align-items-center mb-3" id="sf-article_author">
+                                <div class="information d-flex align-items-center">
+                                    <a class="d-flex align-items-centers mr-1" href="/u/leon_5a96732f26ea3">
+                                        <picture class="mr-2 d-sm-block d-none">
+                                            <img class="d-inline-block rounded-circle " width="32"
+                                                 src="https://avatar-static.segmentfault.com/210/130/2101307417-5aab74b6b6019_big64" aria-hidden="true"/>
+                                        </picture>
+                                        <strong class="align-self-center">leon</strong>
+                                    </a>
+                                    <ul class="list-inline mb-0 authentication-info sflex-center font-size-14">
+                                                                                <li class="list-inline-item">
+                                            <i class="fas fa-dice-d8" style="color:#BF7158"></i>
+                                            <span style="color: #BF7158;font-weight:bold">21</span>
+                                        </li>
+                                        
+                                                                            </ul>
+                                </div>
+
+                            </div>
+                            <div class="functional-area-left sticky-top d-none d-xl-flex"></div>
+                            <h1 class="h2 mb-3" id="sf-article_title">
+                                <a class="text-body" href="/a/1190000014737366">tmpfs详解</a>
+                            </h1>
+                            <div class="d-sm-flex d-none flex-wrap align-items-center mb-4" id="sf-article_tags">
+                                <div class="m-n1"><a class="m-1 badge-tag" href="/t/shell"
+                                           data-toggle="popover"
+                                           data-img="" data-placement="top"
+                                           data-original-title="shell"
+                                           data-id="1040000000089669">
+                                                                                        shell
+                                        </a><a class="m-1 badge-tag" href="/t/centos"
+                                           data-toggle="popover"
+                                           data-img="https://avatar-static.segmentfault.com/153/588/1535884374-1040000000090249_big64" data-placement="top"
+                                           data-original-title="centos"
+                                           data-id="1040000000090249">
+                                                                                        centos
+                                        </a><a class="m-1 badge-tag" href="/t/linux"
+                                           data-toggle="popover"
+                                           data-img="https://avatar-static.segmentfault.com/329/062/3290625956-1040000000089392_big64" data-placement="top"
+                                           data-original-title="linux"
+                                           data-id="1040000000089392">
+                                                                                        linux
+                                        </a></div>
+                                <div class="font-size-14">
+                                                                    <span class="text-secondary ml-2">发布于 2018-05-05 </span>
+                                                                    <span class="split-dot"></span>
+                                    <span class="text-secondary" title="阅读时长">&nbsp;约 5 分钟</span>
+                                                                                                        </div>
+                            </div>
+                            <article class="article fmt article-content" data-id="1190000014737366"
+                                     data-license="">
+                                
+<p>致因</p>
+<p>在平常工作中，我们经常需要查看Linux服务器磁盘挂载使用情况，可以使用df命令，不知大家注意到没有，我们使用此命令除了会查看到系统盘以及数据盘挂载情况，还会看到一个tmpfs也在挂载。</p>
+<pre><code>[root@test ~]# df -hT
+
+Filesystem     Type   Size  Used Avail Use% Mounted on
+
+/dev/vda1      ext4    40G  1.1G   37G   3% /
+
+tmpfs          tmpfs  499M     0  499M   0% /dev/shm
+
+</code></pre>
+<p>同时可以注意到，这个tmpfs大小是499M, 大小和内存相比，约为内存的一半。</p>
+<pre><code>[root@test~]# free -m
+
+             total       used       free     shared    buffers     cached
+
+Mem:           996        124        872          0          7         57
+
+-/+ buffers/cache:         59        936
+
+Swap:            0          0          0Swap:      2064376          0    2064376
+
+
+</code></pre>
+<p>我们通过df可以看到tmpfs是挂载到/dev/下的shm目录，tmpfs是什么呢? 其实是一个临时文件系统，驻留在内存中，所以/dev/shm/这个目录不在硬盘上，而是在内存里。因为是在内存里，所以读写非常快，可以提供较高的访问速度。linux下，tmpfs默认最大为内存的一半大小，使用df -h命令刚才已经看到了，但是这个df查看到的挂载内存大小的数值，如果没有使用，是没有去真正占用的，只有真正在tmpfs存储数据了，才会去占用。比如，tmpfs大小是499M,用了10M大小，内存里就会使用真正使用10M，剩余的489M是可以继续被服务器其他程序来使用的。但是因为数据是在内存里，所以断电后文件会丢失，内存数据不会和硬盘中数据一样可以永久保存。了解了tmpfs这个特性可以用来提高服务器性能，把一些对读写性能要求较高，但是数据又可以丢失的这样的数据保存在/dev/shm中，来提高访问速度。</p>
+<p>调整大小：我们还可以根据实际需要去调整tmpfs文件的大小。</p>
+<pre><code>[root@test]# mount -o remount,size=777M tmpfs /dev/shm
+
+[root@test]# df -hT
+
+Filesystem     Type   Size  Used Avail Use% Mounted on
+
+/dev/vda1      ext4    40G  1.1G   37G   3% /
+
+tmpfs          tmpfs  777M     0  777M   0% /dev/shm
+
+
+</code></pre>
+<p>这种修改是临时修改，重启后会恢复正常，恢复为内存一半大小。   </p>
+<p>永久修改可以</p>
+<pre><code>vim  /etc/fstab 
+
+把tmpfs这一行改为：
+
+tmpfs                   /dev/shm                tmpfs   defaults,size=777M     0 0
+</code></pre>
+<p>这样设置后重启会自动挂载为777M大小，永久生效。</p>
+<p>实际应用：最后在说下tmpfs的一些应用，tmpfs用途还是较广的，Linux中可以把一些程序的临时文件放置在tmpfs中，利用tmpfs比硬盘速度快的特点来提升系统性能。比如可以用来放squid程序的缓存文件。当然，还有其他的用途，我们应该想到，tmpfs的挂载点既然能当作普通磁盘使用，也就能当作nfs的共享目录使用。但是用tmpfs做nfsd共享需要考虑网卡速度和tmpfs读写速度二者孰为瓶颈，如果网卡速度是瓶颈，那么直接用nfs创建一个普通磁盘目录即可。因为tmpfs重启后丢失，使用tmpfs做nfs前，须先从磁盘或用rsync从其他服务器拷贝到tmpfs里。更新文件时，先更新磁盘上的文件，或更新rsync的源。然后设置定时进程，每分钟从磁盘或rsync里将程序同步到tmpfs即可。</p>
+<p>tmpfs的其他应用希望本文对大家使用tmpfs有所帮助，另外，请务必注意，重启后数据会丢失！</p>
+
+                            </article>
+                            <div class="text-secondary font-size-14 mb-5 d-flex justify-content-between row">
+                                                                    <div class="col-6 text-secondary" id="sf-article_metas">阅读 5.2k<span
+                                                class="split-dot"></span>发布于 2018-05-05 </div>
+                                                                <div class="operation col-6 text-right">
+                                                                                                                                                                                                                        
+                                                                                                        </div>
+                            </div>
+
+                            
+                                                                                    
+                            <div class="functional-area-bottom"></div>
+
+                            <div class="text-center mb-5 mt-3 text-secondary font-size-14">
+                                本作品系
+                                转载 (<a href="https://yq.aliyun.com/articles/114625"
+                                                                            target="_blank">阅读原文</a>)
+                                 ，
+                                                                    <a target="_blank"
+                                       class="text-secondary"
+                                       href="https://creativecommons.org/licenses/by-nc-nd/4.0/">采用《署名-非商业性使用-禁止演绎 4.0
+                                        国际》许可协议</a>
+                                                            </div>
+                            <hr class="mb-0"/>
+                            <div class="article-author d-flex flex-sm-row align-items-center pt-4 row">
+                                <div class="d-flex align-items-center flex-grow-1 author-left col-sm-9 col-12">
+                                    <a href="/u/leon_5a96732f26ea3">
+                                        <img class="rounded-circle mr-3" width="64" src="https://avatar-static.segmentfault.com/210/130/2101307417-5aab74b6b6019_big64"
+                                             aria-hidden="true"/>
+                                    </a>
+                                    <div>
+                                        <h5><a class="text-body" href="/u/leon_5a96732f26ea3">leon</a></h5>
+                                        <ul class="list-inline mb-0 authentication-info">
+                                                                                        <li class="list-inline-item">
+                                                <i class="fas fa-dice-d8" style="color:#BF7158"></i>
+                                                <span style="color: #BF7158; font-size:16px; font-weight:bold">21</span>
+                                            </li>
+                                                                                    </ul>
+                                    </div>
+                                </div>
+                                <div class="author-right flex-shrink-0 col-sm-3 col-12 text-sm-right text-left mt-sm-0 mt-3">
+                                                                                                                <button type="button"
+                                                class="btn btn-primary follow-user sf_do"
+                                                data-doType="post"
+                                                data-content="{&quot;type&quot;:&quot;state&quot;,&quot;state&quot;:false,&quot;true&quot;:&quot;\u5173\u6ce8\u4f5c\u8005&quot;,&quot;false&quot;:&quot;\u6b63\u5728\u5173\u6ce8&quot;}"
+                                                data-api="/iteration/api/user/1030000013444687/follow">关注作者
+                                        </button>
+                                                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-none d-lg-block">
+                        <script type='text/javascript'>
+                          OA_show(3);
+                        </script>
+                    </div>
+                                                            <div id="comment-area" class="my-4" data-type="article" data-id="1190000014737366" data-page="1"
+                         data-user="null"></div>
+                                        <h5 class="mt-4">推荐阅读</h5>
+                    <div class="card border-0 mb-4">
+                        <div class="list-group list-group-flush" id="paradigm-article-related"></div>
+                    </div>
+
+                </div>
+
+                                <div class="col-12 col-xl-auto">
+                    <div class="w-xl-300">
+                        
+                        <div class="card border-0 overflow-hidden d-none d-xl-flex justify-content-center align-items-center float-ads">
+                            <script type='text/javascript'>
+                              OA_show(1);
+                            </script>
+                        </div>
+                        <!-- / 矩形广告位 -->
+
+                        <div class="card border-0 d-none d-xl-flex mt-4">
+                            <div class="card-body">
+                                <div class="text-center mb-3">
+                                    <div class="mb25 hidden-md hidden-sm hidden-xs">
+    <img src="https://cdn.segmentfault.com/sponsor/20200310.png" alt="Planets" usemap ="#gridsMap" width=255 height=136>
+    <map name="gridsMap" id="gridsMap"></map>
+    <div style="text-align: center;"><a style="color:#9E9E9E; font-size:12px" href="/sponsor">广告位促销，月曝光三千万，10 元/天</a></div>
+        <script async src="https://cdn.segmentfault.com/sponsor/20200310.js"></script>
+</div>
+                                </div>
+
+                                <div class="side-promote-link">
+                                    <script type='text/javascript'>
+                                      OA_show(7);
+                                      OA_show(9);
+                                      OA_show(10);
+                                      OA_show(15);
+                                      OA_show(16);
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- / 格子广告、链接广告 -->
+
+                        <div class="card border-0 mt-4 overflow-hidden d-none d-xl-flex" data-article-nav>
+                            <div class="card-body">
+                                <h6 class="pt-3 position-relative bg-white" style="margin-top:-1.25rem; height:45px">
+                                    目录</h6>
+                                <nav id="article-nav-list" data-article-nav-list class="font-size-14">
+
+                                </nav>
+                            </div>
+                        </div>
+                        <!-- / 目录 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+      var ARTICLE = {
+        articleId: 1190000014737366,
+        title: "tmpfs详解",
+        isLiked: false,
+        votes: 2,
+        isBookmarked: false,
+        bookmarks: 1,
+        canReward: false
+      }
+    </script>
+
+    
+
+
+
+
+
+
+
+<script type='text/javascript'>
+  OA_show(4);
+</script>
+
+<footer id="footer" class="bg-white py-5 font-size-14">
+    <div class="container">
+        <div class="row">
+            <dl class="col-4 col-md-2">
+                <dt class="h6">产品</dt>
+                                <dd class="my-1"><a class="text-secondary" href="/questions/hottest?utm_source=sf-footer" target="_blank">热门问答</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/blogs/hottest?utm_source=sf-footer" target="_blank">热门专栏</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/lives?utm_source=sf-footer" target="_blank">热门课程</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/events?utm_source=sf-footer" target="_blank">最新活动</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/groups?utm_source=sf-footer" target="_blank">技术圈</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/groups?tab=jobs&amp;utm_source=sf-footer" target="_blank">酷工作</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/app?utm_source=sf-footer" target="_blank">移动客户端</a></dd>
+                            </dl>
+
+            <dl class="col-4 col-md-2">
+                <dt class="h6">课程</dt>
+                                <dd class="my-1"><a class="text-secondary" href="/lives/edu?tag=java&amp;sort=hottest&amp;utm_source=sf-footer" target="_blank">Java 开发课程</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/lives/edu?tag=php&amp;sort=hottest&amp;utm_source=sf-footer" target="_blank">PHP 开发课程</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/lives/edu?tag=python&amp;sort=hottest&amp;utm_source=sf-footer" target="_blank">Python 开发课程</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/lives/edu?category=1&amp;sort=hottest&amp;utm_source=sf-footer" target="_blank">前端开发课程</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/lives/study?category=3&amp;sort=hottest&amp;utm_source=sf-footer" target="_blank">移动开发课程</a></dd>
+                            </dl>
+
+            <dl class="col-4 col-md-2 ">
+                <dt class="h6">资源</dt>
+                                <dd class="my-1"><a class="text-secondary" href="/weekly?utm_source=sf-footer" target="_blank">每周精选</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/users?utm_source=sf-footer" target="_blank">用户排行榜</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/badges?utm_source=sf-footer" target="_blank">徽章</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/faq?utm_source=sf-footer" target="_blank">帮助中心</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/repu?utm_source=sf-footer" target="_blank">声望与权限</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/community?utm_source=sf-footer" target="_blank">社区服务中心</a></dd>
+                            </dl>
+
+            <dl class="col-4 col-md-2">
+                <dt class="h6">合作</dt>
+                                <dd class="my-1"><a class="text-secondary" href="https://about.segmentfault.com/?utm_source=sf-footer" target="_blank">关于我们</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="https://business.segmentfault.com/ads?utm_source=sf-footer" target="_blank">广告投放</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/groups?tab=jobs&amp;utm_source=sf-footer" target="_blank">职位发布</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="https://jinshuju.net/f/HK5r9K?utm_source=sf-footer" target="_blank">讲师招募</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="https://about.segmentfault.com/contact.html?utm_source=sf-footer" target="_blank">联系我们</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/link?utm_source=sf-footer" target="_blank">合作伙伴</a></dd>
+                            </dl>
+
+            <dl class="col-4 col-md-2">
+                <dt class="h6">关注</dt>
+                                <dd class="my-1"><a class="text-secondary" href="/blog/segmentfault?utm_source=sf-footer" target="_blank">产品技术日志</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/blog/community_admin?utm_source=sf-footer" target="_blank">社区运营日志</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/blog/segmentfault_news?utm_source=sf-footer" target="_blank">市场运营日志</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/blog/segmentfault_team?utm_source=sf-footer" target="_blank">团队日志</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/blog/interview?utm_source=sf-footer" target="_blank">社区访谈</a></dd>
+                            </dl>
+
+            <dl class="col-4 col-md-2" id="license">
+                <dt class="h6">条款</dt>
+                                <dd class="my-1"><a class="text-secondary" href="/tos?utm_source=sf-footer" target="_blank">服务条款</a></dd>
+                                <dd class="my-1"><a class="text-secondary" href="/privacy?utm_source=sf-footer" target="_blank">隐私政策</a></dd>
+                                <dd class="my-1">
+                    <a class="text-secondary" href="/app?utm_source=sf-footer"><img width="60" src="https://cdn.segmentfault.com/v-5e67172c/page/img/app/appQrcode.png" class="app-qrcode"><br>下载 App</a>
+                </dd>
+            </dl>
+        </div>
+        <hr class="mt-2 mb-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="text-secondary">
+                    <p class="mb-1">Copyright &copy; 2011-2020 SegmentFault. 当前呈现版本 19.02.27</p>
+                    <p class="mb-1">
+                        <a class="text-secondary mr-2" target="_blank" href="http://beian.miit.gov.cn" rel="nofollow">浙ICP备 15005796号-2</a>
+                        <a class="text-secondary mr-2" target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=33010602002000" rel="nofollow">浙公网安备 33010602002000号</a>
+                        杭州堆栈科技有限公司版权所有
+                    </p>
+                    <p class="mb-0">CDN 存储服务由 <a class="text-secondary" target="_blank" href="https://www.upyun.com/?utm_source=segmentfault&utm_medium=link&utm_campaign=upyun&md=segmentfault">又拍云</a> 赞助提供 </p>
+                </div>
+            </div>
+            <div class="col-md-4 text-right">
+                <div class="shareContent ">
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+<script>
+    window.serverTime = 1583852983000;
+</script>
+
+<script>
+(function (w) {
+    w.SF = {
+        staticUrl: "https://assets.segmentfault.com/v-5e573987/"
+    };
+    w.SF.token = (function () {
+    var _rH3 = //'lp'
+'7'+''///*'Gh'*/'Gh'
++'e6'//'Ee'
++'2c'//'f7'
++'91'//'em'
++//'l4G'
+'c'+''///*'PGm'*/'PGm'
++//'jRn'
+'8'+'c'//'c'
++/* 'I'//'I' */''+'0c9'//'m'
++'13'//'h'
++//'fhA'
+'af'+'11a'//'Xql'
++//'a'
+'e0'+'9ee'//'y'
++//'ea'
+'623'+''///*'iIC'*/'iIC'
++//'5'
+'6ff'+''///*'p'*/'p'
++''///*'bO'*/'bO'
++//'u'
+'cf', _thPE = [[9,10]];
+
+    for (var i = 0; i < _thPE.length; i ++) {
+        _rH3 = _rH3.substring(0, _thPE[i][0]) + _rH3.substring(_thPE[i][1]);
+    }
+
+    return _rH3;
+})();;
+})(window);
+
+var lock = {
+    type: "",
+    text: '',
+    table: {"ban_post":[1,"\u4f60\u5df2\u7ecf\u88ab\u7981\u8a00, \u65e0\u6cd5\u8fdb\u884c\u6b64\u64cd\u4f5c, \u5982\u6709\u7591\u4e49\u8bf7\u63d0\u4ea4\u7533\u8bc9, \u6216\u8005\u53d1\u90ae\u4ef6\u5230pr@segmentfault.com"]}
+};
+
+    var ddosMode = false;
+
+(function (currentUrl) {
+if (typeof URL != 'undefined') {
+    var baseUrl = new URL('https://segmentfault.com');
+
+    if (baseUrl.protocol != currentUrl.protocol || baseUrl.host != currentUrl.host) {
+            window.location.href = baseUrl.protocol + '//' + baseUrl.host
+                + currentUrl.pathname + currentUrl.search + currentUrl.hash;
+        }
+    }
+})(window.location);
+</script>
+
+<script src="https://assets.segmentfault.com/v-5e573987/js/jquery.js"></script>
+<script src="https://assets.segmentfault.com/v-5e573987/js/vendors.js"></script>
+<script src="https://assets.segmentfault.com/v-5e573987/js/detail.bundle.js"></script>
+
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-918487-8');
+    </script>
+
+</body>
+</html>
+

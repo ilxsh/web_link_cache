@@ -1,0 +1,367 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="origin" />
+    <meta property="og:description" content="Mounting the root filesystem via NFS (nfsroot)英文原文位于inux内核源代码中的&amp;quot;Documentation/filesystems/nfs/n" />
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>通过NFS（nfsroot）启动linux系统 - kinglongmee - 博客园</title>
+    
+    <link rel="stylesheet" href="/css/blog-common.min.css?v=bY1L8C4sDM5eS-FBZ53dCHGUGiTPogsnScmdZ88QTfs" />
+    <link id="MainCss" rel="stylesheet" href="/skins/goettinsprache/bundle-goettinsprache.min.css?v=hG-gIVApAO_QSLEiBAt2kgK0oUEm467JQCyJR6nCwz8" />
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/goettinsprache/bundle-goettinsprache-mobile.min.css?v=ADiCwO2hOTdd5yYidcx7eob7ix2VJI4o_TXjEycTHjs" />
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/kinglongmee/rss" />
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/kinglongmee/rsd.xml" />
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/kinglongmee/wlwmanifest.xml" />
+    <script src="https://common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script src="/js/blog-common.min.js?v=1B-qSLIoszvzdNFrGPRF7viF6_0WvesF05bpgAW3TOs"></script>
+    <script>
+        var currentBlogId = 238459;
+        var currentBlogApp = 'kinglongmee';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+    </script>
+    
+    
+    
+</head>
+<body>
+    <a name="top"></a>
+    
+    <div id="home">
+    <div id="header">
+        <div id="blogTitle">
+            
+<div class="title"><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/kinglongmee/">分布式文件系统</a>
+</div>
+<div class="subtitle">
+金龙开源计算工作室
+</div>
+
+        </div>
+        <div id="navigator">
+            
+<ul id="navList">
+    <li id="nav_sitehome"><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+</li>
+    <li id="nav_myhome">
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/kinglongmee/">
+首页</a>
+</li>
+    <li id="nav_newpost">
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+</li>
+    <li id="nav_contact">
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/kinglongmee">
+联系</a></li>
+    <li id="nav_rss">
+<a id="blog_nav_rss" class="menu" href="https://www.cnblogs.com/kinglongmee/rss/">
+订阅</a></li>
+    <li id="nav_admin">
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+</ul>
+
+            <div class="blogStats">
+                
+<span id="stats_post_count">随笔 - 
+2&nbsp;</span>
+<span id="stats_article_count">文章 - 
+0&nbsp;</span>
+<!-- <span id="stats-comment_count"></span> -->
+<span id="stats_comment_count">评论 - 
+0</span>
+            </div>
+        </div>
+    </div>
+    <div id="main">
+        <div id="mainContent">
+            <div class="forFlow">
+                <div id="post_detail">
+    <div id="topics">
+        <div class="post">
+            <h1 class="postTitle">
+                
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/kinglongmee/p/5043656.html">通过NFS（nfsroot）启动linux系统</a>
+
+            </h1>
+            <div class="clear"></div>
+            <div class="postBody">
+                
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <p>Mounting the root filesystem via NFS (nfsroot)</p>
+<p>英文原文位于inux内核源代码中的"Documentation/filesystems/nfs/nfsroot.txt"。</p>
+<p>&nbsp;</p>
+<p><span style="line-height: 1.5;">1996年由</span><span style="line-height: 1.5;">Gero Kuhlmann &lt;gero@gkminix.han.de&gt;初次编写，</span></p>
+<p><span style="line-height: 1.5;">1997年经Martin Mares &lt;mj@atrey.karlin.mff.cuni.cz&gt;，</span></p>
+<p><span style="line-height: 1.5;">2006年经Nico Schottelius &lt;nico-kernel-nfsroot@schottelius.org&gt;和Horms &lt;horms@verge.net.au&gt;更新。</span></p>
+<p>&nbsp;</p>
+<p>为了使用一个无磁盘的系统（例如一个X终端或打印机），将根文件系统存放在非磁盘设备是必要的。它可以是通过NFS挂载的一个initramfs文件（参考Documentation/filesystems/ramfs-rootfs-initramfs.txt），或者一个ramdisk文件（参考Documentation/initrd.txt）或者一个文件系统。以下内容描述了如何通过NFS获取linux的根文件系统来启动系统。下文的客户端（'client'）表示无磁盘系统，服务器端（'server'）表示NFS服务器。</p>
+<p>1.）<strong><span style="text-decoration: underline;">启动nfsroot功能</span></strong></p>
+<p>为了使用nfsroot功能，在编译配置时，NFS客户端必须被选择为内置(built-in， 非模块)文件系统。NFS客户端被设置为内置，nfsroot选项将变为可选项，选择后才支持nfsroot功能（译者注：在没有将NFS客户端设置为内置文件系统时，nfsroot选项是不可见的）。</p>
+<p>对于网络配置选项，选择内核自动配置，以及相应的自动配置类型。将DHCP，BOOTP和RARP三种类型全部选择上是最靠谱的。</p>
+<p>2.）<strong><span style="text-decoration: underline;">内核命令行参数</span></strong></p>
+<p>当引导加载程序（bootloader）加载一个linux内核时，需要知道使用的是什么根文件设备（root fs device）。在使用nfsroot时，需要知道从哪儿获取服务器地址和可挂载为根文件的目录名。可以通过以下内核命令行参数来设置nfsroot：</p>
+<div class="cnblogs_code">
+<pre>root=/dev/nfs</pre>
+</div>
+<p>启动虚拟NFS设备（pseudo-NFS-device）所必需的参数。需要注意，/dev/nfs不是一个真实的设备，它只是一个告诉内核使用NFS功能来替换真实设备的一个符号。</p>
+<div class="cnblogs_code">
+<pre>nfsroot=[&lt;server-ip&gt;:]&lt;root-<span style="color: #0000ff;">dir</span>&gt;[,&lt;nfs-options&gt;]</pre>
+</div>
+<p>如果在内核启动命令行中没有指定'nfsroot'参数，内核将使用默认的"/tftpboot/%s"参数。</p>
+<p>&lt;server-ip&gt;&nbsp;指定NFS服务器的IP地址。默认IP地址是从'ip'参数中获取的（参见下一个参数）。该参数允许IP自动配置与NFS使用不同的服务器。</p>
+<p>&lt;root-dir&gt; 将挂载为根文件系统的服务器端目录名。如果有"%s"标记在配置字符串中，它将被ASCII表示的客户端IP地址所替代。</p>
+<p>&lt;nfs-options&gt; 规范的NFS选项。所有选项通过逗号（','）来分隔。默认使用以下配置，</p>
+<table border="0">
+<tbody>
+<tr>
+<td>port</td>
+<td>
+<p>由服务器端的端口映射进程所给定</p>
+<p>（centos7以前版本叫portmap，以后叫rpcbind）</p>
+</td>
+</tr>
+<tr>
+<td>rsize</td>
+<td>4096</td>
+</tr>
+<tr>
+<td>wsize</td>
+<td>4096</td>
+</tr>
+<tr>
+<td>timeo</td>
+<td>7</td>
+</tr>
+<tr>
+<td>retrans</td>
+<td>3</td>
+</tr>
+<tr>
+<td>acregmin</td>
+<td>3</td>
+</tr>
+<tr>
+<td>acregmax</td>
+<td>60</td>
+</tr>
+<tr>
+<td>acdirmin</td>
+<td>30</td>
+</tr>
+<tr>
+<td>acdirmax</td>
+<td>60</td>
+</tr>
+<tr>
+<td>flags</td>
+<td>hard, nointr, noposix, cto, ac</td>
+</tr>
+</tbody>
+</table>
+<div class="cnblogs_code">
+<pre>ip=&lt;client-ip&gt;:&lt;server-ip&gt;:&lt;gw-ip&gt;:&lt;netmask&gt;:&lt;<span style="color: #0000ff;">hostname</span>&gt;:&lt;device&gt;:&lt;autoconf&gt;:&lt;dns0-ip&gt;:&lt;dns1-ip&gt;</pre>
+</div>
+<p>该行参数告诉内核如何配置设备的IP地址以及如何配置IP路由表。起初被叫做'nfsaddrs'，但是现在启动时IP配置已经独立于NFS，所以被重命名为'ip'并且为了兼容性旧名称'nfsaddrs'将作为别名存在。</p>
+<p>如果没有在内核命令行参数中设置该参数，所有项将被视为空处理，所有默认值将按后面具体项中说明。通常是内核尝试自动配置所有项。</p>
+<p>其中&lt;autoconf&gt;项可以单独地存在于'ip'参数中（没有任何的':'）。如果值被设置为"ip=off"或者"ip=none"，将不会被替换成自动配置，否则会被替换为自动配置。使用得最多的设置是"ip=dhcp"。</p>
+<p>&lt;client-ip&gt; 客户端的IP地址。默认：通过自动配置获取。</p>
+<p>&lt;server-ip&gt; NFS服务器的IP地址。如果使用RARP来获取客户端地址，并且该参数不为空时所指定的服务器才会被接受。</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 只有NFS root需要该参数。如果没有设置该参数或者不是使用的NFS root，那么自动配置将不会被触发。</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 默认：通过自动配置获取。将使用用于自动配置的服务器地址。</p>
+<p>&lt;gw-ip&gt; 如果服务器位于不同的网段，那么需要通向IP地址相应的网关。默认：通过自动配置获取。</p>
+<p>&lt;netmask&gt; 本地网络设备的子网掩码。如果没有指定，设备的子网掩码将从客户端IP地址的派生地址获取。默认：通过自动配置获取。</p>
+<p>&lt;hostname&gt; 客户端名。可以通过自动配置来支持，但是如果不指定将不会触发自动配置。如果指定了该参数并且是使用的DHCP方式，用户指定的hostname将被应用于DHCP请求中进行DNS记录的更新。默认：所使用客户端IP地址的ASCII形式。</p>
+<p>&lt;device&gt; 所使用的网络设备名。默认：如果本地只有一个设备，那么将直接使用它。否则将通过自动配置决定。它将通过所有设备发送自动配置请求，然后使用最先收到回复的那个设备。</p>
+<p>&lt;autoconf&gt; 使用自动配置。如果设备了多个自动配置协议（DHCP/BOOTP/RARP），将使用所有协议都发送自动配置请求，然后使用最先收到回复的那个协议。</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;该选项中设置的协议只有被编译进内核的才能够使用。</p>
+<p><span style="line-height: 1.5;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;off或者none：不使用自动配置（使用指定的IP地址）</span></p>
+<p><span style="line-height: 1.5;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;on或者any：使用内核中任一可用的协议</span></p>
+<p><span style="line-height: 1.5;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;dhcp: 使用DHCP</span></p>
+<p><span style="line-height: 1.5;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;bootp: 使用BOOTP</span></p>
+<p><span style="line-height: 1.5;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;rarp: 使用RARP</span></p>
+<p><span style="line-height: 1.5;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;both: 使用BOOTP和RARP但不使用DHCP （为了向后兼容所保留的旧选项）</span></p>
+<p><span style="line-height: 1.5;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;如果使用dhcp协议，客户端可以按以下格式使用&ldquo;ip=dhcp,client-id-type,client-id-value&rdquo;。默认：any</span></p>
+<p><span style="line-height: 1.5;">&lt;dns0-ip&gt; IP地址的第一个命名服务器。从/proc/net/pnp（在嵌入式系统中通常链接到/et/resolv.conf）中获取导出的值。</span></p>
+<p><span style="line-height: 1.5;">&lt;dns1-ip&gt; IP地址的第二个命名服务器。同上。</span></p>
+<div class="cnblogs_code">
+<pre>nfsrootdebug</pre>
+</div>
+<p>该选项将开启内核输出调试信息。在启动时，管理员可以通过输出的信息来检查传入NFS客户端的NFS挂载选项，服务器地址和根路径等是否正确。</p>
+<div class="cnblogs_code">
+<pre>rdinit=&lt;executable <span style="color: #0000ff;">file</span>&gt;</pre>
+</div>
+<p>管理员可以通过该参数指定包含有系统初始化程序的文件名。默认值是"/init"。如果指定的文件有效，并且内核可以运行，那么根文件系统相关的内核命令行参数（包括'nfsroot='）将被忽略。</p>
+<p>[<strong>译者注</strong>] 该方法已经过时，dracut支持但不推荐使用。更多详情可参考man dracut.cmdline中关于NFS的描述。</p>
+<p>关于处理挂载根文件系统的描述可以在该文件中获得：Documentation/early-userspace/README</p>
+<p>3.)&nbsp;<span style="text-decoration: underline;"><strong>引导程序</strong></span></p>
+<p>加载内核程序到内存有很多不同的方法。主要依赖于可供选择的设施：</p>
+<p>3.1) <span style="text-decoration: underline;">使用syslinux从软盘启动</span></p>
+<p>在编译内核时，使用syslinux来创建一个可启动软盘的简单方式是，使用zdisk或者bzdisk来生成使用zimage或bzimage镜像的目标文件。两种目录文件都可以接收FDARGS参数，该参数可以用于指定内核命令行参数。例如：&nbsp;</p>
+<div class="cnblogs_code">
+<pre><span style="color: #0000ff;">make</span> bzdisk FDARGS=<span style="color: #800000;">"</span><span style="color: #800000;">root=/dev/nfs"</span></pre>
+</div>
+<p>注意，运行该命令进需要访问磁盘设备/dev/fd0。</p>
+<p>关于syslinux的更多详情以及如何创建基于磁盘的预先编译内核可参考http://syslinux.zytor.com/。</p>
+<p>注意：以前可以通过dd命令将内核直接写入到软盘，通过rdev管理启动设备，然后使用生成的软盘启动系统。linux不再支持该方法的内核启动。</p>
+<p>3.2) <span style="text-decoration: underline;">使用isolinux从cdrom启动</span></p>
+<p>当编译内核时，使用isolinux来创建一个可启动cdrom的简单方式是，使用bzimage镜像的isoimage目标文件。与zdisk和bzdisk类似，目录文件可接收FDARGS参数，该参数可以用于指定内核命令行参数。例如：</p>
+<div class="cnblogs_code">
+<pre><span style="color: #0000ff;">make</span> isoimage FDARGS=<span style="color: #800000;">"</span><span style="color: #800000;">root=/dev/nfs</span><span style="color: #800000;">"</span></pre>
+</div>
+<p>生成的iso镜像文件位于arch/&lt;ARCH&gt;/boot/image.iso。可以通过类似cdrecord的工具将iso文件写入到cdrom。例如：</p>
+<div class="cnblogs_code">
+<pre>cdrecord dev=ATAPI:<span style="color: #800080;">1</span>,<span style="color: #800080;">0</span>,<span style="color: #800080;">0</span> arch/x86/boot/image.iso</pre>
+</div>
+<p>关于isolinux的更多详细信息，以及如何创建基于磁盘的预先编译内核可参考http://syslinux.zytor.com/。</p>
+<p>3.3) <span style="text-decoration: underline;">使用LILO</span></p>
+<p>当使用LILO时，所有需要的命令行参数可以通过位于LILO配置文件中的'append='项进行设置。</p>
+<p>但是，为了使用'root='来指定内核命令行启动参数，仍然需要创建一个临时的root设备，它可以在LILO运行后被删除。</p>
+<div class="cnblogs_code">
+<pre><span style="color: #0000ff;">mknod</span> /dev/boot255 c <span style="color: #800080;">0</span> <span style="color: #800080;">255</span></pre>
+</div>
+<p>关于配置LILO的详细信息可以参考其相关的文件。</p>
+<p>3.4) <span style="text-decoration: underline;">使用GRUB</span></p>
+<p>当使用GRUB时，内核参数可以简单地添加到内核设置的后面：</p>
+<div class="cnblogs_code">
+<pre>kernel &lt;kernel&gt; &lt;parameters&gt;</pre>
+</div>
+<p>3.5) <span style="text-decoration: underline;">使用loadlin</span></p>
+<p>loadin可以用于从一个DOS命令提示符启动Linux，而不需要挂载本地磁盘作为root。虽然该方法没有经过作者的确认，但是它的配置方式应该与LILO相类似。</p>
+<p>更多详情请参考loadin的文档。</p>
+<p>3.6) <span style="text-decoration: underline;">使用启动ROM</span></p>
+<p>这可能是无磁盘启动最优雅的方式。可以使用TFTP协议来加载基于启动ROM的内核。该文档作者不知道任何支持通过网络加载linux的非商业启动ROM。但是，有启动ROM的两种自由实现，netboot-nfs和etherboot，两者都位于sunsite.unc.edu并且两者都包含了无磁盘linux客户端启动的所有信息。</p>
+<p>3.7) <span style="text-decoration: underline;">使用pxelinux</span></p>
+<p>Pxelinux可以通过PXE引导程序（众多现代网卡都包含该功能）启动linux。</p>
+<p>当使用pxelinux时，内核镜像可以通过"kernel &lt;relative-path-below /tftpboot&gt;"进行指定。nfsroot参数将通过"append"项被添加到内核中。通常使用串行控制台与pxelinux进行连接，更多详情请参考Documentation/serial-console.txt。</p>
+<p>关于pxelinux的更多详情以及如何创建基于磁盘的预先编译内核可参考http://syslinux.zytor.com/。</p>
+<p>4.) <span style="text-decoration: underline;"><strong>致谢</strong></span></p>
+<p>内核中nfsroot代码和RARP的支持已经由&nbsp;Gero Kuhlmann &lt;gero@gkminix.han.de&gt;编写完成。</p>
+<p>剩下的IP层自动配置代码已经由&nbsp;Martin Mares &lt;mj@atrey.karlin.mff.cuni.cz&gt;编写完成。</p>
+<p>为了编写最初版本的nfsroot，作者还要感谢Jens-Uwe Mager &lt;jum@anubis.han.de&gt;的帮助。</p>
+<p>&nbsp;</p>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+    <div id="blog_post_info"></div>
+    <div class="clear"></div>
+    <div id="post_next_prev"></div>
+</div>
+            </div>
+            <div class="postDesc">posted @ 
+<span id="post-date">2015-12-13 21:47</span>&nbsp;
+<a href="https://www.cnblogs.com/kinglongmee/">kinglongmee</a>&nbsp;
+阅读(<span id="post_view_count">...</span>)&nbsp;
+评论(<span id="post_comment_count">...</span>)&nbsp;
+<a href="https://i.cnblogs.com/EditPosts.aspx?postid=5043656" rel="nofollow">编辑</a>&nbsp;
+<a href="javascript:void(0)" onclick="AddToWz(5043656);return false;">收藏</a></div>
+        </div>
+<script src="https://common.cnblogs.com/highlight/9.12.0/highlight.min.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 238459, cb_blogApp = 'kinglongmee', cb_blogUserGuid = '79d486c1-b56b-df11-ba8f-001cf0cd104b';
+    var cb_entryId = 5043656, cb_entryCreatedDate = '2015-12-13 21:47', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container"></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;"></div>
+    </div>
+    <div id="under_post_news"></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;">
+            <script>
+                if (new Date() >= new Date(2018, 9, 13)) {
+                    googletag.cmd.push(function () { googletag.display("div-gpt-ad-1539008685004-0"); });
+                }
+            </script>
+        </div>
+    </div>
+    <div id="under_post_kb"></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+setTimeout(function() { incrementViewCount(cb_entryId); }, 50);        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div>    </div>
+</div>
+            </div>
+        </div>
+
+        <div id="sideBar">
+            <div id="sideBarMain">
+                
+<div id="sidebar_news" class="newsItem">
+            <script>loadBlogNews();</script>
+</div>
+
+                <div id="calendar"><div id="blog-calendar" style="display:none"></div></div>                
+                <script>loadBlogDefaultCalendar();</script>
+                <div id="leftcontentcontainer">
+                    <!-- begin:SingleColumn -->
+                    <div id="blog-sidecolumn"></div>
+                    <script>loadBlogSideColumn();</script>
+                    <!-- end:  SingleColumn -->
+                </div>
+            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <div class="clear"></div>
+    <div id="footer">
+        <!--done-->
+Copyright &copy; 2020 kinglongmee
+<br /><span id="poweredby">Powered by .NET Core on Kubernetes</span>
+
+    </div>
+</div>
+
+    
+</body>
+</html>

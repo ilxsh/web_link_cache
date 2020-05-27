@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="keywords" content="starguard,观星博客,开发笔记,观星大事件,观星科技报">
+<meta name="description" content="Starguard，观星博客，网站内容包括开发笔记，新闻分析，科技前瞻，生活随笔等">
+<meta name="author" content="Scott">
+
+<title>
+
+	systemd关机流程
+
+    
+</title>
+
+<link href="/css/bootstrap.css" rel="stylesheet">
+
+<link href="/css/font-awesome-4.2.0/css/font-awesome.css" rel="stylesheet">
+<link href="/public/upload/517/5368c1aa99c37b029d000001/themes/5dac790e56fec85c9a000006/style.css" rel="stylesheet">
+<script>
+function log(o) {
+}
+</script>
+<style>
+
+</style>
+</head>
+<body>
+
+
+<div class="clearfix">
+
+<div id="headerAndNav" >
+	<div id="headerContainer" class="container">
+		
+		<div id="header">
+		
+			
+			<h1>
+				
+				<a href="https://starguard.cn" id="logo">
+    				
+    				<div>
+    				    Starguard
+    				</div>
+				</a>
+			</h1>
+			<div id="blogDesc">
+				开发笔记
+			</div>
+		</div>
+	</div>
+	
+	
+	<div class="navbar navbar-default">
+	  <div class="container">
+	    <div class="navbar-header">
+	      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+	        <span class="sr-only">Toggle navigation</span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	      </button>
+	      <a class="navbar-brand" href="/blog/admin">
+	      	
+			Starguard
+		
+	      </a>
+	    </div>
+	    <div class="navbar-collapse collapse">
+	      <ul class="nav navbar-nav">
+	      	
+	    	<li class=""><a href="/blog/admin">全部笔记</a></li>
+		    
+		   	
+				<li class="">
+					<a href="/blog/cate/admin/Unity" 
+					>Unity</a>
+				</li>
+			
+				<li class="">
+					<a href="/blog/cate/admin/%E5%A4%A7%E8%AF%9D%E5%AD%98%E5%82%A8%E7%AC%94%E8%AE%B0" 
+					>大话存储笔记</a>
+				</li>
+			
+				<li class="">
+					<a href="/blog/cate/admin/C%E8%AF%AD%E8%A8%80-2" 
+					>C语言</a>
+				</li>
+			
+				<li class="">
+					<a href="/blog/cate/admin/MongoDB" 
+					>MongoDB</a>
+				</li>
+			
+			
+			
+			    <li class="">
+					<a href="/blog/single/admin/About-Me">About Me</a>
+				</li>
+			
+			
+			
+			<li class="">
+				<a href="/blog/archives/admin">归档</a>
+			</li>
+			<li class="">
+				<a href="/blog/tags/admin">标签</a>
+			</li>
+			
+	      </ul>
+	      <form class="navbar-form navbar-right" id="search" onsubmit="search(event);return false;">
+	      	<div class="input-group">
+			  	<span class="input-group-addon" id="searchIcon" onclick="search(event);"><i class="fa fa-search"></i></span>
+		        <input type="text" placeholder="search" id="searchInput" class="form-control" value="">
+		  	</div>
+	      </form>
+	    </div>
+	  </div>
+	</div>
+</div>
+
+<style>
+    #headerAndNav {
+        position: static;
+        float: left;
+        -webkit-box-shadow: none;
+        box-shadow: none;
+        border: none;
+        bottom: auto;
+    }
+</style>
+<div id="postsContainer">
+	<div id="posts">
+		<div class="each-post">
+			<div class="title">
+				systemd关机流程
+			</div>
+			<div class="created-time">
+				
+    			
+    			
+    			<i class="fa fa-clock-o"></i> 2020-03-02 17:22:29 
+    			&nbsp;&nbsp;
+    			<span class="fa fa-eye"></span> 40
+    			&nbsp;&nbsp;
+    			<span class="fa fa-thumbs-o-up"></span> 0
+    			&nbsp;&nbsp;
+    			<span class="fa fa-comments-o"></span> 0
+			</div>
+			
+			
+			<div class="mobile-created-time">
+			
+				<img src="/public/upload/517/5368c1aa99c37b029d000001/images/logo/f80debaad166d2b2eaaf9b2446644a6b.png" id="userLogo">
+			
+			admin
+	
+			
+			</div>
+			
+			<div class="desc" id="content">
+				
+					<div id="markdownContent" style="display: none">
+						
+						<textarea># 目录
+[TOC]
+# 关机/重启systemd依赖图
+![title](/api/file/getImage?fileId=5e5cd09056fec85509000069)
+
+* conflicts with all system services：指那些定义了Conflicts=shutdown.target和Before=shutdown.target依赖关系的服务，service单元会自动添加这些依赖，除非明确设置了DefaultDependencies=no，这些服务在shutdown.target运行之前会停止。
+* conflicts with all system mounts...：需要在shutdown过程中卸载的挂载点对应的mount单元需要添加和这个单元的冲突依赖，默认隐含设置了DefaultDependencies=yes，所以该冲突依赖隐含添加。
+
+# poweroff相关单元
+## systemd-poweroff.service
+/usr/lib/systemd/system/systemd-poweroff.service在final.target后强制poweroff：
+```
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version.
+
+[Unit]
+Description=Power-Off
+Documentation=man:systemd-halt.service(8)
+DefaultDependencies=no
+Requires=shutdown.target umount.target final.target
+After=shutdown.target umount.target final.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl --force poweroff
+```
+## poweroff.target
+* /usr/lib/systemd/system/poweroff.target需要的依赖：
+```
+$ ls poweroff.target.wants/
+plymouth-poweroff.service  systemd-update-utmp-runlevel.service
+```
+
+# 实例
+## 输入关机/重启命令后执行脚本
+例如开机时保存开机时间，驻留服务，关机时保存此次系统运行时间。
+
+* /usr/lib/systemd/system/recorduptime.service：
+```
+[Unit]
+Description=Record the time the linux runs every time
+# Before=shutdown.target
+# Conflicts=shutdown.target
+# no need to add Dependencies=yes to be conflicted with and stopped before shutdown.target unless DefaultDependencies=no is set
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/share/recorduptime.sh start 
+ExecStop=/usr/local/share/recorduptime.sh shutdown
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+```
+* /usr/local/share/recorduptime.sh：
+```
+#!/bin/sh
+upfile=/var/log/uptime.log
+
+if [ &#34;$1&#34; = &#34;start&#34; ]
+then
+    echo &#34;----------------------Before start--------------------------&#34;
+    echo &#34;`date &#34;&#43;%y%m%d %H:%M:%S&#34;` boot&#34; &gt;&gt; $upfile
+else
+    echo &#34;----------------------Before shutdown--------------------------&#34;
+    upminutes=$(uptime | cut -d&#34; &#34; -f&#34;4 5&#34; | sed &#39;s/,//&#39;)
+    echo -n `date &#34;&#43;%y%m%d %H:%M:%S&#34;` &gt;&gt; $upfile
+    echo &#34; $upminutes shutdown&#34; &gt;&gt; $upfile
+fi
+```
+* 开机启动服务：
+```
+$ systemctl start recorduptime
+$ systemctl status recorduptime # 查看是否正确
+$ systemctl enable recorduptime
+Created symlink from /etc/systemd/system/multi-user.target.wants/recorduptime.service to /usr/lib/systemd/system/recorduptime.service.
+$ find / -name recorduptime.service
+/sys/fs/cgroup/systemd/system.slice/recorduptime.service
+/etc/systemd/system/multi-user.target.wants/recorduptime.service
+/usr/lib/systemd/system/recorduptime.service
+```
+* 查看执行结果：
+```
+$ cat /var/log/uptime.log 
+200302 19:25:04 14 min shutdown
+200302 19:25:51 boot
+200302 19:26:21 0 min shutdown
+200302 19:27:07 boot
+```
+
+
+</textarea>
+					</div>
+					<div style="padding: 20px; text-align: center">
+						<img src="/public/upload/517/5368c1aa99c37b029d000001/themes/5dac790e56fec85c9a000006/images/loading-32.gif" />
+					</div>
+				
+			</div>
+			
+		    <div class="pre-next-post">
+		        <p>
+			    上一篇: <a href="/blog/post/admin/iPXE%E8%A7%A3%E6%9E%90">iPXE解析</a>
+                </p>
+                <p>
+                下一篇: <a href="/blog/post/admin/%E6%A0%91%E8%8E%93%E6%B4%BE%E9%85%8D%E7%BD%AEnextcloud%E7%A7%81%E4%BA%BA%E4%BA%91%E7%9B%98">树莓派配置nextcloud私人云盘</a>
+			    </p>
+			</div>
+			
+			
+			
+<div class="entry-controls clearfix">
+	<div class="vote-section-wrapper clearfix">
+		<button class="btn btn-default btn-zan" id="likeBtn"><i class="fa fa-thumbs-o-up"></i> <span id="likeNum">0</span> 赞</button>
+		<span class="control-item read-counts"><i class="fa fa-eye"></i> 40 人读过</span>
+	</div>
+	<div class="right-section">
+		<div id="weixinQRCode"></div>
+		<button class="btn btn-share btn-default btn-weibo"><i class="fa fa-weibo"></i> 新浪微博</button>
+		<button class="btn btn-share btn-default btn-weixin"><i class="fa fa-wechat"></i> 微信</button>
+		<div class="dropdown" style="display: inline-block; cursor: pointer; padding: 5px 10px; padding-right: 30px">
+			
+			<div class="dropdown-toggle" data-hover="dropdown" data-toggle="dropdown">
+				<i class="fa fa-ellipsis-h"></i>
+			</div>
+			<ul class="dropdown-menu" role="menu">
+				<li><a href="#" class="btn-share tencent-weibo"><i class="fa fa-tencent-weibo"></i> 腾讯微博</a></li>
+				<li><a href="#" class="btn-share qq"><i class="fa fa-qq"></i> QQ空间</a></li>
+				<li><a href="#" class="btn-share renren"><i class="fa fa-renren"></i> 人人网</a></li>
+			</ul>
+		</div>
+	</div>
+	<div class="voters clearfix" id="likers">
+	</div>
+</div>
+
+<script type="text/x-jsrender" id="tLikers">
+[[for users]]
+	<a id="liker_[[:UserId]]" title="[[:BlogTitle]]" href="[[:BlogUrl]]" target="_blank" class="voter">
+		[[if Logo]]
+			<img alt="avatar" class="avatar-small" src="[[:Logo]]">
+		[[else]]
+			<img alt="avatar" class="avatar-small" src="/images/blog/default_avatar.png">
+		[[/if]]
+	</a>
+[[/for]]
+</script>
+
+
+	
+		</div>
+	</div>
+</div>
+
+</div>
+
+<div id="footerContainer">
+	
+	<div class="container" id="footer">
+        <div class="col-md-4">
+          <h3>导航</h3>
+          <ul>
+          	<li><a href="/blog/admin">全部</a></li>
+          	
+			<li>
+				<a href="/blog/cate/admin/Unity">Unity</a>
+			</li>
+			
+			<li>
+				<a href="/blog/cate/admin/%E5%A4%A7%E8%AF%9D%E5%AD%98%E5%82%A8%E7%AC%94%E8%AE%B0">大话存储笔记</a>
+			</li>
+			
+			<li>
+				<a href="/blog/cate/admin/C%E8%AF%AD%E8%A8%80-2">C语言</a>
+			</li>
+			
+			<li>
+				<a href="/blog/cate/admin/MongoDB">MongoDB</a>
+			</li>
+			
+			
+			
+			    <li class="">
+					<a href="/blog/single/admin/About-Me">About Me</a>
+				</li>
+			
+			
+			
+			<li class="">
+				<a href="/blog/archives/admin">归档</a>
+			</li>
+			<li class="">
+				<a href="/blog/tags/admin">标签</a>
+			</li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+          <h3>最近发表</h3>
+          <ul>
+          	
+          	<li title="ESP8266开发环境搭建"><a href="/blog/post/admin/ESP12F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA">ESP8266开发环境搭建</a></li>
+          	
+          	<li title="naked函数"><a href="/blog/post/admin/naked%E5%87%BD%E6%95%B0">naked函数</a></li>
+          	
+          	<li title="Arduino ATmega328 Bootloader分析"><a href="/blog/post/admin/Arduino-ATmega328-Bootloader%E5%88%86%E6%9E%90">Arduino ATmega328 Bootloader分析</a></li>
+          	
+          	<li title="__attribute__用法"><a href="/blog/post/admin/__attribute__%E7%94%A8%E6%B3%95">__attribute__用法</a></li>
+          	
+          	<li title="Arduino ATmega8 Bootloader分析"><a href="/blog/post/admin/Arduino-Bootloader%E5%88%86%E6%9E%90">Arduino ATmega8 Bootloader分析</a></li>
+          	
+          </ul>
+       </div>
+        <div class="col-md-4">
+          <h3>友情链接 </h3>
+          <ul>
+          	
+          		
+					<li><a href="https://starguard.cn" target="_blank">Frontpage</a></li>
+          		
+					<li><a href="https://github.com/ScottL97" target="_blank">Github Home</a></li>
+          		
+          	
+		 </ul>
+        </div>
+    </div>
+    <div class="footer-leanote">
+		Copyright © <a href="https://starguard.cn">Starguard | 观星博客</a>
+		<br/>备案号：<a href="http://beian.miit.gov.cn">陇ICP备18002899号</a>
+		<br/>
+	</div>
+</div>
+<script src="/js/jquery-1.9.0.min.js"></script>
+<script src="/js/bootstrap-min.js"></script>
+<script src="https://starguard.cn/js/bootstrap-hover-dropdown.js"></script>
+<script>
+
+function search(e) {
+	var keywords = $("#searchInput").val();
+	if(!keywords) {
+		location.href = "\/blog\/search\/admin";
+	} else {
+		var tpl = '<form style="display: none" action="\/blog\/search\/admin" method="get">';
+		tpl += '<input name="keywords" value="' + keywords + '" />';
+		tpl += "</form";
+		var $tpl = $(tpl);
+		$('body').append($tpl)
+		$tpl.submit();
+		$tpl.remove(); 
+	}
+}
+</script>
+
+<link href="/js/google-code-prettify/prettify.css" type="text/css" rel="stylesheet"/>
+<script src="/js/google-code-prettify/prettify.js"></script>
+<script>
+$("pre").addClass("prettyprint linenums");
+prettyPrint();
+</script>
+
+<div id="blogNav">
+	<div id="blogNavNav">
+		<i class="fa fa-align-justify" title="文档导航"></i>
+		<span>文档导航</span>
+	</div>
+	<div id="blogNavContent">
+	</div>
+</div>
+
+
+<script>
+var siteUrl = "https:\/\/starguard.cn"; 
+
+var blogInfo={UserId: "5368c1aa99c37b029d000001", OpenComment:  false , CommentType: "default"}; 
+var noteId = "5e5ccfdc1e360d5738000000"; 
+var preLikeNum = +"0";
+var commentNum = +"0";
+</script>
+
+
+<link href="/public/blog/css/share_comment.css" rel="stylesheet">
+
+<script src="/public/blog/js/common.js"></script>
+<script src="/public/blog/js/jsrender.js"></script>
+<script src="/public/blog/js/jquery-cookie-min.js"></script>
+<script src="/public/blog/js/bootstrap-dialog.min.js"></script>
+<script src="/public/blog/js/jquery.qrcode.min.js"></script>
+
+<script src="/public/blog/js/share_comment.js"></script>
+
+
+<script src="/public/libs/md2html/md2html.js"></script>
+<script>
+var content = $.trim($("#markdownContent textarea").val());
+md2Html(content, $("#content"), function(html) {
+    $("pre").addClass("prettyprint linenums");
+    prettyPrint();
+    initNav();
+    weixin();
+});
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" dir="ltr" xml:lang="en">
+<head>
+<meta name="generator" content="HTML Tidy for HTML5 for Linux version 5.2.0" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Language" content="en" />
+<meta name="description" content="Tips for a Debian GNU/Linux System Administrator." />
+<meta name="keywords" content="Debian System Administration News, Debian Sysadmin, Linux Administration, Linux Sysadmin, Sysadmin" />
+<meta name="copyright" content="(c) 2004-2017 Debian Administration" />
+<meta name="author" content="Debian Administration" />
+<meta name="robots" content="index,follow" />
+<meta name="resource-type" content="document" />
+<meta name="classification" content="Personal" />
+<meta name="language" content="en" />
+<link rel="icon" href="/favicon.ico" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="top" title="home" href="/" />
+<link rel="stylesheet" type="text/css" href="/css/view.css" media="screen" title="Site Layout" />
+<link rel="search" title="Search" href="/about/search" />
+<link rel="alternate" title="Debian Administration RSS" href="/articles.rdf" type="application/rdf+xml" />
+<link rel="alternate" title="Atom" href="/atom.xml" type="application/atom+xml" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="canonincal" href="https://debian-administration.org/article/478/Setting_up_a_server_for_PXE_network_booting" />
+<title>Setting up a server for PXE network booting</title>
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" href="/css/jquery.socialshareprivacy.min.css" />
+<link rel="stylesheet" type="text/css" href="/css/jquery.autocomplete.css" />
+<link rel="stylesheet" type="text/css" href="/css/view.css" media="screen" title="Site Layout" />
+<script>
+<![CDATA[
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-80553159-8', 'auto');
+      ga('send', 'pageview');
+
+]]>
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js">
+</script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">
+</script>
+</head>
+<body>
+<nav class="navbar">
+<div class="container-fluid">
+<div class="navbar-header"><a class="navbar-brand pull-left" href="/"><img height="75" width="75" src="/images/logo.png" alt="logo" /></a></div>
+<ul class="nav navbar-nav">
+<li><a href="/">Home</a></li>
+<li><a href="/about/Debian%20Administration">About</a></li>
+<li><a href="/archive/">Archive</a></li>
+<li><a href="/about/FAQ">FAQ</a></li>
+<li><a href="/tag">Tags</a></li>
+</ul>
+<div style="margin-left: 2em" class="nav navbar-nav navbar-right">
+<form class="navbar-form navbar-left" role="search" action="/search/" method="post">
+<div class="form-group"><input type="hidden" name="mode" value="article_search" /><input type="text" name="q" class="form-control" placeholder="Search.." /></div>
+<button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search">&nbsp;</span></button></form>
+</div>
+</div>
+</nav>
+<p>&nbsp;</p>
+<div class="container-fluid">
+<div class="row">
+<div class="col-md-1"></div>
+<div class="col-md-9">
+<div class="alert alert-danger">This site is <a href="/article/730/This_site_is_going_to_go_read-only">now 100% read-only</a>, and retired.</div>
+<script type="text/javascript" src="/js/jquery.socialshareprivacy.min.js">
+</script>
+<script type="text/javascript">
+  <!--//--><![CDATA[//><!--
+$.fn.socialSharePrivacy.settings.path_prefix = '/';
+
+$(function() {
+     $('.share').socialSharePrivacy();
+});
+  //--><!]]>
+</script>
+<div class="article">
+<h2 class="title">Setting up a server for PXE network booting</h2>
+<div class="tagline">
+<p>Posted by <a href="/users/Steve">Steve</a> on Fri 22 Dec 2006 at 09:18</p>
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+function addTag(url)
+{
+    $("#current_tags").load( url,
+                             function() {
+                                 $("#new_tag").val( "" )
+                                 $("#add_tag").hide()
+                             })
+}
+
+$(document).ready(function(){
+    $.getScript("/js/jquery.autocomplete.js", function() {
+
+        $("#new_tag").autocomplete("/ajax/complete");
+        $('a#toggle').click(function() {
+            $('#add_tag').toggle(400);
+        })
+    });
+});
+//]]>
+</script>
+<div class="tags"><span id="current_tags">Tags: <a href="/tag/boot" title="Find more content with this tag" rel="tag">boot</a>, <a href="/tag/debian%20packages" title="Find more content with this tag" rel="tag">debian packages</a>, <a href="/tag/dhcp" title="Find more content with this tag" rel="tag">dhcp</a>, <a href="/tag/dnsmasq" title="Find more content with this tag" rel="tag">dnsmasq</a>, <a href="/tag/etch" title="Find more content with this tag" rel="tag">etch</a>, <a href="/tag/network%20booting" title="Find more content with this tag" rel="tag">network booting</a>, <a href="/tag/pxe" title="Find more content with this tag" rel="tag">pxe</a></span></div>
+
+<p>If you're looking to perform a lot of system recovery, or system installation, then network booting with PXE is ideal. PXE allows you to boot up a system and have it automatically get an IP address via DHCP and start booting a kernel over the network.</p>
+<p>PXE itself stands for "Pre-boot eXecution Environment", which describes how it works in the sense that the clients using it haven't booted in a traditional manner.</p>
+<p>In order to use PXE you need to setup a boot-server which will allow client systems to :</p>
+<ul>
+<li>Request an IP address (via <abbr title="Dynamic Host Control Protocol">DHCP</abbr>)</li>
+<li>Download a kernel (via <abbr title="Trivial File Transfer Protocol">TFTP</abbr>)</li>
+</ul>
+<p>With both of these services in place any system which supports PXE/network-booting (you might need to enable it in the BIOS) should be able to gain an IP address, fetch a kernel, and boot without an installed operating system.</p>
+<p>(This is ideal for systems which can't be booted by a traditional approach; for example your new AMD-64 system which doesn't have a CD/DVD drive!)</p>
+<b>Our Setup</b>
+<blockquote>
+<p>For the purposes of this article we'll assume:</p>
+<ul>
+<li>We're working with a small network 192.168.1.0/24</li>
+<li>We'll allow all local machines to boot and get an IP address via DHCP from the range 196.168.1.70-192.168.1.100</li>
+<li>Our "boot-server" is the host "itchy" with IP address 192.168.1.50</li>
+<li>We will serve the same kernel to each host.</li>
+</ul>
+<p>In our example we'll configure a PXE-server which will allow remote systems to run the Debian Etch installer, but nothing here is specific to that. PXE allows you to configure a system to boot from an arbitrary kernel (and matching ramdisk if you wish to use one). With the correct configuration you can even cause the clients to mount a remote file-system via NFS and have a diskless thin-client system.</p>
+</blockquote>
+<b>TFTP Setup</b>
+<blockquote>
+<p>TFTP is a very simple file-transfer protocol, which is very similar to FTP but which doesn't use any kind of authentication. If you're not already running a TFTP server you can install one by running:</p>
+<pre>
+root@itchy:~# apt-get install tftpd-hpa
+</pre>
+<p>Once installed you'll need to enable it by editing the file <tt>/etc/default/tftpd-hpa</tt>. You should change <tt>RUN_DAEMON</tt> to yes, leaving you with contents like these:</p>
+<pre>
+#Defaults for tftpd-hpa
+RUN_DAEMON="yes"
+OPTIONS="-l -s /var/lib/tftpboot"
+</pre>
+<p>Now create the root directory, if it is missing, and start the server:</p>
+<pre>
+root@itchy:~# mkdir -p /var/lib/tftpboot
+root@itchy:~# /etc/init.d/tftpd-hpa start
+Starting HPA's tftpd: in.tftpd.
+</pre>
+<p>Once our systems have retrieved an IP address via DHCP they will request files from beneath the <tt>/var/lib/tftpboot</tt> root directory. We'll come back to the contents of this directory shortly.</p>
+</blockquote>
+<b>DHCP Setup</b>
+<blockquote>
+<p>If you don't already have a DHCP server configured upon your LAN you'll need to install one. If you're using a small home router, or similar, to provide local DHCP services you <b>must</b> disable this first. (Since we require the DHCP server to pass back some extra options to clients which the majority of routers won't allow).</p>
+<p>Discussing a full DHCP installation is mostly beyond the scope of this introduction but the thing we're trying to do is fairly simple. The goal of the DHCP server in this setup is twofold:</p>
+<ul>
+<li>We obviously want to use it to allow clients to request and receive an IP address.</li>
+<li>We want to cause the DHCP "answer" to give some extra details to the clients which are requesting an address:
+<ul>
+<li>The address of the TFTP server.</li>
+<li>The initial filename to request from the TFTP server.</li>
+</ul>
+</li>
+</ul>
+<p>The most common DHCP server is <a href="https://packages.debian.org/dhcp3-server">the dhcp-server package</a>, and you can install this by running:</p>
+<pre>
+root@itchy:~# apt-get install dhcp3-server
+</pre>
+<p>Once installed the server is configured in the file <tt>/etc/dhcp3/dhcpd.conf</tt>, and there are a lot of available options described there. For our example we'll use the following configuration:</p>
+<pre>
+option domain-name-servers 62.31.64.39, 62.31.112.39;
+default-lease-time 86400;
+max-lease-time 604800;
+authoritative;
+
+subnet 192.168.1.0 netmask 255.255.255.0 {
+        range 192.168.1.70 192.168.1.100;
+        filename "pxelinux.0";
+        next-server 192.168.1.50;
+        option subnet-mask 255.255.255.0;
+        option broadcast-address 192.168.1.255;
+        option routers 192.168.1.1;
+}
+</pre>
+<p>Here we've configured the server to give out IP addresses from the range 192.168.1.70-100, set the default gateway to be 192.168.1.1 and use our ISP's nameservers.</p>
+<p>We've also used <tt>next-server</tt> to point to the TFTP server we're using (which is the same host as our DHCP server, but doesn't need to be). We've chosen the default name of <tt>pxelinux.0</tt> as the name of the file for booting clients to request.</p>
+<p><b>Using <tt>dnsmasq</tt> instead</b></p>
+<p>Personally I use the <a href="https://packages.debian.org/dnsmasq">dnsmasq</a> package to provide DHCP services upon my LAN, since this is small and simple and provides other useful abilities, setting up PXE booting with <tt>dnsmasq</tt> just requires the addition of the following line to <tt>/etc/dnsmasq.conf</tt>:</p>
+<pre>
+dhcp-boot=pxelinux.0,itchy,192.168.1.50
+</pre>
+<p>(Again we've setup the filename along with the name and IP address of the TFTP server which is "itchy" / 192.168.1.50 in this example)</p>
+<p>Restarting the service after this change is as simple as:</p>
+<pre>
+root@itchy:~# /etc/init.d/dnsmasq restart
+Restarting DNS forwarder and DHCP server: dnsmasq.
+</pre></blockquote>
+<b>PXE Configuration</b>
+<blockquote>
+<p>Now that we've configured the TFTP and DHCP servers we need to go back and complete the configuration. By default when a client boots up it will use its own MAC address to specify which configuration file to read - however after trying several options it will fall back to requesting a <tt>default</tt> file.</p>
+<p>We need to create that that file, which will contain the list of kernels which are available to boot, we'll firstly need to create a directory to hold it:</p>
+<pre>
+root@itchy:~# mkdir /var/lib/tftpboot/pxelinux.cfg
+</pre>
+<p>Now save the following as <tt>/var/lib/tftpboot/pxelinux.cfg/default</tt>:</p>
+<pre>
+DISPLAY boot.txt
+
+DEFAULT etch_i386_install
+
+LABEL etch_i386_install
+        kernel debian/etch/i386/linux
+        append vga=normal initrd=debian/etch/i386/initrd.gz  --
+LABEL etch_i386_linux
+        kernel debian/etch/i386/linux
+        append vga=normal initrd=debian/etch/i386/initrd.gz  --
+
+LABEL etch_i386_expert
+        kernel debian/etch/i386/linux
+        append priority=low vga=normal initrd=debian/etch/i386/initrd.gz  --
+
+LABEL etch_i386_rescue
+        kernel debian/etch/i386/linux
+        append vga=normal initrd=debian/etch/i386/initrd.gz  rescue/enable=true --
+
+PROMPT 1
+TIMEOUT 0
+</pre>
+<p>This file instructs the client to display the contents of the file <tt>boot.txt</tt> so create that too:</p>
+<pre>
+- Boot Menu -
+=============
+
+etch_i386_install
+etch_i386_linux
+etch_i386_expert
+etch_i386_rescue
+</pre>
+<p>The only remaining job is to download the official Etch installer kernel and associated files and save them in the directories specified in the <tt>default</tt> file we created:</p>
+<pre>
+root@itchy:~# cd /var/lib/tftpboot/
+root@itchy:~# wget <a href="http://ftp.uk.debian.org/debian/dists/etch/main/installer-i386/current/images/netboot/debian-installer/i386/pxelinux.0" rel="nofollow">http://ftp.uk.debian.org/debian/dists/etch/main/installer-i386/current/images/netboot/debian-installer/i386/pxelinux.0</a>
+
+root@itchy:~# mkdir -p /var/lib/tftpboot/debian/etch/i386
+root@itchy:~# cd /var/lib/tftpboot/debian/etch/i386
+root@itchy:~# wget <a href="http://ftp.uk.debian.org/debian/dists/etch/main/installer-i386/current/images/netboot/debian-installer/i386/linux" rel="nofollow">http://ftp.uk.debian.org/debian/dists/etch/main/installer-i386/current/images/netboot/debian-installer/i386/linux</a>
+root@itchy:~# wget <a href="http://ftp.uk.debian.org/debian/dists/etch/main/installer-i386/current/images/netboot/debian-installer/i386/initrd.gz" rel="nofollow">http://ftp.uk.debian.org/debian/dists/etch/main/installer-i386/current/images/netboot/debian-installer/i386/initrd.gz</a>
+</pre>
+<p>When these commands have been completed we'll have the following structure:</p>
+<pre>
+root@itchy:~# tree /var/lib/tftpboot/
+/var/lib/tftpboot/
+|-- boot.txt
+|-- debian
+|   `-- etch
+|       `-- i386
+|           |-- initrd.gz
+|           `-- linux
+|-- pxelinux.0
+`-- pxelinux.cfg
+    `-- default
+
+4 directories, 5 files
+</pre>
+<p>(We only used <tt>debian/etch</tt> here in case we want to offer other installers in the future. You can put everything in one directory if you wish, just update <tt>pxelinux.cfg/default</tt> to match.)</p>
+<p>We should now be ready to test the setup.</p>
+<p>We've installed a <tt>pxelinux.0</tt> file which will instruct booting clients to request <tt>pxelinux.cfg/default</tt>. This will then make a list of boot options available, which are displayed by the simple boot menu file we created.</p>
+<p>The files which are used for booting are stored beneath the TFTP root directory and thus accessible to booting clients.</p>
+</blockquote>
+<b>Sample Run</b>
+<blockquote>
+<p>A sample remote boot looks like this:</p>
+<pre>
+PXE entry point found (we hope) at 9AE5:00D6
+My IP address seems to be C0A80146 192.168.1.70
+FTFTP prefix:
+Trying to load: pxelinux.cfg/01-00-14-22-a1-53-85
+Trying to load: pxelinux.cfg/C0A80146
+Trying to load: pxelinux.cfg/C0A8014
+Trying to load: pxelinux.cfg/C0A801
+Trying to load: pxelinux.cfg/C0A80
+Trying to load: pxelinux.cfg/C0A8
+Trying to load: pxelinux.cfg/C0A
+Trying to load: pxelinux.cfg/C0
+Trying to load: pxelinux.cfg/C
+Trying to load: pxelinux.cfg/default
+- Boot Menu -
+=============
+
+etch_i386_install
+etch_i386_linux
+etch_i386_expert
+etch_i386_rescue
+</pre>
+<p>As you can see the system here attempted to load several configuration files, based upon its MAC address (01-00-14-22-a1-53-85) initially then falling back to the octets in the IP address it was given by DHCP (192.167.1.70).</p>
+<p>Finally it managed to load a working configuration using the last-chance <tt>default</tt> file we created. This in turn instructed it to show the boot menu we created.</p>
+<p>From here on the system will boot into whichever kernel you specify. (We could configure the system to timeout here and just boot into a default option, but we didn't.)</p>
+</blockquote>
+<p>From here on you should understand how PXE can be used to boot an arbitrary kernel and initial ramdisk. Later we'll look at mounting a remote file-system over NFS to provide a diskless thin-client.</p>
+<div style="text-align: right;"></div>
+<div class="navigation">
+<p>&nbsp;</p>
+<nav>
+<ul class="pager">
+<li class="previous"><a href="/article/477/Discovering_new_Debian_packages">&lt;&lt;&lt; Discovering new Debian packages</a></li>
+<li class="next"><a href="/article/479/Setting_up_a_Tor_server">Setting up a Tor server &gt;&gt;&gt;</a></li>
+</ul>
+</nav>
+</div>
+</div>
+<p>&nbsp;</p>
+<div class="share"></div>
+<p>&nbsp;</p>
+<div class="advert">
+<center>
+<script async="async" src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js">
+</script> <ins class="adsbygoogle" style="display:block" data-ad-format="autorelaxed" data-ad-client="ca-pub-1910202134166551" data-ad-slot="6097394608"></ins>
+<script>
+<![CDATA[
+     (adsbygoogle = window.adsbygoogle || []).push({});
+]]>
+</script></center>
+</div>
+<hr />
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_5">#</a></div>
+<div class="title" id="comment_5">If you own a Router which can handle the dd-wrt firmware...</div>
+<div class="tagline">Posted by <a href="/users/dopehouse">dopehouse</a> (84.131.xx.xx) on Fri 22 Dec 2006 at 13:11<br /></div>
+<div class="body">If you own a Router which can handle the dd-wrt firmware you don't have to disable the dhcp service in the router. Just open the 'Administration'-&gt;'Services' tab and enable 'DNSMasq' and in the 'Additional DNS Options' input field enter '<b>dhcp-boot=pxelinux.0,<i>tfptd-hostname</i>,<i>tftpd-ip</i></b>'. Replace <b><i>tfptd-hostname</i></b> with the hostname of your tftpd machine and <b><i>tftpd-ip</i></b> with the ip-address of you tfptd. Thats all. Nice articel. Can't wait until the next comes out, which handles the PXE and NFS-Root. ;)</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_18">#</a></div>
+<div class="title" id="comment_18">Re: If you own a Router which can handle the dd-wrt firmware...</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (69.219.xx.xx) on Sat 7 Jul 2007 at 22:52<br /></div>
+<div class="body">THANK YOU FOR THE TIP - you saved my bacon!</div>
+<p class="foot">[ <a href="#comment_5">Parent</a> ]</p>
+</div>
+</div>
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_62">#</a></div>
+<div class="title" id="comment_62">Re: If you own a Router which can handle the dd-wrt firmware...</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (71.65.xx.xx) on Sun 8 Aug 2010 at 19:27<br /></div>
+<div class="body">Thank you, years later this still helped greatly.</div>
+<p class="foot">[ <a href="#comment_5">Parent</a> ]</p>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_63">#</a></div>
+<div class="title" id="comment_63">Re: If you own a Router which can handle the dd-wrt firmware...</div>
+<div class="tagline">Posted by <a href="/users/dopehouse">dopehouse</a> (92.226.xx.xx) on Sun 8 Aug 2010 at 21:38<br /></div>
+<div class="body">Maybe this helps you and other, who try to use gpxe with the DD-WRT integrated DHCPd. If you want to use http or one of the other supported boot sources, this could be helpful. Instead of just pointing to the pxelinux.0 file, specify the URI and insert the dhcp-no-override command, as shown in the code below.
+<pre>
+#dhcp-boot=/pxelinux.0,"192.168.0.2",192.168.0.2
+dhcp-no-override
+dhcp-boot=<a href="http://www.example.com/pxelinux.0" rel="nofollow"></a><a href="http://www.example.com/pxelinux.0" rel="nofollow">http://www.example.com/pxelinux.0</a>,"192.168.0.2",192.168.0.2
+</pre></div>
+<p class="foot">[ <a href="#comment_62">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_7">#</a></div>
+<div class="title" id="comment_7">semicolon missing in /etc/dhcp3/dhcpd.conf</div>
+<div class="tagline">Posted by <a href="/users/xrat">xrat</a> (128.130.xx.xx) on Tue 9 Jan 2007 at 11:20<br /></div>
+<div class="body">Hi folks, there is a typo in the code for /etc/dhcp3/dhcpd.conf. There should be a <strong>;</strong> (semicolon) at the end of
+<pre>next-server 192.168.1.50</pre>
+HTH,<br />
+-- <a href="https://amaryllis-a-day.blogspot.com/" rel="nofollow">Andreas</a></div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_8">#</a></div>
+<div class="title" id="comment_8">Re: semicolon missing in /etc/dhcp3/dhcpd.conf</div>
+<div class="tagline">Posted by <a href="/users/Steve">Steve</a> (80.68.xx.xx) on Tue 9 Jan 2007 at 11:23<br />
+[ <a href="/users/Steve/weblog">View Weblogs</a> ]</div>
+<div class="body">
+<p>Thanks for the report - I've updated the article text now.</p>
+<p>Well spotted!</p>
+<p><a href="http://www.steve.org.uk/">Steve</a></p>
+</div>
+<p class="foot">[ <a href="#comment_7">Parent</a> ]</p>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_9">#</a></div>
+<div class="title" id="comment_9">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Petzolinni">Petzolinni</a> (212.190.xx.xx) on Wed 24 Jan 2007 at 13:47<br /></div>
+<div class="body">a little typo I think.<br />
+<br />
+root@itchy:~# mkdir -p /var/lib/tftpboot/debian/etch/i386<br />
+root@itchy:~# cd /var/lib/tftpboot/pxelinux.cfg/etch/i386<br />
+<br />
+first you create a directory and then you cd to another?<br />
+Shouldn't the last line be?<br />
+<br />
+root@itchy:~# cd /var/lib/tftpboot/debian/etch/i386<br />
+<br />
+or am I missing something here?<br /></div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_10">#</a></div>
+<div class="title" id="comment_10">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Steve">Steve</a> (80.68.xx.xx) on Wed 24 Jan 2007 at 13:50<br />
+[ <a href="/users/Steve/weblog">View Weblogs</a> ]</div>
+<div class="body">
+<p>Yes it should, thanks. I've updated the text now.</p>
+<p>Well spotted!</p>
+<p><a href="http://www.steve.org.uk/">Steve</a></p>
+</div>
+<p class="foot">[ <a href="#comment_9">Parent</a> ]</p>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_11">#</a></div>
+<div class="title" id="comment_11">Behind a router</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (200.104.xx.xx) on Fri 2 Feb 2007 at 03:59<br /></div>
+<div class="body">Is it possible to have a TFTP/DHCP server behind a home router? I've found an article in etherboot's wiki which says that it can be done by disabling the DHCP server on the router in a certain range of IP addresses and then setting up correctly the LAN server, not-authoritative. I guess it is possible to do it with PXE since the router won't do anything about it and there's no difference in the contents of the transmitted paquets for the router, since it doesn't handle them (not further that broadcasting them, i guess). Here is the links to the full article: <a href="http://www.etherboot.org/wiki/twodhcpservers?DokuWiki=4bf2b378a7d1d85b1c807454e477ae18" rel="nofollow">http://www.etherboot.org/wiki/twodhcpservers?DokuWiki=4bf2b378a7d 1d85b1c807454e477ae18</a><br /></div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_12">#</a></div>
+<div class="title" id="comment_12">Re: Behind a router</div>
+<div class="tagline">Posted by <a href="/users/Steve">Steve</a> (80.68.xx.xx) on Fri 2 Feb 2007 at 09:19<br />
+[ <a href="/users/Steve/weblog">View Weblogs</a> ]</div>
+<div class="body">
+<p>My impression was that this wouldn't work since the bootloader users TFTP to transfer files - and that uses <tt>udp</tt> which the router wouldn't forward ...</p>
+<p><a href="http://www.steve.org.uk/">Steve</a></p>
+</div>
+<p class="foot">[ <a href="#comment_11">Parent</a> ]</p>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_14">#</a></div>
+<div class="title" id="comment_14">Wrong IP addresses range?</div>
+<div class="tagline">Posted by <a href="/users/acacs">acacs</a> (201.32.xx.xx) on Fri 2 Mar 2007 at 15:07<br /></div>
+<div class="body">Hi.<br />
+<br />
+Shouldn't the line "range 192.168.0.70 192.168.0.100;" be "range 192.168.1.70 192.168.1.100;"?</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_15">#</a></div>
+<div class="title" id="comment_15">Re: Wrong IP addresses range?</div>
+<div class="tagline">Posted by <a href="/users/Steve">Steve</a> (80.68.xx.xx) on Fri 2 Mar 2007 at 15:21<br />
+[ <a href="/users/Steve/weblog">View Weblogs</a> ]</div>
+<div class="body">
+<p>D'oh!</p>
+<p>Yes, they should. Thanks!</p>
+<p><a href="http://www.steve.org.uk/" rel="nofollow">Steve</a></p>
+</div>
+<p class="foot">[ <a href="#comment_14">Parent</a> ]</p>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_16">#</a></div>
+<div class="title" id="comment_16">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/sergi_mb">sergi_mb</a> (80.102.xx.xx) on Fri 9 Mar 2007 at 22:24<br /></div>
+<div class="body">Thanks for the article!<br />
+Very useful for me and my project involving <a href="http://thinstation.sourceforge.net/wiki/index.php/ThIndex" rel="nofollow">Thinstation</a>.<br />
+<br />
+One extra point: dnsmasq is also TFTP capable since version 2.36. You only need to add these lines in dnsmasq.conf<br />
+<br />
+<code>enable-tftp<br />
+tftp-root=/var/lib/tfptboot</code></div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_17">#</a></div>
+<div class="title" id="comment_17">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Steve">Steve</a> (62.30.xx.xx) on Sat 10 Mar 2007 at 00:52<br />
+[ <a href="/users/Steve/weblog">View Weblogs</a> ]</div>
+<div class="body">
+<p>Very useful to know, thanks a lot!</p>
+<p><a href="http://www.steve.org.uk/" rel="nofollow">Steve</a></p>
+</div>
+<p class="foot">[ <a href="#comment_16">Parent</a> ]</p>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_20">#</a></div>
+<div class="title" id="comment_20">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (212.44.xx.xx) on Mon 1 Oct 2007 at 15:59<br /></div>
+<div class="body">Can't post a comment as I'm not logged in - but thanks - this was great.<br />
+<br />
+I did however end up with boot.txt in the wrong directory following the instructions - it took me a while to spot it in the directory structure diagram.<br />
+<br />
+Might be good to explicitly specify dropping a dir before creating boot.txt.<br />
+<br />
+But it works pretty fast ;)</div>
+<p class="foot">[ <a href="#comment_17">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_19">#</a></div>
+<div class="title" id="comment_19">PXE boot bootable iso</div>
+<div class="tagline">Posted by <a href="/users/namit">namit</a> (83.70.xx.xx) on Sun 15 Jul 2007 at 01:54<br /></div>
+<div class="body">Is there any way of pxe booting a windows xp boot cd?<br />
+<br />
+or<br />
+<br />
+How can you create your own distro with your own stuff on it (for recovery purpose) and boot up with that image?<br /></div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_22">#</a></div>
+<div class="title" id="comment_22">Re: PXE boot bootable iso</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (98.199.xx.xx) on Mon 5 Nov 2007 at 04:48<br /></div>
+<div class="body">I too would like to know how to PXE boot regular cdrom ISO files. This tutorial tells us to download the debian netboot files, but what if I wanted to use the debian i386 cd (or dvd) binary? I have about 30 ISO's for a lot of different OS's (Linux, BSD, &amp; Windows) and I am tired of having to reburn CDs and DVDs due to lost/scratched cd/dvd medium...<br />
+<br />
+I have read that it is not possible to directly load a cdrom ISO because its in their nature to communicate directly ith the hardware, but is there some other way around it? Like, if I PXE boot to some virtualized mini OS, then have this load up the cdrom ISO's. Maybe something totally different from that, I'm not really sure where to look anymore, and I've been looking for nearly 15 man hours (seriously).<br />
+<br />
+Any help would be greatly appreciated!</div>
+<p class="foot">[ <a href="#comment_19">Parent</a> ]</p>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_26">#</a></div>
+<div class="title" id="comment_26">Re: PXE boot bootable iso</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (75.68.xx.xx) on Tue 4 Mar 2008 at 04:18<br /></div>
+<div class="body">You can get an image file called "memdisk". A google search should help you out. Then you can use something like this in your pxelinux.cfg directory with the IP of the server, MAC address, or default for all to boot:<br />
+<br />
+# Update BIOS via ISO image<br />
+DEFAULT dos<br />
+LABEL dos<br />
+KERNEL memdisk<br />
+append initrd=cdrom.img<br />
+<br />
+<br />
+The cdrom.img filename is just the ISO renamed.<br />
+I use this to network boot firmware update CDs, BMC config CDs, etc. for a Linux cluster. Works great for remote administration. As long as the KVM or serial port is behaving there's no reason to be physically present. :-)</div>
+<p class="foot">[ <a href="#comment_22">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_49">#</a></div>
+<div class="title" id="comment_49">Re: PXE boot bootable iso</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (216.228.xx.xx) on Tue 3 Feb 2009 at 01:44<br /></div>
+<div class="body">Did you have to resize the firmware CD? Have you ever done it with an HP Firmware CD 8.20? When trying to load the CD via PXE, it says:<br />
+<br />
+Memdisk: Image seems to have fractional end cylinder<br />
+Memdisk: Image appears to be truncated<br />
+<br />
+The iso is fine with no issues. Does memdisk have some kind of limit to what it can load? This is a 500MB iso. Or maybe I have to specify options?</div>
+<p class="foot">[ <a href="#comment_26">Parent</a> ]</p>
+</div>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_59">#</a></div>
+<div class="title" id="comment_59">Re: PXE boot bootable iso</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (207.71.xx.xx) on Sat 22 May 2010 at 10:45<br /></div>
+<div class="body">Memdisk won't be able to read the ISO from any kernel that runs in protected mode.<br />
+<br />
+From <a href="http://syslinux.zytor.com/wiki/index.php/MEMDISK#ISO_images" rel="nofollow"></a><a href="http://syslinux.zytor.com/wiki/index.php/MEMDISK#ISO_images" rel="nofollow">http://syslinux.zytor.com/wiki/index.php/MEMDISK#ISO_images</a> :<br />
+<br />
+"The majority of Linux based CD images will also fail to work with MEMDISK ISO emulation. Linux distributions require kernel and initrd files to be specified, as soon as these files are loaded the protected mode kernel driver(s) take control and the virtual CD will no longer be accessible."</div>
+<p class="foot">[ <a href="#comment_49">Parent</a> ]</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_74">#</a></div>
+<div class="title" id="comment_74">Re: PXE boot bootable iso</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (59.90.xx.xx) on Wed 16 Nov 2011 at 09:27<br /></div>
+<div class="body">Hi intellectuals...<br />
+I have done with the PXE installation of Ubuntu...<br />
+Now its my actual time to make PXE booting possible for Windows flavors ,<br />
+Can any one please suggest me " how to install windows images make possible with PXE server".<br />
+And PXE server platform must be linux only ...<br />
+<br />
+I have installed tftpd-hpa , dhcp3-server , nfs-kernel-server , samba server...<br />
+And my pxelinu.cfg/default file :<br />
+<br />
+DEFAULT menu.c32<br />
+label winxp<br />
+KERNEL memdisk<br />
+APPEND initrd=winxp.img<br />
+<br />
+I have copied the files memdisk &amp; winxp.img( actual boot cd)...<br />
+<br />
+Please suggest me some articles about PXE booting windows.<br />
+<br />
+Thanks in advance,<br />
+David john</div>
+<p class="foot">[ <a href="#comment_26">Parent</a> ]</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_21">#</a></div>
+<div class="title" id="comment_21">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (84.215.xx.xx) on Sun 21 Oct 2007 at 15:10<br /></div>
+<div class="body">I have a problem where the computer boots but cant find the nfs-server.<br />
+I can easly mount the nfs if I use the mount-command on a running computer though.<br />
+<br />
+I have a gateway that only runs the dhcpserver, and then I have another computer that runs the rest.<br />
+<br />
+Debian install iso, memtest and the debian boots up perfectly but I cant get the nfs-support to work properly, and for that reason it doesn´t really work.<br />
+<br />
+<br />
+Has anyone else had the same problem?<br />
+I can mount the nfs with any ip on the subnet.<br />
+<br /></div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_23">#</a></div>
+<div class="title" id="comment_23">... and general way</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (212.98.xx.xx) on Fri 9 Nov 2007 at 15:29<br /></div>
+<div class="body">Hello.<br />
+Here is much more simple:<br />
+<br />
+<br />
+#cd /var/lib/tftpboot/<br />
+#wget <a href="http://http.us.debian.org/debian/dists/etch/main/installer-i386/current/images/netboot/netboot.tar.gz" rel="nofollow"></a><a href="http://http.us.debian.org/debian/dists/etch/main/installer-i386/current/images/netboot/netboot.tar.gz" rel="nofollow">http://http.us.debian.org/debian/dists/etch/main/installer-i386/c urrent/images/netboot/netboot.tar.gz</a><br />
+#tar xzvf netboot.tar.gz<br />
+<br />
+<br />
+after this without any manual files editing you will get standard Debian install splash screen which will install Etch.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_24">#</a></div>
+<div class="title" id="comment_24">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (195.184.xx.xx) on Wed 19 Dec 2007 at 09:38<br /></div>
+<div class="body">Very good work - very easy to understand description which works very well. Thank you so much.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_25">#</a></div>
+<div class="title" id="comment_25">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (84.215.xx.xx) on Sat 12 Jan 2008 at 18:53<br /></div>
+<div class="body">Hey<br />
+<br />
+Great article. Saw two more typos though.<br />
+<br />
+This:<br />
+"As you can see the system here attempted to load several configuration files, based upon its MAC address (01-00-14-22-a1-53-85) initially then falling back to the octets in the IP address it was given by DHCP (192.167.1.70)." should probably have the IP adress 192.168.1.170 and not 192.167.1.70.<br />
+<br />
+And this:<br />
+We'll allow all local machines to boot and get an IP address via DHCP from the range 196.168.1.70-192.168.1.100"<br />
+<br />
+Should probably have the IP adress range 192.168.1.170-192.168.1.100 and not 196.168.1.70-192.168.1.100.<br />
+<br />
+Keep up the good work with the articles :)</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_27">#</a></div>
+<div class="title" id="comment_27">DHCP does not work for me</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (76.199.xx.xx) on Wed 19 Mar 2008 at 20:28<br /></div>
+<div class="body">Am having a problem getting the dhcp to work... when i try to run it i get "Starting DHCP server: dhcpd3 failed to start - check syslog for diagnostics."<br />
+<br />
+here is the syslog<br />
+"<br />
+dhcpd: Wrote 2 leases to leases file.<br />
+dhcpd: No subnet declaration for eth0 (0.0.0.0).<br />
+dhcpd: ** Ignoring requests on eth0. If this is not what<br />
+dhcpd: you want, please write a subnet declaration<br />
+dhcpd: in your dhcpd.conf file for the network segment<br />
+dhcpd: to which interface eth0 is attached. **<br />
+dhcpd: Not configured to listen on any interfaces!<br />
+"</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_28">#</a></div>
+<div class="title" id="comment_28">Changes in syslinux =&gt;3.31</div>
+<div class="tagline">Posted by <a href="/users/andmalc">andmalc</a> (24.226.xx.xx) on Thu 17 Apr 2008 at 00:18<br /></div>
+<div class="body">If you're running Lenny read menu.txt.gz in /usr/share/doc/syslinux.<br />
+<br />
+In addition to pxelinux.0, you must also copy "menu.c32" from /usr/lib/syslinux into "/var/lib/tftpboot" and add "DEFAULT menu.c32" to top of menu. This is a recent change as of Syslinux 3.31 and not shown in most examples on the net (and not even in an April 2008 Linux Journal story on PXE menus.)</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_29">#</a></div>
+<div class="title" id="comment_29">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/kroshka">kroshka</a> (66.253.xx.xx) on Mon 16 Jun 2008 at 23:59<br />
+[ <a href="/users/kroshka/weblog">View Weblogs</a> ]</div>
+<div class="body">Given <a href="https://www.iana.org/assignments/bootp-dhcp-parameters" rel="nofollow">bootp-dhcp-parameters</a> ,what option numbers do <b>filename "pxelinux.0"</b> and <b>next-server 192.168.1.50;</b> correspond to?
+<p>I have tried a few, such as <b>67 Bootfile-Name</b> and <b>150 TFTP server address</b> without luck. I'm trying to configure our sonicwall 2040 dhcp server to work with this.</p>
+<p>Thanks</p>
+</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_44">#</a></div>
+<div class="title" id="comment_44">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (203.58.xx.xx) on Thu 11 Dec 2008 at 00:49<br /></div>
+<div class="body">Hi,<br />
+<br />
+Did you ever getting the SonicWall 2040 DHCP working with PXE, I have exactly the same issue?<br />
+<br />
+Thanks<br />
+<br />
+Andrew webstean@gmail.com</div>
+<p class="foot">[ <a href="#comment_29">Parent</a> ]</p>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_45">#</a></div>
+<div class="title" id="comment_45">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/kroshka">kroshka</a> (66.253.xx.xx) on Thu 11 Dec 2008 at 01:19<br />
+[ <a href="/users/kroshka/weblog">View Weblogs</a> ]</div>
+<div class="body">Nah, I just gave up. I think the SonicWall DHCP server is slightly broken, or at least will not work nicely when trying to configure it that way. I did ask on the sonicwall site's forums with little result. You're best off to just use a DHCP server on a Linux box if you need these options to work. And turn off Sonicwall's DHCP server, if they're clashing.</div>
+<p class="foot">[ <a href="#comment_44">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_30">#</a></div>
+<div class="title" id="comment_30">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (71.62.xx.xx) on Thu 26 Jun 2008 at 03:23<br /></div>
+<div class="body">Dude this is awesome. One of the best and well written examples. I did this word for word and this worked. Just awesome. I cant say enough thanks.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_31">#</a></div>
+<div class="title" id="comment_31">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (84.112.xx.xx) on Wed 2 Jul 2008 at 11:18<br /></div>
+<div class="body">First, thank your for this great article.<br />
+It really helped me since now I don't have to look for a cd drive to install debian on some machines.<br />
+<br />
+But I have 2 questions:<br />
+1.<br />
+LABEL etch_i386_install<br />
+kernel debian/etch/i386/linux<br />
+append vga=normal initrd=debian/etch/i386/initrd.gz --<br />
+LABEL etch_i386_linux<br />
+kernel debian/etch/i386/linux<br />
+append vga=normal initrd=debian/etch/i386/initrd.gz --<br />
+<br />
+Why do you have this in twice, it only has a different label, is it really necessary ?<br />
+<br />
+2. What would the append line for an expertgui installation look like?<br />
+<br />
+Thanks.<br />
+<br />
+Greetings.<br />
+Markus</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_32">#</a></div>
+<div class="title" id="comment_32">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Steve">Steve</a> (82.41.xx.xx) on Wed 2 Jul 2008 at 11:21<br />
+[ <a href="/users/Steve/weblog">View Weblogs</a> ]</div>
+<div class="body">
+<p>To answer your questions:</p>
+<p>1. I just happen to have two copies - you only need one, as you guessed.</p>
+<p>2. I'm afraid I'm not sure.</p>
+<p><a href="http://www.steve.org.uk/" rel="nofollow">Steve</a></p>
+</div>
+<p class="foot">[ <a href="#comment_31">Parent</a> ]</p>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_33">#</a></div>
+<div class="title" id="comment_33">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Ntsakzin">Ntsakzin</a> (146.141.xx.xx) on Fri 4 Jul 2008 at 09:02<br /></div>
+<div class="body">"...Later we'll look at mounting a remote file-system over NFS to provide a diskless thin-client."<br />
+<br />
+So where can I find this article because I am strugling with mounting the thin clients over NFS?</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_54">#</a></div>
+<div class="title" id="comment_54">Re: Diskless thin client?</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (189.144.xx.xx) on Mon 27 Jul 2009 at 04:17<br /></div>
+<div class="body">I thing it would be very good to see a complete and actualized example of thin clients setup, as the information available is somewhat sparse and even outdated.<br /></div>
+<p class="foot">[ <a href="#comment_33">Parent</a> ]</p>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_34">#</a></div>
+<div class="title" id="comment_34">length of the "append" line</div>
+<div class="tagline">Posted by <a href="/users/vjm">vjm</a> (130.155.xx.xx) on Thu 24 Jul 2008 at 06:53<br /></div>
+<div class="body">When playing with this, don't forget (as I did, for too long) that for Linux kernel images on i386, there is a 255-character length limit on the "append" part of the label stanza (see [1]).<br />
+This can be quite confusing! The moral is: don't try to add too many preseeding parameters to the boot line. Stick 'em in the preseed file.<br />
+<br />
+[1] <a href="http://syslinux.zytor.com/archives/2005-February/004809.html" rel="nofollow"></a><a href="http://syslinux.zytor.com/archives/2005-February/004809.html" rel="nofollow">http://syslinux.zytor.com/archives/2005-February/004809.html</a><br />
+(The limits vary between architectures, see<br />
+<a href="http://syslinux.zytor.com/archives/2005-February/004812.html" rel="nofollow"></a><a href="http://syslinux.zytor.com/archives/2005-February/004812.html" rel="nofollow">http://syslinux.zytor.com/archives/2005-February/004812.html</a>)</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_35">#</a></div>
+<div class="title" id="comment_35">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (88.76.xx.xx) on Mon 28 Jul 2008 at 19:30<br /></div>
+<div class="body">Is it possible to set-up an image that not pops up with the debian installer, but starts a ssh-server on the booting machine? I'll get a little KPC K45 soon and would love to set it up as home server.<br />
+<br />
+But I don't have any monitors to attach, so, I need to _completely_ install the system by remote hands on. I suggested ssh would be fine, so that I can start debootstrapping my system via console.<br />
+<br />
+Any ideas? Thanks!</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_36">#</a></div>
+<div class="title" id="comment_36">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (88.76.xx.xx) on Mon 28 Jul 2008 at 19:33<br /></div>
+<div class="body">And, yes, I DON'T HAVE ANY MONITOR HERE. And it's not an option to borrow one from a friend of mine. My friends life too far away ;)<br />
+<br />
+I'm a laptop only user, right now.</div>
+<p class="foot">[ <a href="#comment_35">Parent</a> ]</p>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_37">#</a></div>
+<div class="title" id="comment_37">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (91.178.xx.xx) on Thu 11 Sep 2008 at 21:55<br /></div>
+<div class="body">Have a look at preseed files for debian-installer : <a href="https://wiki.debian.org/DebianInstaller/Preseed" rel="nofollow"></a><a href="https://wiki.debian.org/DebianInstaller/Preseed" rel="nofollow">http://wiki.debian.org/DebianInstaller/Preseed</a></div>
+<p class="foot">[ <a href="#comment_36">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_38">#</a></div>
+<div class="title" id="comment_38">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (96.253.xx.xx) on Sat 11 Oct 2008 at 05:25<br /></div>
+<div class="body">One other point that delayed me 4-5 hours in trying to get this to work with an embedded box: If you're working with a system that is directing the console output to a serial port (such as a Soekris system), be sure to include "console=ttyS0,19200" (or whatever baud you will be using in place of 19200) to the append line for each kernel.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_39">#</a></div>
+<div class="title" id="comment_39">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/deadcat">deadcat</a> (98.207.xx.xx) on Wed 3 Dec 2008 at 06:12<br />
+[ <a href="/users/deadcat/weblog">View Weblogs</a> ]</div>
+<div class="body">i dont know why my setup takes so long for client machine to load the default file. it starts from Trying to load: pxelinux.cfg/ip-address<br />
+...<br />
+... default<br />
+then it just fails.<br />
+the above messages should just comes up real quick right?<br />
+<br />
+heres my setup.<br />
+server:<br />
+/var/lib/tftpboot<br />
+|-- debian-installer<br />
+| `-- i386<br />
+| |-- boot-screens<br />
+| | |-- boot.txt<br />
+| | |-- f1.txt<br />
+| | |-- f10.txt<br />
+| | |-- f2.txt<br />
+| | |-- f3.txt<br />
+| | |-- f4.txt<br />
+| | |-- f5.txt<br />
+| | |-- f6.txt<br />
+| | |-- f7.txt<br />
+| | |-- f8.txt<br />
+| | |-- f9.txt<br />
+| | `-- splash.rle<br />
+| |-- initrd.gz<br />
+| |-- linux<br />
+| |-- pxelinux.0<br />
+| |-- pxelinux.cfg<br />
+| | `-- default<br />
+| `-- pxelinux.cfg.serial-9600<br />
+| `-- default<br />
+|-- pxelinux.0 -&gt; debian-installer/i386/pxelinux.0<br />
+`-- pxelinux.cfg -&gt; debian-installer/i386/pxelinux.cfg<br />
+<br />
+/etc/dhcp3/dhcpd.conf:<br />
+...<br />
+allow booting;<br />
+allow bootp;<br />
+<br />
+subnet 10.10.32.0 netmask 255.255.255.0 {<br />
+range 10.10.32.20 10.10.32.50;<br />
+option routers 10.10.32.80;<br />
+}<br />
+<br />
+host deimos {<br />
+filename "pxelinux.0";<br />
+hardware ethernet 00:e0:81:32:5b:3a;<br />
+fixed-address 10.10.32.25;<br />
+}<br /></div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_40">#</a></div>
+<div class="title" id="comment_40">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Steve">Steve</a> (2001:0xx:0xx:0xxx:0xxx:0xxx:xx) on Wed 3 Dec 2008 at 06:18<br />
+[ <a href="/users/Steve/weblog">View Weblogs</a> ]</div>
+<div class="body">
+<p>The obvious question is - what do the server error logs show?</p>
+<p>You should be able to see the files being requested logged in syslog, by the TFTP server.. At a guess I'd that you've not specified the "next server" in the dhcpd.conf setting - so the TFTP request isn't being made against your server.</p>
+<p><a href="http://www.steve.org.uk/" rel="nofollow">Steve</a></p>
+</div>
+<p class="foot">[ <a href="#comment_39">Parent</a> ]</p>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_41">#</a></div>
+<div class="title" id="comment_41">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/deadcat">deadcat</a> (98.207.xx.xx) on Wed 3 Dec 2008 at 06:26<br />
+[ <a href="/users/deadcat/weblog">View Weblogs</a> ]</div>
+<div class="body">ah. i dont have any next server tags in dhcpd.conf. let me see whats up<br /></div>
+<p class="foot">[ <a href="#comment_40">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_42">#</a></div>
+<div class="title" id="comment_42">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/deadcat">deadcat</a> (98.207.xx.xx) on Wed 3 Dec 2008 at 06:34<br />
+[ <a href="/users/deadcat/weblog">View Weblogs</a> ]</div>
+<div class="body">thanks for spotting the error steve... next-server did the trick. (=</div>
+<p class="foot">[ <a href="#comment_40">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_43">#</a></div>
+<div class="title" id="comment_43">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Steve">Steve</a> (2001:0xx:0xx:0xxx:0xxx:0xxx:xx) on Wed 3 Dec 2008 at 06:36<br />
+[ <a href="/users/Steve/weblog">View Weblogs</a> ]</div>
+<div class="body">
+<p>Good to hear, thanks for the followup.</p>
+<p><a href="http://www.steve.org.uk/" rel="nofollow">Steve</a></p>
+</div>
+<p class="foot">[ <a href="#comment_42">Parent</a> ]</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_46">#</a></div>
+<div class="title" id="comment_46">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Double-V">Double-V</a> (89.251.xx.xx) on Tue 13 Jan 2009 at 13:46<br /></div>
+<div class="body">Awesome! I've just tried netbooting a Debian installer inside VMware Server 2.0 from a Debian host, and it works just fine. I was afraid to edit VMware's DHCP settings, but it seems to be ok to do it.<br />
+Thanks for the wonderful article.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_47">#</a></div>
+<div class="title" id="comment_47">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (82.67.xx.xx) on Fri 23 Jan 2009 at 14:20<br /></div>
+<div class="body">Hi,<br />
+At home !<br />
+DISPLAY boot.txt<br />
+Doesn't work<br />
+<br />
+But :<br />
+DISPLAY /pxelinux.cfg/boot.txt<br />
+<br />
+works fine</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_48">#</a></div>
+<div class="title" id="comment_48">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (85.147.xx.xx) on Mon 26 Jan 2009 at 00:52<br /></div>
+<div class="body">Talk about life-saving comments!<br />
+Have that same issue here using Lenny. So might be a bug?<br />
+<br />
+Maybe my fooling around changed something?, I made tftpd-hpa not running from inetd and as it's own user:<br />
+Added user &amp; group tftpd with home dir /var/lib/tftpboot<br />
+Changed /etc/default/tftpd-hpa to:<br />
+<br />
+<code><br />
+#Defaults&nbsp;for&nbsp;tftpd-hpa<br />
+RUN_DAEMON="yes"<br />
+OPTIONS="-u&nbsp;tftpd&nbsp;-l&nbsp;-s&nbsp;/var/lib/tftpboot"<br /></code><br />
+And in /etc/inetd.conf (commented the tftp line)<br />
+<code><br />
+#&nbsp;tftp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;dgram&nbsp;&nbsp;&nbsp;udp&nbsp;&nbsp;&nbsp;&nbsp;&amp;nb sp;wait&nbsp;&nbsp;&nbsp;&nbsp;root&nbsp;&nbsp;/usr/sbin/in.tftpd &nbsp;/usr/sbin/in.tftpd&nbsp;-s&nbsp;/var/lib/tftpboot<br /></code><br /></div>
+<p class="foot">[ <a href="#comment_47">Parent</a> ]</p>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_50">#</a></div>
+<div class="title" id="comment_50">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (198.65.xx.xx) on Wed 11 Mar 2009 at 16:36<br /></div>
+<div class="body">very useful post by all.<br />
+<br />
+Thanks a lot.</div>
+<p class="foot">[ <a href="#comment_48">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_53">#</a></div>
+<div class="title" id="comment_53">lenny tftp issue</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (190.75.xx.xx) on Mon 20 Apr 2009 at 01:36<br /></div>
+<div class="body">I figured out that in lenny inetd tries to run tftpd as IPv6. You have to force it to run as IPv4 (hpa-tftpd version 5.0 is required for IPv6, and lenny comes with version 0.48). In /etc/inetd.conf you have to put "udp4" instead of the plain old "udp" that is there by default:<br />
+<br />
+tftp dgram udp4 wait root /usr/sbin/in.tftpd /usr/sbin/in.tftpd -s /var/lib/tftpboot</div>
+<p class="foot">[ <a href="#comment_48">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_56">#</a></div>
+<div class="title" id="comment_56">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (64.81.xx.xx) on Tue 1 Sep 2009 at 00:19<br /></div>
+<div class="body">Not a bug, you put boot.txt in the wrong directory</div>
+<p class="foot">[ <a href="#comment_47">Parent</a> ]</p>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_51">#</a></div>
+<div class="title" id="comment_51">A few gotcha's</div>
+<div class="tagline">Posted by <a href="/users/vesperto">vesperto</a> (77.54.xx.xx) on Fri 17 Apr 2009 at 23:10<br /></div>
+<div class="body">1) tftpd is ran by inetd; while troubleshooting around (i.e. launching from the command-line) you might run into trouble. I took mine off of inetd.<br />
+<br />
+2) If you've been fiddling with firewalls make sure the tftp port is open. :)<br />
+<br />
+3) if you have a home router and nothing important (i.e. network dependant) on your host machine, connect it to your client machine. That way you can safely install dhcp servers in your host machine without messing the router's config (you won't be connected to it anyway).</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_52">#</a></div>
+<div class="title" id="comment_52">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (58.187.xx.xx) on Sat 18 Apr 2009 at 12:07<br /></div>
+<div class="body">The net installer requires internet access.<br />
+How could I build a local pxe boot/installer with full cd iso, like Ubuntu<br />
+<a href="https://wiki.ubuntu.com/LiveCDNetboot" rel="nofollow"></a><a href="https://wiki.ubuntu.com/LiveCDNetboot" rel="nofollow">https://wiki.ubuntu.com/LiveCDNetboot</a></div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_55">#</a></div>
+<div class="title" id="comment_55">pxelinux.0</div>
+<div class="tagline">Posted by <a href="/users/etbe">etbe</a> (59.167.xx.xx) on Sun 23 Aug 2009 at 12:13<br /></div>
+<div class="body"><a href="https://etbe.coker.com.au/2009/08/23/nbd-pxe-booting-debian/" rel="nofollow"></a><a href="https://etbe.coker.com.au/2009/08/23/nbd-pxe-booting-debian/" rel="nofollow">http://etbe.coker.com.au/2009/08/23/nbd-pxe-booting-debian/</a><br />
+<br />
+I've documented my configuration of a diskless workstation with PXE booting at the above URL.<br />
+<br />
+One significant thing that is missing from this article (maybe because of a missing feature in Etch) is that there is no mention of the syslinux-common package which contains the pxelinux.0 file. When you get pxelinux.0 from the syslinux-common package then APT will verify the integrity of the data. If you use wget then there is the potential for a corrupted mirror or a MITM attack.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_57">#</a></div>
+<div class="title" id="comment_57">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (161.116.xx.xx) on Mon 30 Nov 2009 at 12:02<br /></div>
+<div class="body">I know it's been 3 years since you wrote this, but it has still been useful today. Thank you.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_58">#</a></div>
+<div class="title" id="comment_58">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (75.177.xx.xx) on Fri 14 May 2010 at 03:00<br /></div>
+<div class="body">And today, thanks!</div>
+<p class="foot">[ <a href="#comment_57">Parent</a> ]</p>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_67">#</a></div>
+<div class="title" id="comment_67">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (188.134.xx.xx) on Wed 26 Jan 2011 at 19:32<br /></div>
+<div class="body">And today too</div>
+<p class="foot">[ <a href="#comment_58">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_76">#</a></div>
+<div class="title" id="comment_76">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (88.161.xx.xx) on Wed 15 Feb 2012 at 12:22<br /></div>
+<div class="body">And today too.</div>
+<p class="foot">[ <a href="#comment_67">Parent</a> ]</p>
+</div>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_81">#</a></div>
+<div class="title" id="comment_81">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (212.175.xx.xx) on Tue 26 Feb 2013 at 16:34<br /></div>
+<div class="body">And today too.</div>
+<p class="foot">[ <a href="#comment_76">Parent</a> ]</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_86">#</a></div>
+<div class="title" id="comment_86">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (183.83.xx.xx) on Sat 25 Jan 2014 at 14:15<br /></div>
+<div class="body">And today too...</div>
+<p class="foot">[ <a href="#comment_81">Parent</a> ]</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_93">#</a></div>
+<div class="title" id="comment_93">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (92.106.xx.xx) on Sat 28 Feb 2015 at 23:37<br /></div>
+<div class="body">And also today, too!</div>
+<p class="foot">[ <a href="#comment_86">Parent</a> ]</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_92">#</a></div>
+<div class="title" id="comment_92">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (155.138.xx.xx) on Fri 16 Jan 2015 at 13:52<br /></div>
+<div class="body">...and today! :D</div>
+<p class="foot">[ <a href="#comment_57">Parent</a> ]</p>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_60">#</a></div>
+<div class="title" id="comment_60">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (91.148.xx.xx) on Sun 23 May 2010 at 11:34<br /></div>
+<div class="body">hi i have 2 questions<br />
+1.How can i make boot menu,that i can select from<br />
+2.How could i put some kind of live cd and the users files to be stored some where and every time he uses the os his changes to load.<br />
+Thanks in advance.The article is very useful to me.By the way ,if it helps i can say restart your machine after u done and every thing will work properly,that was my problem.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_64">#</a></div>
+<div class="title" id="comment_64">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (212.121.xx.xx) on Wed 1 Sep 2010 at 12:40<br /></div>
+<div class="body">Absolutely perfect. Works a treat. Thanks.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_65">#</a></div>
+<div class="title" id="comment_65">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/aclhkaclhk">aclhkaclhk</a> (118.142.xx.xx) on Wed 8 Sep 2010 at 08:04<br /></div>
+<div class="body">the installation is via debian mirror site. could we setup a mirror using the download dvd image? i do not want to have large traffic via WAN.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_66">#</a></div>
+<div class="title" id="comment_66">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (80.39.xx.xx) on Fri 19 Nov 2010 at 16:06<br /></div>
+<div class="body">see here<br />
+www.vercot.com/~serva/howto/DebianPXE1.html</div>
+<p class="foot">[ <a href="#comment_65">Parent</a> ]</p>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_68">#</a></div>
+<div class="title" id="comment_68">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (115.111.xx.xx) on Tue 1 Feb 2011 at 05:25<br /></div>
+<div class="body">Hi,<br />
+For me PXE booting is working nicely but after booting i am getting to only from mirrors of debian only. But i want to install using NFS, i am not able to get this one and if NFS option able to get , please guide me how it is to be or how can i install debian from local LAN?</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_70">#</a></div>
+<div class="title" id="comment_70">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (38.127.xx.xx) on Wed 18 May 2011 at 17:22<br /></div>
+<div class="body">Thanks a lot, great write up!</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_71">#</a></div>
+<div class="title" id="comment_71">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (2001:0xx:0xx:0xxx:0xxx:0xxx:xx) on Wed 8 Jun 2011 at 23:50<br /></div>
+<div class="body">This is a fantastic write up, but I have one problem. I am trying to install the SERVER version of Ubuntu, and there is no CASPER directory on the disc. There's an INSTALL folder which contains vmlinuz and initrd.lz, but copying those files over and replacing casper under "boot=casper" to "boot=install" but this just returns back to the menu after a black screen, what am I missing here?<br />
+<br />
+Thanks!<br />
+Mike</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_72">#</a></div>
+<div class="title" id="comment_72">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (2001:0xx:0xx:0xxx:0xxx:0xxx:xx) on Thu 9 Jun 2011 at 00:02<br /></div>
+<div class="body">Actually, I am stupid, I had a / instead of a "." But now when the install starts, it's looking for CD-ROM files instead of NFS. I have the NFS configured in the APPEND line, but it doesn't seem to notice...</div>
+<p class="foot">[ <a href="#comment_71">Parent</a> ]</p>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_73">#</a></div>
+<div class="title" id="comment_73">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (67.169.xx.xx) on Sat 16 Jul 2011 at 08:45<br /></div>
+<div class="body">Thanks for the excellent writeup. I have a question. Is it possible to control pxe boot through a script. So if i have 2 images fedora and debian and i want to boot any of these but don't want to manually select the image i load but would rather use a script to do it. I have root access to pxe/dhcp server. Thanks</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_75">#</a></div>
+<div class="title" id="comment_75">difficult to debug, and outdated</div>
+<div class="tagline">Posted by <a href="/users/V">V</a> (129.187.xx.xx) on Mon 23 Jan 2012 at 14:17<br /></div>
+<div class="body">For a more recent tutorial that breaks the installation into debugable steps, see <a href="https://wiki.debian.org/PXEBootInstall" rel="nofollow"></a><a href="https://wiki.debian.org/PXEBootInstall" rel="nofollow">http://wiki.debian.org/PXEBootInstall</a>.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_77">#</a></div>
+<div class="title" id="comment_77">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (24.246.xx.xx) on Sun 12 Aug 2012 at 22:56<br /></div>
+<div class="body">Excellent write up, thanks!</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_87">#</a></div>
+<div class="title" id="comment_87">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (81.92.xx.xx) on Wed 13 Aug 2014 at 15:36<br /></div>
+<div class="body">Hi!<br />
+<br />
+I really like your tutorial; It's short, simple and actually understandable.<br />
+<br />
+But unfortunately, I can't get it to work. I can only assume that is because the DHCP server I put together from your example is in conflict with the router or some other DHCP server, both of which I have no access to and little to no information about.<br />
+<br />
+So I was wondering if it is even possible to set up a PXE boot server and test it using nothing but two instances of VMWare Player(one being Ubuntu and the other "empty") or some other virtual machine (so I can't accidentally damage the company's network)?<br />
+If yes, do you have some clue on how to isolate the VMs from the LAN?<br />
+<br />
+I am kind of... well, really... lost here. Some help would be much appreciated.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_88">#</a></div>
+<div class="title" id="comment_88">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Steve">Steve</a> (2.126.xx.xx) on Wed 13 Aug 2014 at 15:40<br />
+[ <a href="/users/Steve/weblog">View Weblogs</a> ]</div>
+<div class="body">
+<p>Sadly not. As you say the DHCP server needs to reply back with a pointer to the TFTP server - so that the client will know where to boot from.</p>
+<p>If there is another DHCP server on the same network-segment, and that replies "first", then the clients will not have that magical extra information sent to them - and it will just not work.You need to either fix the other DHCP server, or setup some private VLAN with filtering to ensure it cannot reply, but that's not something I could explain in detail in the general case.</p>
+<p><a href="http://www.steve.org.uk/" rel="nofollow">Steve</a></p>
+</div>
+<p class="foot">[ <a href="#comment_87">Parent</a> ]</p>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_89">#</a></div>
+<div class="title" id="comment_89">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (81.92.xx.xx) on Thu 14 Aug 2014 at 08:19<br /></div>
+<div class="body">That sounds like a roundabout way would be really difficult (VLAN), if not impossible...<br />
+<br />
+I just read about something called a proxyDHCP, which only sends the "PXEBoot extra bit" and leaves the actual DHCP work to the server already in place.<br />
+Apparently one can configure dnsmasq to act in such a way, I'm not sure how yet.<br />
+Maybe you can give me any tips on that?</div>
+<p class="foot">[ <a href="#comment_88">Parent</a> ]</p>
+</div>
+</div>
+</div>
+
+<div class="indent">
+<div class="indent">
+<div class="indent">
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_90">#</a></div>
+<div class="title" id="comment_90">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (93.204.xx.xx) on Mon 25 Aug 2014 at 04:44<br /></div>
+<div class="body">check this out:<br />
+<br />
+blog.ociru.net/2013/03/11/pxe-with-a-fritzbox-without-modificatio ns<br />
+<br />
+Regards, Paul</div>
+<p class="foot">[ <a href="#comment_89">Parent</a> ]</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_91">#</a></div>
+<div class="title" id="comment_91">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (122.248.xx.xx) on Thu 11 Dec 2014 at 05:52<br /></div>
+<div class="body">Hi, an excellent write up. Thanks a lot for this!<br />
+<br />
+I have a little different scenario. I am already running a bootloader, so I don't want pxelinux.0. Is there any way I can go past that? Basically I directly want to transfer kernel and initrd images, without having to boot pxelinux.0 first. Any idea how can that be done? And yeah, I am using dnsmasq.</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+
+
+<div class="comment">
+<div class="link"><a href="/articles/478#comment_94">#</a></div>
+<div class="title" id="comment_94">Re: Setting up a server for PXE network booting</div>
+<div class="tagline">Posted by <a href="/users/Anonymous">Anonymous</a> (153.225.xx.xx) on Thu 16 Apr 2015 at 15:06<br /></div>
+<div class="body">Here, I translated this article in Japanese<br />
+<br />
+this post is very very useful, thanks a lot !<br />
+<br />
+ttp://ec2-54-213-146-214.us-west-2.compute.amazonaws.com/fswiki/w iki.cgi?page=PXE%E3%83%8D%E3%83%83%E3%83%88%E3%83%AF%E3%83%BC%E3% 82%AF%E3%83%96%E3%83%BC%E3%83%88%E3%81%A7Linux%E3%82%92%E3%82%A4% E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E3%81%99%E3%82%8B<br />
+<br />
+best regards</div>
+<p class="foot">[ Parent ]</p>
+</div>
+
+</div>
+<div class="col-md-2">
+<p>&nbsp;</p>
+<div class="advert">
+<h3>Sponsored Links</h3>
+<div align="center">
+<script type="text/javascript">
+//<![CDATA[
+<!--
+                                                     google_ad_client = "pub-1910202134166551";
+                                                     //200x90, created 08/12/07
+                                                     google_ad_slot = "2315151555";
+                                                     google_ad_width = 200;
+                                                     google_ad_height = 90;
+                                                     //-->
+//]]>
+</script>
+<script type="text/javascript" src="//pagead2.googlesyndication.com/pagead/show_ads.js">
+</script></div>
+</div>
+</div>
+</div>
+<div id="footer">
+<p>&nbsp;</p>
+<p>Articles and comments are the property of their respective posters.</p>
+<p>Trademarks are the property of their respective owners.<br />
+Debian is <a href="http://tarr.uspto.gov/servlet/tarr?regser=serial&amp;entry=75386376&amp;action=Request+Status">a registered trademark</a> of <a href="https://www.spi-inc.org">Software in the Public Interest, Inc</a>.</p>
+<p>Copyright <a href="https://steve.kemp.fi/">Steve Kemp</a> 2004-2017.<br />
+Site hosting provided by <a href="http://www.bytemark.co.uk/">Bytemark Hosting</a>.</p>
+<p><a href="/about/Syndication">Article Feeds in Atom, RSS, &amp; RDF formats</a></p>
+</div>
+</div>
+
+</body>
+</html>

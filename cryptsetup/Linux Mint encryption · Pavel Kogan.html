@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<!-- saved from url=(0060)https://www.pavelkogan.com/2015/01/25/linux-mint-encryption/ -->
+<html lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Linux Mint encryption · Pavel Kogan
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="./Linux Mint encryption · Pavel Kogan_files/poole.css">
+  <link rel="stylesheet" href="./Linux Mint encryption · Pavel Kogan_files/syntax.css">
+  <link rel="stylesheet" href="./Linux Mint encryption · Pavel Kogan_files/lanyon.css">
+  <link rel="stylesheet" href="./Linux Mint encryption · Pavel Kogan_files/css">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="https://www.pavelkogan.com/atom.xml">
+</head>
+
+
+  <body>
+
+    <!-- Target for toggling the sidebar `.sidebar-checkbox` is for regular
+     styles, `#sidebar-checkbox` for behavior. -->
+<input type="checkbox" class="sidebar-checkbox" id="sidebar-checkbox">
+
+<!-- Toggleable sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-item">
+    <p></p>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="sidebar-nav-item" href="https://www.pavelkogan.com/">Home</a>
+
+    
+
+    
+    
+      
+        
+      
+    
+      
+        
+      
+    
+      
+        
+          <a class="sidebar-nav-item" href="https://www.pavelkogan.com/about/">About</a>
+        
+      
+    
+      
+        
+          <a class="sidebar-nav-item" href="https://www.pavelkogan.com/archive/">Archive</a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+
+    
+    
+      <span class="sidebar-nav-item"></span>
+    
+    
+      
+        <a class="sidebar-nav-item" href="https://github.com/pavelkogan">GitHub</a>
+      
+    
+      
+        <a class="sidebar-nav-item" href="https://twitter.com/pavel_kogan">Twitter</a>
+      
+    
+      
+        <a class="sidebar-nav-item" href="https://uk.linkedin.com/in/pkogan">LinkedIn</a>
+      
+    
+
+  </nav>
+
+  <div class="sidebar-item">
+    <p>
+      Copyright © 2018 Pavel Kogan
+    </p>
+  </div>
+</div>
+
+
+    <!-- Wrap is the content to shift when toggling the sidebar. We wrap the
+         content to avoid any CSS collisions with our real content. -->
+    <div class="wrap">
+      <div class="masthead">
+        <div class="container">
+          <h3 class="masthead-title">
+            <a href="https://www.pavelkogan.com/" title="Home">Pavel Kogan</a>
+            <small></small>
+          </h3>
+        </div>
+      </div>
+
+      <div class="container content">
+        <div class="post">
+  <h1 class="post-title">Linux Mint encryption</h1>
+  <span class="post-date">25 Jan 2015</span>
+  <p>In my <a href="https://www.pavelkogan.com/2014/05/23/luks-full-disk-encryption/">previous post</a> on full disk encryption I described how to avoid having to enter your passphrase twice. That method, however, only works on Arch. Here’s how to do it on Linux Mint<sup id="fnref:mint"><a href="https://www.pavelkogan.com/2015/01/25/linux-mint-encryption/#fn:mint" class="footnote">1</a></sup>.</p>
+
+<p>The initial setup process (with LVM, LUKS and GRUB) is the same as on Arch, but instead of editing <code>/etc/mkinitcpio.conf</code>, which doesn’t exist on Mint, create <code>/etc/crypttab</code>:</p>
+
+<pre><code>lvm /dev/sda1 none luks
+</code></pre>
+
+<p>So far, so good. The <code>crypttab</code> man page even talks about how you can point to a keyfile in the third column (“none” above). Unfortunately, if you do so, it doesn’t actually work. If you read the <code>cryptroot</code> script<sup id="fnref:script"><a href="https://www.pavelkogan.com/2015/01/25/linux-mint-encryption/#fn:script" class="footnote">2</a></sup>, you find that the keyfile is only ever used as an argument to a keyscript.</p>
+
+<p>Oddly enough, although there are several provided scripts, each doing various exotic things, none of them seem to handle the simple case of using the key to just decrypt the drive.</p>
+
+<p>What these scripts have in common is that they take the “keyfile” as an argument, and their output is used as the key. So, all we need to do is provide a “script” that will take a filename and output the file’s contents:</p>
+
+<pre><code>lvm /dev/sda1 /crypto_keyfile.bin luks,keyscript=/bin/cat
+</code></pre>
+
+<p>Now, the <code>cryptroot</code> hook<sup id="fnref:hook"><a href="https://www.pavelkogan.com/2015/01/25/linux-mint-encryption/#fn:hook" class="footnote">3</a></sup> will copy the <code>cat</code> executable into the ramdisk, and during boot <code>cat</code> will send the keyfile’s contents to <code>cryptsetup</code>.</p>
+
+<p>All that’s left is to ensure the keyfile is available before the drive is decrypted by copying it into the ramdisk too. There’s no convenient <code>FILES</code> option like in Arch, so you’ll have to make a custom hook. Luckily, it’s trivial:</p>
+
+<pre><code>#!/bin/sh
+cp /crypto_keyfile.bin "${DESTDIR}"
+</code></pre>
+
+<p>Put it in <code>/etc/initramfs-tools/hooks/</code> and make it executable:</p>
+
+<pre><code>chmod +x /etc/initramfs-tools/hooks/crypto_keyfile
+</code></pre>
+
+<p>Recreate the ramdisk:</p>
+
+<pre><code>update-initramfs -u
+</code></pre>
+
+<p>Check that everything is where it should be with <code>lsinitramfs</code> and reboot.</p>
+
+<blockquote>
+  <p>Update (02/08/15): Don’t forget that since the keyfile is stored on the ramdisk, you should make it only accessible by <code>root</code>, as well:</p>
+
+  <pre><code>chmod -R g-rwx,o-rwx /boot
+</code></pre>
+</blockquote>
+
+<hr>
+
+<div class="footnotes">
+  <ol>
+    <li id="fn:mint">
+      <p>It should also work with Debian/Ubuntu (or any distro that uses <code>initramfs-tools</code>)&nbsp;<a href="https://www.pavelkogan.com/2015/01/25/linux-mint-encryption/#fnref:mint" class="reversefootnote">↩</a></p>
+    </li>
+    <li id="fn:script">
+      <p>in <code>/usr/share/initramfs-tools/scripts/local-top/</code>&nbsp;<a href="https://www.pavelkogan.com/2015/01/25/linux-mint-encryption/#fnref:script" class="reversefootnote">↩</a></p>
+    </li>
+    <li id="fn:hook">
+      <p>in <code>/usr/share/initramfs-tools/hooks/</code>&nbsp;<a href="https://www.pavelkogan.com/2015/01/25/linux-mint-encryption/#fnref:hook" class="reversefootnote">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+</div>
+
+<div class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+      <li>
+        <h3>
+          <a href="https://www.pavelkogan.com/2014/07/13/nix-shell-on-linux-mint/">
+            nix-shell on Linux Mint
+            <small>13 Jul 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="https://www.pavelkogan.com/2014/07/09/haskell-development-with-nix/">
+            Haskell development with Nix
+            <small>09 Jul 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="https://www.pavelkogan.com/2014/05/23/luks-full-disk-encryption/">
+            Full disk encryption with LUKS (including /boot)
+            <small>23 May 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+  </ul>
+</div>
+
+      </div>
+    </div>
+
+    <label for="sidebar-checkbox" class="sidebar-toggle"></label>
+
+    <script>
+      (function(document) {
+        var toggle = document.querySelector('.sidebar-toggle');
+        var sidebar = document.querySelector('#sidebar');
+        var checkbox = document.querySelector('#sidebar-checkbox');
+
+        document.addEventListener('click', function(e) {
+          var target = e.target;
+
+          if(!checkbox.checked ||
+             sidebar.contains(target) ||
+             (target === checkbox || target === toggle)) return;
+
+          checkbox.checked = false;
+        }, false);
+      })(document);
+    </script>
+  
+
+</body></html>

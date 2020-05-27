@@ -1,0 +1,500 @@
+/**
+ * 
+ */
+var commentPid=null;
+var commentPageNum=$('#commentPageNum').val();
+var commentPages=$('#commentPages').val();
+var commentTotal=$('#commentTotal').val();
+var commentPageSize=$('#commentPageSize').val();
+var blogId=$('#blogId').val();
+$(function() {
+    initCommentInfo();
+    // 图片懒加载
+	$("img.img-thumbnail").lazyload({
+		placeholder : '/assets/images/loading.gif',
+		effect : "fadeIn",
+		threshold : 10,// 提前加载下面200px的内容
+	});
+
+    $("div.lazyload").lazyload({
+        placeholder : '/assets/images/loading.gif',
+        effect : "fadeIn",
+        threshold : 200,// 提前加载下面200px的内容
+    });
+
+    //博客浮動介紹
+    $('.blog-container').hover(function(){
+        $(this).find('.list-desc').stop().animate({
+            height:'100%'
+        });
+    },function(){
+        $(this).find('.list-desc').stop().animate({
+            height:'0'
+        });
+    });
+
+	// 程序代码高亮初始化
+	hljs.initHighlightingOnLoad();
+	codeTitle();//代码标题自定义实现
+	// 返回顶部
+	$(".gototop").gototop({
+		position : 0,
+		duration : 1250,
+		visibleAt : 300,
+		classname : "isvisible"
+	});
+
+	//搜索
+	$('#view_search_value').keydown(function(event) {
+		if (event.keyCode == 13) {
+			var key = $(this).val();
+			if (key != null && key.length > 0) {
+				window.open("/s/" + encodeURIComponent(key));
+			} else {
+				layer.msg('输入点啥内容吧', {
+					icon : 2
+				});
+			}
+		}
+	});
+	
+	//搜索
+	$('.view_search_btn').click(function() {
+		var key = $('#view_search_value').val();
+		if (key != null && key.length > 0) {
+			window.open("/s/" + encodeURIComponent(key));
+		} else {
+			layer.msg('输入点啥内容吧', {
+				icon : 2
+			});
+		}
+	});
+
+	//广告关闭
+	$('.ad-box-close').click(function() {
+		$('.ad-box-content').hide();
+	});
+	
+	//收藏博客
+	$('.collection-btn').click(function() {
+		collection();
+	});
+	//评论编辑器
+	//initEditor();
+
+	//标题
+    blogContentCatalog();
+
+    //回复评论
+	$('.comment-replay-btn').click(function () {
+		if ($(this).next()&&$(this).next().hasClass('comment-push-group')) {
+            $(this).text('回复');
+            $(this).removeClass('btn-danger');
+            $(this).addClass('btn-success');
+            commentPid='';
+            var pushGroup=$('.comment-push-group');
+			$('.comment-push-group-box').append(pushGroup);
+		}else{
+            commentPid=$(this).attr('data-id');
+            var pushGroup=$('.comment-push-group');
+            $(this).parent().append(pushGroup);
+            $(this).text('取消');
+            $(this).removeClass('btn-success');
+            $(this).addClass('btn-danger');
+            $('#comment_content').focus();
+		}
+
+
+    });
+
+	// initEditor();
+    if (commentPages&&commentPages>1){
+        buildPager(commentPageNum,commentTotal);
+    }
+})
+
+/***
+ * 分页
+ */
+function buildPager(currentPage,totalRows) {
+    $('#comment-pager').bootstrapPager({
+        btnNum: 5,
+        pageNum: currentPage,
+        pageSize: commentPageSize,
+        total: totalRows,
+        onChange: function (pageNum, pageSize) {
+            window.location.href = "/blog/" + blogId + "/comment/" + pageNum+"#blog-comment-area";
+        }
+    });
+}
+/**
+ * 初始化代码标题
+ */
+function codeTitle(){
+    $('.blog-content-right pre code').each(function () {
+        var text = $(this).html();
+        var reg = /\$title\(([^\)]*)\)/;
+        var mc = text.match(reg);
+        if (mc) {
+            console.log(mc[1]);
+            var span = $('<span class="code-title"><i class="fa fa-copy" title="复制代码" style="cursor:pointer;" onclick="copyCode(this)"> 复制</i>&nbsp;' + mc[1] + '</span>');
+            $(this).parent().prepend(span);
+            var dealText = text.replace(reg, '');
+            dealText = dealText.replace('\n', '');
+            $(this).html(dealText)
+        }else{
+        	 var span = $('<span class="code-title"><i class="fa fa-copy" title="复制代码" style="cursor:pointer;" onclick="copyCode(this)"> 复制</i></span>');
+        	 $(this).parent().prepend(span);
+        }
+    })
+}
+
+/**
+ * 复制代码
+ * @param obj
+ */
+function  copyCode(obj) {
+    var code=$(obj).parent().parent().find('code').text();
+    var area=document.createElement('textarea');
+    area.value=code;
+    area.id='copytmp'
+    document.body.appendChild(area);
+    area.select();
+   	document.execCommand("Copy"); // 执行浏览器复制命令
+   	document.body.removeChild(area);
+    layer.msg('已复制到粘贴板');
+}
+
+/***
+ * 博客目录抽取
+ */
+function blogContentCatalog() {
+	//获取文章中的h2标签
+	var h2Arr=$('.blog-content-area').find('h2');
+	if (h2Arr&&h2Arr.length>0){
+        var container=$('.blog-content-catalog');//目录容器div
+		var ul=$('<ul></ul>');
+
+        $.each(h2Arr,function (index,element) {
+        	$(this).attr('id','blog-content-area-'+index);
+			var item=$('<li><a href="#blog-content-area-'+index+'" title="'+$(this).text()+'">'+$(this).text()+'</a></li>');
+			ul.append(item);
+        });
+        container.append(ul);
+        $('.blog-content-catalog').addClass('restore');
+
+        $('.blog-content-catalog .close-btn').on('click',function () {
+
+            if ($('.blog-content-catalog').hasClass('restore')){
+                $('.blog-content-catalog').removeClass('restore');
+            } else {
+                $('.blog-content-catalog').addClass('restore');
+            }
+
+        });
+    }else{
+        $('.blog-content-catalog').hide();
+	}
+}
+
+/**
+ * 本地评论记录
+ */
+function initCommentInfo() {
+    var nickname= localStorage.getItem("comment_nickname");
+    if (nickname){
+        $('#comment_nickname').val(nickname);
+    }
+    var qq=localStorage.getItem("comment_qq");
+       if (qq){
+           $('#comment_qq').val(qq);
+       }
+    var email=localStorage.getItem("comment_email");
+        if (email){
+            $('#comment_email').val(email);
+        }
+        var website=localStorage.getItem("comment_website");
+   if (website){
+       $('#comment_website').val(website);
+   }
+}
+
+/****
+ * 发布评论
+ */
+function comment() {
+
+    var userId=$('#comment_userId').val();
+	var blogId=$('#blogId').val();
+	var content=$('#comment_content').val();
+	var nickname=$('#comment_nickname').val();
+	localStorage.setItem("comment_nickname",nickname);
+	var qq=$('#comment_qq').val();
+	localStorage.setItem("comment_qq",qq);
+	var email=$('#comment_email').val();
+	localStorage.setItem("comment_email",email);
+	var website=$('#comment_website').val();
+	localStorage.setItem("comment_website",website);
+	var params;
+
+	if (userId){
+        params={
+            "pid":commentPid,
+            userId:userId,
+            "content":content,
+            "blogId":blogId,
+        }
+    } else{
+        if (!content){
+            commentBtnErrorMsg('输入点内容再提交吧。');
+            return false;
+        }
+        if (!nickname){
+            commentBtnErrorMsg('昵称不能为空。');
+            return false;
+        }
+        if (!email){
+            commentBtnErrorMsg('请输入邮箱。');
+            return false;
+        }
+
+        params={
+            "pid":commentPid,
+            "blogId":blogId,
+            "email":email,
+            "nickname":nickname,
+            "qq":qq,
+            "website":website,
+            "content":content
+        }
+    }
+
+    var publishBtn=$('.publish-btn-div .publish-btn');
+    $(publishBtn).text("评论提交中，请稍后...")
+    $(publishBtn).attr('disabled','disabled');
+	$.ajax({
+        url:'/blog/comment/push.json',
+        type:'post',
+        data:params,
+        success:function(result){
+            $(publishBtn).text('发布评论');
+            $(publishBtn).removeAttr('disabled');
+
+            if(result&&result.status=='Success'){
+				layer.alert('评论已发布等待审核中...',{icon:1});
+                $('#comment_content').val('');
+			}else if (result&&result.status=='Fail') {
+                layer.alert(result.message,{icon:2});
+			}else{
+            	layer.alert('错误，稍后再试。',{icon:2});
+			}
+
+		}
+	});
+
+}
+
+
+var cursurPosition=-1;
+function commentInsertImage() {
+    //var cursurPosition=-1;//光标位置
+    var content=$('#comment_content')[0];
+    var contentValue=$('#comment_content').val();
+    if (contentValue&&contentValue.length>0){
+        if (content.selectionStart){//非IE
+            cursurPosition= content.selectionStart;
+        }else{//IE
+            var range = document.selection.createRange();
+            range.moveStart("character",-contentValue.length);
+            cursurPosition=range.text.length;
+        }
+        cursurPosition = cursurPosition==0?1:cursurPosition;
+	}
+    var startValue=contentValue.substring(0,cursurPosition);
+    var endValue=contentValue.substring(cursurPosition);
+
+    let commentImageIndex=layer.open({
+        type: 1,
+        title:false,
+        area: ['420px', '170px'], //宽高
+        closeBtn:0,//
+        content: '<div style="padding: 10px"><textarea id="commentPopTextarea"  rows="5" style="resize: none;" class="form-control" placeholder="图片地址以https://或者http//开头 \n推荐图床： http://im.sb"></textarea>' +
+        '</div>' +
+        '<div style="text-align: center;">' +
+        '<button class="btn btn-primary btn-xs" id="commentPopImageInsert">&nbsp;&nbsp;插入&nbsp;&nbsp;</button>&nbsp;&nbsp; ' +
+        '<button class="btn btn-danger btn-xs" id="commentPopImageClose">&nbsp;&nbsp;关闭&nbsp;&nbsp;</button>' +
+        '</div>',
+    });
+    $('#commentPopTextarea').focus();
+    $('#commentPopImageClose').click(function () {
+        layer.close(commentImageIndex);
+        //处理光标
+        var textObj=$('#comment_content')[0];
+        textObj.focus();
+        if (typeof textObj.selectionStart === 'number' && typeof textObj.selectionEnd === 'number') {
+            textObj.selectionStart =cursurPosition;
+            textObj.selectionEnd=cursurPosition;
+        }
+    });
+    $('#commentPopImageInsert').click(function () {
+        let imgUrl=$('#commentPopTextarea').val();
+        if (!imgUrl){
+            layer.close(commentImageIndex);
+            //处理光标
+            var textObj=$('#comment_content')[0];
+            textObj.focus();
+            if (typeof textObj.selectionStart === 'number' && typeof textObj.selectionEnd === 'number') {
+                textObj.selectionStart =cursurPosition;
+                textObj.selectionEnd=cursurPosition;
+            }
+            return ;
+        }
+        var code='[img]'+imgUrl+'[/img]';
+        contentValue=startValue+code+endValue;
+        $('#comment_content').val(contentValue);
+        //处理光标
+        var textObj=$('#comment_content')[0];
+        textObj.focus();
+        if (typeof textObj.selectionStart === 'number' && typeof textObj.selectionEnd === 'number') {
+            var cursorPos =cursurPosition+code.length;
+            textObj.selectionStart = cursorPos;
+            textObj.selectionEnd = cursorPos;
+        }
+        layer.close(commentImageIndex);
+    });
+}
+var commentInsertSmileIndex;
+function commentInsertSmile() {
+    var content=$('#comment_content')[0];
+    var contentValue=$('#comment_content').val();
+    if(contentValue&&contentValue.length>0){
+        if (content.selectionStart){//非IE
+            cursurPosition= content.selectionStart;
+        }else{//IE
+            var range = document.selection.createRange();
+            range.moveStart("character",-contentValue.length);
+            cursurPosition=range.text.length;
+        }
+        cursurPosition = cursurPosition==0?1:cursurPosition;
+	}
+	// layer.alert($('.smile-box').html());
+    commentInsertSmileIndex=layer.open({
+        type: 1,
+        area: ['300px', '200px'], //宽高
+        // shade: false,
+        shadeClose: true, //开启遮罩关闭
+        title: false, //不显示标题
+        content: $('.smile-box').html(), //捕获的元素，注意：最好该指定的元素要存放在body最外层，否则可能被其它的相对元素所影响
+        cancel: function(){
+           // layer.msg('捕获就是从页面已经存在的元素上，包裹layer的结构', {time: 5000, icon:6});
+            //处理光标
+            var textObj=$('#comment_content')[0];
+            textObj.focus();
+            if (typeof textObj.selectionStart === 'number' && typeof textObj.selectionEnd === 'number') {
+                textObj.selectionStart =cursurPosition;
+                textObj.selectionEnd=cursurPosition;
+            }
+        }
+    });
+
+}
+/***
+ * 表情点击事件
+ */
+$(document).on('click','.smile-image img',function () {
+	var src=$(this).attr('src');
+	var name=src.replace('/assets/framework/editor/ckeditor/plugins/smiley/images/me/tie/','');
+	name=name.substring(0,name.length-4);
+	var code="[s]"+name+"[/s]"
+
+	var contentValue=$('#comment_content').val();
+    var startValue=contentValue.substring(0,cursurPosition);
+    var endValue=contentValue.substring(cursurPosition);
+
+    var content=startValue+code+endValue;
+    //赋值
+    $('#comment_content').val(content);
+    //处理光标
+	var textObj=$('#comment_content')[0];
+    textObj.focus();
+    if (typeof textObj.selectionStart === 'number' && typeof textObj.selectionEnd === 'number') {
+        var cursorPos =cursurPosition+code.length;
+        textObj.selectionStart = cursorPos;
+		textObj.selectionEnd = cursorPos;
+    }
+    //--结束
+
+
+    if(commentInsertSmileIndex){
+    	layer.close(commentInsertSmileIndex);
+	}
+})
+
+function commentBtnErrorMsg(msg) {
+    var publishBtn=$('.publish-btn-div .publish-btn');
+    var defaultBtnText='发布评论';
+    $(publishBtn).attr('disabled','disabled');
+    $(publishBtn).text(msg+'（3秒)');
+    setTimeout(function () {
+        $(publishBtn).removeAttr('disabled');
+        $(publishBtn).text(defaultBtnText);
+    },3000);
+}
+
+
+
+//评论编辑器
+function initEditor(){
+	CKEDITOR.replace( 'comment_content',{//配置
+		extraPlugins:'',
+		height: 100,
+		toolbarGroups: [
+				{ name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+				{ name: 'colors', groups: [ 'colors' ] },
+				{ name: 'styles', groups: [ 'styles' ] },
+				{ name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+				{ name: 'forms', groups: [ 'forms' ] },
+				{ name: 'links', groups: [ 'links' ] },
+				{ name: 'insert', groups: [ 'insert' ] },
+				{ name: 'others', groups: [ 'others' ] },
+				{ name: 'about', groups: [ 'about' ] },
+				{ name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
+				{ name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+				{ name: 'document', groups: [ 'mode', 'doctools', 'document' ] },
+				{ name: 'tools', groups: [ 'tools' ] }
+			],
+			removeButtons :'codesnippet,NewPage,Preview,Print,Save,Cut,Copy,Paste,PasteText,Undo,Redo,SelectAll,Scayt,Form,Checkbox,Radio,TextField,Textarea,Select,Button,ImageButton,HiddenField,BidiLtr,BidiRtl,Language,Flash,Styles,FontSize,ShowBlocks,About,PageBreak,Templates,Iframe,JustifyBlock,Italic,Bold,Underline,Strike,CopyFormatting,RemoveFormat,Format,Font,NumberedList,BulletedList,Indent,Outdent,Blockquote,CreateDiv,Link,Unlink,Anchor,Image,HorizontalRule,SpecialChar,Find,Replace,Source,Maximize,Table,PasteFromWord,Subscript,Superscript,TextColor,BGColor,JustifyLeft,JustifyCenter,JustifyRight'
+
+	});
+	
+}
+function collection(){
+	var blogId=$('#blogId').val();
+	$.ajax({
+		url:'/user/blog/colletion.json',
+		type:'post',
+		dataType:'json',
+		data:{blogId:blogId},
+		success:function(result){
+			if (result&&result.status=='Success') {
+				//成功更新收藏数量
+				var cc=$('.blog-collection-hidden').val();
+				$('.blog-collection-span').text(eval(cc)+1);
+				layer.msg('博客收藏成功。',{icon:1});
+			}else if (result&&result.status=='unLogin') {
+				layer.confirm('您未登陆，是否前往登陆？',{
+					btn:['去登陆','下次吧'],
+					title:'收藏提示'
+					},
+					function(index) {
+						window.location.href="/account/login.html";
+					},
+					function(index) {
+						layer.close(index);
+					}
+				);
+			}
+		}
+	});
+}
+

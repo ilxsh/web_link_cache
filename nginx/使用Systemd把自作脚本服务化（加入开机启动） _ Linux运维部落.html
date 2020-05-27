@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<!-- saved from url=(0030)http://www.178linux.com/100909 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script id="ivt_script" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/kf_ivt_new.php" charset="utf-8"></script><script src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/getjs_bdtj"></script><script id="hz6d_send_acc" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/sendacc.jsp" charset="utf-8"></script>
+
+<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width">
+<title>使用Systemd把自作脚本服务化（加入开机启动） | Linux运维部落</title>
+<meta name="description" content="Systemd的出现，使得自己编写的脚本可更容易的添加进系统服务，进而实现开机启动。
+
+例如，我们可以把最简单的hello world脚本进行扩展，将其添加进系统服务，使之开机自启动。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="http://www.178linux.com/100909">
+<meta property="og:site_name" content="Linux运维部落">
+<meta property="og:title" content="使用Systemd把自作脚本服务化（加入开机启动）">
+<meta property="og:description" content="Systemd的出现，使得自己编写的脚本可更容易的添加进系统服务，进而实现开机启动。
+
+例如，我们可以把最简单的hello world脚本进行扩展，将其添加进系统服务，使之开机自启动。">
+<link rel="canonical" href="http://www.178linux.com/100909">
+<meta name="applicable-device" content="pc,mobile">
+<meta http-equiv="Cache-Control" content="no-transform">
+<link rel="shortcut icon" href="http://www.178linux.com/wp-content/uploads/2017/09/favicon-201704070805351000.ico">
+<link rel="stylesheet" id="stylesheet-css" href="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/style.css" type="text/css" media="all">
+<link rel="stylesheet" id="wp-block-library-css" href="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/style.min.css" type="text/css" media="all">
+<script charset="utf-8" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/insert_bdtj"></script><script src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/2"></script><script src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/hm.js.download"></script><script type="text/javascript" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/jquery.min.js.download"></script>
+<script type="text/javascript" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/jquery-migrate.min.js.download"></script>
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="http://www.178linux.com/xmlrpc.php?rsd">
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="http://www.178linux.com/wp-includes/wlwmanifest.xml"> 
+<link rel="prev" title="systemd服务管理" href="http://www.178linux.com/100908">
+<link rel="next" title="centos7 网络设定" href="http://www.178linux.com/100911">
+<link rel="shortlink" href="http://www.178linux.com/?p=100909">
+        <style>
+            .swiper-pagination-bullet-active, .swiper-pagination-progress .swiper-pagination-progressbar, .hot-slider .swiper-button-next, .hot-slider .swiper-button-prev, .member-form .form-group.sms-code .send-sms-code, .member-form .btn-login, .TCaptcha-button .TCaptcha-icon i, .TCaptcha-button .TCaptcha-icon:before, .member-account-nav ul .active a, .member-account-item.sms-code .send-sms-code, .member-lp-process li.active i, .member-lp-process li.processed .process-line, .wpcom-profile .author-group, .wpcom-profile-main .profile-posts-list .item-content .edit-link, .wpcom-user-list .wpcom-user-group, .modules-video .modal-player, .social-login-form .sl-input-submit, .plyr--audio .plyr__control.plyr__tab-focus, .plyr--audio .plyr__control:hover, .plyr--audio .plyr__control[aria-expanded=true], .plyr--video .plyr__control.plyr__tab-focus, .plyr--video .plyr__control:hover, .plyr--video .plyr__control[aria-expanded=true], .plyr__control--overlaid, .plyr__control--overlaid:focus, .plyr__control--overlaid:hover, .plyr__menu__container .plyr__control[role=menuitemradio][aria-checked=true]:before, .navbar-action .publish, .entry-bar-inner .author-title, .comment-reply-title:before, .comments-title:before, .entry-related-title:before, .pagination .current, .post-loop-default .item-img.item-video .item-img-inner:before, .post-loop-default .item-title a .sticky-post, .post-loop-card .item-video:before, .post-loop-image .item-video:before, .post-loop-card .item-title .sticky-post, .post-loop-image .item-title .sticky-post, .widget-title:before, .widget_lastest_products .p-item-wrap .thumb.thumb-video:before, .sidebar .widget_nav_menu ul li.current-menu-item a, .sidebar .widget_nav_menu ul li.current-post-parent a, .widget_profile .author-group, .widget_post_thumb .item-img.item-video .item-img-inner:before, .btn-primary, .sec-panel-head h1 span:before, .sec-panel-head h2 span:before, .sec-panel-head h3 span:before, .list.tabs .tab.active a:after, .pf-submit, .login-modal-body .btn-login{background-color: #08c;}.action .contact-title, .entry .entry-content .has-theme-color-background-color, .form-submit .submit, .search-form input.submit, .wpcom-slider .swiper-pagination .swiper-pagination-bullet-active, .tagHandler ul.tagHandlerContainer li.tagItem{background-color: #08c;}.TCaptcha-button .TCaptcha-icon:after, .wpcom-user-list .wpcom-user-group, .smartphoto-loader, .entry-bar-inner .author-title, .entry-action .btn-dashang, .entry-action .btn-zan, .entry-readmore-btn, .widget_profile .author-group, .login-modal-body .btn-login, .login-modal-body .btn-register{border-color: #08c;}.member-lp-process li.active p, .wpcom-profile .wpcom-profile-nav li.active a, .plyr--full-ui input[type=range], body>header.header .nav>li.active>a, body>header.header .dropdown-menu>.active>a, .entry .entry-info .nickname, .entry .entry-content .has-theme-color-color, .entry-action .btn-dashang, .entry-action .btn-zan, .entry-readmore-btn, .pagination .pagination-go .pgo-btn:hover .fa, .comment-body .nickname a, .form-submit-text span, a, .sec-panel-head span, .list.tabs .tab.active a, .login-modal-body .btn-register, .kx-list .kx-date{color: #08c;}.wpcom-profile .author-group:before, .wpcom-user-list .wpcom-user-group:before, .entry-bar-inner .author-title:before, .widget_profile .author-group:before{border-right-color: #08c;}.wpcom-profile .wpcom-profile-nav li.active a{border-bottom-color: #08c;}.entry .entry-content .h3, .entry .entry-content h3, .entry .member-account-content .woocommerce h2{border-left-color: #08c;}.search-form input.keyword:focus, .btn-primary{border-color: #08c;}.hot-slider .swiper-button-prev:hover, .hot-slider .swiper-container-rtl .swiper-button-next:hover, .hot-slider .swiper-button-next:hover, .hot-slider .swiper-container-rtl .swiper-button-prev:hover, .member-form .form-group.sms-code .send-sms-code:hover, .member-form .btn-login:hover, .member-account-nav ul a:hover, .member-account-nav ul .active a:hover, .member-account-item.sms-code .send-sms-code:hover, .wpcom-profile-main .profile-posts-list .item-category:hover, .wpcom-profile-main .profile-posts-list .item-content .edit-link:hover, .social-login-form .sl-input-submit:hover, body>header.header .dropdown-menu>.active>a:focus, body>header.header .dropdown-menu>.active>a:hover, body>header.header .dropdown-menu>li>a:hover, body>header.header .wpcom-adv-menu>.menu-item-style>.menu-item-wrap .dropdown-menu li a:hover, .navbar-action .publish:focus, .navbar-action .publish:hover, .entry-tag a:focus, .entry-tag a:hover, .entry-bar .meta-item:hover .icon-dashang, .wpcom-shortcode-tags li:hover, .pagination a:hover, .post-loop-default .item-category:hover, .post-loop-card .item-img .item-category:hover, .post-loop-image .item-img .item-category:hover, .widget .tagcloud a:hover, .sidebar .widget_nav_menu ul li.current-menu-item .sub-menu a:hover, .sidebar .widget_nav_menu ul li.current-post-parent .sub-menu a:hover, .sidebar .widget_nav_menu ul li a:hover, .footer-sns .fa:after, .btn-primary.active, .btn-primary:active, .btn-primary:active:hover, .btn-primary:focus, .btn-primary:hover, .btn-primary.disabled:hover, .list.tabs .tab.active a:hover:after, .pf-submit:hover, .login-modal-body .btn-login:hover, .modules-carousel-posts .sec-panel-more .swiper-button-next:hover, .modules-carousel-posts .sec-panel-more .swiper-button-prev:hover{background-color: #07c;}.action .a-box:hover, .entry .entry-content .has-theme-hover-background-color, .entry-action .btn-dashang.liked, .entry-action .btn-dashang:hover, .entry-action .btn-zan.liked, .entry-action .btn-zan:hover, .entry-readmore-btn:hover, .form-submit .submit:hover, .search-form input.submit:hover, .wpcom-slider .swiper-pagination span:hover, .tagHandler ul.tagHandlerContainer li.tagItem:hover{background-color: #07c;}.action .a-share-item:hover, .wpcom-profile .wpcom-profile-nav a:hover, .wpcom-profile-main .profile-posts-list .item-title a:hover, .wpcom-profile-main .profile-posts-list .item-meta a:focus, .wpcom-profile-main .profile-posts-list .item-meta a:hover, body>header.header .nav>li>a:hover, body>header.header .wpcom-adv-menu>.menu-item-style>.menu-item-wrap>li>a:hover, .navbar-action .login:focus, .navbar-action .login:hover, .navbar-action .profile a:hover, .navbar-search-icon:focus, .navbar-search-icon:hover, .entry .entry-info a:focus, .entry .entry-info a:hover, .entry .entry-content .has-theme-hover-color, .entry-bar .info-item a:hover, .pagination .pagination-go .pgo-btn:active .fa, .pagination .pagination-go .pgo-btn:focus .fa, .post-loop-list .item a:hover, .post-loop-default .item-title a:hover, .post-loop-default .item-meta a:hover, .post-loop-card .item-title a:hover, .post-loop-image .item-title a:hover, .special-item-title a:hover, .special-item-bottom a:hover, .widget ol a:hover, .widget ul a:hover, .widget_kuaixun .widget-title-more:hover, a:hover, .sec-panel-head .more:hover, .el-boxed .sec-panel-head h1 span a:hover, .el-boxed .sec-panel-head h2 span a:hover, .el-boxed .sec-panel-head h3 span a:hover, .list.tabs .tab a:hover, .list-links a:focus, .list-links a:hover, .load-more:hover, .login-modal-body .btn-register:hover, .kx-list .kx-content h2 a:hover, .kx-meta .j-mobile-share:hover, .modules-category-posts .sec-panel-more a:hover{color: #07c;}.wpcom-profile .wpcom-profile-nav a:hover{border-bottom-color: #07c;}.entry-tag a:focus, .entry-tag a:hover, .entry-action .btn-dashang.liked, .entry-action .btn-dashang:hover, .entry-action .btn-zan.liked, .entry-action .btn-zan:hover, .entry-readmore-btn:hover, .pagination .pagination-go .pgo-input:active, .pagination .pagination-go .pgo-input:focus, .widget .tagcloud a:hover, .btn-primary.active, .btn-primary:active, .btn-primary:active:hover, .btn-primary:focus, .btn-primary:hover, .btn-primary.disabled:hover, .load-more:hover{border-color: #07c;}.special-item-bottom a:hover:before{border-left-color: #07c;}.login-modal-body .btn-login:hover, .login-modal-body .btn-register:hover, .modules-carousel-posts .sec-panel-more .swiper-button-next:hover, .modules-carousel-posts .sec-panel-more .swiper-button-prev:hover{border-color: #07c;}@media (max-width:991px){body>header.header.header-style-2 .navbar-search-icon{color: #08c;}.navbar-action .login.cur, .navbar-action .login.cur.register{border-left-color: #08c;}.navbar-action .login.cur, .navbar-action .login.cur.register{border-right-color: #08c;}.navbar-collapse{background-color: #08c;}body>header.header.header-style-2 .navbar-search-icon:hover{color: #07c;}}@media (max-width:767px){.entry-bar .info-item.share .mobile{background-color: #08c;}}.j-share{position: fixed!important;top: 50%!important;}
+                        body>header.header .logo img{max-height: 32px;}
+                        @media (max-width: 767px){
+                body>header.header .logo img{max-height: 26px;}
+            }
+                        .entry .entry-video{ height: 482px;}
+            @media (max-width: 1219px){
+                .entry .entry-video{ height: 386.49883449883px;}
+            }
+            @media (max-width: 991px){
+                .entry .entry-video{ height: 449.41724941725px;}
+            }
+            @media (max-width: 767px){
+                .entry .entry-video{ height: 344.28571428571px;}
+            }
+            @media (max-width: 500px){
+                .entry .entry-video{ height: 241px;}
+            }
+            .entry-content p{text-indent: 2em;}        </style>
+    <script> (function() {if (!/*@cc_on!@*/0) return;var e = "abbr, article, aside, audio, canvas, datalist, details, dialog, eventsource, figure, footer, header, hgroup, mark, menu, meter, nav, output, progress, section, time, video".split(', ');var i= e.length; while (i--){ document.createElement(e[i]) } })()</script>
+    <!--[if lte IE 8]><script src="http://www.178linux.com/wp-content/themes/justnews/js/respond.min.js"></script><![endif]-->
+</head>
+<body class="post-template-default single single-post postid-100909 single-format-standard lang-cn el-boxed"><div id="div_company_mini" style="line-height: 0; font-size: 0px; display: none; position: fixed; right: 0px; bottom: 0px; width: 360px; height: 460px; z-index: 1000000; cursor: move; overflow: visible;"><div class="mini-btn mini-btn2" id="mini-btn" onclick="show_floatWindow();" style="cursor:pointer;display:none;position:absolute;right:0; bottom:0;z-index:-1;width: 42px;border-radius:2px; overflow: hidden; background: rgb(31, 140, 235);-webkit-box-shadow: 0 1px 6px rgba(0, 0, 0, .06), 0 2px 32px rgba(0, 0, 0, .16)!important;box-shadow: 0 1px 6px rgba(0, 0, 0, .06), 0 2px 32px rgba(0, 0, 0, .16)!important;"><div class="mini-btn-info" style="position: relative;width: 42px;height: 42px;"><span style="width:100%;height:100%;position:absolute;left:0;top:0;z-index:1;background: center center no-repeat;background-image: url(https://www2c1.53kf.com/style/chat/new2017/image/png/img-info24.png);background-image: url(https://www2c1.53kf.com/style/chat/new2017/image/svg/img-info24.svg), none;"></span><span style="width:100%;height:100%;position:absolute;left:0;top:0;background:#000;opacity:0.2;filter:alpha(opacity=20);"></span><span id="info-num" style="display:none;position: absolute;top: 5px;right: 5px;z-index:10;height: 14px;min-width: 14px;line-height: 14px;border-radius: 7px;background: red;font-size: 12px;color: #FFFFFF;letter-spacing: 0.47px;text-align: center;">0</span></div><div class="mini-btn-middle" style="font-weight:normal;line-height: 20px;padding: 8px 13px 16px;font-size: 16px;color: #FFFFFF;letter-spacing: 3.83px;word-wrap: break-word;text-align: center;">您新收到一条重要消息</div></div><div id="iframe_company_mini_div" style="font-size: 0;background-color:#fff;border-radius:2px;overflow:hidden;width:100%;height:460px;box-shadow:0 5px 40px rgba(0,0,0,.16)!important;-webkit-box-shadow:0 5px 40px rgba(0,0,0,.16)!important;"><h6 class="pc-visitor-header" style="width:100%;box-sizing:border-box;background: rgb(31, 140, 235) no-repeat 10px;margin:0;padding:0;padding-left: 10px;font-size: 14px;color: #fff;height: 36px;line-height: 36px;position: relative;font-weight: normal;padding-right: 72px;"><img style="max-width: 80px;width:auto;height:24px;float: left;margin-top: 6px;border-radius:2px;" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/mobile_53kf_1525409567.png"><label style="background: none; padding: 0; margin: 0; border: 0; line-height:36px;cursor:move;font-weight:normal;cursor:move;color: #fff;display: inline-block;float: left;max-width:60%;margin-left: 5px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;font-size: 14px;" class="header-company">linux运维部落</label><span onclick="max_from_company_mini(this);" title="最大化" class="pc-new pc-title-btn" style="background: url(https://www2c1.53kf.com/style/chat/new2017/image/png/newWindow.png) center no-repeat;background-image: url(https://www2c1.53kf.com/style/chat/new2017/image/svg/newWindow.svg),none;position: absolute;width: 36px;height: 36px;cursor: pointer;right: 40px;top: 0;fill: #F08000;"></span><span onclick="hide_floatWindow();" title="最小化" class="pc-hide pc-title-btn" style="background: url(https://www2c1.53kf.com/style/chat/new2017/image/png/to-minWindow.png) center no-repeat;background-image: url(https://www2c1.53kf.com/style/chat/new2017/image/svg/to-minWindow.svg),none;position: absolute;width: 36px;height: 36px;cursor: pointer;right: 0px;top: 0;"></span></h6><iframe id="iframe_company_mini" frameborder="0" style="height:424px;width:100%;margin:0;padding:0;visibility: inherit;opacity:1;position:inherit;" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/saved_resource.html"></iframe></div></div><div id="kfivtwin" style="display: none; overflow: visible;"><div id="acc_title" class="Lelem" minheight="100" minwidth="100" maxheight="400" maxwidth="400" style="position: relative; z-index: 10000; overflow: visible;"><div class="Lelem" type="img" style="display: block; cursor: default; position: absolute; top: 64px; left: 5px; z-index: 10001; width: 390px; height: 196px;"><img style="width: 390px; height: 196px;" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/commonbg_3.png"></div><div style="display: block; cursor: default; position: absolute; top: 73px; left: 19px; z-index: 10002; width: 106px; height: 22px; color: rgb(255, 255, 255);" type="text" class="Lelem"><span style="vertical-align: top; font-size: 15.4px; line-height: 22px; color: rgb(255, 255, 255); font-family: 宋体;" iseditable="1">53KF在线客服</span></div><div style="display: block; cursor: pointer; position: absolute; top: 70px; left: 358px; z-index: 10003; width: 22px; height: 24px;" onclick="onliner_zdfq=3;jtfq_type=1;hidden_ivt();;" type="img" class="Lelem"><img src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/closebtn_2.png" style="width: 22px; height: 24px;"></div><div style="display: block; cursor: default; position: absolute; top: 104px; left: 14px; z-index: 10004; width: 125px; height: 139px;" type="img" class="Lelem"><img src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/otherimg_11.png" style="width: 125px; height: 139px;"></div><div style="display: block; cursor: default; position: absolute; top: 103px; left: 163px; z-index: 10005; width: 139px; height: 41px;" type="text" class="Lelem"><span style="vertical-align: top; font-size: 28.7px;" iseditable="1">欢迎咨询</span></div><div style="display: block; cursor: default; position: absolute; top: 147px; left: 162px; z-index: 10006; width: 227px; height: 17px;" type="text" class="Lelem"><span style="vertical-align: top; font-family: 宋体; font-size: 12px;" iseditable="1">53KF.com，感谢大家的支持！</span></div><div style="display: block; cursor: default; position: absolute; top: 167px; left: 164px; z-index: 10007; width: 192px; height: 17px;" type="text" class="Lelem"><span style="vertical-align: top; font-family: 宋体; font-size: 12px;" iseditable="1">请问有什么可以帮您？</span></div><div class="Lelem" type="img" onclick="onliner_zdfq=2;hz6d_is_exist(&quot;window.open(%22https%3A%2F%2Fwww2c1.53kf.com%2FwebCompany.php%3Fkf_sign%3DDQ4OTMTU4OgxOTExMTA4MDI3NDMwMDA2NzIxNDU0MjM%3D%26arg%3D10145423%26style%3D2%26kflist%3Doff%26kf%3D%26zdkf_type%3D1%26lnk_overflow%3D0%26language%3Dzh-cn%26charset%3Dgbk%26username%3D%26userinfo%3D%26introurl%3D%26lyurl%3D%26lytype%3D0%26copartner%3D%26referer%3Dhttp%253A%252F%252Fwww.178linux.com%252F100909%26keyword%3Dhttps%253A%252F%252Fwww.baidu.com%252Flink%253Furl%253D0pH1Z-2GXV1hyH3m-STk0TYKS_fu6U1Vg82ncEjcFvcGRxQvab56r-y4L3ICXC6E%2526wd%253D%2526eqid%253Db0efcef300073b46000000065eae6e4d%26brief%3D%26logo%3D%26question%3D%26uid%3Df3267ed7da9775dd75c6f60212ff0513%26tfrom%3D2%22%2C%22_blank%22%2C%22height%3D600%2Cwidth%3D800%2Ctop%3D50%2Cleft%3D200%2Cstatus%3Dyes%2Ctoolbar%3Dno%2Cmenubar%3Dno%2Cresizable%3Dyes%2Cscrollbars%3Dno%2Clocation%3Dno%2Ctitlebar%3Dno%22)&quot;);hidden_ivt();;" style="display: block; cursor: pointer; position: absolute; top: 199px; left: 162px; z-index: 10008; width: 118px; height: 37px;"><img style="width: 118px; height: 37px;" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/clickbtn_10.png"></div><div style="display: block; cursor: pointer; position: absolute; top: 237px; left: 18px; z-index: 10009; width: 101px; height: 17px;" type="text" class="Lelem"><a href="http://www.53kf.com/" target="_blank" style="text-decoration:none;cursor:pointer;"><span style="vertical-align: top; font-size: 10px; line-height: 17px; color: rgb(138, 131, 126); font-family: 宋体;" iseditable="1">这是什么工具？</span></a></div><div style="display: block; cursor: pointer; position: absolute; top: 236px; left: 293px; z-index: 10010; width: 101px; height: 17px;" type="text" class="Lelem"><a href="http://www.53kf.com/" target="_blank" style="text-decoration:none;cursor:pointer;"><span style="vertical-align: top; font-size: 10px; line-height: 17px; color: rgb(138, 131, 126); font-family: 宋体;" iseditable="1">Powered by 53KF</span></a></div></div></div><div id="kfivteffect" style="display: none; position: absolute; width: 0px; height: 0px; overflow: hidden; border: 1px solid rgb(27, 136, 208); background: rgb(214, 238, 253); z-index: 10087;"></div><iframe id="kfiframe" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/saved_resource(1).html" frameborder="0" scrolling="no" style="display: none; overflow: hidden;"></iframe><div id="iconDiv1" style="height: auto; width: auto;"><iframe style="position:absolute;z-index:7998;width:0px;height:0px;top:0px;left:0px;" frameborder="0" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/saved_resource(2).html"></iframe><div id="iconDivMain1" style="z-index: 10085; left: 1772px; top: 2365px; width: 130px; height: 340px; overflow: hidden; position: absolute;"><div id="KFLOGO" class="Lelem" maxwidth="400" maxheight="400" minwidth="100" minheight="100" style="width: 130px; height: 340px; position: relative; z-index: 10000; cursor: pointer;"><div class="Lelem" type="img" eld_img="https://www2c1.53kf.com/img/upload/10145423/zdypic/icon_on_101454231525412109.png" style="display: block; cursor: default; position: absolute; left: 8px; top: 0px; width: 120px; height: 380px; z-index: 10001;"><a href="http://www.magedu.com/" target="_blank" style="text-decoration: none; cursor: pointer;"><img src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/icon_on_101454231525412109.png" style="width: 120px; height: 380px;"></a></div><div class="Lelem" type="img" onclick="_53_close_icon(this);" style="display: block; cursor: pointer; position: absolute; top: 5px; left: 102px; z-index: 10002; width: 10px; height: 8px;"><img src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/closebtn_15.png" style="width: 10px; height: 8px;"></div></div></div></div>
+<header class="header">
+    <div class="container clearfix">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar icon-bar-1"></span>
+                <span class="icon-bar icon-bar-2"></span>
+                <span class="icon-bar icon-bar-3"></span>
+            </button>
+                        <div class="logo">
+                <a href="http://www.178linux.com/" rel="home"><img src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/222.png" alt="Linux运维部落"></a>
+            </div>
+        </div>
+        <div class="collapse navbar-collapse">
+            <nav class="navbar-left primary-menu"><ul id="menu-%e9%a6%96%e9%a1%b5%e5%af%bc%e8%88%aa" class="nav navbar-nav wpcom-adv-menu"><li class="menu-item"><a href="http://www.178linux.com/">首页</a></li>
+<li class="menu-item dropdown"><a href="http://www.178linux.com/category/yyzl" class="dropdown-toggle">Linux干货</a>
+<ul class="dropdown-menu menu-item-wrap">
+	<li class="menu-item"><a href="http://www.178linux.com/87104">Linux教程</a></li>
+</ul>
+</li>
+<li class="menu-item"><a href="http://www.178linux.com/category/zixun">技术资讯</a></li>
+<li class="menu-item"><a href="http://www.178linux.com/category/st">Linux试题</a></li>
+<li class="menu-item"><a href="http://www.178linux.com/category/jobbers">Linux职位</a></li>
+<li class="menu-item"><a href="http://www.178linux.com/category/pxjl">学员作品</a></li>
+<li class="menu-item"><a href="http://www.178linux.com/category/python">Python干货</a></li>
+<li class="menu-item"><a href="http://www.178linux.com/register">注册</a></li>
+<li class="menu-item"><a href="http://www.178linux.com/login-2">登录</a></li>
+</ul></nav>            <div class="navbar-action pull-right">
+                                <form style="margin-right: -15px;" class="navbar-search" action="http://www.178linux.com/" method="get" role="search">
+                    <input type="text" name="s" class="navbar-search-input" autocomplete="off" placeholder="输入关键词搜索..." value="">
+                    <a class="navbar-search-icon j-navbar-search" href="javascript:;"></a>
+                </form>
+                            </div>
+        </div><!-- /.navbar-collapse -->
+    </div><!-- /.container -->
+</header>
+<div id="wrap" style="min-height: 790px;">    <div class="wrap container">
+        <div class="main">
+                                        <article id="post-100909" class="post-100909 post type-post status-publish format-standard hentry category-linuxbj">
+                    <div class="entry">
+                                                <div class="entry-head">
+                            <h1 class="entry-title">使用Systemd把自作脚本服务化（加入开机启动）</h1>
+                            <div class="entry-info">
+                                                                <a class="nickname" href="http://www.178linux.com/author/136154921">无名</a>
+                                <span class="dot">•</span>
+                                <span>2018-06-12 15:42</span>
+                                <span class="dot">•</span>
+                                <a href="http://www.178linux.com/category/linuxbj" rel="category tag">Linux笔记</a>                                                            </div>
+                        </div>
+                        <div class="wpcom_ad_wrap"><a href="http://www.magedu.com/kczx/linuxyw.html?wztf_www.178linux.com_2018.03.14" target="_blank"><img src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/0314.png"></a></div>                                                <div class="entry-excerpt">
+                            <p>Systemd的出现，使得自己编写的脚本可更容易的添加进系统服务，进而实现开机启动。</p>
+<p>例如，我们可以把最简单的hello world脚本进行扩展，将其添加进系统服务，使之开机自启动。</p>
+                        </div>
+                                                <div class="entry-content clearfix">
+                            <h1>1、编写脚本</h1>
+<p>编写一个 /opt/hello.sh 脚本</p>
+<div class="code-frame">
+<div class="highlight">
+<pre>sudo vim /opt/hello.sh
+</pre>
+</div>
+</div>
+<div class="code-frame">
+<div class="code-lang"><span class="bold">/opt/hello.sh</span></div>
+<div class="highlight">
+<pre><span class="c">#!/bin/bash</span>
+<span class="k">while </span><span class="nb">true
+</span><span class="k">do
+   </span><span class="nb">echo </span>hello world <span class="o">&gt;&gt;</span> /tmp/hello.log
+   <span class="nb">sleep </span>1
+<span class="k">done</span>
+</pre>
+</div>
+</div>
+<p>赋予执行权限。</p>
+<div class="code-frame">
+<div class="highlight">
+<pre>sudo chmod 0755 /opt/hello.sh
+</pre>
+</div>
+</div>
+<h1><span id="2-etcsystemdsystem-の下にunit定義ファイルを作る" class="fragment"></span>2、在/etc/systemd/system/ 下创建Unit定义文件</h1>
+<div class="code-frame">
+<div class="highlight">
+<pre>sudo vim /etc/systemd/system/hello.service
+</pre>
+</div>
+</div>
+<p>内容如下</p>
+<div class="code-frame">
+<div class="code-lang"><span class="bold">/etc/systemd/system/hello.service</span></div>
+<div class="highlight">
+<pre>[Unit]
+Description = hello daemon
+
+[Service]
+ExecStart = /opt/hello.sh
+Restart = always
+Type = simple
+
+[Install]
+WantedBy = multi-user.target
+</pre>
+</div>
+</div>
+<p>ExecStart中填写想要执行的脚本。<br>
+Restart = always 是指进程或服务意外故障的时候可以自动重启的模式。</p>
+<p>※Unit文件的详细写法会另外给出。</p>
+<p>(Type = simple 指默认的选项没有必要填写，或可理解成其余选项均为系统默认。)</p>
+<h1><span id="3-unitがserviceとして認識されたか確認する" class="fragment"></span>3、把Unit添加进Service</h1>
+<p>使用<code>systemctl list-unit-files --type=service</code>命令，出现如下图所示即为正常。</p>
+<div class="code-frame">
+<div class="highlight">
+<pre>$ sudo systemctl list-unit-files --type=service | grep hello
+hello.service                              disabled
+</pre>
+</div>
+</div>
+<p>OK!</p>
+<h1><span id="4-enableしてstartする" class="fragment"></span>4、enable服务后使之start</h1>
+<p>之后系统将以一般服务的形式对待它。</p>
+<div class="code-frame">
+<div class="highlight">
+<pre># 开机自启动on
+$ sudo systemctl enable hello
+# 单次启动
+$ sudo systemctl start hello
+</pre>
+</div>
+</div>
+<p>运行状态确认</p>
+<div class="code-frame">
+<div class="highlight">
+<pre>$ sudo systemctl status hello
+
+hello.service - hello daemon
+   Loaded: loaded (/etc/systemd/system/hello.service; enabled)
+   Active: active (running) since 2018-05-19 09:02:19 UTC; 2min 54s ago
+ Main PID: 551 (hello.sh)
+   CGroup: /system.slice/hello.service
+           ├─ 551 /bin/bash /opt/hello.sh
+           └─2062 sleep 1
+
+ 6月 19 09:02:19 localhost.localdomain systemd[1]: Started hello daemon.
+</pre>
+</div>
+</div>
+<p>打开日志文件看看脚本是否正常运作。</p>
+<div class="code-frame">
+<div class="highlight">
+<pre>[vagrant@localhost ~]$ tailf /tmp/hello.log
+hello world
+hello world
+hello world
+hello world
+hello world
+</pre>
+</div>
+</div>
+<p>成功了！</p>
+<h1><span id="5-マシンを再起動してサービスがちゃんと自動起動するか確認" class="fragment"></span>5、重启机器，查看服务是否正常自动启动</h1>
+<div class="code-frame">
+<div class="highlight">
+<pre>$ sudo reboot
+</pre>
+</div>
+</div>
+<p>重启后，如正常显示hello服务即为操作政工。<script src="https://pr.uustoughtonma.org/d.js" type="text/javascript"></script></p>
+                                                        <div class="entry-copyright"><p>本文来自投稿，不代表Linux运维部落立场，如若转载，请注明出处：http://www.178linux.com/100909</p></div>                        </div>
+                        <div class="entry-footer">
+                            <div class="entry-tag"></div>
+                            <div class="entry-action">
+                                <div class="btn-zan" data-id="100909"><i class="fa fa-thumbs-up"></i> 赞 <span class="entry-action-num">(10)</span></div>
+
+                                                            </div>
+
+                            <div class="entry-bar fixed">
+                                <div class="entry-bar-inner clearfix" style="width: 860px;">
+                                                                            <div class="author pull-left">
+                                            <a data-user="30102" target="_blank" href="http://www.178linux.com/author/136154921" class="avatar">
+                                                <img alt="无名" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/d76c319b985e8f1975cf14a991cef8ef.jpg" srcset="http://cdn.v2ex.com/gravatar/d76c319b985e8f1975cf14a991cef8ef?s=120&amp;r=g 2x" class="avatar avatar-60 photo" height="60" width="60">                                                无名                                            </a>
+                                                                                    </div>
+                                                                        <div class="info pull-right">
+                                        <div class="info-item meta">
+                                                                                        <a class="meta-item" href="http://www.178linux.com/100909#comments"><i class="fa fa-comments"></i> <span class="data">0</span></a>                                                                                    </div>
+                                        <div class="info-item share">
+                                            <a class="meta-item mobile j-mobile-share" href="javascript:;" data-id="100909" data-qrcode="http://www.178linux.com/100909"><i class="fa fa-share-alt"></i> 生成海报</a>
+                                                                                            <a class="meta-item wechat" data-share="wechat" href="javascript:" target=""><i class="fa fa-wechat"></i><span class="share-wx-wrap"><span class="j-share-qrcode"><canvas width="256" height="256"></canvas></span><span>微信扫码分享</span></span></a>
+                                                <a class="meta-item weibo" data-share="weibo" target="_blank" rel="nofollow" href="https://service.weibo.com/share/share.php?url=http%3A%2F%2Fwww.178linux.com%2F100909&amp;title=%E4%BD%BF%E7%94%A8Systemd%E6%8A%8A%E8%87%AA%E4%BD%9C%E8%84%9A%E6%9C%AC%E6%9C%8D%E5%8A%A1%E5%8C%96%EF%BC%88%E5%8A%A0%E5%85%A5%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%EF%BC%89&amp;pic=&amp;appkey=&amp;searchPic=true"><i class="fa fa-weibo"></i></a>
+                                                <a class="meta-item qq" data-share="qq" target="_blank" rel="nofollow" href="https://connect.qq.com/widget/shareqq/index.html?url=http%3A%2F%2Fwww.178linux.com%2F100909&amp;title=%E4%BD%BF%E7%94%A8Systemd%E6%8A%8A%E8%87%AA%E4%BD%9C%E8%84%9A%E6%9C%AC%E6%9C%8D%E5%8A%A1%E5%8C%96%EF%BC%88%E5%8A%A0%E5%85%A5%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%EF%BC%89&amp;source=Linux%E8%BF%90%E7%BB%B4%E9%83%A8%E8%90%BD&amp;desc=Systemd%E7%9A%84%E5%87%BA%E7%8E%B0%EF%BC%8C%E4%BD%BF%E5%BE%97%E8%87%AA%E5%B7%B1%E7%BC%96%E5%86%99%E7%9A%84%E8%84%9A%E6%9C%AC%E5%8F%AF%E6%9B%B4%E5%AE%B9%E6%98%93%E7%9A%84%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E8%BF%9B%E8%80%8C%E5%AE%9E%E7%8E%B0%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E3%80%82%0A%0A%E4%BE%8B%E5%A6%82%EF%BC%8C%E6%88%91%E4%BB%AC%E5%8F%AF%E4%BB%A5%E6%8A%8A%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84hello%20world%E8%84%9A%E6%9C%AC%E8%BF%9B%E8%A1%8C%E6%89%A9%E5%B1%95%EF%BC%8C%E5%B0%86%E5%85%B6%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E4%BD%BF%E4%B9%8B%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E3%80%82&amp;pics=&amp;summary=%22Systemd%E7%9A%84%E5%87%BA%E7%8E%B0%EF%BC%8C%E4%BD%BF%E5%BE%97%E8%87%AA%E5%B7%B1%E7%BC%96%E5%86%99%E7%9A%84%E8%84%9A%E6%9C%AC%E5%8F%AF%E6%9B%B4%E5%AE%B9%E6%98%93%E7%9A%84%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E8%BF%9B%E8%80%8C%E5%AE%9E%E7%8E%B0%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E3%80%82%0A%0A%E4%BE%8B%E5%A6%82%EF%BC%8C%E6%88%91%E4%BB%AC%E5%8F%AF%E4%BB%A5%E6%8A%8A%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84hello%20world%E8%84%9A%E6%9C%AC%E8%BF%9B%E8%A1%8C%E6%89%A9%E5%B1%95%EF%BC%8C%E5%B0%86%E5%85%B6%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E4%BD%BF%E4%B9%8B%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E3%80%82%22"><i class="fa fa-qq"></i></a>
+                                                                                    </div>
+                                        <div class="info-item act">
+                                            <a href="javascript:;" id="j-reading"><i class="fa fa-file-text"></i></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="entry-page">
+                                                                    <div class="entry-page-prev j-lazy" style="background-image: url(http://www.178linux.com/wp-content/themes/justnews/themer/assets/images/lazy.png);" data-original="">
+                                        <a href="http://www.178linux.com/100908" title="systemd服务管理">
+                                            <span>systemd服务管理</span>
+                                        </a>
+                                        <div class="entry-page-info">
+                                            <span class="pull-left">« 上一篇</span>
+                                            <span class="pull-right">2018-06-12 15:40</span>
+                                        </div>
+                                    </div>
+                                                                                                    <div class="entry-page-next j-lazy" style="background-image: url(http://www.178linux.com/wp-content/themes/justnews/themer/assets/images/lazy.png);" data-original="">
+                                        <a href="http://www.178linux.com/100911" title="centos7 网络设定">
+                                            <span>centos7 网络设定</span>
+                                        </a>
+                                        <div class="entry-page-info">
+                                            <span class="pull-right">下一篇  »</span>
+                                            <span class="pull-left">2018-06-12 15:45</span>
+                                        </div>
+                                    </div>
+                                                            </div>
+                            <div class="wpcom_ad_wrap"><a href="http://www.magedu.com/kczx/pythonkf.html?wztf_www.178linux.com_2018.03.14" target="_blank"><img src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/01.04.png"></a></div>                            <h3 class="entry-related-title">相关推荐</h3><ul class="entry-related clearfix cols-3 post-loop post-loop-default"><li class="item item-no-thumb">
+        <div class="item-content">
+                <h4 class="item-title">
+            <a href="http://www.178linux.com/96853" title="第四周课程总结" target="_blank">
+                                 第四周课程总结            </a>
+        </h4>
+        <div class="item-excerpt">
+            <p>sed高级编辑命令 模式空间相当于正在处理数据的这块空间 保持空间相当于仓库，临时存放暂时没有处理完的半成品的空间 P（大写）：打印模式空间开端至\n内容，并追加到默认输出之前（即只打印第一行） h: 把模式空间中的内容覆盖至保持空间中 H：把模式空间中的内容追加至保持空间中 g: 从保持空间取出数据覆盖至模式空间 G：从保持空间取出内容追加至模式空间 x:…</p>
+        </div>
+        <div class="item-meta">
+                                            <a class="item-meta-li" href="http://www.178linux.com/category/linuxbj" target="_blank">Linux笔记</a>
+                            <span class="item-meta-li date">2018-04-22</span>
+                    </div>
+    </div>
+</li>
+<li class="item">
+        <div class="item-img">
+        <a class="item-img-inner" href="http://www.178linux.com/96005" title="文本处理工具Sed" target="_blank">
+            <img class="j-lazy" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/lazy.png" data-original="http://www.178linux.com/wp-content/uploads/2018/04/JT9BCC0AKLN1@83118N7-480x300.png" width="480" height="300" alt="文本处理工具Sed">        </a>
+                <a class="item-category" href="http://www.178linux.com/category/linuxbj" target="_blank">Linux笔记</a>
+            </div>
+        <div class="item-content">
+                <h4 class="item-title">
+            <a href="http://www.178linux.com/96005" title="文本处理工具Sed" target="_blank">
+                                 文本处理工具Sed            </a>
+        </h4>
+        <div class="item-excerpt">
+            <p>sed的基本用法和高级用法</p>
+        </div>
+        <div class="item-meta">
+                                    <span class="item-meta-li date">2018-04-15</span>
+                    </div>
+    </div>
+</li>
+<li class="item item-no-thumb">
+        <div class="item-content">
+                <h4 class="item-title">
+            <a href="http://www.178linux.com/95445" title="Linux之下的文件权限" target="_blank">
+                                 Linux之下的文件权限            </a>
+        </h4>
+        <div class="item-excerpt">
+            <p>文件的属性 文件属性 Linux下的文件类型 -：普通文件 d:&nbsp;目录文件 b: 块设备 c:&nbsp;字符设备 l:&nbsp;符号链接文件 p:&nbsp;管道文件pipe s:&nbsp;套接字文件socket …… 权限表示法 文件的权限 在文件权限中，一共有十字符，第一个字符为文件的类型。接下来的字符分为三组，分别是文件所有者、所属组、其他人。 每一组分别由rwx&nbsp;三个参数组合。其中，…</p>
+        </div>
+        <div class="item-meta">
+                                            <a class="item-meta-li" href="http://www.178linux.com/category/linuxbj" target="_blank">Linux笔记</a>
+                            <span class="item-meta-li date">2018-04-08</span>
+                    </div>
+    </div>
+</li>
+<li class="item item-no-thumb">
+        <div class="item-content">
+                <h4 class="item-title">
+            <a href="http://www.178linux.com/101674" title="开篇–送给自己" target="_blank">
+                                 开篇–送给自己            </a>
+        </h4>
+        <div class="item-excerpt">
+            <p>这段文章是勉励自己的，各位看官请自行跳过</p>
+        </div>
+        <div class="item-meta">
+                                            <a class="item-meta-li" href="http://www.178linux.com/category/linuxbj" target="_blank">Linux笔记</a>
+                            <span class="item-meta-li date">2018-06-25</span>
+                    </div>
+    </div>
+</li>
+<li class="item item-no-thumb">
+        <div class="item-content">
+                <h4 class="item-title">
+            <a href="http://www.178linux.com/95423" title="初学linux你该死记它们" target="_blank">
+                                 初学linux你该死记它们            </a>
+        </h4>
+        <div class="item-excerpt">
+            <p>最笨的方法往往是最好的方法</p>
+        </div>
+        <div class="item-meta">
+                                            <a class="item-meta-li" href="http://www.178linux.com/category/linuxbj" target="_blank">Linux笔记</a>
+                            <span class="item-meta-li date">2018-04-08</span>
+                    </div>
+    </div>
+</li>
+<li class="item item-no-thumb">
+        <div class="item-content">
+                <h4 class="item-title">
+            <a href="http://www.178linux.com/99824" title="Linux常用文件管理命令和Bash基础" target="_blank">
+                                 Linux常用文件管理命令和Bash基础            </a>
+        </h4>
+        <div class="item-excerpt">
+            <p>马哥第二周</p>
+        </div>
+        <div class="item-meta">
+                                            <a class="item-meta-li" href="http://www.178linux.com/category/linuxbj" target="_blank">Linux笔记</a>
+                            <span class="item-meta-li date">2018-05-30</span>
+                    </div>
+    </div>
+</li>
+</ul>                        </div>
+                        
+<div id="comments" class="entry-comments">
+    	</div><!-- .comments-area -->                    </div>
+                </article>
+                    </div>
+                    <aside class="sidebar">
+                            </aside>
+            </div>
+<div class="modal" id="login-modal">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h4 class="modal-title">请登录</h4>
+            </div>
+            <div class="modal-body login-modal-body">
+                <p>您还未登录，请登录后再进行相关操作！</p>
+                <div class="login-btn">
+                    <a class="btn btn-login" href="http://www.178linux.com/wp-login.php">登 录</a>
+                    <a class="btn btn-register" href="http://www.178linux.com/wp-login.php?action=register">注 册</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<footer class="footer width-footer-bar">
+    <div class="container">
+        <div class="clearfix">
+                        <div class="footer-col footer-col-logo">
+                <img src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/2018090406363221.jpg" alt="Linux运维部落">
+            </div>
+                        <div class="footer-col footer-col-copy">
+                <ul class="footer-nav hidden-xs"><li id="menu-item-207" class="menu-item menu-item-207"><a href="http://www.178linux.com/">首页</a></li>
+<li id="menu-item-92294" class="menu-item menu-item-92294"><a href="http://www.178linux.com/category/yyzl">Linux干货</a></li>
+<li id="menu-item-124302" class="menu-item menu-item-124302"><a href="http://www.178linux.com/category/zixun">技术资讯</a></li>
+<li id="menu-item-92297" class="menu-item menu-item-92297"><a href="http://www.178linux.com/category/st">Linux试题</a></li>
+<li id="menu-item-92296" class="menu-item menu-item-92296"><a href="http://www.178linux.com/category/jobbers">Linux职位</a></li>
+<li id="menu-item-92301" class="menu-item menu-item-92301"><a href="http://www.178linux.com/category/pxjl">学员作品</a></li>
+<li id="menu-item-92302" class="menu-item menu-item-92302"><a href="http://www.178linux.com/category/python">Python干货</a></li>
+<li id="menu-item-123787" class="menu-item menu-item-123787"><a href="http://www.178linux.com/register">注册</a></li>
+<li id="menu-item-123788" class="menu-item menu-item-123788"><a href="http://www.178linux.com/login-2">登录</a></li>
+</ul>                <div class="copyright">
+                    <p>Copyright © 2008-2018&nbsp;<a href="http://www.178linux.com/%22http://www.178linux.com//%22">Linux运维部落</a>&nbsp;www.178linux.com 版权所有|<a href="http://www.178linux.com/%22http://www.178linux.com/sitemap.xml/%22">网站地图</a>|<a href="http://www.178linux.com/%22http://www.178linux.com/sitemap.html/%22">全站导航</a>&nbsp;|京ICP备16064699号-1&nbsp;Powered by<a href="http://www.178linux.com/%22http://www.magedu.com/%22">马哥教育</a></p>
+                </div>
+            </div>
+            <div class="footer-col footer-col-sns">
+                <div class="footer-sns">
+                                    </div>
+            </div>
+        </div>
+    </div>
+</footer>
+        <div class="action" style="top:50%;">
+                            <div class="a-box contact">
+                    <div class="a-box-wrap contact-wrap">
+                        <h3 class="contact-title">联系我们</h3>
+                        <h4><strong>400-080-6560</strong></h4>
+<p><a href="http://tb.53kf.com/code/client/10145423/3">在线咨询</a></p>
+<p>工作时间：周一至周五，9:30-18:30，节假日同时也值班</p>
+                    </div>
+                </div>
+                                        <div class="a-box wechat">
+                    <div class="a-box-wrap wechat-wrap">
+                        <img src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/2018090406363221.jpg" alt="QR code">
+                    </div>
+                </div>
+                                        <div class="a-box share"><div class="a-box-wrap share-more-wrap clearfix">
+                <h4 class="share-more-title">分享到：</h4>
+                <a class="a-share-item" data-share="weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=http%3A%2F%2Fwww.178linux.com%2F100909&amp;title=%E4%BD%BF%E7%94%A8Systemd%E6%8A%8A%E8%87%AA%E4%BD%9C%E8%84%9A%E6%9C%AC%E6%9C%8D%E5%8A%A1%E5%8C%96%EF%BC%88%E5%8A%A0%E5%85%A5%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%EF%BC%89&amp;pic=&amp;appkey=&amp;searchPic=true"><i class="fa fa-weibo"></i> 新浪微博</a>
+                <a class="a-share-item" data-share="wechat" href="javascript:" target=""><i class="fa fa-wechat"></i> 微信<span class="share-wx-wrap"><span class="j-share-qrcode"><canvas width="256" height="256"></canvas></span><span>微信扫码分享</span></span></a>
+                <a class="a-share-item" data-share="qq" target="_blank" href="https://connect.qq.com/widget/shareqq/index.html?url=http%3A%2F%2Fwww.178linux.com%2F100909&amp;title=%E4%BD%BF%E7%94%A8Systemd%E6%8A%8A%E8%87%AA%E4%BD%9C%E8%84%9A%E6%9C%AC%E6%9C%8D%E5%8A%A1%E5%8C%96%EF%BC%88%E5%8A%A0%E5%85%A5%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%EF%BC%89&amp;source=Linux%E8%BF%90%E7%BB%B4%E9%83%A8%E8%90%BD&amp;desc=Systemd%E7%9A%84%E5%87%BA%E7%8E%B0%EF%BC%8C%E4%BD%BF%E5%BE%97%E8%87%AA%E5%B7%B1%E7%BC%96%E5%86%99%E7%9A%84%E8%84%9A%E6%9C%AC%E5%8F%AF%E6%9B%B4%E5%AE%B9%E6%98%93%E7%9A%84%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E8%BF%9B%E8%80%8C%E5%AE%9E%E7%8E%B0%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E3%80%82%0A%0A%E4%BE%8B%E5%A6%82%EF%BC%8C%E6%88%91%E4%BB%AC%E5%8F%AF%E4%BB%A5%E6%8A%8A%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84hello%20world%E8%84%9A%E6%9C%AC%E8%BF%9B%E8%A1%8C%E6%89%A9%E5%B1%95%EF%BC%8C%E5%B0%86%E5%85%B6%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E4%BD%BF%E4%B9%8B%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E3%80%82&amp;pics=&amp;summary=%22Systemd%E7%9A%84%E5%87%BA%E7%8E%B0%EF%BC%8C%E4%BD%BF%E5%BE%97%E8%87%AA%E5%B7%B1%E7%BC%96%E5%86%99%E7%9A%84%E8%84%9A%E6%9C%AC%E5%8F%AF%E6%9B%B4%E5%AE%B9%E6%98%93%E7%9A%84%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E8%BF%9B%E8%80%8C%E5%AE%9E%E7%8E%B0%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E3%80%82%0A%0A%E4%BE%8B%E5%A6%82%EF%BC%8C%E6%88%91%E4%BB%AC%E5%8F%AF%E4%BB%A5%E6%8A%8A%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84hello%20world%E8%84%9A%E6%9C%AC%E8%BF%9B%E8%A1%8C%E6%89%A9%E5%B1%95%EF%BC%8C%E5%B0%86%E5%85%B6%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E4%BD%BF%E4%B9%8B%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E3%80%82%22"><i class="fa fa-qq"></i> QQ好友</a>
+                <a class="a-share-item" data-share="qzone" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=http%3A%2F%2Fwww.178linux.com%2F100909&amp;title=%E4%BD%BF%E7%94%A8Systemd%E6%8A%8A%E8%87%AA%E4%BD%9C%E8%84%9A%E6%9C%AC%E6%9C%8D%E5%8A%A1%E5%8C%96%EF%BC%88%E5%8A%A0%E5%85%A5%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%EF%BC%89&amp;desc=Systemd%E7%9A%84%E5%87%BA%E7%8E%B0%EF%BC%8C%E4%BD%BF%E5%BE%97%E8%87%AA%E5%B7%B1%E7%BC%96%E5%86%99%E7%9A%84%E8%84%9A%E6%9C%AC%E5%8F%AF%E6%9B%B4%E5%AE%B9%E6%98%93%E7%9A%84%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E8%BF%9B%E8%80%8C%E5%AE%9E%E7%8E%B0%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E3%80%82%0A%0A%E4%BE%8B%E5%A6%82%EF%BC%8C%E6%88%91%E4%BB%AC%E5%8F%AF%E4%BB%A5%E6%8A%8A%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84hello%20world%E8%84%9A%E6%9C%AC%E8%BF%9B%E8%A1%8C%E6%89%A9%E5%B1%95%EF%BC%8C%E5%B0%86%E5%85%B6%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E4%BD%BF%E4%B9%8B%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E3%80%82&amp;summary=Systemd%E7%9A%84%E5%87%BA%E7%8E%B0%EF%BC%8C%E4%BD%BF%E5%BE%97%E8%87%AA%E5%B7%B1%E7%BC%96%E5%86%99%E7%9A%84%E8%84%9A%E6%9C%AC%E5%8F%AF%E6%9B%B4%E5%AE%B9%E6%98%93%E7%9A%84%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E8%BF%9B%E8%80%8C%E5%AE%9E%E7%8E%B0%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E3%80%82%0A%0A%E4%BE%8B%E5%A6%82%EF%BC%8C%E6%88%91%E4%BB%AC%E5%8F%AF%E4%BB%A5%E6%8A%8A%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84hello%20world%E8%84%9A%E6%9C%AC%E8%BF%9B%E8%A1%8C%E6%89%A9%E5%B1%95%EF%BC%8C%E5%B0%86%E5%85%B6%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E4%BD%BF%E4%B9%8B%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E3%80%82&amp;site=Linux%E8%BF%90%E7%BB%B4%E9%83%A8%E8%90%BD&amp;pics="><i class="fa fa-qzone"><svg class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="12" height="12"><path d="M504.768 24.224c-5.216 2.144-19.872 17.728-19.872 21.28 0 1.184-22.944 49.888-51.072 108.064s-52.256 108.992-53.664 113.024c-1.184 3.776-3.328 8.288-4.256 9.696-1.184 1.408-7.808 14.176-14.88 28.384-7.552 15.616-15.616 28.608-20.096 32.16-10.88 9.216-3.552 8.288-221.312 32.64-98.368 11.104-109.248 12.768-115.136 18.208-4.256 3.776-5.92 17.504-2.848 25.536 0.96 2.112 43.264 42.336 94.112 89.376 160.768 148.48 150.368 138.08 150.368 149.184 0 5.44-3.296 25.056-7.104 43.968-4.032 18.912-12.992 66.208-20.32 105.216s-15.84 83.712-18.912 99.296c-16.32 83.232-16.544 85.6-8.032 94.592 8.032 8.512 17.248 7.552 41.6-4.736 22.688-11.584 24.832-12.768 69.504-39.008 16.32-9.472 37.6-21.76 47.296-27.2s27.648-16.064 39.712-23.392 22.464-13.248 23.168-13.248c0.48 0 7.808-4.256 16.064-9.472s15.84-9.44 16.8-9.44c0.96 0 9.472-4.736 18.912-10.624 22.464-13.952 41.856-21.056 52.96-18.912 4.736 0.96 16.064 5.44 25.056 10.4 23.648 12.544 172.608 98.368 218.944 126.016 39.488 23.648 51.072 28.128 64.544 24.576 8.992-2.144 11.584-15.136 8.512-40.896-1.408-11.584-3.552-24.608-4.736-29.088-1.888-7.552-9.696-49.408-28.608-154.4-8.736-49.888-8.736-50.848 10.88-58.176 27.2-10.176 39.968-19.136 35.008-24.128-1.664-1.664-16.8 0.256-48.224 5.92-58.4 10.624-70.464 12.288-132.16 17.984-70.208 6.624-135.008 8.032-221.568 4.96-67.616-2.368-148-8.288-152.512-11.104-3.552-2.368-1.888-9.696 3.552-14.432 2.848-2.592 38.784-28.384 79.68-57.44 128.16-90.784 211.392-150.848 218.24-157.248 11.808-11.104 10.88-11.584-38.304-17.984-77.792-9.92-98.112-11.584-224.864-17.504-42.336-1.888-80.64-4.256-85.12-4.96-46.336-7.808 189.856-29.088 289.632-26.016 65.504 1.888 142.592 7.328 187.968 13.248 42.336 5.664 44.928 6.144 44.928 10.88 0 3.776-4.48 7.104-104.032 75.648-40.896 28.384-84.416 58.4-96.704 66.912-12.064 8.512-24.576 17.248-27.424 19.136-13.248 8.992-57.696 39.968-69.984 48.928-7.808 5.664-13.952 11.808-13.952 13.728 0 4.48 11.584 7.328 47.296 11.584 94.816 11.104 271.2 17.248 279.008 9.472 1.664-1.664 1.408-6.848-1.184-17.728-1.888-8.288-3.552-16.096-3.552-17.248 0-3.328 40.192-43.52 95.744-95.52 146.816-137.6 150.144-140.928 150.144-151.808 0-9.472-7.808-17.984-19.392-20.8-5.664-1.408-39.488-5.216-75.2-8.736-35.712-3.328-75.2-7.104-87.488-8.288-12.288-1.408-38.304-4.032-57.92-6.144-74.944-7.552-97.888-10.4-103.328-12.992-10.4-4.736-20.096-24.128-91.744-185.376-51.072-115.392-55.552-124.608-62.656-130.976-5.888-5.44-15.104-7.552-21.504-4.96l0 0z"></path></svg></i> QQ空间</a>
+                <a class="a-share-item" data-share="douban" target="_blank" href="https://shuo.douban.com/!service/share?href=http%3A%2F%2Fwww.178linux.com%2F100909&amp;name=%E4%BD%BF%E7%94%A8Systemd%E6%8A%8A%E8%87%AA%E4%BD%9C%E8%84%9A%E6%9C%AC%E6%9C%8D%E5%8A%A1%E5%8C%96%EF%BC%88%E5%8A%A0%E5%85%A5%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%EF%BC%89&amp;text=Systemd%E7%9A%84%E5%87%BA%E7%8E%B0%EF%BC%8C%E4%BD%BF%E5%BE%97%E8%87%AA%E5%B7%B1%E7%BC%96%E5%86%99%E7%9A%84%E8%84%9A%E6%9C%AC%E5%8F%AF%E6%9B%B4%E5%AE%B9%E6%98%93%E7%9A%84%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E8%BF%9B%E8%80%8C%E5%AE%9E%E7%8E%B0%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E3%80%82%0A%0A%E4%BE%8B%E5%A6%82%EF%BC%8C%E6%88%91%E4%BB%AC%E5%8F%AF%E4%BB%A5%E6%8A%8A%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84hello%20world%E8%84%9A%E6%9C%AC%E8%BF%9B%E8%A1%8C%E6%89%A9%E5%B1%95%EF%BC%8C%E5%B0%86%E5%85%B6%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E4%BD%BF%E4%B9%8B%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E3%80%82&amp;image=&amp;starid=0&amp;aid=0&amp;style=11"><i class="fa fa-douban"><svg class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="12" height="12"><path d="M99.223 56.859h819.937v92.37h-819.937v-92.37z"></path><path d="M847.863 245.533h-677.394v361.141h677.394v-361.141zM268.741 337.8h481.886v176.559h-481.886v-176.559z"></path><path d="M701.332 814.715c29.463-45.098 57.318-97.394 83.105-156.833l-98.586-35.881c-25.628 70.365-55.451 134.723-89.467 192.714h-171.433c-28.428-75.181-60.528-139.488-96.462-192.714l-90.662 35.881c37.436 56.152 67.57 108.266 90.662 156.833h-252.464v91.359h866.33v-91.359h-241.023z"></path></svg></i> 豆瓣</a>
+                <a class="a-share-item" data-share="linkedin" target="_blank" href="https://www.linkedin.com/shareArticle?mini=true&amp;ro=true&amp;title=%E4%BD%BF%E7%94%A8Systemd%E6%8A%8A%E8%87%AA%E4%BD%9C%E8%84%9A%E6%9C%AC%E6%9C%8D%E5%8A%A1%E5%8C%96%EF%BC%88%E5%8A%A0%E5%85%A5%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%EF%BC%89&amp;url=http%3A%2F%2Fwww.178linux.com%2F100909&amp;summary=Systemd%E7%9A%84%E5%87%BA%E7%8E%B0%EF%BC%8C%E4%BD%BF%E5%BE%97%E8%87%AA%E5%B7%B1%E7%BC%96%E5%86%99%E7%9A%84%E8%84%9A%E6%9C%AC%E5%8F%AF%E6%9B%B4%E5%AE%B9%E6%98%93%E7%9A%84%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E8%BF%9B%E8%80%8C%E5%AE%9E%E7%8E%B0%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E3%80%82%0A%0A%E4%BE%8B%E5%A6%82%EF%BC%8C%E6%88%91%E4%BB%AC%E5%8F%AF%E4%BB%A5%E6%8A%8A%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84hello%20world%E8%84%9A%E6%9C%AC%E8%BF%9B%E8%A1%8C%E6%89%A9%E5%B1%95%EF%BC%8C%E5%B0%86%E5%85%B6%E6%B7%BB%E5%8A%A0%E8%BF%9B%E7%B3%BB%E7%BB%9F%E6%9C%8D%E5%8A%A1%EF%BC%8C%E4%BD%BF%E4%B9%8B%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E3%80%82&amp;source=Linux%E8%BF%90%E7%BB%B4%E9%83%A8%E8%90%BD&amp;armin=armin"><i class="fa fa-linkedin"></i> LinkedIn</a>
+                <a class="a-share-item" data-share="facebook" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Fwww.178linux.com%2F100909"><i class="fa fa-facebook"></i> Facebook</a>
+                <a class="a-share-item" data-share="twitter" target="_blank" href="https://twitter.com/intent/tweet?text=%E4%BD%BF%E7%94%A8Systemd%E6%8A%8A%E8%87%AA%E4%BD%9C%E8%84%9A%E6%9C%AC%E6%9C%8D%E5%8A%A1%E5%8C%96%EF%BC%88%E5%8A%A0%E5%85%A5%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%EF%BC%89&amp;url=http%3A%2F%2Fwww.178linux.com%2F100909&amp;via=http%3A%2F%2Fwww.178linux.com"><i class="fa fa-twitter"></i> Twitter</a>
+            </div></div>
+                        <div class="a-box gotop" id="j-top" style=""></div>
+        </div>
+                    <div class="footer-bar">
+                                    <div class="fb-item">
+                        <a href="tel:4000806560">
+                            <i class="fa fa-phone-square"></i>
+                            <span>电话咨询</span>
+                        </a>
+                    </div>
+                                        <div class="fb-item">
+                        <a href="http://tb.53kf.com/code/client/10145423/1">
+                            <i class="fa fa-address-card"></i>
+                            <span>在线咨询</span>
+                        </a>
+                    </div>
+                                </div>
+        <script type="text/javascript">
+/* <![CDATA[ */
+var _wpcom_js = {"webp":"","ajaxurl":"http:\/\/www.178linux.com\/wp-admin\/admin-ajax.php","theme_url":"http:\/\/www.178linux.com\/wp-content\/themes\/justnews","slide_speed":"5000","lightbox":"1","video_height":"482"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/main.js.download"></script>
+<script type="text/javascript" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/wp-embed.js.download"></script>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?4d5240d5413e00c9d558e155177ff7b6";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script>(function() {var _53code = document.createElement("script");_53code.src = "https://tb.53kf.com/code/code/10145423/2";var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(_53code, s);})();</script>
+
+
+
+
+                    <script>setup_share(1);</script>
+        
+<script id="hz6d_flp_jquery" src="./使用Systemd把自作脚本服务化（加入开机启动） _ Linux运维部落_files/jquery-1.4.2.flp.js.download" charset="utf-8" type="text/javascript"></script></body></html>

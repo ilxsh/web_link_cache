@@ -1,0 +1,309 @@
+/*
+ * Bootstrap Pager Base On Bootstrap 3.x
+ * @author:Leftso
+ * @Website http://bootstrap-pager.leftso.com
+ * @Date 2016-01
+ *
+ * Copyright 2018-2018 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+(function ($, window, document, undefined) {
+    'use strict';
+
+    var pluginName = 'bootstrapPager';
+
+    $.fn[pluginName] = function (options) {
+        var self = $(this);
+        if (this == null)
+            return null;
+        var data = this.data(pluginName);
+        //if (!data) {
+        data = new BasePager(this, options);
+        self.data(pluginName, data);
+        //}
+        return data;
+    };
+
+
+    var BasePager = function (element, options) {
+        this.loaded = false;
+        this.$element = $(element);
+        this.options = $.extend(true, {}, this.default, options);
+        if (this.options.btnNum<7) {
+            //this.options.btnNum=7;//最小值7
+        }
+        this.init();
+    }
+
+    //默认配置
+    BasePager.prototype.default = {
+        btnNum: 9,  //最大显示页码
+        pageSize: 10,   //每页显示条数
+        theme:"btn-md", //样式
+        pageNum:1,//默认当前页码
+        total:0,//默认总记录条数
+        locale:{
+            nextPageText:'>',
+            prePageText:'<'
+        },//语言
+        onChange:null
+    }
+
+    BasePager.prototype.template = {
+        ul: '<ul class="pagination">',
+        li_pre: '<li class=" previous disabled" id="{0}_previous" ></li>',
+        li_pre_a: '<a href="javascript:void(0)" class="previous"  aria-controls="{0}" data-dt-idx="0" tabindex="0" style="border-top-right-radius: 0px;border-bottom-right-radius: 0px;">上一页</a>',
+        li_page: '<li class=""></li>',
+        li_page_a: '<a href="javascript:void(0)"  aria-controls="{0}" style="border-radius: 0;" data-dt-idx="{1}" tabindex="{1}">{1}</a>',
+        li_dots: '<li class=" disabled"></li>',
+        li_dots_a: '<a href="javascript:void(0)"  aria-controls="{0}" style="border-radius: 0;" class="disabled" tabindex="{1}">{2}</a>',
+        li_next: '<li class=" next disabled" id="{0}_next"></li>',
+        li_next_a: '<a href="javascript:void(0)" class="next"  aria-controls="{0}" style="border-top-left-radius: 0px;border-bottom-left-radius: 0px;" data-dt-idx="{1}" tabindex="{1}">下一页</a>'
+    }
+
+
+    BasePager.prototype.refresh=function (options) {
+        this.$element.bootstrapPager(options);
+    }
+    //分页初始化
+    BasePager.prototype.init = function () {
+        this.drawPage(this.options.total, this.options.pageNum || 1);
+        this.loaded = true;
+    }
+
+    BasePager.prototype.drawPage = function (total, pageNum) {
+        total = parseInt(total);
+        pageNum = parseInt(pageNum);
+        var btnClass="btn-md";
+       if (this.options.theme) {
+       	btnClass=this.options.theme;
+       }
+
+        this.$element.find("ul").remove();
+
+        var totalPage = Math.ceil(total / this.options.pageSize);//最大页数
+        var id = this.$element.attr("id");
+        var ul = $(this.template.ul);
+        if(this.options.theme=="big"){
+            ul.addClass("pager-"+this.options.theme);
+        }
+        var li_pre = $(this.template.li_pre.format(id));
+        var li_pre_a = $(this.template.li_pre_a.format(id));
+        li_pre_a.text(this.options.locale.prePageText);
+        li_pre_a.addClass(btnClass);
+        li_pre.append(li_pre_a);
+        
+        var li_next = $(this.template.li_next.format(id));
+        var li_next_a = $(this.template.li_next_a.format(id, totalPage + 1));
+        li_next_a.text(this.options.locale.nextPageText);
+        li_next_a.addClass(btnClass);
+        li_next.append(li_next_a);
+        
+
+        ul.append(li_pre);
+
+
+        if (totalPage <= this.options.btnNum) {
+            for (var i = 1; i <= totalPage; i++) {
+                var li_page = $(this.template.li_page);
+                var li_page_a = $(this.template.li_page_a.format(id, i));
+                li_page_a.addClass(btnClass);
+                li_page.append(li_page_a);
+                
+                ul.append(li_page);
+            }
+        } else {
+            if (pageNum < this.options.btnNum - 2) {
+                //后省略
+                for (var i = 1; i <= this.options.btnNum - 2; i++) {
+                    var li_page = $(this.template.li_page);
+                    var li_page_a = $(this.template.li_page_a.format(id, i));
+                    li_page_a.addClass(btnClass);
+                    li_page.append(li_page_a);
+                    
+                    ul.append(li_page);
+                }
+                var li_dots = $(this.template.li_dots);
+                var li_dots_a = $(this.template.li_dots_a.format(id, totalPage - 1, '...'));
+                li_dots_a.addClass(btnClass);
+                li_dots.append(li_dots_a);
+                
+                ul.append(li_dots);
+
+                var li_page = $(this.template.li_page);
+                var li_page_a = $(this.template.li_page_a.format(id, totalPage));
+                li_page_a.addClass(btnClass);
+                li_page.append(li_page_a);
+                ul.append(li_page);
+            } else if (pageNum > totalPage - this.options.btnNum + 3) {
+                //前省略
+                var li_page = $(this.template.li_page);
+                var li_page_a = $(this.template.li_page_a.format(id, 1));
+                li_page_a.addClass(btnClass);
+                li_page.append(li_page_a);
+                ul.append(li_page);
+
+                var li_dots = $(this.template.li_dots);
+                var li_dots_a = $(this.template.li_dots_a.format(id, 2, '...'));
+                li_dots_a.addClass(btnClass);
+                li_dots.append(li_dots_a);
+                ul.append(li_dots);
+
+
+                for (var i = totalPage - this.options.btnNum + 3; i <= totalPage; i++) {
+                    var li_page = $(this.template.li_page);
+                    var li_page_a = $(this.template.li_page_a.format(id, i));
+                    li_page_a.addClass(btnClass);
+                    li_page.append(li_page_a);
+                    ul.append(li_page);
+                }
+
+            } else {
+                //前后都省略，中间当前页
+                var li_page = $(this.template.li_page);
+                var li_page_a = $(this.template.li_page_a.format(id, 1));
+                li_page.append(li_page_a);
+                li_page_a.addClass(btnClass);
+                ul.append(li_page);
+
+                var li_dots = $(this.template.li_dots);
+                var li_dots_a = $(this.template.li_dots_a.format(id, 2, '...'));
+                li_dots_a.addClass(btnClass);
+                li_dots.append(li_dots_a);
+
+                ul.append(li_dots);
+                for (var i = pageNum - 1; i <= pageNum + 1; i++) {
+                    var li_page = $(this.template.li_page);
+                    var li_page_a = $(this.template.li_page_a.format(id, i));
+                    li_page_a.addClass(btnClass);
+                    li_page.append(li_page_a);
+                    ul.append(li_page);
+                }
+
+                var li_dots = $(this.template.li_dots);
+                var li_dots_a = $(this.template.li_dots_a.format(id, totalPage - 1, '...'));
+                li_dots_a.addClass(btnClass);
+                li_dots.append(li_dots_a);
+                ul.append(li_dots);
+
+                var li_page = $(this.template.li_page);
+                var li_page_a = $(this.template.li_page_a.format(id, totalPage));
+                li_page_a.addClass(btnClass);
+                li_page.append(li_page_a);
+                ul.append(li_page);
+            }
+        }
+        ul.append(li_next);
+
+        this.$element.append(ul);
+
+        this.pageNum = pageNum;
+        this.totalPage = totalPage;
+        this.elementId = id;
+        this.bindEvent();
+        //构造完成，设置属性
+        this.setPreviousButton();
+        this.setNextButton();
+        this.setActiveButton();
+    }
+
+    BasePager.prototype.setPreviousButton = function () {
+        if (this.pageNum > 1) {
+            $("#" + this.elementId + "_previous").removeClass("disabled");
+        } else {
+            $("#" + this.elementId + "_previous").addClass("disabled");
+        }
+    }
+
+    BasePager.prototype.setNextButton = function () {
+        if (this.pageNum < this.totalPage) {
+            $("#" + this.elementId + "_next").removeClass("disabled")
+        } else {
+            $("#" + this.elementId + "_next").addClass("disabled");
+        }
+    }
+
+    BasePager.prototype.setActiveButton = function () {
+        this.$element.find("li").removeClass("active");
+        this.$element.find("a[data-dt-idx='" + this.pageNum + "']").parent().addClass("active");
+    }
+
+    BasePager.prototype.bindEvent = function () {
+        var self = this;
+        this.$element.find("li a").not(".disabled").not(".next").not(".previous").each(function (index, item) {
+            $(item).click(function () {
+                var pageNum = $(this).text();
+                if (self.options.onChange) {
+                    self.options.onChange(parseInt(pageNum),self.options.pageSize);
+                }
+                 var options = {
+                    btnNum: self.options.btnNum,  //最大显示页
+                    pageSize: self.options.pageSize,   //每页显示条数
+                    theme:self.options.theme, //样式
+                    pageNum:pageNum,//默认当前页码
+                    total:self.options.total,//默认总记录条数
+                    locale:self.options.locale,//语言
+                    onChange:self.options.onChange//回调
+                }
+                self.refresh(options);
+            })
+        })
+
+        this.$element.find("li a.next").click(function () {
+            if (self.pageNum == self.totalPage)
+                return;
+             var options = {
+                    btnNum: self.options.btnNum,  //最大显示页
+                    pageSize: self.options.pageSize,   //每页显示条数
+                    theme:self.options.theme, //样式
+                    pageNum:self.pageNum + 1,//默认当前页码
+                    total:self.options.total,//默认总记录条数
+                    locale:self.options.locale,//语言
+                    onChange:self.options.onChange//回调
+                }
+            if (self.options.onChange) {
+                    self.options.onChange(self.pageNum + 1,self.options.pageSize);
+                }
+                self.refresh(options);
+        })
+
+        this.$element.find("li a.previous").click(function () {
+            if (self.pageNum == 1)
+                return;
+
+             var options = {
+                    btnNum: self.options.btnNum,  //最大显示页
+                    pageSize: self.options.pageSize,   //每页显示条数
+                    theme:self.options.theme, //样式
+                    pageNum:self.pageNum - 1,//默认当前页码
+                    total:self.options.total,//默认总记录条数
+                    locale:self.options.locale,//语言
+                    onChange:self.options.onChange//回调
+                }
+            if (self.options.onChange) {
+                    self.options.onChange(self.pageNum - 1,self.options.pageSize);
+                }
+                self.refresh(options);
+        })
+    }
+
+    String.prototype.format = function () {
+        if (arguments.length == 0) return this;
+        for (var s = this, i = 0; i < arguments.length; i++)
+            s = s.replace(new RegExp("\\{" + i + "\\}", "g"), arguments[i]);
+        return s;
+    };
+
+
+})(jQuery, window, document)

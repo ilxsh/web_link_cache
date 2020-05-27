@@ -1,0 +1,1 @@
+﻿document.writeln("<img src=\'/linuxfile/lws.png\' alt=\'\' width=\'300\' height=\'300\' />");

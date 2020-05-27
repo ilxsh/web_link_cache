@@ -1,0 +1,545 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0036)https://linux.cn/article-7961-1.html -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>技术|在 Linux 上检测硬盘上的坏道和坏块</title>
+ 
+<meta name="keywords" content="在 Linux 上检测硬盘上的坏道和坏块">
+<meta name="description" content="我们通过几个必要的步骤，使用特定的磁盘扫描工具让你能够判断 Linux 磁盘或闪存是否存在坏道。 ">
+<meta name="copyright" content="2005-2019 Linux.cn">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<meta name="applicable-device" content="pc,mobile">
+<meta name="referrer" content="always">
+<!--<base href="https://linux.cn/">--><base href="."><link rel="stylesheet" type="text/css" href="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/style_1_common.css">
+<link rel="stylesheet" type="text/css" href="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/style_1_portal_view.css">
+<link href="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/responsive.css" rel="stylesheet">
+
+<script type="text/javascript">var STYLEID = '1', STATICURL = 'https://img.linux.net.cn/static/', IMGDIR = 'https://img.linux.net.cn/static/image/common', VERHASH = 'XXo', charset = 'utf-8', discuz_uid = '0', cookiepre = 'dx_516d_', cookiedomain = '.linux.cn', cookiepath = '/', showusercard = '1', attackevasive = '0', disallowfloat = '', creditnotice = '1|经验|,2|L币|,3|贡献|', defaultstyle = '', REPORTURL = 'aHR0cDovL2xpbnV4LmNuL2FydGljbGUtNzk2MS0xLmh0bWw=', SITEURL = 'https://linux.cn/', JSPATH = 'https://img.linux.net.cn/static/js/', CSSPATH = 'data/cache/style_', DYNAMICURL = '';</script>
+<script src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/common.js.download" type="text/javascript"></script>
+<script src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/jquery-1.11.0.min.js.download" type="text/javascript"></script>
+<script type="text/javascript">jQuery.noConflict();</script>
+<script src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/jquery.plugins.js.download" type="text/javascript"></script>
+<script src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/bootstrap.min.js.download" type="text/javascript"></script>
+<link rel="alternate" type="application/rss+xml" title="Linux 中国◆开源社区 RSS" href="https://linux.cn/rss.xml">
+<link rel="shortcut icon" href="https://img.linux.net.cn/favicon.ico" sizes="32x32">
+<link rel="canonical" href="https://linux.cn/article-7961-1.html">
+<script src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/portal.js.download" type="text/javascript"></script>
+<script type="text/javascript" id="lEokdkhfmflTrqgmBMKabgJjYjljdhYY" charset="UTF-8" src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/common_extra.js.download"></script><script type="text/javascript" id="seccodejs_cSYkvw4I" src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/misc.php"></script></head>
+
+<body id="nv_portal" class="pg_view" onkeydown="if(event.keyCode==27) return false;" style="">
+<div id="append_parent"></div><div id="ajaxwaitid"></div>
+<div id="hd">
+<div class="wp" style="box-shadow: 1px 1px 2px #666;">
+<h1 id="linuxcn_logo"><a href="https://linux.cn/" title="Linux.中国 - 开源社区"></a><style type="text/css">@-webkit-keyframes spin{100%{-webkit-transform:rotate(360deg);}}@keyframes spin{100%{transform:rotate(360deg);}}</style></h1>
+<div class="p_pop h_pop" id="mn_userapp_menu" style="display: none"></div><div id="topmenu_wrapper" style="height: 33px;">
+<div id="topmenu" class="affix" style="padding-left: 0px; width: 1200px;">
+<div id="nv">
+<ul><li id="mn_N6666" style="display: block; width: 179px;"><a href="https://linux.cn/" hidefocus="true" style="font-weight: bold; padding: 0px 45px;">Linux 中国</a></li><li id="mn_P3" onmouseover="navShow(&#39;P3&#39;)"><a href="https://linux.cn/tech/" hidefocus="true" style="color: #FFFAE5;">技术</a></li><li id="mn_P1" onmouseover="navShow(&#39;P1&#39;)"><a href="https://linux.cn/news/" hidefocus="true" style="color: #FFFAE5;">新闻</a></li><li id="mn_P4" onmouseover="navShow(&#39;P4&#39;)"><a href="https://linux.cn/talk/" hidefocus="true" style="color: #FFFAE5;">观点</a></li><li id="mn_P8" onmouseover="navShow(&#39;P8&#39;)"><a href="https://linux.cn/share/" hidefocus="true" style="color: #FFFAE5;">分享</a></li><li id="mn_N1fa1"><a href="https://linux.cn/lctt/" hidefocus="true" target="_blank">LCTT</a></li></ul>
+</div>
+<div id="mu" class="cl">
+<ul class="cl " id="snav_mn_P3" style="display:none;">
+<li><a href="https://linux.cn/tech/desktop/" hidefocus="true">桌面应用</a></li><li><a href="https://linux.cn/tech/sa/" hidefocus="true">系统运维</a></li><li><a href="https://linux.cn/tech/program/" hidefocus="true">软件开发</a></li><li><a href="https://linux.cn/tech/raspberrypi/" hidefocus="true">树莓派</a></li><li><a href="https://linux.cn/tech/container/" hidefocus="true">容器与云</a></li><li><a href="https://linux.cn/portal.php?mod=list&amp;catid=27" hidefocus="true">区块链</a></li></ul>
+<ul class="cl " id="snav_mn_P1" style="display:none;">
+<li><a href="https://linux.cn/news/express/" hidefocus="true">新闻速读</a></li></ul>
+<ul class="cl " id="snav_mn_P4" style="display:none;">
+<li><a href="https://linux.cn/talk/comic/" hidefocus="true">极客漫画</a></li><li><a href="https://linux.cn/talk/ossip/" hidefocus="true">开源智慧</a></li><li><a href="https://linux.cn/talk/interview/" hidefocus="true">穿山甲专访</a></li><li><a href="https://linux.cn/talk/ocselected/" hidefocus="true">开源之道</a></li></ul>
+<ul class="cl " id="snav_mn_P8" style="display:none;">
+<li><a href="https://linux.cn/share/distro/" hidefocus="true">Linux 发行版</a></li></ul>
+<ul class="cl " id="snav_mn_userapp" style="display:none;">
+</ul>
+</div>
+</div>
+</div>
+<div id="scbar" class="cl">
+<form id="scbar_form" method="post" autocomplete="off" onsubmit="searchFocus($(&#39;scbar_txt&#39;))" action="https://linux.cn/search.php?searchsubmit=yes" target="_blank">
+<input type="hidden" name="mod" id="scbar_mod" value="search">
+<input type="hidden" name="formhash" value="5869a36b">
+<input type="hidden" name="srchtype" value="title">
+<input type="hidden" name="srhfid" value="0">
+<input type="hidden" name="srhlocality" value="portal::view">
+<table id="scbar_table" cellspacing="0" cellpadding="0" style="float:right;">
+<tbody><tr>
+<td class="scbar_icon_td"></td>
+<td class="scbar_txt_td"><input type="text" name="srchtxt" id="scbar_txt" value="请注册后再搜索" autocomplete="off" speech="" class=" xg1" placeholder="请注册后再搜索"></td>
+<td class="scbar_type_td"><a href="javascript:;" id="scbar_type" class="xg1" onclick="showMenu(this.id)" hidefocus="true">搜索</a></td>
+<td class="scbar_btn_td"><button type="submit" name="searchsubmit" id="scbar_btn" sc="1" class="pn pnc" value="true"><strong class="xi2">搜索</strong></button></td>
+<td class="scbar_hot_td">
+<div id="scbar_hot">
+</div>
+</td>
+</tr>
+</tbody></table>
+</form>
+<span class="z titletext" style="padding: 0 10px 0 20px;">❏ 站外平台：</span>
+<ul id="ext_plantform" class="cl mutag z">
+<li><a class="hidefocus tsina" hidefocus="true" href="https://weibo.com/linuxcn" target="_blank" title="微博认证号：Linux中国"></a></li>
+<li><a class="hidefocus tticon" hidefocus="true" href="https://www.toutiao.com/c/user/52889878622/" target="_blank" title="今日头条：Linux中国"></a></li>
+<li><a class="hidefocus tticon" hidefocus="true" href="http://www.toutiao.com/c/user/3357852467/" target="_blank" title="今日头条：Linux技术"></a></li>
+<li><a class="hidefocus wyicon" hidefocus="true" href="http://dy.163.com/v2/article/detail/D282EJLD0511CPOJ.html" target="_blank" title="网易号：Linux"></a></li>
+<li><a class="hidefocus fbicon" hidefocus="true" href="https://www.facebook.com/linux.china/" target="_blank" title="Facebook Page：Linux中国"></a></li>
+<li><a class="hidefocus zhicon" hidefocus="true" href="https://www.zhihu.com/org/linuxzhong-guo/" target="_blank" title="知乎机构号：Linux中国"></a></li>
+<li><a class="hidefocus twicon" hidefocus="true" href="https://twitter.com/linux_cn" target="_blank" title="Twitter：Linux中国"></a></li>
+<li><a class="hidefocus tgicon" hidefocus="true" href="https://t.me/linuxdotcn" target="_blank" title="Telegram Channel：Linux中国"></a></li>
+</ul>
+</div>
+<br class="clear">
+<ul id="scbar_type_menu" class="p_pop" style="display: none;"><li><a href="javascript:;" rel="search">全站</a></li></ul>
+<script type="text/javascript">
+initSearchmenu('scbar', '');
+</script>
+<script type="text/javascript">
+(function($){
+$(window).load(function() {
+$("#topmenu").affix({offset : {
+top : $("#topmenu").offset().top,
+bottom: 218}});
+$('#topmenu_wrapper').height($("#topmenu").height());
+$("#topmenu").on('affixed.bs.affix',function() {
+if ($('#linuxcn_logo').is(':visible')) {
+$('#mn_N6666').css({'display': 'block','width': '179px'});
+$('#mn_N6666 a').css({'padding': '0 45px'});
+$(this).css({'padding-left': 0,'width':'1200px'});
+}
+});
+$("#topmenu").on('affixed-top.bs.affix',function() {
+if ($('#linuxcn_logo').is(':visible')) {
+$('#mn_N6666').css({'display': 'none'});
+$(this).css({'padding-left': '180px','width': '1020px'});
+}
+});
+})
+})(jQuery);
+</script>
+
+</div>
+</div>
+<div id="wp" class="wp">
+
+<style type="text/css">
+#nv_portal .vw .h.hm {background: #FFF url(https://img.linux.net.cn/data/attachment/album/201611/16/161511pz1odz8o1z1fmh8d.jpg); border-radius: 0;background-size: cover; background-position: center; height: 640px;position: relative;padding: 10px; margin-bottom: 0; }
+#nv_portal .vw .h.hm h1 {background-color: rgba(33,33,33,0.8); border-radius: 0;position: absolute;margin: 10px 20px 20px 20px;padding: 15px 10px;bottom: 0;width: 90%; }
+#nv_portal .vw .d table {margin: 0 auto;}
+</style>
+<div id="ct" class="ct2 wp cl">
+<div class="mn">
+<article class="vw">
+<div class="h hm bm" style="margin-top: 0;">
+<h1 class="ph" id="article_title">在 Linux 上检测硬盘上的坏道和坏块 </h1>
+<div class="ph" id="article_copyright">
+<span>作者： 
+    	 
+    		    			<span class="textcut"><a href="http://www.tecmint.com/check-linux-hard-disk-bad-sectors-bad-blocks/" target="_blank">Aaron Kili</a></span>
+    		    	    	<span>译者： 
+<a href="https://linux.cn/lctt/" target="_blank">LCTT</a>&nbsp;<a href="https://linux.cn/lctt/alim0x" target="_blank">Mo</a></span>
+<p id="article_date">
+| 2016-11-16 16:15&nbsp;&nbsp;
+评论: <a href="https://linux.cn/portal.php?mod=comment&amp;id=7961&amp;idtype=aid" title="查看全部评论"><em id="_commentnum">4</em></a>&nbsp;收藏: <em id="_favtimes">9</em>&nbsp;&nbsp;&nbsp;&nbsp;
+</p>
+</span></div>
+</div>
+
+<div class="d" style="width: 100%;margin: 0;">
+<div id="article_content" style="border-radius:0;">
+<p>让我们从坏道和坏块的定义开始说起，它们是一块磁盘或闪存上不再能够被读写的部分，一般是由于磁盘表面特定的<a href="http://www.tecmint.com/defragment-linux-system-partitions-and-directories/" class="ext" rel="external nofollow" target="_blank">物理损坏</a>或闪存晶体管失效导致的。</p>
+<p>随着坏道的继续积累，它们会对你的磁盘或闪存容量产生令人不快或破坏性的影响，甚至可能会导致硬件失效。</p>
+<p>同时还需要注意的是坏块的存在警示你应该开始考虑买块新磁盘了，或者简单地将坏块标记为不可用。</p>
+<p>因此，在这篇文章中，我们通过几个必要的步骤，使用特定的<a href="http://www.tecmint.com/ncdu-a-ncurses-based-disk-usage-analyzer-and-tracker/" class="ext" rel="external nofollow" target="_blank">磁盘扫描工具</a>让你能够判断 Linux 磁盘或闪存是否存在坏道。</p>
+
+<p>以下就是步骤：</p>
+<h3 id="toc_1">在 Linux 上使用坏块工具检查坏道</h3>
+<p>坏块工具可以让用户扫描设备检查坏道或坏块。设备可以是一个磁盘或外置磁盘，由一个如 <code>/dev/sdc</code> 这样的文件代表。</p>
+<p>首先，通过超级用户权限执行 <a href="http://www.tecmint.com/fdisk-commands-to-manage-linux-disk-partitions/" class="ext" rel="external nofollow" target="_blank">fdisk 命令</a>来显示你的所有磁盘或闪存的信息以及它们的分区信息：</p>
+<pre class="prettyprint linenums prettyprinted" style=""><ol class="linenums"><li class="L0"><code><span class="pln">$ </span><span class="kwd">sudo</span><span class="pln"> </span><span class="kwd">fdisk</span><span class="pln"> </span><span class="pun">-</span><span class="pln">l</span><span class="pun">&lt;</span><span class="pln">br</span><span class="pun">&gt;</span></code></li></ol></pre>
+<p class="article_img"><img src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/161522zvofgpg5atqaz66q.png" alt="列出 Linux 文件系统分区" title="列出 Linux 文件系统分区"></p>
+<p class="article_img_desc"><em>列出 Linux 文件系统分区</em></p>
+<p>然后用如下命令检查你的 Linux 硬盘上的坏道/坏块：</p>
+<pre class="prettyprint linenums prettyprinted" style=""><ol class="linenums"><li class="L0"><code><span class="pln">$ </span><span class="kwd">sudo</span><span class="pln"> badblocks </span><span class="pun">-</span><span class="pln">v </span><span class="pun">/</span><span class="pln">dev</span><span class="pun">/</span><span class="pln">sda10 </span><span class="pun">&gt;</span><span class="pln"> badsectors</span><span class="pun">.</span><span class="pln">txt</span></code></li></ol></pre>
+<p class="article_img"><img src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/161523ae1f9efev9zmpa44.png" alt="在 Linux 上扫描硬盘坏道" title="在 Linux 上扫描硬盘坏道"></p>
+<p class="article_img_desc"><em>在 Linux 上扫描硬盘坏道</em></p>
+<p>上面的命令中，badblocks 扫描设备 <code>/dev/sda10</code>（记得指定你的实际设备），<code>-v</code> 选项让它显示操作的详情。另外，这里使用了输出重定向将操作结果重定向到了文件 <code>badsectors.txt</code>。</p>
+<p>如果你在你的磁盘上发现任何坏道，卸载磁盘并像下面这样让系统不要将数据写入回报的扇区中。</p>
+<p>你需要执行 <code>e2fsck</code>（针对 ext2/ext3/ext4 文件系统）或 <code>fsck</code> 命令，命令中还需要用到 <code>badsectors.txt</code> 文件和设备文件。</p>
+<p><code>-l</code> 选项告诉命令将在指定的文件 <code>badsectors.txt</code> 中列出的扇区号码加入坏块列表。</p>
+<pre class="prettyprint linenums prettyprinted" style=""><ol class="linenums"><li class="L0"><code><span class="pun">------------</span><span class="pln"> </span><span class="pun">针对</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> ext2</span><span class="pun">/</span><span class="pln">ext3</span><span class="pun">/</span><span class="pln">ext4 </span><span class="pun">文件系统</span><span class="pln"> </span><span class="pun">------------</span></code></li><li class="L1"><code><span class="pln">$ </span><span class="kwd">sudo</span><span class="pln"> </span><span class="kwd">e2fsck</span><span class="pln"> </span><span class="pun">-</span><span class="pln">l badsectors</span><span class="pun">.</span><span class="pln">txt </span><span class="pun">/</span><span class="pln">dev</span><span class="pun">/</span><span class="pln">sda10</span></code></li><li class="L2"><code></code></li><li class="L3"><code><span class="pun">或</span></code></li><li class="L4"><code></code></li><li class="L5"><code><span class="pun">------------</span><span class="pln"> </span><span class="pun">针对其它文件系统</span><span class="pln"> </span><span class="pun">------------</span></code></li><li class="L6"><code><span class="pln">$ </span><span class="kwd">sudo</span><span class="pln"> </span><span class="kwd">fsck</span><span class="pln"> </span><span class="pun">-</span><span class="pln">l badsectors</span><span class="pun">.</span><span class="pln">txt </span><span class="pun">/</span><span class="pln">dev</span><span class="pun">/</span><span class="pln">sda10</span></code></li></ol></pre>
+<h3 id="toc_2">在 Linux 上使用 Smartmontools 工具扫描坏道</h3>
+<p>这个方法对带有 S.M.A.R.T（<ruby>自我监控分析报告技术<rp>（</rp><rt>Self-Monitoring, Analysis and Reporting Technology</rt><rp>）</rp></ruby>）系统的现代磁盘（ATA/SATA 和 SCSI/SAS 硬盘以及固态硬盘）更加的可靠和高效。S.M.A.R.T 系统能够帮助检测，报告，以及可能记录它们的健康状况，这样你就可以找出任何可能出现的硬件失效。</p>
+<p>你可以使用以下命令安装 <code>smartmontools</code>：</p>
+<pre class="prettyprint linenums prettyprinted" style=""><ol class="linenums"><li class="L0"><code><span class="pun">------------</span><span class="pln"> </span><span class="pun">在基于</span><span class="pln"> </span><span class="typ">Debian</span><span class="pun">/</span><span class="typ">Ubuntu</span><span class="pln"> </span><span class="pun">的系统上</span><span class="pln"> </span><span class="pun">------------</span></code></li><li class="L1"><code><span class="pln">$ </span><span class="kwd">sudo</span><span class="pln"> </span><span class="kwd">apt-get</span><span class="pln"> install smartmontools</span></code></li><li class="L2"><code></code></li><li class="L3"><code><span class="pun">------------</span><span class="pln"> </span><span class="pun">在基于</span><span class="pln"> RHEL</span><span class="pun">/</span><span class="typ">CentOS</span><span class="pln"> </span><span class="pun">的系统上</span><span class="pln"> </span><span class="pun">------------</span></code></li><li class="L4"><code><span class="pln">$ </span><span class="kwd">sudo</span><span class="pln"> </span><span class="kwd">yum</span><span class="pln"> install smartmontools</span></code></li></ol></pre>
+<p>安装完成之后，使用 <code>smartctl</code> 控制磁盘集成的 S.M.A.R.T 系统。你可以这样查看它的手册或帮助：</p>
+<pre class="prettyprint linenums prettyprinted" style=""><ol class="linenums"><li class="L0"><code><span class="pln">$ </span><span class="kwd">man</span><span class="pln"> smartctl</span></code></li><li class="L1"><code><span class="pln">$ smartctl </span><span class="pun">-</span><span class="pln">h</span></code></li></ol></pre>
+<p>然后执行 <code>smartctrl</code> 命令并在命令中指定你的设备作为参数，以下命令包含了参数 <code>-H</code> 或 <code>--health</code> 以显示 SMART 整体健康自我评估测试结果。</p>
+<pre class="prettyprint linenums prettyprinted" style=""><ol class="linenums"><li class="L0"><code><span class="pln">$ </span><span class="kwd">sudo</span><span class="pln"> smartctl </span><span class="pun">-</span><span class="pln">H </span><span class="pun">/</span><span class="pln">dev</span><span class="pun">/</span><span class="pln">sda10</span></code></li></ol></pre>
+<p class="article_img"><img src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/161523ycc1n841ncat1zz2.png" alt="检查 Linux 硬盘健康" title="检查 Linux 硬盘健康"></p>
+<p class="article_img_desc"><em>检查 Linux 硬盘健康</em></p>
+<p>上面的结果指出你的硬盘很健康，近期内不大可能发生硬件失效。</p>
+<p>要获取磁盘信息总览，使用 <code>-a</code> 或 <code>--all</code> 选项来显示关于磁盘所有的 SMART 信息，<code>-x</code> 或 <code>--xall</code> 来显示所有关于磁盘的 SMART 信息以及非 SMART 信息。</p>
+<p>在这个教程中，我们涉及了有关<a href="http://www.tecmint.com/defragment-linux-system-partitions-and-directories/" class="ext" rel="external nofollow" target="_blank">磁盘健康诊断</a>的重要话题，你可以下面的反馈区来分享你的想法或提问，并且记得多回来看看。</p>
+<hr>
+<p>via: <a href="http://www.tecmint.com/check-linux-hard-disk-bad-sectors-bad-blocks/" class="ext" rel="external nofollow" target="_blank">http://www.tecmint.com/check-linux-hard-disk-bad-sectors-bad-blocks/</a></p>
+<p>作者：<a href="http://www.tecmint.com/author/aaronkili/" class="ext" rel="external nofollow" target="_blank">Aaron Kili</a> 译者：<a href="https://github.com/alim0x" class="ext" rel="external nofollow" target="_blank">alim0x</a> 校对：<a href="https://github.com/wxy" class="ext" rel="external nofollow" target="_blank">wxy</a></p>
+<p>本文由 <a href="https://github.com/LCTT/TranslateProject" class="ext" rel="external nofollow" target="_blank">LCTT</a> 原创编译，<a href="https://linux.cn/article-7961-1.html">Linux中国</a> 荣誉推出</p>  					<section><img style="width:24px;height: 24px;float: right;" src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/linisi.svg"><br class="clear"></section>
+</div>
+</div>
+<br class="clear">
+<div class="vw">
+<div id="add_comment" class="h bm" style="display: none;">
+<div class="bm_h cl">
+<h3>发表评论</h3>
+</div>
+<div class="bm_c pbn">
+<form id="cform" name="cform" action="https://linux.cn/portal.php?mod=portalcp&amp;ac=comment" method="post" autocomplete="off">
+<div class="tedt">
+<div class="area">
+<textarea name="message" rows="10" class="pt" id="message" onkeydown="ctrlEnter(event, &#39;commentsubmit_btn&#39;);"></textarea>
+</div>
+</div>
+
+<div class="mtm z"><span id="seccode_cSYkvw4I"><input name="seccodehash" type="hidden" value="cSYkvw4I"><input name="seccodemodid" type="hidden" value="portal::view">验证码 <span id="seccodecSYkvw4I" onclick="showMenu(this.id);"><input name="seccodeverify" id="seccodeverify_cSYkvw4I" type="text" autocomplete="off" style="ime-mode:disabled;width:100px" class="txt px vm" onblur="checksec(&#39;code&#39;, &#39;cSYkvw4I&#39;, 0, null, &#39;portal::view&#39;)"> <a href="javascript:;" onclick="updateseccode(&#39;cSYkvw4I&#39;);doane(event);" class="xi2">换一个</a><span id="checkseccodeverify_cSYkvw4I"><img id="checksec_none_cSYkvw4I" src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/none.gif" width="16" height="16" class="vm"></span></span><div id="seccodecSYkvw4I_menu" class="p_pop p_opt" style="display:none"><span id="vseccode_cSYkvw4I">输入下图中的字符<br><img onclick="updateseccode(&#39;cSYkvw4I&#39;)" width="100" height="40" src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/misc(1).php" class="vm" alt=""></span></div></span>		
+<script type="text/javascript" reload="1">updateseccode('cSYkvw4I', '<sec> <span id="sec<hash>" onclick="showMenu(this.id);"><sec></span><div id="sec<hash>_menu" class="p_pop p_opt" style="display:none"><sec></div>', 'portal::view');</script>
+<script type="text/javascript">
+(function($){
+$("#cform").submit(function(e) {
+if ($("#checksec_none_cSYkvw4I").length>0) {
+alert("请输入验证码");
+return false;
+} else if ($("#checksec_error_cSYkvw4I").length>0) {
+alert("验证码输入错误，请重新输入");
+return false;
+} else if ($("#checksec_loading_cSYkvw4I").length>0) {
+alert("验证码验证中……");
+return false;
+}
+});
+})(jQuery);
+</script>
+</div>
+<input type="hidden" name="portal_referer" value="https://linux.cn/article-7961-1.html#comment">
+<input type="hidden" name="referer" value="https://linux.cn/article-7961-1.html#comment">
+<input type="hidden" name="id" value="0">
+<input type="hidden" name="idtype" value="">
+<input type="hidden" name="aid" value="7961">
+<input id="reppid" type="hidden" name="reppid" value="">
+<input type="hidden" name="formhash" value="5869a36b">
+<input type="hidden" name="replysubmit" value="true">
+<input type="hidden" name="commentsubmit" value="true">
+<p class="mtm" style="text-align: center;"><button type="submit" name="commentsubmit_btn" id="commentsubmit_btn" value="true" class="pn"><strong>评论</strong></button></p>
+<br class="clear">
+</form>
+</div>
+</div>
+<div id="comment" class="bm h">
+<div class="bm_h cl">
+<h3 class="z"><a name="comment"></a>最新评论</h3>
+</div>
+<div id="comment_ul" class="bm_c">
+<div style="text-align: center;"><button type="button" class="pnc" style="font-size: 24px;width: 160px;" id="c_add" onclick="showWindow(this.id, &#39;portal.php?mod=portalcp&amp;ac=comment&amp;op=new&amp;aid=7961&#39;, &#39;get&#39;, 0);"><strong>发表评论</strong></button></div><a name="comment_anchor_43755"></a>
+<dl id="comment_43755_li" class="pbm bbda cl">
+<dt class="mbm user ">
+<a href="https://linux.cn/space/42295/" class="xi2 xw1 vm" c="1" target="_blank" mid="card_5072">wst021 [Chrome 55.0|Windows 8.1]</a>
+<span class=" xw0 vm">2016-12-23 13:37</span>
+<span class="y xw0 xi2 opt" style="margin-right: 5px;">
+<a class="replyadd" href="https://linux.cn/portal.php?mod=review&amp;action=postreview&amp;do=support&amp;idtype=aid&amp;tid=7961&amp;pid=43755&amp;hash=5869a36b" onclick="ajaxmenu(this, 3000, 0, 0, &#39;43&#39;, &#39;&#39;);return false;"><span id="review_support_43755"></span> 赞</a> 
+<!--<a href="javascript:;" onclick="portal_comment_reppost(43755, '7961');">回复</a> --><a id="reply_43755" onclick="showWindow(&#39;comment&#39;, this.href, &#39;get&#39;, 0);" href="https://linux.cn/portal.php?mod=portalcp&amp;ac=comment&amp;op=reply&amp;cid=43755&amp;aid=7961&amp;idtype=">回复</a> </span>	
+</dt>
+<dd>
+非常赞，收藏了。</dd>
+</dl><a name="comment_anchor_43212"></a>
+<dl id="comment_43212_li" class="pbm bbda cl">
+<dt class="mbm  ">
+<span class=" xw0 vm">来自广东广州的 Chrome 54.0|GNU/Linux 用户</span>
+<span class=" xw0 vm">2016-11-20 18:08</span>
+<span class="y xw0 xi2 opt" style="margin-right: 5px;">
+<a class="replyadd" href="https://linux.cn/portal.php?mod=review&amp;action=postreview&amp;do=support&amp;idtype=aid&amp;tid=7961&amp;pid=43212&amp;hash=5869a36b" onclick="ajaxmenu(this, 3000, 0, 0, &#39;43&#39;, &#39;&#39;);return false;"><span id="review_support_43212">1</span> 赞</a> 
+<!--<a href="javascript:;" onclick="portal_comment_reppost(43212, '7961');">回复</a> --><a id="reply_43212" onclick="showWindow(&#39;comment&#39;, this.href, &#39;get&#39;, 0);" href="https://linux.cn/portal.php?mod=portalcp&amp;ac=comment&amp;op=reply&amp;cid=43212&amp;aid=7961&amp;idtype=">回复</a> </span>	
+</dt>
+<dd>
+good !!</dd>
+</dl><a name="comment_anchor_43171"></a>
+<dl id="comment_43171_li" class="pbm bbda cl">
+<dt class="mbm user s2">
+<a href="https://linux.cn/space/28646/" class="xi2 xw1 vm" c="1" target="_blank" mid="card_6679">Wf_talk [Firefox 49.0|GNU/Linux]</a>
+<span class=" xw0 vm">2016-11-17 18:27</span>
+<span class="y xw0 xi2 opt" style="margin-right: 5px;">
+<a class="replyadd" href="https://linux.cn/portal.php?mod=review&amp;action=postreview&amp;do=support&amp;idtype=aid&amp;tid=7961&amp;pid=43171&amp;hash=5869a36b" onclick="ajaxmenu(this, 3000, 0, 0, &#39;43&#39;, &#39;&#39;);return false;"><span id="review_support_43171">4</span> 赞</a> 
+<!--<a href="javascript:;" onclick="portal_comment_reppost(43171, '7961');">回复</a> --><a id="reply_43171" onclick="showWindow(&#39;comment&#39;, this.href, &#39;get&#39;, 0);" href="https://linux.cn/portal.php?mod=portalcp&amp;ac=comment&amp;op=reply&amp;cid=43171&amp;aid=7961&amp;idtype=">回复</a> </span>	
+</dt>
+<dd>
+又是一项系统管理技能。</dd>
+</dl><a name="comment_anchor_43157"></a>
+<dl id="comment_43157_li" class="pbm bbda cl">
+<dt class="mbm user ">
+<a href="https://linux.cn/space/40725/" class="xi2 xw1 vm" c="1" target="_blank" mid="card_8621">zalois [Sina Weibo 6.11|Android 6.0]</a>
+<span class=" xw0 vm">2016-11-16 17:47</span>
+<span class="y xw0 xi2 opt" style="margin-right: 5px;">
+<a class="replyadd" href="https://linux.cn/portal.php?mod=review&amp;action=postreview&amp;do=support&amp;idtype=aid&amp;tid=7961&amp;pid=43157&amp;hash=5869a36b" onclick="ajaxmenu(this, 3000, 0, 0, &#39;43&#39;, &#39;&#39;);return false;"><span id="review_support_43157">1</span> 赞</a> 
+<!--<a href="javascript:;" onclick="portal_comment_reppost(43157, '7961');">回复</a> --><a id="reply_43157" onclick="showWindow(&#39;comment&#39;, this.href, &#39;get&#39;, 0);" href="https://linux.cn/portal.php?mod=portalcp&amp;ac=comment&amp;op=reply&amp;cid=43157&amp;aid=7961&amp;idtype=">回复</a> </span>	
+</dt>
+<dd>
+学习学习</dd>
+</dl><div class="ptm pbm cl">
+</div>
+</div>
+</div>
+</div>
+<div class="h bm_c bm z" id="footer_info">
+<p class="copyright">
+    	 
+    		    			    			<span class="z textcut">译自：<a href="http://www.tecmint.com/check-linux-hard-disk-bad-sectors-bad-blocks/" target="_blank">tecmint.com</a></span>
+    			    		    		<span class="y">作者： Aaron Kili</span>    		<br class="clear">
+    	    	<span class="z">原创：<a href="https://linux.cn/lctt/" target="_blank">LCTT</a> <a href="https://linux.cn/article-7961-1.html" target="_blank">https://linux.cn/article-7961-1.html</a></span>
+            			<span class="y">译者： Mo</span>    		<br class="clear">
+    	    	<br>
+    	    		<span>本文由 LCTT 原创翻译，<a href="https://linux.cn/article-7961-1.html">Linux中国首发</a>。也想加入译者行列，为开源做一些自己的贡献么？欢迎加入 <a href="http://lctt.github.io/" target="_blank">LCTT</a>！<br>翻译工作和译文发表仅用于学习和交流目的，翻译工作遵照 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/deed.zh" target="_blank">CC-BY-NC-SA 协议规定</a>，如果我们的工作有侵犯到您的权益，请及时联系我们。</span>
+    		    		<br class="clear">
+    		<span style="color:red;">欢迎遵照 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/deed.zh" target="_blank">CC-BY-NC-SA 协议规定</a>转载，敬请在正文中标注并保留原文/译文链接和作者/译者等信息。</span>
+                		<br class="clear">
+    	    	<span>文章仅代表作者的知识和看法，如有不同观点，请楼下排队<a href="javascript:void(0);" onclick="$(&#39;message&#39;).focus();">吐槽</a> :D</span>
+    	<br class="clear">
+</p>
+
+
+
+<div class="o cl ptm pbm">
+<a href="https://linux.cn/home.php?mod=spacecp&amp;ac=favorite&amp;type=article&amp;id=7961&amp;handlekey=favoritearticlehk_7961" id="a_favorite" onclick="showWindow(this.id, this.href, &#39;get&#39;, 0);" class="favorite z" title="收藏"></a>
+<!-- <a href="misc.php?mod=invite&amp;action=article&amp;id=7961" id="a_invite" onclick="showWindow('invite', this.href, 'get', 0);" class="invite z" title="邀请"></a> -->
+<a href="https://linux.cn/article-7961-1.html?pr" class="print z" title="打印"></a>
+				
+</div>
+<div class="pren pbm cl">
+<em>上一篇：<a href="https://linux.cn/article-7960-1.html">在 Kali Linux 下实战 Nmap（网络安全扫描器）</a></em><em>下一篇：<a href="https://linux.cn/article-7964-1.html">如何在 Linux 中压缩及解压缩 .bz2 文件</a></em></div>
+</div>
+<div><div id="translator_info" class="bm" style="position: relative;margin: 8px 4px 8px 0 !important;float: right;">
+<div class="bm_h cl">
+LCTT 译者
+</div>
+<div class="bm_c">
+<div>
+<a href="https://linux.cn/lctt/alim0x" target="_blank"><img class="avatar" src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/4954007" style="max-width: 64px; float: left;margin-top: 10px;"></a>
+<div style="float: left;margin-left: 10px;font-size: 12px;line-height: 1.5em; ">
+<div>
+<a href="https://github.com/alim0x" target="_blank"><img src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/github_icon.png" style="vertical-align:middle;"></a> <a href="https://linux.cn/lctt/alim0x" target="_blank" style="font-weight: bold;">Mo</a> 🌟🌟🌟🌟🌟</div>
+<div class="addfiles">共计翻译： <span class="num" style="color: #f00;font-weight: 700;">80.5</span> 篇
+| 共计贡献： <span class="num" style="color: #f00;font-weight: 700;">2078</span> 天</div>
+<div>贡献时间：2014-05-21 -&gt; 2020-01-28</div><a href="https://linux.cn/lctt/alim0x" target="_blank">访问我的 LCTT 主页</a> | <a href="https://github.com/alim0x" target="_blank">在 GitHub 上关注我</a>
+</div>
+<br class="clear">
+</div>
+</div>
+</div>
+</div>
+
+<div id="related" class="bm block z">
+<div class="bm_h cl">
+<h3>相关阅读</h3>
+</div>
+<div class="bm_c pbn" id="related_tag">
+<ul class="xl xl2 cl bbs pbm" id="tag"><li><a href="https://linux.cn/tag-%E7%A3%81%E7%9B%98.html">磁盘</a></li>
+<li><a href="https://linux.cn/tag-smartmontools.html">smartmontools</a></li>
+<li><a href="https://linux.cn/tag-e2fsck.html">e2fsck</a></li>
+</ul>
+</div>
+<div class="bm_c xl xl1 cl" id="related_article">
+<ul><li><em>2018-07-23</em><a href="https://linux.cn/article-9859-1-rel.html" target="_blank">如何检查 Linux 中的可用磁盘空间</a> </li>
+<li><em>2018-08-07</em><a href="https://linux.cn/article-9902-1-rel.html" target="_blank">如何使用命令行检查 Linux 上的磁盘空间</a> </li>
+<li><em>2018-09-14</em><a href="https://linux.cn/article-10013-1-rel.html" target="_blank">Filelight：可视化查看 Linux 系统上的磁盘使用情况</a> </li>
+<li><em>2018-10-10</em><a href="https://linux.cn/article-10096-1-rel.html" target="_blank">df 命令新手教程</a> </li>
+<li><em>2018-11-16</em><a href="https://linux.cn/article-10239-1-rel.html" target="_blank">几个用于替代 du 命令的更好选择</a> </li>
+</ul>
+</div>
+</div>
+<br class="clear">
+</article>
+</div>
+
+</div>
+
+
+<input type="hidden" id="portalview" value="1">
+
+<script type="text/javascript">
+(function($){
+$(window).load(function() {
+
+// 文章内插图及注释
+
+var max_width = $("#article_content").width() - 60;
+var imgp = $("#article_content IMG").parents("P");
+imgp.each(function(){
+$(this).addClass("article_img");
+var img = $(this).find("IMG");
+if (img.parent("A").is("A")) {
+img.unwrap();
+}
+// 如果有图片描述
+var desc = null;
+if ((desc = $(this).next("P")) && desc && desc.contents() && desc.contents().first().is("EM") ) {
+desc.addClass("article_img_desc");
+desc_txt = desc.contents().first().text();
+img.attr({"title":desc_txt,"alt":desc_txt});
+} else if ((desc = img.next("BR").next("EM")) && desc.text()) {
+var desc_txt = desc.text();
+img.next("BR").remove();
+img.next("EM").remove();
+$(this).after("<p class='article_img_desc'><em>" + desc_txt + "</em></p>");
+} else {
+var desc_txt = img.attr("alt") || img.attr("title");
+if (desc_txt != '' && typeof desc_txt != 'undefined') {
+$(this).after("<p class='article_img_desc'><em>" + desc_txt + "</em></p>");
+}
+}
+if (img.attr("width") > max_width) {
+img.attr("width",'');
+img.attr("height",'');
+img.css("cursor","pointer");
+img.click(function(){window.open(img.attr("src"));});
+} else if (img.width() > max_width) {
+img.css("height",parseInt(img.height() * (max_width / img.attr("width"))));
+img.css("width",max_width);
+img.css("cursor","pointer");
+img.click(function(){window.open(img.attr("src"));});
+}
+});
+
+var pre = $("#article_content PRE");
+pre.each(function(){
+// 如果有代码描述
+var desc = null;
+if ((desc = $(this).next("P")) && desc && desc.contents() && desc.contents().first().is("EM") ) {
+desc.addClass("article_img_desc");
+desc_txt = desc.contents().first().text();
+}
+});
+
+// 链接
+var re_sitelink = /^https?:\/\/(www.)?linux(.net)?.cn\//i;
+$("#article_content a").map(function(){
+if ($(this).attr('href') == undefined) {
+$(this).css({'visibility':'hidden'});
+} else if ($(this).attr('href').substr(0,1) == '#') {
+$(this).attr('href','https://linux.cn/article-7961-1.html' + $(this).attr('href'));
+}
+if (re_sitelink.test($(this).attr('href'))) {
+if ($(this).text() == 'Linux中国') $(this).attr('href',$(location).attr('href'));
+} else {
+$(this).addClass("ext").attr({"rel":"external nofollow","target":"_blank"});
+}
+});
+
+// 视频
+$("video").map(function() {
+width = $(this).attr("width");
+height = $(this).attr("height");
+$(this).wrap("<div class='videoContainer'></div>").parent()
+.css({width: width,height : height});
+});
+$("#article_content table").map(function() {
+var page_width = parseInt($("#article_content").css('width')) - 30;
+var width = parseInt($(this).css('width')) + 2;
+if (width > page_width) {
+width = page_width;
+width = width + "px";
+$(this).wrap("<section class='bm'><section style='white-space:nowrap;overflow:scroll;'></section></section>")
+.parent().parent().css('width',width).prepend("<section class='hm bm_h'>&lt; 如显示不全，请左右滑动 &gt;</section>")
+.append("<section class='hm bm_f'></section>");
+}
+});
+$("#article_content table td").map(function() {
+var c = $(this).text();
+if (c.length > 20) $(this).css("white-space","normal");
+
+});
+})
+})(jQuery);
+</script>
+<link rel="stylesheet" href="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/prettify.css" type="text/css">
+<script src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/prettify.min.js.download" type="text/javascript"></script>
+<script type="text/javascript">
+var sourceBaseUrl = "https://img.linux.net.cn/static/js/tinymce/plugins/prettify";
+prettyPrint();
+</script>
+<script type="text/javascript">
+var getblock_last = 0;
+var related = [];related.push(9859);
+related.push(9902);
+related.push(10013);
+related.push(10096);
+related.push(10239);
+	
+(function($){
+$(window).scroll(function() {
+var load_more_bottom = $('#article_content').offset().top + $('#article_content').height();
+var scrollPos = $(window).scrollTop() + jQuery(window).height();
+var last = Date.parse(new Date())
+if (scrollPos - load_more_bottom > 300 && last - getblock_last > 1000) {
+getblock_last = last
+}
+});
+})(jQuery);
+
+</script>	</div>
+    <div id="footer">
+        <p>
+            <span>Linux.CN © 2003 →→→  Linux中国</span>
+            <span class="line">|</span>
+            <span>Powered by <strong>DX</strong> | 图片存储于<a href="http://www.qiniu.com/" target="_blank">七牛云</a></span>
+        </p>
+        <p>
+            <a href="http://www.miitbeian.gov.cn/" target="_blank">京ICP备05083684号-1</a>            京公网安备110105001595
+        </p>
+        <p>
+        <a href="https://linux.cn/legal.html">服务条款</a> |
+        除特别申明外，本站原创内容版权遵循 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/deed.zh" target="_blank">CC-BY-NC-SA 协议规定</a></p>
+        <p>
+        <a href="https://linux.cn/"><img src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/linuxcn_logo_mini.png" align="absmiddle"></a>
+        <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank"><img src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/cc.png" align="absmiddle"></a>
+        </p>
+<p>
+<a href="https://linux.cn/forum.php?mod=misc&amp;action=showdarkroom">小黑屋</a><span class="pipe">|</span></p>
+</div>
+
+<div id="ft" class="cl"></div>
+<script src="./技术_在 Linux 上检测硬盘上的坏道和坏块_files/home.php" type="text/javascript"></script>
+<div id="scrolltop" style="left: auto; right: 0px; visibility: visible;">
+<span>
+<a href="javascript:void();" class="wxicon" onmouseover="show_qrcode(event,&#39;#qrcode&#39;, SITEURL + &#39;article-7961-1.html?utm_source=weixin&#39;);" onmouseout="show_qrcode(event,&#39;#qrcode&#39;,&#39;&#39;);"></a>
+<a title="分享到微博" href="javascript:void( share_tsina(SITEURL + &#39;article-7961-1.html?utm_source=weibo&#39;,&#39;article_title&#39;,&#39;article_content&#39;,&#39;https://img.linux.net.cn/data/attachment/album/201611/16/161511pz1odz8o1z1fmh8d.jpg&#39;) );" class="tsina"></a>
+<a title="收藏" href="https://linux.cn/home.php?mod=spacecp&amp;ac=favorite&amp;type=article&amp;id=7961&amp;handlekey=favoritearticlehk_7961" id="a_favorite" onclick="showWindow(this.id, this.href, &#39;get&#39;, 0);" class="favorite"></a>
+    	<a href="https://linux.cn/article-7961-1.html?pr" class="print" title="!print!"></a>
+
+</span>
+<span hidefocus="true"><a title="返回顶部" onclick="window.scrollTo(&#39;0&#39;,&#39;0&#39;)" class="scrolltopa"><b>返回顶部</b></a></span>
+</div>
+<script type="text/javascript">_attachEvent(window, 'scroll', function () { showTopLink(); });</script>
+<div id="qrcode">
+<p>分享到微信</p>
+<div id="canvas"></div>
+<p><em>打开微信，点击顶部的“╋”，<br>
+使用“扫一扫”将网页分享至微信。</em></p></div>
+<!-- script type="text/javascript" src="https://img.linux.net.cn/static/js/ads.js?XXo"></script -->
+<!-- div id="LXXoCisOsS" style="display: none; background-color: #A00; position: fixed; top: 0; width: 100%; z-index: 9999; left: 0; font-size: 16px; color: #fff; text-align: center; padding: 10px; opacity: 0.8;">请将我们加入您的广告过滤器的白名单，请支持开源站点。谢谢您。</div -->
+<script type="text/javascript">
+(function($){
+$(window).load(function() {
+/*if ($('#pleaseRemoveOurSiteFromBlackList').length == 0 && $(window).width() >= 480) {
+$('#LXXoCisOsS').css('display','block');
+}*/
+if (location.href.substr(0,17) != 'https://linux.cn/') {
+location.href = 'https://linux.cn/';
+}
+function roundTopFocus() {
+if ($('.topfocus').length) {
+//var tf1 = $('.topfocus').children().first();
+//$('.topfocus').children().fadeOut('fast',function(){tf1.remove().appendTo($('.topfocus')).fadeIn()}).fadeIn();
+} else if ($('.article_titlead').length) {
+var ad1 = $('.article_titlead').children().first();
+$('.article_titlead').children().fadeOut('slow',function(){ad1.remove().appendTo($('.article_titlead')).fadeIn()}).fadeIn();
+
+}
+}
+setInterval(roundTopFocus, 10000);
+});
+})(jQuery);
+</script>
+
+
+</body></html>

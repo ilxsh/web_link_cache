@@ -1,0 +1,4160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0059)http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html -->
+<html xmlns="http://www.w3.org/1999/xhtml" id="sixapart-standard"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+<meta name="generator" content="Movable Type  5.2.2">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--link rel="stylesheet" href="http://www.ruanyifeng.com/blog/styles.css" type="text/css" /-->
+<link rel="start" href="http://www.ruanyifeng.com/blog/" title="Home">
+<link rel="alternate" type="application/atom+xml" title="Recent Entries" href="http://feeds.feedburner.com/ruanyifeng">
+<script src="./Docker 入门教程 - 阮一峰的网络日志_files/hm.js.download"></script><script async="" src="./Docker 入门教程 - 阮一峰的网络日志_files/analytics.js.download"></script><script type="text/javascript" src="./Docker 入门教程 - 阮一峰的网络日志_files/mt.js.download"></script>
+<!--
+<rdf:RDF xmlns="http://web.resource.org/cc/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/"
+         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<Work rdf:about="http://www.ruanyifeng.com/blog/2015/04/tail-call.html">
+<dc:title>尾调用优化</dc:title>
+<dc:description>尾调用（Tail Call）是函数式编程的一个重要概念，本文介绍它的含义和用法。...</dc:description>
+<dc:creator>阮一峰</dc:creator>
+<dc:date>2015-04-10T11:34:18+08:00</dc:date>
+<license rdf:resource="http://creativecommons.org/licenses/by-nc-nd/3.0/" />
+</Work>
+<License rdf:about="http://creativecommons.org/licenses/by-nc-nd/3.0/">
+</License>
+</rdf:RDF>
+-->
+
+<style>
+body {
+  background-color: #f5f5d5;
+}
+
+#container::before {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background: rgba(0,0,0,0.1);
+  text-align: center;
+  content: "本站显示不正常，可能因为您使用了广告拦截器。";
+}
+
+</style>
+<script>
+function loadjscssfile(filename, filetype){
+    if (filetype=="js"){ //if filename is a external JavaScript file
+        var fileref=document.createElement('script')
+        fileref.setAttribute("type","text/javascript")
+        fileref.setAttribute("src", filename)
+    }
+    else if (filetype=="css"){ //if filename is an external CSS file
+        var fileref=document.createElement("link")
+        fileref.setAttribute("rel", "stylesheet")
+        fileref.setAttribute("type", "text/css")
+        fileref.setAttribute("href", filename)
+    }
+    if (typeof fileref!="undefined")
+        document.getElementsByTagName("head")[0].appendChild(fileref)
+}
+//loadjscssfile("http://www.ruanyifeng.com/blog/styles.css", "css");
+loadjscssfile('/static/themes/theme_scrapbook/theme_scrapbook.min.css', "css");
+
+
+function checker() {
+// var img = document.querySelector('img[src^="http://www.ruanyifeng.com/blog/images"]');
+var img = document.querySelector('a > img[src*="wangbase.com/blogimg/asset/"]');
+  if (img && window.getComputedStyle(img).display === 'none'){
+    var sponsor = document.querySelector('.entry-sponsor');
+    var prompt = document.createElement('div');
+    prompt.style = 'border: 1px solid #c6c6c6;border-radius: 4px;background-color: #f5f2f0;padding: 15px; font-size: 14px;';
+  prompt.innerHTML = '<p>您使用了广告拦截器，导致本站内容无法显示。</p><p>请将 www.ruanyifeng.com 加入白名单，解除广告屏蔽后，刷新页面。谢谢。</p>';
+    sponsor.parentNode.replaceChild(prompt, sponsor);
+    document.querySelector('#main-content').innerHTML = '';
+  }
+}
+
+setTimeout(checker, 1000);
+</script><link rel="stylesheet" type="text/css" href="./Docker 入门教程 - 阮一峰的网络日志_files/theme_scrapbook.min.css">
+
+    
+    <link rel="prev" href="http://www.ruanyifeng.com/blog/2018/01/assembly-language-primer.html" title="汇编语言入门教程">
+    <link rel="next" href="http://www.ruanyifeng.com/blog/2018/02/docker-wordpress-tutorial.html" title="Docker 微服务教程">
+    
+    <title>Docker 入门教程 - 阮一峰的网络日志</title>
+<script src="./Docker 入门教程 - 阮一峰的网络日志_files/bsStatic.js.download" type="text/javascript" charset="utf-8"></script><script src="./Docker 入门教程 - 阮一峰的网络日志_files/bs-engine.js.download" type="text/javascript" charset="utf-8"></script><style type="text/css">a.bshareDiv,#bsPanel,#bsMorePanel,#bshareF{border:none;background:none;padding:0;margin:0;font:12px Helvetica,Calibri,Tahoma,Arial,宋体,sans-serif;line-height:14px;}#bsPanel div,#bsMorePanel div,#bshareF div{display:block;}.bsRlogo .bsPopupAwd,.bsRlogoSel .bsPopupAwd,.bsLogo .bsPopupAwd,.bsLogoSel .bsPopupAwd{line-height:16px !important;}a.bshareDiv div,#bsFloatTab div{*display:inline;zoom:1;display:inline-block;}a.bshareDiv img,a.bshareDiv div,a.bshareDiv span,a.bshareDiv a,#bshareF table,#bshareF tr,#bshareF td{text-decoration:none;background:none;margin:0;padding:0;border:none;line-height:1.2}a.bshareDiv span{display:inline;float:none;}div.buzzButton{cursor:pointer;font-weight:bold;}.buzzButton .shareCount a{color:#333}.bsStyle1 .shareCount a{color:#fff}span.bshareText{white-space:nowrap;}span.bshareText:hover{text-decoration:underline;}a.bshareDiv .bsPromo,div.bshare-custom .bsPromo{display:none;position:absolute;z-index:100;}a.bshareDiv .bsPromo.bsPromo1,div.bshare-custom .bsPromo.bsPromo1{width:51px;height:18px;top:-18px;left:0;line-height:16px;font-size:12px !important;font-weight:normal !important;color:#fff;text-align:center;background:url(http://static.bshare.cn/frame/images/bshare_box_sprite2.gif) no-repeat 0 -606px;}div.bshare-custom .bsPromo.bsPromo2{background:url(http://static.bshare.cn/frame/images/bshare_promo_sprite.gif) no-repeat;cursor:pointer;}</style><style type="text/css">.bsBox{display:none;z-index:100000001;font-size:12px;background:url(http://static.bshare.cn/frame/images//background-opaque-dark.gif) !important;padding:6px !important;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;}.bsClose{_overflow:hidden;cursor:pointer;position:absolute;z-index:10000000;color:#666;font-weight:bold;font-family:Helvetica,Arial;font-size:14px;line-height:20px;}.bsTop{color:#666;background:#f2f2f2;height:24px;line-height:24px;border-bottom:1px solid #e8e8e8;}.bsTop span{float:left;}.bsFrameDiv,#bsMorePanel{border:none;background:#fff;}.bsReturn{float:right;*margin-right:20px;margin-right:36px;text-align:right;cursor:pointer;line-height:24px;color:#666;opacity:0.5;}#bsReturn:hover{text-decoration:underline;opacity:1;}</style><script src="./Docker 入门教程 - 阮一峰的网络日志_files/bsMore.js.download" type="text/javascript" charset="utf-8"></script><script src="./Docker 入门教程 - 阮一峰的网络日志_files/bshareS1.js.download" type="text/javascript" charset="utf-8"></script><style type="text/css">div.bsClear{clear:both;height:0;line-height:0;overflow:hidden;font-size:0;}.bsSearchDiv{padding:5px 15px;background-color:#fafafa;}.bFind-wrapper-top{background:#fff;border-color:#ccc #aaa #aaa #ccc;border-style:solid;border-width:1px;height:16px;padding:4px;margin:0;}.bFind-wrapper-top input{padding:0 !important;border:none !important;box-shadow:none !important;line-height:16px !important;}.bFind-placeholder{background:url("http://static.bshare.cn/css/images/search-icon.gif") no-repeat;display:block;float:left;height:16px;width:16px;}.bFind{background:none;border:none;float:left;font-size:11px !important;height:16px !important;margin-left:3px;outline:none;padding:0;width:400px;}.bsPlatDiv{height:322px;background:#fff;overflow:auto;padding:0 15px;}#bsLogoList{display:block;list-style:none;overflow:hidden;margin:0;padding:0;}#bsLogoList li{float:left;display:inline-block;width:71px;text-align:center;font-size:12px;height:80px;margin:0 !important;}#bsLogoList .bsPlatIcon{cursor:pointer;display:block !important;text-align:center;}#bsLogoList .bsPlatImg{width:32px;height:32px;border:none !important;display:inline-block;}#bsLogoList .bsPlatImg:hover{-moz-border-radius:7px;-webkit-border-radius:7px;border-radius:7px;box-shadow:0 0 15px #a7a8ac;}#bsLogoList .bsPlatName{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;text-align:center;color:#333 !important;margin-top:2px;line-height:140%;*width:70px;}#bsLogoList .bsPromoM{text-align:center;}.bsFooterDiv{height:24px;line-height:24px;padding:0 15px;border-top:1px solid #e8e8e8;background:#f2f2f2;text-align:right;}a.bsLogoLink{color:#666;}.bsLogoLink:hover{text-decoration:underline;}.bsPromoM{background:url(http://static.bshare.cn/frame/images//bshare_box_sprite2.gif) no-repeat top left;}.bsNew,.bsHot,.bsRec,.bsAwd{background-position:0 -552px;width:19px;margin:5px auto 1px;line-height:16px;height:18px;font-size:12px;color:#fff;overflow:hidden;}.bsNew{background-position:0 -570px;}.bsRec{width:30px;background-position:0 -588px;}.bsAwd{background:url(http://static.bshare.cn/frame/images//promot/promote.gif) no-repeat;}</style><script src="./Docker 入门教程 - 阮一峰的网络日志_files/bshare_view" type="text/javascript" charset="utf-8"></script><style type="text/css">a.bsSiteLink{text-decoration:none;color:#666;}a.bsSiteLink:hover{text-decoration:underline;}a.bshareDiv{overflow:hidden;height:16px;line-height:18px;font-size:14px;color:#333;padding-left:0;}a.bshareDiv:hover{text-decoration:none;}div.bsTitle{padding:0 8px;border-bottom:1px solid #e8e8e8;color:#666;background:#f2f2f2;text-align:left;}div.buzzButton{cursor:pointer;}div.bsRlogo,div.bsRlogoSel{width:68px;float:left;margin:0;padding:2px 0;}div.bsRlogo a,div.bsRlogoSel a{float:left;}div.bsLogo,div.bsLogoSel{float:left;width:111px;text-align:left;height:auto;padding:2px 4px;margin:2px 0;white-space:nowrap;overflow:hidden;}div.bsLogoSel,div.bsRlogoSel{border:1px solid #ddd;background:#f1f1f1;}div.bsLogo,div.bsRlogo{border:1px solid #fff;background:#fff;}div.bsLogo a,div.bsLogoSel a{display:block;height:16px;line-height:16px;padding:0 0 0 24px;text-decoration:none;float:left;overflow:hidden;}div.bsLogoSel a,div.bsRlogoSel a{color:#000;border:none;}div.bsLogo a,div.bsRlogo a{color:#666;border:none;}div.bsLogoLink{width:121px;overflow:hidden;background:#FFF;float:left;margin:3px 0;}#bsLogin{float:right;text-align:right;overflow:hidden;height:100%;}#bsPanel{position:absolute;z-index:100000000;font-size:12px;width:258px;background:url(http://static.bshare.cn/frame/images/background-opaque-dark.png) !important;padding:6px !important;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;}div.bsClear{clear:both;height:0;line-height:0;font-size:0;overflow:hidden;}div.bsPopupAwd{background:url(http://static.bshare.cn/frame/images//bshare_box_sprite2.gif) no-repeat top left;background-position:0 -624px;width:18px;padding-left:3px;text-align:center;float:left;margin-left: 2px;height:15px;font-size:12px;color:#fff;overflow:hidden;}div.bsRlogo .bsPopupAwd,div.bsRlogoSel .bsPopupAwd{float:left;margin:5px 0 0 -14px;}</style><style type="text/css">a.bsSiteLink{text-decoration:none;color:#666;}a.bsSiteLink:hover{text-decoration:underline;}a.bshareDiv{overflow:hidden;height:16px;line-height:18px;font-size:14px;color:#333;padding-left:0;}a.bshareDiv:hover{text-decoration:none;}div.bsTitle{padding:0 8px;border-bottom:1px solid #e8e8e8;color:#666;background:#f2f2f2;text-align:left;}div.buzzButton{cursor:pointer;}div.bsRlogo,div.bsRlogoSel{width:68px;float:left;margin:0;padding:2px 0;}div.bsRlogo a,div.bsRlogoSel a{float:left;}div.bsLogo,div.bsLogoSel{float:left;width:111px;text-align:left;height:auto;padding:2px 4px;margin:2px 0;white-space:nowrap;overflow:hidden;}div.bsLogoSel,div.bsRlogoSel{border:1px solid #ddd;background:#f1f1f1;}div.bsLogo,div.bsRlogo{border:1px solid #fff;background:#fff;}div.bsLogo a,div.bsLogoSel a{display:block;height:16px;line-height:16px;padding:0 0 0 24px;text-decoration:none;float:left;overflow:hidden;}div.bsLogoSel a,div.bsRlogoSel a{color:#000;border:none;}div.bsLogo a,div.bsRlogo a{color:#666;border:none;}div.bsLogoLink{width:121px;overflow:hidden;background:#FFF;float:left;margin:3px 0;}#bsLogin{float:right;text-align:right;overflow:hidden;height:100%;}#bsPanel{position:absolute;z-index:100000000;font-size:12px;width:258px;background:url(http://static.bshare.cn/frame/images/background-opaque-dark.png) !important;padding:6px !important;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;}div.bsClear{clear:both;height:0;line-height:0;font-size:0;overflow:hidden;}div.bsPopupAwd{background:url(http://static.bshare.cn/frame/images//bshare_box_sprite2.gif) no-repeat top left;background-position:0 -624px;width:18px;padding-left:3px;text-align:center;float:left;margin-left: 2px;height:15px;font-size:12px;color:#fff;overflow:hidden;}div.bsRlogo .bsPopupAwd,div.bsRlogoSel .bsPopupAwd{float:left;margin:5px 0 0 -14px;}</style></head>
+<body id="scrapbook" class="mt-entry-archive one-column">
+<script>
+if (/mobile/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent)) document.body.classList.add('mobile');
+
+/*
+window.addEventListener('load', function(event) {
+  setTimeout(function () {
+    hab('#sup-post-2');
+    hab('#cre-inner');
+  }, 1000);
+});
+*/
+</script>
+    <div id="container">
+        <div id="container-inner">
+
+            <div id="header">
+    <div id="header-inner">
+        <div id="header-content">
+
+
+            <div id="header-name">阮一峰的网络日志 <span id="site_location"> » <a href="http://www.ruanyifeng.com/blog/" accesskey="1">首页</a></span><span id="site_archive"> » <a href="http://www.ruanyifeng.com/blog/archives.html">档案</a></span>
+</div>
+
+<div id="google_search">
+<!-- SiteSearch Google -->
+<form action="https://www.baidu.com/s" target="_blank" method="get" id="cse-search-box">
+  <div>
+  <input type="text" size="20" name="origin" class="searchbox" id="sbi" value="">
+  <input type="hidden" name="wd" value="">
+  <!--input type="image" src="/static/themes/theme_scrapbook/images/top_search_submit.gif" class="searchbox_submit" value="" alt="搜索" name="sa" onclick="this.form.wd.value = this.form.origin.value + ' inurl:www.ruanyifeng.com/blog'" /-->
+  <input type="image" src="./Docker 入门教程 - 阮一峰的网络日志_files/top_search_submit.gif" class="searchbox_submit" value="" alt="搜索" name="sa" onclick="this.form.wd.value = this.form.origin.value + &#39; 阮一峰&#39;">
+</div>
+</form>
+
+<!-- SiteSearch Google -->
+</div>
+<div id="feed_icon">
+<a href="http://www.ruanyifeng.com/feed.html" title="订阅Feed">
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAUzSURBVHjavFdbbFRVFF3nPjoz7dTWTittaW0jUDRAUqaNojyqREnEQKgfUj9MqqAmhqRt/OCD4CuY+Kckoh+aiGKC+gMJbdHoRysJ8dkhhmJLNdDKtJU+6GMK87j3Hs85d2Z6HzNtMYWb3Dn3NWftvfba+5xNYDl+e6Fkj6yqb/oDRbWq14vlPBLRKCITkxf0ROLt+hNjp1PPSRK4kA3vF1dXNRcWlyA2OQU9eos9opAkAiKxD+XkKO6t15aRWO7J/MgmAZU8MEgexgZHMX518Dh72sYMmVKShnxWuWHdHtxKIDIYTgMuDzgfmSOIQkYMpdUF8OY92Hytt4/jvkg47czzU16iQovM3QFwmNck+Yyduu7D6NA0Z6JR4THntFs9V4tWQg6Ui3s6MwKDncsFTnXKLJhDSeUK3AgPtyhccDzmVs999buRt/1Vm4i0od+hX7+MRG87jPGB/w1u8FPj9xEw7McVrnYuOCvtpjTth3J/nTg99c8LRhKhr6D3dTB5R24bXFwbMXBsyZzeoXaycEpJ95TB09AGX/NpqLVNtw8urnVzLvHjFNxiFqRy2OOHuqUVnue+ACkoWzo4O6lGzTmuHq6nPvY2m9rVqjrIK2rMEKxqyG5NPAKt+wjo0LklgfNxJkZMA3KJvqRUk3z5UFY3QH14P0h+WUY79HPvgv7VuSg4ZRGY1YgZgqXmORccF17sy2ehnf9AeO085K2HQFbtXBScj0LcpgF2cN+WV+DZ/LJQu6gD4R7oV7pBJwbSgtMvfiPoVp56DySwxm7EtkMs1WdAB7qzggsDJKQYsHucSkOudrkiCPWR/fA2nYCn8SNIK4NptSMyAu3sAdDRkIsJdfth0LzSrODUoPNZ4KI9SxJI5UHk7D4GdQfz2us31c7CoHMjRkKuDPHseCMrONVhNcDJwMJpKFVvg9L4OaTiNWm1x789KCqkrXhVBiEz0WYCT2nAzQAD1/vaETv1GrRfP4Vx5cfMNcDPwvP0h0DhanPym7OIf/+O67vcJ1/PCJ4KgdzaUP6Wz+dU+5yIL6fV+PsHGAOdwlPpvvUOyeeAVGyCdqkDNB6DPjsBSrnndfOGevOh3RhGItxvA+fX1CtbGFhgYUFkFMZPR6F1HnClHq8HyubWtJexX06CRmdt33hrd7nA7SFY4qoGpnYuOKcRykPPgDCBcsHx9Iv+fNL2PueBehCWUfYQIIMGLOCcOmXDXsh1+yCt35tUPfvzGFuSvzvoinXOxqa02qOhM6733nVP2MAdaej2XN11DPKjLZCD+yBvahGCo7JfTKAN9UD7s8Oe9zUNIhz8fWI8DG2k38WCFdxugANcXrvTVd1IEbuv3Jour7Hzn7jLMBNfKs7R3i67gRVrbeCOEDhinmWhAatsqdquM2XzHZINhK2cqTjHr/XZdVJUbgN3MWAVXKbSyg9jesRW2xP9di+lwrL5ojM3m2H/kG9hwcIA37c71W6wJdW2J2S5nrjYbq/t1AHAhJsKQeyfPvf6IMJgghPJhFZ4x0KlfLFvt22du45Au/A1SOlGc0P672XXwhLtOcM0kTTEMMd0qkVmMNXxMd/tsedUjInr4SQDgOfeXMSiN0FCL5WHah4L1qqYXPJOJlttd+a5M+YpcG5poLYKQ5f+6JJ4r8bbJYP47hq4r7QAs9PjYNhHJd4o8l5taiwuOpa7AS4XKqI/5NjJbTnaWK92nLdLuhQAJayRNMiygXPBeQN+Qbvu0zDc3y+aUzhbkGR73sI7ljvUnndx2q3t+X8CDAD66FtrIL864AAAAABJRU5ErkJggg==" alt="" style="border: 0pt none;">
+</a></div>
+
+        </div>
+    </div>
+</div>
+
+
+
+            <div id="content">
+                <div id="content-inner">
+
+
+                    <div id="alpha">
+                        <div id="alpha-inner">
+
+
+                            <div id="entry-1974" class="entry-asset asset hentry">
+                                <div class="asset-header">
+<div class="asset-nav entry-nav">
+
+<div class="entry-location">
+<ul>
+<li>上一篇：<a href="http://www.ruanyifeng.com/blog/2018/01/assembly-language-primer.html" title="汇编语言入门教程">汇编语言入门教程&nbsp;&nbsp;&nbsp;</a></li>
+<li>下一篇：<a href="http://www.ruanyifeng.com/blog/2018/02/docker-wordpress-tutorial.html" title="Docker 微服务教程">Docker&nbsp;微服务教</a></li>
+</ul>
+</div>
+
+
+    
+                                    <div class="entry-categories">
+                                        <p>分类<span class="delimiter">：</span></p>
+                                        <ul>
+                                            <li><a href="http://www.ruanyifeng.com/blog/developer/" rel="tag">开发者手册</a></li>
+                                        </ul>
+                                    </div>
+    
+
+
+                                            
+<div class="entry-location-mobile" style="float: right;">
+<ul>
+<li><a href="http://www.ruanyifeng.com/blog/2018/01/assembly-language-primer.html" title="汇编语言入门教程">⇐&nbsp;</a></li>
+<li><a href="http://www.ruanyifeng.com/blog/2018/02/docker-wordpress-tutorial.html" title="Docker 微服务教程">&nbsp;⇒</a></li>
+</ul>
+</div>
+
+</div>
+</div>
+
+                          
+<article class="hentry">
+                                    <h1 id="page-title" class="asset-name entry-title">Docker 入门教程</h1>
+                                            <div id="share_button" class="social-share" style="float:right;padding-right:2em;padding-top:1em;">
+<a class="bshareDiv" href="http://www.bshare.cn/share" style="display: block; text-decoration: none; padding: 0px; margin: 0px; font-size: 12px; height: 21px; width: 51px;"><div class="bsPromo bsPromo1"></div><div class="buzzButton bsStyle10" style="height:21px;color:#333;;background:transparent url(http://static.bshare.cn/frame/images/button_custom10-zh-Orange.gif) no-repeat;text-align:center;width:51px;"></div><div style="clear:both;"></div></a>
+
+
+
+<script type="text/javascript" charset="utf-8" src="./Docker 入门教程 - 阮一峰的网络日志_files/buttonLite.js.download"></script>
+<script type="text/javascript" charset="utf-8">
+bShare.addEntry({
+    title: document.getElementById("page-title").innerHTML,
+url:window.location.href
+});
+</script>
+</div>
+
+<div class="asset-meta">
+                                        
+
+                                            <p class="vcard author">作者： <a class="fn url" href="http://www.ruanyifeng.com/">阮一峰</a></p>
+                                    <p>日期： <a href="http://www.ruanyifeng.com/blog/2018/02/"><abbr class="published" title="2018-02-09T05:53:27+08:00">2018年2月 9日</abbr></a></p>
+
+
+</div>
+
+
+
+
+
+
+
+
+                                
+                                <div class="asset-content entry-content" id="main-content">
+
+                                    <!-- div class="asset-body" -->
+                                        <p>2013年发布至今， <a href="https://www.docker.com/" target="_blank">Docker</a> 一直广受瞩目，被认为可能会改变软件行业。</p>
+
+                                    <!-- /div -->
+
+
+                                    <!-- div id="more" class="asset-more" -->
+                                        <p>但是，许多人并不清楚 Docker 到底是什么，要解决什么问题，好处又在哪里？本文就来详细解释，帮助大家理解它，还带有简单易懂的实例，教你如何将它用于日常开发。</p>
+
+<p><img src="./Docker 入门教程 - 阮一峰的网络日志_files/bg2018020901.png" alt="" title=""></p>
+
+<h2>一、环境配置的难题</h2>
+
+<p>软件开发最大的麻烦事之一，就是环境配置。用户计算机的环境都不相同，你怎么知道自家的软件，能在那些机器跑起来？</p>
+
+<p>用户必须保证两件事：操作系统的设置，各种库和组件的安装。只有它们都正确，软件才能运行。举例来说，安装一个 Python 应用，计算机必须有 Python 引擎，还必须有各种依赖，可能还要配置环境变量。</p>
+
+<p>如果某些老旧的模块与当前环境不兼容，那就麻烦了。开发者常常会说："它在我的机器可以跑了"（It works on my machine），言下之意就是，其他机器很可能跑不了。</p>
+
+<p>环境配置如此麻烦，换一台机器，就要重来一次，旷日费时。很多人想到，能不能从根本上解决问题，软件可以带环境安装？也就是说，安装的时候，把原始环境一模一样地复制过来。</p>
+
+<h2>二、虚拟机</h2>
+
+<p>虚拟机（virtual machine）就是带环境安装的一种解决方案。它可以在一种操作系统里面运行另一种操作系统，比如在 Windows 系统里面运行 Linux 系统。应用程序对此毫无感知，因为虚拟机看上去跟真实系统一模一样，而对于底层系统来说，虚拟机就是一个普通文件，不需要了就删掉，对其他部分毫无影响。</p>
+
+<p>虽然用户可以通过虚拟机还原软件的原始环境。但是，这个方案有几个缺点。</p>
+
+<p><strong>（1）资源占用多</strong></p>
+
+<p>虚拟机会独占一部分内存和硬盘空间。它运行的时候，其他程序就不能使用这些资源了。哪怕虚拟机里面的应用程序，真正使用的内存只有 1MB，虚拟机依然需要几百 MB 的内存才能运行。</p>
+
+<p><strong>（2）冗余步骤多</strong></p>
+
+<p>虚拟机是完整的操作系统，一些系统级别的操作步骤，往往无法跳过，比如用户登录。</p>
+
+<p><strong>（3）启动慢</strong></p>
+
+<p>启动操作系统需要多久，启动虚拟机就需要多久。可能要等几分钟，应用程序才能真正运行。</p>
+
+<h2>三、Linux 容器</h2>
+
+<p>由于虚拟机存在这些缺点，Linux 发展出了另一种虚拟化技术：Linux 容器（Linux Containers，缩写为 LXC）。</p>
+
+<p><strong>Linux 容器不是模拟一个完整的操作系统，而是对进程进行隔离。</strong>或者说，在正常进程的外面套了一个<a href="https://opensource.com/article/18/1/history-low-level-container-runtimes" target="_blank">保护层</a>。对于容器里面的进程来说，它接触到的各种资源都是虚拟的，从而实现与底层系统的隔离。</p>
+
+<p>由于容器是进程级别的，相比虚拟机有很多优势。</p>
+
+<p><strong>（1）启动快</strong></p>
+
+<p>容器里面的应用，直接就是底层系统的一个进程，而不是虚拟机内部的进程。所以，启动容器相当于启动本机的一个进程，而不是启动一个操作系统，速度就快很多。</p>
+
+<p><strong>（2）资源占用少</strong></p>
+
+<p>容器只占用需要的资源，不占用那些没有用到的资源；虚拟机由于是完整的操作系统，不可避免要占用所有资源。另外，多个容器可以共享资源，虚拟机都是独享资源。</p>
+
+<p><strong>（3）体积小</strong></p>
+
+<p>容器只要包含用到的组件即可，而虚拟机是整个操作系统的打包，所以容器文件比虚拟机文件要小很多。</p>
+
+<p>总之，容器有点像轻量级的虚拟机，能够提供虚拟化的环境，但是成本开销小得多。</p>
+
+<h2>四、Docker 是什么？</h2>
+
+<p><strong>Docker 属于 Linux 容器的一种封装，提供简单易用的容器使用接口。</strong>它是目前最流行的 Linux 容器解决方案。</p>
+
+<p>Docker 将应用程序与该程序的依赖，打包在一个文件里面。运行这个文件，就会生成一个虚拟容器。程序在这个虚拟容器里运行，就好像在真实的物理机上运行一样。有了 Docker，就不用担心环境问题。</p>
+
+<p>总体来说，Docker 的接口相当简单，用户可以方便地创建和使用容器，把自己的应用放入容器。容器还可以进行版本管理、复制、分享、修改，就像管理普通的代码一样。</p>
+
+<h2>五、Docker 的用途</h2>
+
+<p>Docker 的主要用途，目前有三大类。</p>
+
+<p><strong>（1）提供一次性的环境。</strong>比如，本地测试他人的软件、持续集成的时候提供单元测试和构建的环境。</p>
+
+<p><strong>（2）提供弹性的云服务。</strong>因为 Docker 容器可以随开随关，很适合动态扩容和缩容。</p>
+
+<p><strong>（3）组建微服务架构。</strong>通过多个容器，一台机器可以跑多个服务，因此在本机就可以模拟出微服务架构。</p>
+
+<h2>六、Docker 的安装</h2>
+
+<p>Docker 是一个开源的商业产品，有两个版本：社区版（Community Edition，缩写为 CE）和企业版（Enterprise Edition，缩写为 EE）。企业版包含了一些收费服务，个人开发者一般用不到。下面的介绍都针对社区版。</p>
+
+<p>Docker CE 的安装请参考官方文档。</p>
+
+<blockquote>
+  <ul>
+<li><a href="https://docs.docker.com/docker-for-mac/install/" target="_blank">Mac</a></li>
+<li><a href="https://docs.docker.com/docker-for-windows/install/" target="_blank">Windows</a></li>
+<li><a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/" target="_blank">Ubuntu</a></li>
+<li><a href="https://docs.docker.com/install/linux/docker-ce/debian/" target="_blank">Debian</a></li>
+<li><a href="https://docs.docker.com/install/linux/docker-ce/centos/" target="_blank">CentOS</a></li>
+<li><a href="https://docs.docker.com/install/linux/docker-ce/fedora/" target="_blank">Fedora</a></li>
+<li><a href="https://docs.docker.com/install/linux/docker-ce/binaries/" target="_blank">其他 Linux 发行版</a></li>
+</ul>
+</blockquote>
+
+<p>安装完成后，运行下面的命令，验证是否安装成功。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker version
+<span class="token comment" spellcheck="true"># 或者
+</span>$ docker info
+</code></pre></blockquote>
+
+<p>Docker 需要用户具有 sudo 权限，为了避免每次命令都输入<code>sudo</code>，可以把用户加入 Docker 用户组（<a href="https://docs.docker.com/install/linux/linux-postinstall/#manage-docker-as-a-non-root-user" target="_blank">官方文档</a>）。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ sudo usermod <span class="token operator">-</span>aG docker <span class="token property">$USER</span>
+</code></pre></blockquote>
+
+<p>Docker 是服务器----客户端架构。命令行运行<code>docker</code>命令的时候，需要本机有 Docker 服务。如果这项服务没有启动，可以用下面的命令启动（<a href="https://docs.docker.com/config/daemon/systemd/" target="_blank">官方文档</a>）。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token comment" spellcheck="true"># service 命令的用法
+</span>$ sudo service docker start
+
+<span class="token comment" spellcheck="true"># systemctl 命令的用法
+</span>$ sudo systemctl start docker
+</code></pre></blockquote>
+
+<h2>六、image 文件</h2>
+
+<p><strong>Docker 把应用程序及其依赖，打包在 image 文件里面。</strong>只有通过这个文件，才能生成 Docker 容器。image 文件可以看作是容器的模板。Docker 根据 image 文件生成容器的实例。同一个 image 文件，可以生成多个同时运行的容器实例。</p>
+
+<p>image 是二进制文件。实际开发中，一个 image 文件往往通过继承另一个 image 文件，加上一些个性化设置而生成。举例来说，你可以在 Ubuntu 的 image 基础上，往里面加入 Apache 服务器，形成你的 image。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token comment" spellcheck="true"># 列出本机的所有 image 文件。
+</span>$ docker image ls
+
+<span class="token comment" spellcheck="true"># 删除 image 文件
+</span>$ docker image rm <span class="token punctuation">[</span>imageName<span class="token punctuation">]</span>
+</code></pre></blockquote>
+
+<p>image 文件是通用的，一台机器的 image 文件拷贝到另一台机器，照样可以使用。一般来说，为了节省时间，我们应该尽量使用别人制作好的 image 文件，而不是自己制作。即使要定制，也应该基于别人的 image 文件进行加工，而不是从零开始制作。</p>
+
+<p>为了方便共享，image 文件制作完成后，可以上传到网上的仓库。Docker 的官方仓库 <a href="https://hub.docker.com/" target="_blank">Docker Hub</a> 是最重要、最常用的 image 仓库。此外，出售自己制作的 image 文件也是可以的。</p>
+
+<h2>七、实例：hello world</h2>
+
+<p>下面，我们通过最简单的 image 文件"<a href="https://hub.docker.com/r/library/hello-world/" target="_blank">hello world"</a>，感受一下 Docker。</p>
+
+<p>需要说明的是，国内连接 Docker 的官方仓库很慢，还会断线，需要将默认仓库改成国内的镜像网站，具体的修改方法在<a href="http://www.ruanyifeng.com/blog/2018/02/docker-wordpress-tutorial.html" target="_blank">下一篇文章</a>的第一节。有需要的朋友，可以先看一下。</p>
+
+<p>首先，运行下面的命令，将 image 文件从仓库抓取到本地。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker image pull library<span class="token operator">/</span>hello<span class="token operator">-</span>world
+</code></pre></blockquote>
+
+<p>上面代码中，<code>docker image pull</code>是抓取 image 文件的命令。<code>library/hello-world</code>是 image 文件在仓库里面的位置，其中<code>library</code>是 image 文件所在的组，<code>hello-world</code>是 image 文件的名字。</p>
+
+<p>由于 Docker 官方提供的 image 文件，都放在<a href="https://hub.docker.com/r/library/" target="_blank"><code>library</code></a>组里面，所以它的是默认组，可以省略。因此，上面的命令可以写成下面这样。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker image pull hello<span class="token operator">-</span>world
+</code></pre></blockquote>
+
+<p>抓取成功以后，就可以在本机看到这个 image 文件了。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker image ls
+</code></pre></blockquote>
+
+<p>现在，运行这个 image 文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container run hello<span class="token operator">-</span>world
+</code></pre></blockquote>
+
+<p><code>docker container run</code>命令会从 image 文件，生成一个正在运行的容器实例。</p>
+
+<p>注意，<code>docker container run</code>命令具有自动抓取 image 文件的功能。如果发现本地没有指定的 image 文件，就会从仓库自动抓取。因此，前面的<code>docker image pull</code>命令并不是必需的步骤。</p>
+
+<p>如果运行成功，你会在屏幕上读到下面的输出。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container run hello<span class="token operator">-</span>world
+
+Hello from Docker<span class="token operator">!</span>
+This message shows that your installation appears to be working correctly<span class="token punctuation">.</span>
+
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+</code></pre></blockquote>
+
+<p>输出这段提示以后，<code>hello world</code>就会停止运行，容器自动终止。</p>
+
+<p>有些容器不会自动终止，因为提供的是服务。比如，安装运行 Ubuntu 的 image，就可以在命令行体验 Ubuntu 系统。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container run <span class="token operator">-</span>it ubuntu bash
+</code></pre></blockquote>
+
+<p>对于那些不会自动终止的容器，必须使用<a href="https://docs.docker.com/engine/reference/commandline/container_kill/" target="_blank"><code>docker container kill</code></a> 命令手动终止。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container kill <span class="token punctuation">[</span>containID<span class="token punctuation">]</span>
+</code></pre></blockquote>
+
+<h2>八、容器文件</h2>
+
+<p><strong>image 文件生成的容器实例，本身也是一个文件，称为容器文件。</strong>也就是说，一旦容器生成，就会同时存在两个文件： image 文件和容器文件。而且关闭容器并不会删除容器文件，只是容器停止运行而已。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token comment" spellcheck="true"># 列出本机正在运行的容器
+</span>$ docker container ls
+
+<span class="token comment" spellcheck="true"># 列出本机所有容器，包括终止运行的容器
+</span>$ docker container ls <span class="token operator">--</span>all
+</code></pre></blockquote>
+
+<p>上面命令的输出结果之中，包括容器的 ID。很多地方都需要提供这个 ID，比如上一节终止容器运行的<code>docker container kill</code>命令。</p>
+
+<p>终止运行的容器文件，依然会占据硬盘空间，可以使用<a href="https://docs.docker.com/engine/reference/commandline/container_rm/" target="_blank"><code>docker container rm</code></a>命令删除。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container rm <span class="token punctuation">[</span>containerID<span class="token punctuation">]</span>
+</code></pre></blockquote>
+
+<p>运行上面的命令之后，再使用<code>docker container ls --all</code>命令，就会发现被删除的容器文件已经消失了。</p>
+
+<h2>九、Dockerfile 文件</h2>
+
+<p>学会使用 image 文件以后，接下来的问题就是，如何可以生成 image 文件？如果你要推广自己的软件，势必要自己制作 image 文件。</p>
+
+<p>这就需要用到 Dockerfile 文件。它是一个文本文件，用来配置 image。Docker 根据 该文件生成二进制的 image 文件。</p>
+
+<p>下面通过一个实例，演示如何编写 Dockerfile 文件。</p>
+
+<h2>十、实例：制作自己的 Docker 容器</h2>
+
+<p>下面我以 <a href="http://www.ruanyifeng.com/blog/2017/08/koa.html" target="_blank">koa-demos</a> 项目为例，介绍怎么写 Dockerfile 文件，实现让用户在 Docker 容器里面运行 Koa 框架。</p>
+
+<p>作为准备工作，请先<a href="https://github.com/ruanyf/koa-demos/archive/master.zip" target="_blank">下载源码</a>。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ git clone https<span class="token punctuation">:</span><span class="token operator">/</span><span class="token operator">/</span>github<span class="token punctuation">.</span>com<span class="token operator">/</span>ruanyf<span class="token operator">/</span>koa<span class="token operator">-</span>demos<span class="token punctuation">.</span>git
+$ cd koa<span class="token operator">-</span>demos
+</code></pre></blockquote>
+
+<h3>10.1 编写 Dockerfile 文件</h3>
+
+<p>首先，在项目的根目录下，新建一个文本文件<code>.dockerignore</code>，写入下面的<a href="https://github.com/ruanyf/koa-demos/blob/master/.dockerignore" target="_blank">内容</a>。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token punctuation">.</span>git
+node_modules
+npm<span class="token operator">-</span>debug<span class="token punctuation">.</span>log
+</code></pre></blockquote>
+
+<p>上面代码表示，这三个路径要排除，不要打包进入 image 文件。如果你没有路径要排除，这个文件可以不新建。</p>
+
+<p>然后，在项目的根目录下，新建一个文本文件 Dockerfile，写入下面的<a href="https://github.com/ruanyf/koa-demos/blob/master/Dockerfile" target="_blank">内容</a>。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+FROM node<span class="token punctuation">:</span><span class="token number">8.4</span>
+COPY <span class="token punctuation">.</span> <span class="token operator">/</span>app
+WORKDIR <span class="token operator">/</span>app
+RUN npm install <span class="token operator">--</span>registry<span class="token operator">=</span>https<span class="token punctuation">:</span><span class="token operator">/</span><span class="token operator">/</span>registry<span class="token punctuation">.</span>npm<span class="token punctuation">.</span>taobao<span class="token punctuation">.</span>org
+EXPOSE <span class="token number">3000</span>
+</code></pre></blockquote>
+
+<p>上面代码一共五行，含义如下。</p>
+
+<blockquote>
+  <ul>
+<li><code>FROM node:8.4</code>：该 image 文件继承官方的 node image，冒号表示标签，这里标签是<code>8.4</code>，即8.4版本的 node。</li>
+<li><code>COPY . /app</code>：将当前目录下的所有文件（除了<code>.dockerignore</code>排除的路径），都拷贝进入 image 文件的<code>/app</code>目录。</li>
+<li><code>WORKDIR /app</code>：指定接下来的工作路径为<code>/app</code>。</li>
+<li><code>RUN npm install</code>：在<code>/app</code>目录下，运行<code>npm install</code>命令安装依赖。注意，安装后所有的依赖，都将打包进入 image 文件。</li>
+<li><code>EXPOSE 3000</code>：将容器 3000 端口暴露出来， 允许外部连接这个端口。</li>
+</ul>
+</blockquote>
+
+<h3>10.2 创建 image 文件</h3>
+
+<p>有了 Dockerfile 文件以后，就可以使用<code>docker image build</code>命令创建 image 文件了。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker image build <span class="token operator">-</span>t koa<span class="token operator">-</span>demo <span class="token punctuation">.</span>
+<span class="token comment" spellcheck="true"># 或者
+</span>$ docker image build <span class="token operator">-</span>t koa<span class="token operator">-</span>demo<span class="token punctuation">:</span><span class="token number">0.0</span><span class="token punctuation">.</span><span class="token number">1</span> <span class="token punctuation">.</span>
+</code></pre></blockquote>
+
+<p>上面代码中，<code>-t</code>参数用来指定 image 文件的名字，后面还可以用冒号指定标签。如果不指定，默认的标签就是<code>latest</code>。最后的那个点表示 Dockerfile 文件所在的路径，上例是当前路径，所以是一个点。</p>
+
+<p>如果运行成功，就可以看到新生成的 image 文件<code>koa-demo</code>了。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker image ls
+</code></pre></blockquote>
+
+<h3>10.3 生成容器</h3>
+
+<p><code>docker container run</code>命令会从 image 文件生成容器。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container run <span class="token operator">-</span>p <span class="token number">8000</span><span class="token punctuation">:</span><span class="token number">3000</span> <span class="token operator">-</span>it koa<span class="token operator">-</span>demo <span class="token operator">/</span>bin<span class="token operator">/</span>bash
+<span class="token comment" spellcheck="true"># 或者
+</span>$ docker container run <span class="token operator">-</span>p <span class="token number">8000</span><span class="token punctuation">:</span><span class="token number">3000</span> <span class="token operator">-</span>it koa<span class="token operator">-</span>demo<span class="token punctuation">:</span><span class="token number">0.0</span><span class="token punctuation">.</span><span class="token number">1</span> <span class="token operator">/</span>bin<span class="token operator">/</span>bash
+</code></pre></blockquote>
+
+<p>上面命令的各个参数含义如下：</p>
+
+<blockquote>
+  <ul>
+<li><code>-p</code>参数：容器的 3000 端口映射到本机的 8000 端口。</li>
+<li><code>-it</code>参数：容器的 Shell 映射到当前的 Shell，然后你在本机窗口输入的命令，就会传入容器。</li>
+<li><code>koa-demo:0.0.1</code>：image 文件的名字（如果有标签，还需要提供标签，默认是 latest 标签）。</li>
+<li><code>/bin/bash</code>：容器启动以后，内部第一个执行的命令。这里是启动 Bash，保证用户可以使用 Shell。</li>
+</ul>
+</blockquote>
+
+<p>如果一切正常，运行上面的命令以后，就会返回一个命令行提示符。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<a class="token email-link" href="mailto:root@66d80f4aaf">root@66d80f4aaf</a>1e<span class="token punctuation">:</span><span class="token operator">/</span>app<span class="token comment" spellcheck="true">#
+</span></code></pre></blockquote>
+
+<p>这表示你已经在容器里面了，返回的提示符就是容器内部的 Shell 提示符。执行下面的命令。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<a class="token email-link" href="mailto:root@66d80f4aaf">root@66d80f4aaf</a>1e<span class="token punctuation">:</span><span class="token operator">/</span>app<span class="token comment" spellcheck="true"># node demos/01.js
+</span></code></pre></blockquote>
+
+<p>这时，Koa 框架已经运行起来了。打开本机的浏览器，访问 http://127.0.0.1:8000，网页显示"Not Found"，这是因为这个 <a href="https://github.com/ruanyf/koa-demos/blob/master/demos/01.js" target="_blank">demo</a> 没有写路由。</p>
+
+<p>这个例子中，Node 进程运行在 Docker 容器的虚拟环境里面，进程接触到的文件系统和网络接口都是虚拟的，与本机的文件系统和网络接口是隔离的，因此需要定义容器与物理机的端口映射（map）。</p>
+
+<p>现在，在容器的命令行，按下 Ctrl + c 停止 Node 进程，然后按下 Ctrl + d （或者输入 exit）退出容器。此外，也可以用<code>docker container kill</code>终止容器运行。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token comment" spellcheck="true"># 在本机的另一个终端窗口，查出容器的 ID
+</span>$ docker container ls
+
+<span class="token comment" spellcheck="true"># 停止指定的容器运行
+</span>$ docker container kill <span class="token punctuation">[</span>containerID<span class="token punctuation">]</span>
+</code></pre></blockquote>
+
+<p>容器停止运行之后，并不会消失，用下面的命令删除容器文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token comment" spellcheck="true"># 查出容器的 ID
+</span>$ docker container ls <span class="token operator">--</span>all
+
+<span class="token comment" spellcheck="true"># 删除指定的容器文件
+</span>$ docker container rm <span class="token punctuation">[</span>containerID<span class="token punctuation">]</span>
+</code></pre></blockquote>
+
+<p>也可以使用<code>docker container run</code>命令的<code>--rm</code>参数，在容器终止运行后自动删除容器文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container run <span class="token operator">--</span>rm <span class="token operator">-</span>p <span class="token number">8000</span><span class="token punctuation">:</span><span class="token number">3000</span> <span class="token operator">-</span>it koa<span class="token operator">-</span>demo <span class="token operator">/</span>bin<span class="token operator">/</span>bash
+</code></pre></blockquote>
+
+<h3>10.4 CMD 命令</h3>
+
+<p>上一节的例子里面，容器启动以后，需要手动输入命令<code>node demos/01.js</code>。我们可以把这个命令写在 Dockerfile 里面，这样容器启动以后，这个命令就已经执行了，不用再手动输入了。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+FROM node<span class="token punctuation">:</span><span class="token number">8.4</span>
+COPY <span class="token punctuation">.</span> <span class="token operator">/</span>app
+WORKDIR <span class="token operator">/</span>app
+RUN npm install <span class="token operator">--</span>registry<span class="token operator">=</span>https<span class="token punctuation">:</span><span class="token operator">/</span><span class="token operator">/</span>registry<span class="token punctuation">.</span>npm<span class="token punctuation">.</span>taobao<span class="token punctuation">.</span>org
+EXPOSE <span class="token number">3000</span>
+CMD node demos<span class="token operator">/</span><span class="token number">01</span><span class="token punctuation">.</span>js
+</code></pre></blockquote>
+
+<p>上面的 Dockerfile 里面，多了最后一行<code>CMD node demos/01.js</code>，它表示容器启动后自动执行<code>node demos/01.js</code>。</p>
+
+<p>你可能会问，<code>RUN</code>命令与<code>CMD</code>命令的区别在哪里？简单说，<code>RUN</code>命令在 image 文件的构建阶段执行，执行结果都会打包进入 image 文件；<code>CMD</code>命令则是在容器启动后执行。另外，一个 Dockerfile 可以包含多个<code>RUN</code>命令，但是只能有一个<code>CMD</code>命令。</p>
+
+<p>注意，指定了<code>CMD</code>命令以后，<code>docker container run</code>命令就不能附加命令了（比如前面的<code>/bin/bash</code>），否则它会覆盖<code>CMD</code>命令。现在，启动容器可以使用下面的命令。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container run <span class="token operator">--</span>rm <span class="token operator">-</span>p <span class="token number">8000</span><span class="token punctuation">:</span><span class="token number">3000</span> <span class="token operator">-</span>it koa<span class="token operator">-</span>demo<span class="token punctuation">:</span><span class="token number">0.0</span><span class="token punctuation">.</span><span class="token number">1</span>
+</code></pre></blockquote>
+
+<h3>10.5 发布 image 文件</h3>
+
+<p>容器运行成功后，就确认了 image 文件的有效性。这时，我们就可以考虑把 image 文件分享到网上，让其他人使用。</p>
+
+<p>首先，去 <a href="https://hub.docker.com/" target="_blank">hub.docker.com</a>  或 <a href="https://cloud.docker.com/" target="_blank">cloud.docker.com</a> 注册一个账户。然后，用下面的命令登录。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker login
+</code></pre></blockquote>
+
+<p>接着，为本地的 image 标注用户名和版本。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker image tag <span class="token punctuation">[</span>imageName<span class="token punctuation">]</span> <span class="token punctuation">[</span>username<span class="token punctuation">]</span><span class="token operator">/</span><span class="token punctuation">[</span>repository<span class="token punctuation">]</span><span class="token punctuation">:</span><span class="token punctuation">[</span>tag<span class="token punctuation">]</span>
+<span class="token comment" spellcheck="true"># 实例
+</span>$ docker image tag koa<span class="token operator">-</span>demos<span class="token punctuation">:</span><span class="token number">0.0</span><span class="token punctuation">.</span><span class="token number">1</span> ruanyf<span class="token operator">/</span>koa<span class="token operator">-</span>demos<span class="token punctuation">:</span><span class="token number">0.0</span><span class="token punctuation">.</span><span class="token number">1</span>
+</code></pre></blockquote>
+
+<p>也可以不标注用户名，重新构建一下 image 文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker image build <span class="token operator">-</span>t <span class="token punctuation">[</span>username<span class="token punctuation">]</span><span class="token operator">/</span><span class="token punctuation">[</span>repository<span class="token punctuation">]</span><span class="token punctuation">:</span><span class="token punctuation">[</span>tag<span class="token punctuation">]</span> <span class="token punctuation">.</span>
+</code></pre></blockquote>
+
+<p>最后，发布 image 文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker image push <span class="token punctuation">[</span>username<span class="token punctuation">]</span><span class="token operator">/</span><span class="token punctuation">[</span>repository<span class="token punctuation">]</span><span class="token punctuation">:</span><span class="token punctuation">[</span>tag<span class="token punctuation">]</span>
+</code></pre></blockquote>
+
+<p>发布成功以后，登录 hub.docker.com，就可以看到已经发布的 image 文件。</p>
+
+<h2>十一、其他有用的命令</h2>
+
+<p>docker 的主要用法就是上面这些，此外还有几个命令，也非常有用。</p>
+
+<p><strong>（1）docker container start</strong></p>
+
+<p>前面的<code>docker container run</code>命令是新建容器，每运行一次，就会新建一个容器。同样的命令运行两次，就会生成两个一模一样的容器文件。如果希望重复使用容器，就要使用<code>docker container start</code>命令，它用来启动已经生成、已经停止运行的容器文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container start <span class="token punctuation">[</span>containerID<span class="token punctuation">]</span>
+</code></pre></blockquote>
+
+<p><strong>（2）docker container stop</strong></p>
+
+<p>前面的<code>docker container kill</code>命令终止容器运行，相当于向容器里面的主进程发出 SIGKILL 信号。而<code>docker container stop</code>命令也是用来终止容器运行，相当于向容器里面的主进程发出 SIGTERM 信号，然后过一段时间再发出 SIGKILL 信号。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ bash container stop <span class="token punctuation">[</span>containerID<span class="token punctuation">]</span>
+</code></pre></blockquote>
+
+<p>这两个信号的差别是，应用程序收到 SIGTERM 信号以后，可以自行进行收尾清理工作，但也可以不理会这个信号。如果收到 SIGKILL 信号，就会强行立即终止，那些正在进行中的操作会全部丢失。</p>
+
+<p><strong>（3）docker container logs</strong></p>
+
+<p><code>docker container logs</code>命令用来查看 docker 容器的输出，即容器里面 Shell 的标准输出。如果<code>docker run</code>命令运行容器的时候，没有使用<code>-it</code>参数，就要用这个命令查看输出。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container logs <span class="token punctuation">[</span>containerID<span class="token punctuation">]</span>
+</code></pre></blockquote>
+
+<p><strong>（4）docker container exec</strong></p>
+
+<p><code>docker container exec</code>命令用于进入一个正在运行的 docker 容器。如果<code>docker run</code>命令运行容器的时候，没有使用<code>-it</code>参数，就要用这个命令进入容器。一旦进入了容器，就可以在容器的 Shell 执行命令了。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container exec <span class="token operator">-</span>it <span class="token punctuation">[</span>containerID<span class="token punctuation">]</span> <span class="token operator">/</span>bin<span class="token operator">/</span>bash
+</code></pre></blockquote>
+
+<p><strong>（5）docker container cp</strong></p>
+
+<p><code>docker container cp</code>命令用于从正在运行的 Docker 容器里面，将文件拷贝到本机。下面是拷贝到当前目录的写法。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ docker container cp <span class="token punctuation">[</span>containID<span class="token punctuation">]</span><span class="token punctuation">:</span><span class="token punctuation">[</span><span class="token operator">/</span>path<span class="token operator">/</span>to<span class="token operator">/</span>file<span class="token punctuation">]</span> <span class="token punctuation">.</span>
+</code></pre></blockquote>
+
+<p>非常感谢你一直读到了这里，这个系列还有<a href="http://www.ruanyifeng.com/blog/2018/02/docker-wordpress-tutorial.html" target="_blank">下一篇</a>，介绍如何使用 Docker 搭建真正的网站，欢迎<a href="http://www.ruanyifeng.com/blog/2018/02/docker-wordpress-tutorial.html" target="_blank">继续阅读</a>。</p>
+
+<p>（完）</p>
+
+                                    <!-- /div -->
+
+                                </div>
+    <script type="text/javascript" src="./Docker 入门教程 - 阮一峰的网络日志_files/newwindow.js.download"></script>
+                                <div class="asset-footer">
+
+<h3>文档信息</h3>
+<ul>
+<li>版权声明：自由转载-非商用-非衍生-保持署名（<a href="http://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh">创意共享3.0许可证</a>）</li>
+<li>发表日期： <abbr class="published" title="2018-02-09T05:53:27+08:00">2018年2月 9日</abbr></li>
+
+</ul>
+                                </div>
+</article>
+                            </div>
+
+  <div style="display: inline-block ! important;width: 100%;">
+
+  </div>
+
+<div id="related_entries">
+<h2>相关文章</h2>
+<ul>
+
+<li><strong>2020.04.16: <a href="http://www.ruanyifeng.com/blog/2020/04/bash-tutorial.html">《Bash 脚本教程》发布了</a></strong>
+
+                           <div class="entry-body">
+                              过去三个月，我一直在写《Bash 脚本教程》，现在终于写完了。
+
+                           </div>
+
+</li>
+
+ 
+<li><strong>2020.02.23: <a href="http://www.ruanyifeng.com/blog/2020/02/sparql.html">RDF 和 SPARQL 初探：以维基数据为例</a></strong>
+
+                           <div class="entry-body">
+                              维基百科有一个姐妹项目，叫做"维基数据"（Wikidata）。你可以从维基百科左侧边栏点进去。
+
+                           </div>
+
+</li>
+
+ 
+<li><strong>2020.01.14: <a href="http://www.ruanyifeng.com/blog/2020/01/ffmpeg.html">FFmpeg 视频处理入门教程</a></strong>
+
+                           <div class="entry-body">
+                              FFmpeg 是视频处理最常用的开源软件。
+
+                           </div>
+
+</li>
+
+ 
+<li><strong>2019.12.29: <a href="http://www.ruanyifeng.com/blog/2019/12/mktemp.html">Bash 脚本如何创建临时文件：mktemp 命令和 trap 命令教程</a></strong>
+
+                           <div class="entry-body">
+                              有时，Bash 脚本需要创建临时文件或临时目录。
+
+                           </div>
+
+</li>
+
+ 
+</ul>
+</div>
+
+
+
+                    
+
+                    <div id="comments" class="comments">
+
+
+    
+    
+        
+    <h2 class="comments-header">留言（94条）</h2>
+
+    <div id="comments-content" class="comments-content" style="clear: left;">
+        
+        <div id="comment-385666" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://www.majianwei.com" href="http://www.majianwei.com/" target="_blank" rel="nofollow">辣条拌鱼翅</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385666">
+            <p><br>
+写下docker的一些感觉, 做为服务端的RD, 在本地开发后要把程序放到线上, 由于各种原因本地开发的机器可能要替换等等. 那么开发环境一但改变, 就要重新为程序安装各种服务与扩展. 这些工作也许不难, 但是做为RD 不应该做重复的事. 使用docker后, 先把环境编排好后, 以后只要一条命令就可以完成环境的部署, 一劳永逸呀. </p>
+
+<p><a href="http://www.majianwei.com/?s=docker" rel="nofollow">http://www.majianwei.com/?s=docker</a></p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018  8:40 AM">2018年2月 9日 08:40</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385666">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用辣条拌鱼翅的这条留言" onclick="return CommentQuote(&#39;comment-quote-385666&#39;,&#39;辣条拌鱼翅&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385667" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="https://ehlxr.me" href="https://ehlxr.me/" target="_blank" rel="nofollow">ehlxr</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385667">
+            <p>阮老师出品，比属精品</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018  9:17 AM">2018年2月 9日 09:17</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385667">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用ehlxr的这条留言" onclick="return CommentQuote(&#39;comment-quote-385667&#39;,&#39;ehlxr&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385673" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">勒布朗</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385673">
+            <p>写的很好</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018 10:26 AM">2018年2月 9日 10:26</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385673">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用勒布朗的这条留言" onclick="return CommentQuote(&#39;comment-quote-385673&#39;,&#39;勒布朗&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385674" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://blog.jianpage.com" href="http://blog.jianpage.com/" target="_blank" rel="nofollow">ixx</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385674">
+            <p>docker 在微服务领域优势明显  结合k8s的生态体系    对开发和运维来说真的是省了好多事  <br>
+推荐一个小工具  方便查看log   进入容器shell    以及启动、重启、偏上容器的扩展命令<br>
+<a href="https://github.com/iuv/xx" rel="nofollow">https://github.com/iuv/xx</a></p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018 10:37 AM">2018年2月 9日 10:37</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385674">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用ixx的这条留言" onclick="return CommentQuote(&#39;comment-quote-385674&#39;,&#39;ixx&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385675" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">阮老师牛逼</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385675">
+            <p>我一直以为docker指的是tor里面经常使用的搜索引擎。 [狗头]</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018 10:41 AM">2018年2月 9日 10:41</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385675">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用阮老师牛逼的这条留言" onclick="return CommentQuote(&#39;comment-quote-385675&#39;,&#39;阮老师牛逼&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385677" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://15tar.com" href="http://15tar.com/" target="_blank" rel="nofollow">iStar</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385677">
+            <p>太感谢了，真是我想看什么，阮老师就写什么。:)</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018 10:48 AM">2018年2月 9日 10:48</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385677">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用iStar的这条留言" onclick="return CommentQuote(&#39;comment-quote-385677&#39;,&#39;iStar&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385678" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">小青岛</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385678">
+            <p>你好<br>
+阮一峰<br>
+如果你有兴致的话、我希望你有时间能写一篇专门针对linux容器的文章。<br>
+谢谢：）<br>
+</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018 10:50 AM">2018年2月 9日 10:50</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385678">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用小青岛的这条留言" onclick="return CommentQuote(&#39;comment-quote-385678&#39;,&#39;小青岛&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385681" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="https://github.com/annewanghy" href="https://github.com/annewanghy" target="_blank" rel="nofollow">anne</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385681">
+            <p>阮老师写的很棒，我一步步操作下来了，就是这条命令需要改一下</p>
+
+<p>$ docker container ls</p>
+
+<p>需要改成</p>
+
+<p>$ docker container ls -l<br>
+</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018 11:08 AM">2018年2月 9日 11:08</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385681">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用anne的这条留言" onclick="return CommentQuote(&#39;comment-quote-385681&#39;,&#39;anne&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385682" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="https://weibo.com/u/2411899271" href="https://weibo.com/u/2411899271" target="_blank" rel="nofollow">Linky</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385682">
+            <p>感谢分享，老师总能把一个复杂的东西讲得直白，容易理解。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018 11:14 AM">2018年2月 9日 11:14</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385682">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Linky的这条留言" onclick="return CommentQuote(&#39;comment-quote-385682&#39;,&#39;Linky&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385685" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://szpzs.oschina.io/" href="http://szpzs.oschina.io/" target="_blank" rel="nofollow">szpzs</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385685">
+            <p>一直很排斥去学习docker。现在有了阮老师的入门教程，一下子就有了学它的兴趣了。谢谢阮老师。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018 11:29 AM">2018年2月 9日 11:29</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385685">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用szpzs的这条留言" onclick="return CommentQuote(&#39;comment-quote-385685&#39;,&#39;szpzs&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385688" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">llfylwg</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385688">
+            <p>对于前端来说有啥用呢？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018  1:02 PM">2018年2月 9日 13:02</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385688">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用llfylwg的这条留言" onclick="return CommentQuote(&#39;comment-quote-385688&#39;,&#39;llfylwg&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385689" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="https://tomotoes.com" href="https://tomotoes.com/" target="_blank" rel="nofollow">Simon</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385689">
+            <p>感谢阮老师！</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018  1:38 PM">2018年2月 9日 13:38</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385689">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Simon的这条留言" onclick="return CommentQuote(&#39;comment-quote-385689&#39;,&#39;Simon&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385690" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://cmdtree.com" href="http://cmdtree.com/" target="_blank" rel="nofollow">zhiyang</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385690">
+            <p>博主你有很多文章的链接怎么都打不开啊，例如那个koa教程</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018  3:09 PM">2018年2月 9日 15:09</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385690">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用zhiyang的这条留言" onclick="return CommentQuote(&#39;comment-quote-385690&#39;,&#39;zhiyang&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385691" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://nachao.me" href="http://nachao.me/" target="_blank" rel="nofollow">咯叩</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385691">
+            <p>作为前端需要运行复杂的后端环境的人员来说，这个简直救命了~~</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018  3:31 PM">2018年2月 9日 15:31</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385691">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用咯叩的这条留言" onclick="return CommentQuote(&#39;comment-quote-385691&#39;,&#39;咯叩&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385692" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">timothy</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385692">
+            <blockquote>
+<pre>引用llfylwg的发言：</pre>
+
+<p>对于前端来说有啥用呢？</p>
+
+</blockquote>
+
+<p>为什么要对前端有用？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018  3:33 PM">2018年2月 9日 15:33</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385692">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用timothy的这条留言" onclick="return CommentQuote(&#39;comment-quote-385692&#39;,&#39;timothy&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385709" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">jack</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385709">
+            <p>感觉一般</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018  4:44 PM">2018年2月 9日 16:44</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385709">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用jack的这条留言" onclick="return CommentQuote(&#39;comment-quote-385709&#39;,&#39;jack&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385710" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://www.coolcc.cn" href="http://www.coolcc.cn/" target="_blank" rel="nofollow">Cwift</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385710">
+            <p>等续集!!!</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February  9, 2018  5:01 PM">2018年2月 9日 17:01</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385710">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Cwift的这条留言" onclick="return CommentQuote(&#39;comment-quote-385710&#39;,&#39;Cwift&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385714" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">wangjian</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385714">
+            <p>写得很好，特别是命令加上了container/image</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 10, 2018  8:53 AM">2018年2月10日 08:53</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385714">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用wangjian的这条留言" onclick="return CommentQuote(&#39;comment-quote-385714&#39;,&#39;wangjian&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385718" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="https://github.com/moonljt521" href="https://github.com/moonljt521" target="_blank" rel="nofollow">孑孓</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385718">
+            <blockquote>
+<pre>引用timothy的发言：</pre>
+
+<p></p>
+
+<p>为什么要对前端有用？</p>
+
+</blockquote>
+
+<p>不用那么狭隘，知识的深度和广度都是程序员极力追求的</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 10, 2018  6:13 PM">2018年2月10日 18:13</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385718">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用孑孓的这条留言" onclick="return CommentQuote(&#39;comment-quote-385718&#39;,&#39;孑孓&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385724" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">LeeMo</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385724">
+            <p>等阮老师的续集...</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 11, 2018 11:03 AM">2018年2月11日 11:03</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385724">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用LeeMo的这条留言" onclick="return CommentQuote(&#39;comment-quote-385724&#39;,&#39;LeeMo&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385735" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">netwolf103</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385735">
+            <p>简单清晰，给一个赞。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 11, 2018 11:11 PM">2018年2月11日 23:11</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385735">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用netwolf103的这条留言" onclick="return CommentQuote(&#39;comment-quote-385735&#39;,&#39;netwolf103&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385736" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">徐超鹏</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385736">
+            <p>精品</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 12, 2018  9:19 AM">2018年2月12日 09:19</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385736">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用徐超鹏的这条留言" onclick="return CommentQuote(&#39;comment-quote-385736&#39;,&#39;徐超鹏&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385737" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://blskye.com" href="http://blskye.com/" target="_blank" rel="nofollow">王昊天</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385737">
+            <p>您好，阮老师，我在执行docker image push命令的时候一直Retrying，过一段时间后提示Service Unvailable，是被墙了吗，有相应的解决方法吗<br>
+<br>
+79832b4d1f2d: Retrying in 3 seconds <br>
+37b22fa5fbec: Retrying in 1 second <br>
+c5b2ac536264: Retrying in 2 seconds <br>
+<br>
+</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 12, 2018  9:50 AM">2018年2月12日 09:50</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385737">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用王昊天的这条留言" onclick="return CommentQuote(&#39;comment-quote-385737&#39;,&#39;王昊天&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385757" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">kuro</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385757">
+            <blockquote>
+<pre>引用iStar的发言：</pre>
+
+<p>太感谢了，真是我想看什么，阮老师就写什么。:)</p>
+
+</blockquote>
+
+<p>我也是，刚刚正打开docker官网，然后打开博客就发现刚好有写</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 13, 2018  5:12 PM">2018年2月13日 17:12</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385757">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用kuro的这条留言" onclick="return CommentQuote(&#39;comment-quote-385757&#39;,&#39;kuro&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385808" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">大大灰灰狼</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385808">
+            <p>已经习惯了看阮老师总结的文章了，自己总结了一半的docker突然就没动力写下去了 ,我这样还有救么。。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 22, 2018 11:02 AM">2018年2月22日 11:02</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385808">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用大大灰灰狼的这条留言" onclick="return CommentQuote(&#39;comment-quote-385808&#39;,&#39;大大灰灰狼&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385817" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://www.hy05190134.com" href="http://www.hy05190134.com/" target="_blank" rel="nofollow">hy05190134</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385817">
+            <p>docker container ls 是不是用 docker ps 以及 docker ps -a 更方便看 container 的运行状态呢</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 22, 2018  5:35 PM">2018年2月22日 17:35</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385817">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用hy05190134的这条留言" onclick="return CommentQuote(&#39;comment-quote-385817&#39;,&#39;hy05190134&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-385856" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Tony</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-385856">
+            <p>我们欠峰哥一个微信红包，实属小恩小惠，但是希望能够以此方式推进峰哥多出精品，以解我等菜鸟之惑。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 23, 2018  3:57 PM">2018年2月23日 15:57</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-385856">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Tony的这条留言" onclick="return CommentQuote(&#39;comment-quote-385856&#39;,&#39;Tony&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386026" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://wuweijia.github.io" href="http://wuweijia.github.io/" target="_blank" rel="nofollow">zerOOne</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386026">
+            <p>阮老师讲东西一直都是简单易懂</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 26, 2018  4:55 PM">2018年2月26日 16:55</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386026">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用zerOOne的这条留言" onclick="return CommentQuote(&#39;comment-quote-386026&#39;,&#39;zerOOne&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386118" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">yang</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386118">
+            <p>Npm,docker，都感觉不是将业务简化。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 27, 2018 11:17 PM">2018年2月27日 23:17</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386118">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用yang的这条留言" onclick="return CommentQuote(&#39;comment-quote-386118&#39;,&#39;yang&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386143" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://ivanli.cc" href="http://ivanli.cc/" target="_blank" rel="nofollow">Ivan</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386143">
+            <p>太简洁明了了，大爱！</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 28, 2018  2:17 PM">2018年2月28日 14:17</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386143">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Ivan的这条留言" onclick="return CommentQuote(&#39;comment-quote-386143&#39;,&#39;Ivan&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386147" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">走在成功的大道上</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386147">
+            <p>为什么我的docker找不到image、container 命令呢？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 28, 2018  3:42 PM">2018年2月28日 15:42</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386147">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用走在成功的大道上的这条留言" onclick="return CommentQuote(&#39;comment-quote-386147&#39;,&#39;走在成功的大道上&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386182" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://www.wei-xiao.top" href="http://www.wei-xiao.top/" target="_blank" rel="nofollow">微wx笑</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386182">
+            <p>请问 docker container run 和 docker run 命令有什么区别？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March  1, 2018 11:57 AM">2018年3月 1日 11:57</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386182">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用微wx笑的这条留言" onclick="return CommentQuote(&#39;comment-quote-386182&#39;,&#39;微wx笑&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386481" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">王大宝</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386481">
+            <p>老师好。<br>
+您在写到 docker container stop 这里时候，误将 docker 写成了 bash </p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March  8, 2018  1:52 PM">2018年3月 8日 13:52</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386481">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用王大宝的这条留言" onclick="return CommentQuote(&#39;comment-quote-386481&#39;,&#39;王大宝&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386483" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">feng</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386483">
+            <p>你好，请教一个问题。我现在的情况是，有一个linux下的程序，不支持centos7，所以装了docker拉取了centos6的镜像。<br>
+现在我的程序是要安装在centos6里才能运行，我已经把程序copy到了镜像里。由于我的程序安装的时候会去读网卡设置，docker里的centos并没有ifcfg-eth0文件，所以一直进行不下去。请问有其他办法吗？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March  8, 2018  2:51 PM">2018年3月 8日 14:51</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386483">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用feng的这条留言" onclick="return CommentQuote(&#39;comment-quote-386483&#39;,&#39;feng&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386662" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://blog.mufengs.com" href="http://blog.mufengs.com/" target="_blank" rel="nofollow">mufeng</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386662">
+            <blockquote>
+<pre>引用hy05190134的发言：</pre>
+
+<p>docker container ls 是不是用 docker ps 以及 docker ps -a 更方便看 container 的运行状态呢</p>
+
+</blockquote>
+
+<p>阮一峰老师，我觉的查看容器还是docker ps比较合适，官方推荐的也是这个</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March 12, 2018  8:44 PM">2018年3月12日 20:44</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386662">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用mufeng的这条留言" onclick="return CommentQuote(&#39;comment-quote-386662&#39;,&#39;mufeng&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386685" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Jansonlv</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386685">
+            <p># 列出本机的所有 image 文件。<br>
+$ docker image ls</p>
+
+<p>这个不对吧<br>
+docker images</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March 13, 2018  8:50 PM">2018年3月13日 20:50</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386685">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Jansonlv的这条留言" onclick="return CommentQuote(&#39;comment-quote-386685&#39;,&#39;Jansonlv&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386806" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="https://wktrf.com" href="https://wktrf.com/" target="_blank" rel="nofollow">wktrf</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386806">
+            <p>写得很不错，不过就我一个用windows吗？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March 19, 2018  7:11 AM">2018年3月19日 07:11</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386806">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用wktrf的这条留言" onclick="return CommentQuote(&#39;comment-quote-386806&#39;,&#39;wktrf&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386868" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">xy</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386868">
+            <blockquote>
+<pre>引用mufeng的发言：</pre>
+
+<p></p>
+
+<p>阮一峰老师，我觉的查看容器还是docker ps比较合适，官方推荐的也是这个</p>
+
+</blockquote>
+
+<blockquote>
+<pre>引用hy05190134的发言：</pre>
+
+<p>docker container ls 是不是用 docker ps 以及 docker ps -a 更方便看 container 的运行状态呢</p>
+
+</blockquote>
+
+<p>docker container options 是Docker 1.13中的更新，docker container ls 与 docker ps 功能相同，但是语义更明确，简化了Docker的用法，所以更推荐使用新的写法</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March 20, 2018  3:02 PM">2018年3月20日 15:02</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386868">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用xy的这条留言" onclick="return CommentQuote(&#39;comment-quote-386868&#39;,&#39;xy&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-386911" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="https://learnfans.com/" href="https://learnfans.com/" target="_blank" rel="nofollow">stilly</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-386911">
+            <p>非常适合入门的一片文章了，喜欢阮一峰老师文章。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March 21, 2018  3:47 PM">2018年3月21日 15:47</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-386911">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用stilly的这条留言" onclick="return CommentQuote(&#39;comment-quote-386911&#39;,&#39;stilly&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-387438" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">amy</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-387438">
+            <p>5和6的小标题序号是不是错了？漏了一个</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April  3, 2018  4:11 PM">2018年4月 3日 16:11</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-387438">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用amy的这条留言" onclick="return CommentQuote(&#39;comment-quote-387438&#39;,&#39;amy&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-387489" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">xionghongzhi</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-387489">
+            <p>$ sudo usermod -aG docker $USER </p>
+
+<p>执行完之后貌似需要先logout一下，才会生效。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April  4, 2018  1:18 PM">2018年4月 4日 13:18</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-387489">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用xionghongzhi的这条留言" onclick="return CommentQuote(&#39;comment-quote-387489&#39;,&#39;xionghongzhi&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-387500" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Oscar</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-387500">
+            <p>在实际操作的过程遇到了一些问题：</p>
+
+<p>Context： 我在Window 10 enterprise 上安装的最新版本的docker</p>
+
+<p>问题：在下载Hello-world image之后一直提示我(No hypervisor is present on this system)</p>
+
+<p>解决方法：正确在windows中安装HyperVisor 和 Container feature之后，需要在BIOS中Enbale Virtualization. 进入BIOS中找到System Security，然后进入找到Virtualization并Enable，此操作需要重启。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April  4, 2018  3:03 PM">2018年4月 4日 15:03</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-387500">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Oscar的这条留言" onclick="return CommentQuote(&#39;comment-quote-387500&#39;,&#39;Oscar&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-387507" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Oscar</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-387507">
+            <p>之后发现官方的node image 暂时还不支持在windows上运行，大家还是使用linux吧。<br>
+</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April  4, 2018  5:42 PM">2018年4月 4日 17:42</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-387507">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Oscar的这条留言" onclick="return CommentQuote(&#39;comment-quote-387507&#39;,&#39;Oscar&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-387886" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">老宋</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-387886">
+            <p>写的太好了，通俗易懂！</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 11, 2018  5:06 PM">2018年4月11日 17:06</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-387886">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用老宋的这条留言" onclick="return CommentQuote(&#39;comment-quote-387886&#39;,&#39;老宋&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-387917" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">hu</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-387917">
+            <p>对OS的依赖是否存在？ 就是说生成image时候的OS是否必须和以后运行容器时的物理机器的OS类型和版本号都一致？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 12, 2018  7:59 PM">2018年4月12日 19:59</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-387917">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用hu的这条留言" onclick="return CommentQuote(&#39;comment-quote-387917&#39;,&#39;hu&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-388028" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">黄</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-388028">
+            <p>bash container stop [containerID]这里是不是应该写成docker container stop [containerID]?</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 16, 2018  3:34 PM">2018年4月16日 15:34</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-388028">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用黄的这条留言" onclick="return CommentQuote(&#39;comment-quote-388028&#39;,&#39;黄&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-388127" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://bayllech.cn" href="http://bayllech.cn/" target="_blank" rel="nofollow">七贝勒</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-388127">
+            <blockquote>
+<pre>引用走在成功的大道上的发言：</pre>
+
+<p>为什么我的docker找不到image、container 命令呢？</p>
+
+</blockquote>
+
+<p>centos 6.8 无法识别 $ docker image 命令</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 20, 2018  2:29 PM">2018年4月20日 14:29</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-388127">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用七贝勒的这条留言" onclick="return CommentQuote(&#39;comment-quote-388127&#39;,&#39;七贝勒&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-388186" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">dpc</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-388186">
+            <p>docker 的官方文档为什么一直打不开，有人知道怎么打开吗</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 23, 2018  2:05 PM">2018年4月23日 14:05</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-388186">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用dpc的这条留言" onclick="return CommentQuote(&#39;comment-quote-388186&#39;,&#39;dpc&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-388484" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">xiewq</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-388484">
+            <p>老师的有一句命令写错了，如果加了CMD，不需要shell映射了，那么为啥还要写-it。<br>
+应该改成：docker container run -p 8000:3000 koa-demo</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May  3, 2018 11:44 AM">2018年5月 3日 11:44</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-388484">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用xiewq的这条留言" onclick="return CommentQuote(&#39;comment-quote-388484&#39;,&#39;xiewq&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-388503" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">devuncle</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-388503">
+            <p>for  Linux Mint 18.3  : </p>
+
+<p>sudo add-apt-repository "deb [arch=amd64] <a href="https://download.docker.com/linux/ubuntu" rel="nofollow">https://download.docker.com/linux/ubuntu</a> xenial stable"  </p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May  4, 2018  8:56 AM">2018年5月 4日 08:56</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-388503">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用devuncle的这条留言" onclick="return CommentQuote(&#39;comment-quote-388503&#39;,&#39;devuncle&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-388732" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">peak</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-388732">
+            <p>文中有一个错误。</p>
+
+<p>$ docker image build -t koa-demo .</p>
+
+<p>最后的那个点表示 Dockerfile 文件所在的路径，上例是当前路径，所以是一个点。</p>
+
+<p>并不是的。.实际上是在指定上下文的目录, docker	build 命令会将该目录下的内容打包交给	Docker	引擎以帮助构建镜像。</p>
+
+<p>细节可查看https://yeasy.gitbooks.io/docker_practice/content/image/build.html</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May  9, 2018  3:18 PM">2018年5月 9日 15:18</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-388732">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用peak的这条留言" onclick="return CommentQuote(&#39;comment-quote-388732&#39;,&#39;peak&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-388786" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">JohnnyWu</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-388786">
+            <p>深入浅出，很好理解，感谢阮老师</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May 11, 2018  1:26 PM">2018年5月11日 13:26</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-388786">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用JohnnyWu的这条留言" onclick="return CommentQuote(&#39;comment-quote-388786&#39;,&#39;JohnnyWu&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-388911" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">GoX</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-388911">
+            <p>docker底层的2个核心技术分别是Namespaces和Control groups。自1.20版本开始docker已经抛开lxc，不过对于理解docker还是有很大帮助。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May 16, 2018  4:28 PM">2018年5月16日 16:28</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-388911">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用GoX的这条留言" onclick="return CommentQuote(&#39;comment-quote-388911&#39;,&#39;GoX&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-389405" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">phper</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-389405">
+            <p>看过最容易懂的一篇文章，收藏啦。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="June  5, 2018 11:48 AM">2018年6月 5日 11:48</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-389405">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用phper的这条留言" onclick="return CommentQuote(&#39;comment-quote-389405&#39;,&#39;phper&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-389477" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">阿飞</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-389477">
+            <p>写的真不错，一下搞懂了Docker是什么，以前听人讲过不要把Docker理解成虚拟机，但是最后也没说明白它与虚拟机的差别，阮老师的说的很清晰，一目了然</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="June  7, 2018  4:52 PM">2018年6月 7日 16:52</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-389477">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用阿飞的这条留言" onclick="return CommentQuote(&#39;comment-quote-389477&#39;,&#39;阿飞&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-389628" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://atti" href="http://atti/" target="_blank" rel="nofollow">ati</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-389628">
+            <p>如果用自定义文件夹模式，把需要的类库，依赖都打包进去，作为一个文件夹整体为容器也可以呀，，我们很多项目就是这么部署，迁移机器直接文件夹copy。。貌似找不到必须用docker的理由？？优点相比普通的文件夹容器模式到底在哪里呢？？docker相对来说麻烦，不跨win linux平台。。文件夹是跨越win linx的。。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="June 11, 2018  3:03 PM">2018年6月11日 15:03</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-389628">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用ati的这条留言" onclick="return CommentQuote(&#39;comment-quote-389628&#39;,&#39;ati&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-389898" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Terry.Rod</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-389898">
+            <p>阮老师，想咨询下，docker可以无限嵌套么？<br>
+之前看了一个docker-in-docker，这样嵌套下去会有哪些问题？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="June 19, 2018  2:33 PM">2018年6月19日 14:33</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-389898">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Terry.Rod的这条留言" onclick="return CommentQuote(&#39;comment-quote-389898&#39;,&#39;Terry.Rod&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-389934" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">emm</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-389934">
+            <p>通俗易懂,赞一个</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="June 20, 2018  3:24 PM">2018年6月20日 15:24</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-389934">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用emm的这条留言" onclick="return CommentQuote(&#39;comment-quote-389934&#39;,&#39;emm&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-389961" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">hjf</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-389961">
+            <p>为啥我那个koa的例子还是Not found啊，好像也没有说解决方法啊，小白求教</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="June 21, 2018 11:25 AM">2018年6月21日 11:25</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-389961">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用hjf的这条留言" onclick="return CommentQuote(&#39;comment-quote-389961&#39;,&#39;hjf&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-390167" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">wxdr</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-390167">
+            <p>阮老师的很多文件，都是写得通俗易懂，不错，加上我对docker的了解。谢谢。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="June 25, 2018  7:27 PM">2018年6月25日 19:27</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-390167">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用wxdr的这条留言" onclick="return CommentQuote(&#39;comment-quote-390167&#39;,&#39;wxdr&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-390287" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">warnier张</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-390287">
+            <p>有没有新的入门资料、cheatsheet推荐？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="June 27, 2018  2:16 PM">2018年6月27日 14:16</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-390287">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用warnier张的这条留言" onclick="return CommentQuote(&#39;comment-quote-390287&#39;,&#39;warnier张&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-390401" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">炒面</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-390401">
+            <p>希望有机会看到k8s入门文章</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="June 30, 2018  2:05 PM">2018年6月30日 14:05</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-390401">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用炒面的这条留言" onclick="return CommentQuote(&#39;comment-quote-390401&#39;,&#39;炒面&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-390492" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Eddila</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-390492">
+            <p>菜鸟入门，感觉很容易明白</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="July  3, 2018 10:39 AM">2018年7月 3日 10:39</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-390492">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Eddila的这条留言" onclick="return CommentQuote(&#39;comment-quote-390492&#39;,&#39;Eddila&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-391913" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://www.ruanyifeng.com" href="http://www.ruanyifeng.com/" target="_blank" rel="nofollow">Docker</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-391913">
+            <p>不吹不黑，只是发表下个人看法，像这种文章，去看官网的教程不就得了，又详细又提高英语阅读水平，一个个在低下鼓掌叫好。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="August  8, 2018 12:16 AM">2018年8月 8日 00:16</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-391913">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Docker的这条留言" onclick="return CommentQuote(&#39;comment-quote-391913&#39;,&#39;Docker&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-392814" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">张辉</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-392814">
+            <blockquote>
+<pre>引用hy05190134的发言：</pre>
+
+<p>docker container ls 是不是用 docker ps 以及 docker ps -a 更方便看 container 的运行状态呢</p>
+
+</blockquote>
+
+<p>docker container stats</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="September  4, 2018 11:21 AM">2018年9月 4日 11:21</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-392814">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用张辉的这条留言" onclick="return CommentQuote(&#39;comment-quote-392814&#39;,&#39;张辉&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-393518" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">kid1412</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-393518">
+            <p>$ docker image tag koa-demos:0.0.1 ruanyf/koa-demos:0.0.1<br>
+这个命令里koa-demos应改成koa-demo,多了个s</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="September 29, 2018 12:06 AM">2018年9月29日 00:06</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-393518">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用kid1412的这条留言" onclick="return CommentQuote(&#39;comment-quote-393518&#39;,&#39;kid1412&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-393519" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">kid1412</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-393519">
+            <blockquote>
+<pre>引用王昊天的发言：</pre>
+
+<p>您好，阮老师，我在执行docker image push命令的时候一直Retrying，过一段时间后提示Service Unvailable，是被墙了吗，有相应的解决方法吗</p>
+
+<p>79832b4d1f2d: Retrying in 3 seconds <br>
+37b22fa5fbec: Retrying in 1 second <br>
+c5b2ac536264: Retrying in 2 seconds </p>
+
+<p></p>
+
+</blockquote>
+
+<p>不知道是不是被墙了,我是开着梯子的,一切正常.</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="September 29, 2018 12:18 AM">2018年9月29日 00:18</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-393519">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用kid1412的这条留言" onclick="return CommentQuote(&#39;comment-quote-393519&#39;,&#39;kid1412&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-394054" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">limi</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-394054">
+            <p>真的感谢，通俗易懂</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="October 15, 2018  4:50 PM">2018年10月15日 16:50</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-394054">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用limi的这条留言" onclick="return CommentQuote(&#39;comment-quote-394054&#39;,&#39;limi&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-394146" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">guiyuan</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-394146">
+            <p>老师，这里我还是不太清楚，如果我的服务器是没有网络环境的，那怎么从其它的机器上拷贝过来docker的img，并粘贴到服务器上进行部署使用呢？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="October 18, 2018  7:15 AM">2018年10月18日 07:15</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-394146">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用guiyuan的这条留言" onclick="return CommentQuote(&#39;comment-quote-394146&#39;,&#39;guiyuan&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-395013" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Gavin</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-395013">
+            <p>阮老师太棒了，10min入门docker</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="November 15, 2018  4:57 PM">2018年11月15日 16:57</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-395013">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Gavin的这条留言" onclick="return CommentQuote(&#39;comment-quote-395013&#39;,&#39;Gavin&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-395514" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://www.tanrd.com" href="http://www.tanrd.com/" target="_blank" rel="nofollow">wpstan</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-395514">
+            <blockquote>
+<pre>引用Docker的发言：</pre>
+
+<p>不吹不黑，只是发表下个人看法，像这种文章，去看官网的教程不就得了，又详细又提高英语阅读水平，一个个在低下鼓掌叫好。</p>
+
+</blockquote>
+
+<p>我觉得老师讲的很好啊，先引入问题，比如环境配置的痛点，所以有了docker这种东西。循序渐进挺好的。至于后续那些命令，确实可以去官网看文档。看博客的时候，汲取有用的东西就好！哈哈</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="November 23, 2018  6:03 PM">2018年11月23日 18:03</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-395514">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用wpstan的这条留言" onclick="return CommentQuote(&#39;comment-quote-395514&#39;,&#39;wpstan&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-396518" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">LuckyPo</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-396518">
+            <p>阮老师，我看您很多文章后面都有<br>
+“版权声明：自由转载-非商用-非衍生-保持署名（创意共享3.0许可证）”<br>
+这样的版权声明，但是我不太清楚把文章转载至自己的个人公众号是否为商用，希望老师能够得到老师的答复。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="December  3, 2018  5:07 PM">2018年12月 3日 17:07</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-396518">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用LuckyPo的这条留言" onclick="return CommentQuote(&#39;comment-quote-396518&#39;,&#39;LuckyPo&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-397289" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://www.caoxile.com" href="http://www.caoxile.com/" target="_blank" rel="nofollow">caoxile</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-397289">
+            <blockquote>
+<pre>引用xionghongzhi的发言：</pre>
+
+<p>$ sudo usermod -aG docker $USER </p>
+
+<p>执行完之后貌似需要先logout一下，才会生效。</p>
+
+</blockquote>
+
+<p>是的,需要 log out 然后 log in 才会生效</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="December 13, 2018  5:26 PM">2018年12月13日 17:26</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-397289">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用caoxile的这条留言" onclick="return CommentQuote(&#39;comment-quote-397289&#39;,&#39;caoxile&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-400254" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Troublemaker</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-400254">
+            <blockquote>
+<pre>引用kid1412的发言：</pre>
+
+<p></p>
+
+<p>不知道是不是被墙了,我是开着梯子的,一切正常.</p>
+
+</blockquote>
+
+<p>可以打开啊  不用翻墙 </p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="January  3, 2019  8:45 PM">2019年1月 3日 20:45</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-400254">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Troublemaker的这条留言" onclick="return CommentQuote(&#39;comment-quote-400254&#39;,&#39;Troublemaker&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-408295" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">delusionxb</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-408295">
+            <p>我才知道还有'docker container ls'和'docker image ls'这2个命令...</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 19, 2019 12:40 PM">2019年2月19日 12:40</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-408295">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用delusionxb的这条留言" onclick="return CommentQuote(&#39;comment-quote-408295&#39;,&#39;delusionxb&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-410953" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">袋鼠</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-410953">
+            <p>请教一个问题：<br>
+文章中<br>
+“这个例子中，Node 进程运行在 Docker 容器的虚拟环境里面，进程接触到的文件系统和网络接口都是虚拟的，与本机的文件系统和网络接口是隔离的，因此需要定义容器与物理机的端口映射（map）。”</p>
+
+<p>端口映射 不是在在下面命令行（-p）中完成了吗？</p>
+
+<p>“docker container run -p 8000:3000 -it koa-demo:0.0.1 /bin/bash”<br>
+</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 29, 2019  2:49 PM">2019年4月29日 14:49</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-410953">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用袋鼠的这条留言" onclick="return CommentQuote(&#39;comment-quote-410953&#39;,&#39;袋鼠&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-411031" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">大大大</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-411031">
+            <p>很厉害，还有JS教程，网络协议等等，受益匪浅。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May  6, 2019  6:25 PM">2019年5月 6日 18:25</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-411031">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用大大大的这条留言" onclick="return CommentQuote(&#39;comment-quote-411031&#39;,&#39;大大大&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-411077" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">reto</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-411077">
+            <p># service 命令的用法<br>
+$ sudo service docker start</p>
+
+<p># systemctl 命令的用法<br>
+$ sudo systemctl start docker</p>
+
+<p>好像在macos上不可用，您知道怎么解决吗？<br>
+谢谢</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May  9, 2019  5:05 PM">2019年5月 9日 17:05</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-411077">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用reto的这条留言" onclick="return CommentQuote(&#39;comment-quote-411077&#39;,&#39;reto&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-412098" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">season</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-412098">
+            <p>我是初学者，请教一下，我想修改别人image，应该怎么操作 :)</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="July  7, 2019 11:36 AM">2019年7月 7日 11:36</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-412098">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用season的这条留言" onclick="return CommentQuote(&#39;comment-quote-412098&#39;,&#39;season&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-412138" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">断尘丶轻舞</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-412138">
+            <blockquote>
+<pre>引用season的发言：</pre>
+
+<p>我是初学者，请教一下，我想修改别人image，应该怎么操作 :)</p>
+
+</blockquote>
+
+<p>像文章中第十节讲的那样，使用Dockerfile 通过继承已有镜像来创建新的镜像<br>
+如果怕使用Dockerfile 操作有问题的话可以在已有的镜像上做完操作后使用docker commit从容器创建镜像</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="July 10, 2019  4:56 PM">2019年7月10日 16:56</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-412138">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用断尘丶轻舞的这条留言" onclick="return CommentQuote(&#39;comment-quote-412138&#39;,&#39;断尘丶轻舞&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-412144" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="https://jisuye.com" href="https://jisuye.com/" target="_blank" rel="nofollow">ixx</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-412144">
+            <p>十一、其他有用的命令 <br>
+第（2）小节里的命令应该是<br>
+ “docker container stop [containerID]”<br>
+现在写的是<br>
+ “bash container stop [containerID]”</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="July 11, 2019 10:43 AM">2019年7月11日 10:43</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-412144">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用ixx的这条留言" onclick="return CommentQuote(&#39;comment-quote-412144&#39;,&#39;ixx&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-412633" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">阿杰</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-412633">
+            <p>写的很好，学习到了。谢谢！</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="August  8, 2019  3:03 PM">2019年8月 8日 15:03</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-412633">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用阿杰的这条留言" onclick="return CommentQuote(&#39;comment-quote-412633&#39;,&#39;阿杰&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-412641" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">typecode</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-412641">
+            <p>JVM屏蔽了与具体平台相关的信息<br>
+参考wikipedia：<br>
+<a href="https://zh.wikipedia.org/wiki/Java%E8%99%9A%E6%8B%9F%E6%9C%BA" rel="nofollow">https://zh.wikipedia.org/wiki/Java%E8%99%9A%E6%8B%9F%E6%9C%BA</a></p>
+
+<p><br>
+从这方面说，jvm也是一种虚拟化方案了吧</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="August  9, 2019  9:05 AM">2019年8月 9日 09:05</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-412641">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用typecode的这条留言" onclick="return CommentQuote(&#39;comment-quote-412641&#39;,&#39;typecode&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-412814" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">671232123213</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-412814">
+            <blockquote>
+<pre>引用孑孓的发言：</pre>
+
+<p></p>
+
+<p>不用那么狭隘，知识的深度和广度都是程序员极力追求的</p>
+
+</blockquote>
+
+<p>docker本来就是容器化的，能放任意的程序，为什么前端项目不可以</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="August 19, 2019 12:17 PM">2019年8月19日 12:17</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-412814">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用671232123213的这条留言" onclick="return CommentQuote(&#39;comment-quote-412814&#39;,&#39;671232123213&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-413647" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="https://www.cnblogs.com/silenzio/" href="https://www.cnblogs.com/silenzio/" target="_blank" rel="nofollow">大雨就要来了</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-413647">
+            <p>阮老师把"镜像比作模板,容器比作实例",真的讲的很明白.<br>
+自己学习的时候看的是, 细节讲的很多, 但是概念却讲的不明白.<br>
+"镜像继承镜像"这句也是,很棒.</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="September 23, 2019  9:02 AM">2019年9月23日 09:02</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-413647">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用大雨就要来了的这条留言" onclick="return CommentQuote(&#39;comment-quote-413647&#39;,&#39;大雨就要来了&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-413994" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Just</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-413994">
+            <blockquote>
+<pre>引用王昊天的发言：</pre>
+
+<p>您好，阮老师，我在执行docker image push命令的时候一直Retrying，过一段时间后提示Service Unvailable，是被墙了吗，有相应的解决方法吗</p>
+
+<p>79832b4d1f2d: Retrying in 3 seconds <br>
+37b22fa5fbec: Retrying in 1 second <br>
+c5b2ac536264: Retrying in 2 seconds </p>
+
+<p></p>
+
+</blockquote>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="October 16, 2019  3:48 PM">2019年10月16日 15:48</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-413994">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Just的这条留言" onclick="return CommentQuote(&#39;comment-quote-413994&#39;,&#39;Just&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-413995" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Just</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-413995">
+            <blockquote>
+<pre>引用王昊天的发言：</pre>
+
+<p>您好，阮老师，我在执行docker image push命令的时候一直Retrying，过一段时间后提示Service Unvailable，是被墙了吗，有相应的解决方法吗</p>
+
+<p>79832b4d1f2d: Retrying in 3 seconds <br>
+37b22fa5fbec: Retrying in 1 second <br>
+c5b2ac536264: Retrying in 2 seconds </p>
+
+<p></p>
+
+</blockquote>
+
+<blockquote>
+<pre>引用Just的发言：</pre>
+
+<p>应该是你没登录</p>
+
+</blockquote>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="October 16, 2019  3:49 PM">2019年10月16日 15:49</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-413995">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用Just的这条留言" onclick="return CommentQuote(&#39;comment-quote-413995&#39;,&#39;Just&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-414381" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">地球不好玩儿</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-414381">
+            <p>我有个疑问，上面提到连运行的结果都保存的到image文件里面。比如，我环境里面有数据库，redis,那么我运行容器后产生的测试数据也还在么？我持续迭代项目，是要每次都要重新build一下么？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="November  6, 2019  3:27 PM">2019年11月 6日 15:27</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-414381">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用地球不好玩儿的这条留言" onclick="return CommentQuote(&#39;comment-quote-414381&#39;,&#39;地球不好玩儿&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-414855" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author"><a title="http://www.dukeluo.me" href="http://www.dukeluo.me/" target="_blank" rel="nofollow">屯屯</a></span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-414855">
+            <p>第十一节中第二部分 docker container stop 中有笔误，应该是`docker container stop [containerID]`，而不是`bash container stop [containerID]`</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="December  2, 2019 12:43 PM">2019年12月 2日 12:43</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-414855">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用屯屯的这条留言" onclick="return CommentQuote(&#39;comment-quote-414855&#39;,&#39;屯屯&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-415507" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">huangzehao</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-415507">
+            <p>感谢阮老师的文章，很详细，如果可以在页面加上目录链接更好哈</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="December 27, 2019  5:12 PM">2019年12月27日 17:12</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-415507">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用huangzehao的这条留言" onclick="return CommentQuote(&#39;comment-quote-415507&#39;,&#39;huangzehao&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-415791" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">fxjs</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-415791">
+            <p>执行 '10.4 &gt; docker container run --rm -p 8000:3000 -it koa-demo:0.0.1' 会进入node终端'&gt;_'，可能需要重新build一个新的image（docker image build -t koa-demo:0.0.2），然后运行 docker container run --rm -p 8000:3000 -it koa-demo:0.0.2。（Docker version 19.03.5, build 633a0ea）</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="January 10, 2020 12:57 PM">2020年1月10日 12:57</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-415791">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用fxjs的这条留言" onclick="return CommentQuote(&#39;comment-quote-415791&#39;,&#39;fxjs&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-416279" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">smallfish</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-416279">
+            <p>讲的很全面很透，又学到新知识了，感谢分享</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 20, 2020 11:03 AM">2020年2月20日 11:03</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-416279">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用smallfish的这条留言" onclick="return CommentQuote(&#39;comment-quote-416279&#39;,&#39;smallfish&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-416698" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">kaola</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-416698">
+            <p>docker image pull/push/build 与 docker pull/push/build  加image与不加image有什么区别？我不加image也可以</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March  9, 2020 10:40 AM">2020年3月 9日 10:40</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-416698">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用kaola的这条留言" onclick="return CommentQuote(&#39;comment-quote-416698&#39;,&#39;kaola&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-417814" class="comment">
+    <div id="comment-last" class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">我服慕容格</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-417814">
+            <p>上直播吧，我要打赏，妈的，现在连直播吃饭都能日入上万，阮大大呕心呖血，写文章，免费公开，还有人瞎BB，啥世道。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 18, 2020  2:27 PM">2020年4月18日 14:27</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-417814">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html#comment-text" title="引用我服慕容格的这条留言" onclick="return CommentQuote(&#39;comment-quote-417814&#39;,&#39;我服慕容格&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    </div>
+        
+    
+
+
+    
+    
+    <div class="comments-open" id="comments-open">
+        <h2 class="comments-open-header">我要发表看法</h2>
+        <div class="comments-open-content">
+
+        
+            <div id="comment-greeting"></div>
+
+            <form method="post" action="http://www.ruanyifeng.com/cgi-bin/mtos/mt-comments.cgi" name="comments_form" id="comments-form" onsubmit="return pleaseWait();">
+                <input type="hidden" name="static" value="1">
+                <input type="hidden" name="entry_id" value="1974">
+                <input type="hidden" name="__lang" value="en">
+                <input type="hidden" name="parent_id" value="" id="comment-parent-id">
+                <input type="hidden" name="armor" value="1">
+                <input type="hidden" name="preview" value="">
+                <input type="hidden" name="sid" value="">
+                <div id="comments-open-data">
+            <div id="comments-open-text">
+                    <p><label for="comment-text">您的留言
+                    （HTML标签部分可用）</label></p>
+                    <p><textarea id="comment-text" name="text" rows="10" cols="50"></textarea></p>
+                </div>
+                    <div id="comment-form-name">
+                        <p><label for="comment-author">您的大名：</label></p>
+                        <p><input id="comment-author" name="author" size="30" value="">  <span class="hint"> «-必填</span></p>
+                    </div>
+                    <div id="comment-form-email">
+                        <p><label for="comment-email">电子邮件：</label></p>
+                        <p><input id="comment-email" name="email" size="30" value="">  <span class="hint"> «-必填，不公开</span></p>
+                    </div>
+                    <div id="comment-form-url">
+                        <p><label for="comment-url">个人网址：</label></p>
+                        <p><input id="comment-url" name="url" size="30" value="">  <span class="hint"> «-我信任你，不会填写广告链接</span></p>
+                    </div>
+                    <div id="comment-form-remember-me">
+                        <p>
+                        <label for="comment-bake-cookie">记住个人信息？</label><input type="checkbox" id="comment-bake-cookie" name="bakecookie" onclick="!this.checked?forgetMe(document.comments_form):rememberMe(document.comments_form)" value="1" accesskey="r"></p>
+                    </div>
+                </div>
+                    <div id="comment-form-reply" style="display:none">
+                    <input type="checkbox" id="comment-reply" name="comment_reply" value="" onclick="mtSetCommentParentID()">
+                    <label for="comment-reply" id="comment-reply-label"></label>
+                </div>
+                <div id="comments-open-captcha"></div>
+                <div id="comments-open-footer">
+<div id="wait" style="display:none;">
+<p><strong>正在发表您的评论，请稍候</strong></p>
+<p>
+<input type="text" name="percent" size="3" style="font-family:Arial; color:black;text-align:center; border-width:medium; border-style:none;">           
+<input type="text" name="chart" size="46" style="font-family:Arial;font-weight:bolder; color:black; padding:0px; border-style:none;">
+</p>
+</div>
+
+                    <p><input type="submit" accesskey="s" name="post" id="comment-submit" value="发表">  <span class="hint"> «- 点击按钮</span></p>
+                </div>
+            </form>
+
+
+        </div>
+    </div>
+
+    
+
+
+</div>
+
+
+
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        <script type="text/javascript" src="./Docker 入门教程 - 阮一峰的网络日志_files/prism.js.download"></script>
+        <script type="text/javascript" src="./Docker 入门教程 - 阮一峰的网络日志_files/checker.js.download"></script> 
+            <div id="footer">
+<div id="footer-inner">
+  <div id="footer-content">
+
+      
+<!--
+      <section> 
+     </section>
+  <p><a title="Instagram" target="_blank" href="http://instagram.com/ruanyf">Instagram</a></p>
+       <p><a title="订阅" href="https://app.feedblitz.com/f/f.fbz?Sub=348868" target="_blank">邮件订阅</a></p>
+  
+       <h2>Feed</h2>
+       <p><a title="FeedBurner" href="http://feeds.feedburner.com/ruanyifeng" target="_blank">FeedBurner</a></p>
+       <p><a title="atom.xml" href="http://www.ruanyifeng.com/blog/atom.xml" target="_blank">atom.xml</a></p>
+     
+      <p>支付宝：<a title="支付宝" href="alipays://platformapi/startapp?appId=20000067&url=http%3A%2F%2Fwww.ruanyifeng.com%2Fblog" target="_blank">yifeng.ruan@gmail.com</a></p>
+-->
+
+     <section>
+<!--
+       <h2>授权方式</h2>
+       <p><a title="许可证" href="http://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh" target="_blank">自由转载-非商用-非衍生-保持署名</a></p>
+       <h2>微信公号</h2>
+       <h2>社交帐号</h2>
+       <h2>联系方式</h2>
+     -->
+       <p><img src="./Docker 入门教程 - 阮一峰的网络日志_files/bg2020013101.jpg" alt="微信扫描"></p>
+       <p>
+         <a title="微博" href="http://weibo.com/ruanyf" target="_blank">Weibo</a> | 
+         <a title="Twitter" target="_blank" href="https://twitter.com/ruanyf">Twitter</a> |
+         <a title="GitHub" target="_blank" href="https://github.com/ruanyf">GitHub</a>
+       </p>
+     
+     <p>Email: <a title="电子邮件" href="mailto:yifeng.ruan@gmail.com" target="_blank">yifeng.ruan@gmail.com</a></p>
+     </section>
+  
+  
+
+
+  </div>
+</div>
+</div>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-46829782-1', 'ruanyifeng.com');
+  ga('send', 'pageview');
+
+</script>
+
+<script type="text/javascript" src="./Docker 入门教程 - 阮一峰的网络日志_files/stats.js.download"></script>
+<script>
+var supportImg = document.querySelector('#support-img');
+
+if (supportImg && _hmt) {
+  _hmt.push(['_trackEvent', 'banner', 'load']);
+  supportImg.addEventListener('click', function () {
+    _hmt.push(['_trackEvent', 'banner', 'click']);
+  }, false);
+}
+
+var homepageImg = document.querySelector('#homepage_sponsor');
+if (homepageImg && _hmt) {
+  _hmt.push(['_trackEvent', 'homepage-banner', 'load']);
+  homepageImg.addEventListener('click', function () {
+    _hmt.push(['_trackEvent', 'homepage-banner', 'click']);
+  }, false);
+}
+</script>
+
+
+<div id="share_button_proto" style="display:none;">
+<a class="bshareDiv" href="http://www.bshare.cn/share" style="display: block; text-decoration: none; padding: 0px; margin: 0px; font-size: 12px; height: 21px; width: 51px;"><div class="bsPromo bsPromo1"></div><div class="buzzButton bsStyle10" style="height:21px;color:#333;;background:transparent url(http://static.bshare.cn/frame/images/button_custom10-zh-Orange.gif) no-repeat;text-align:center;width:51px;"></div><div style="clear:both;"></div></a>
+
+
+
+<script type="text/javascript" charset="utf-8" src="./Docker 入门教程 - 阮一峰的网络日志_files/buttonLite.js.download"></script>
+<script type="text/javascript" charset="utf-8">
+bShare.addEntry({
+    title: document.getElementById("page-title").innerHTML,
+url:window.location.href
+});
+</script>
+</div>
+
+<script>
+document.getElementById("share_button").innerHTML=document.getElementById("share_button_proto").innerHTML;
+</script>
+
+
+
+
+
+        </div>
+    </div>
+
+<div id="bsBox" class="bsBox"><div class="bsClose">X</div><div class="bsTop"><div class="bsReturn">选择其他平台 &gt;&gt;</div><span style="margin-left:15px;">分享到</span><span class="bsPlatName"></span></div><div class="bsFrameDiv"><iframe class="bShareFrame" name="bsFrame541" frameborder="0" scrolling="no" allowtransparency="true" src="./Docker 入门教程 - 阮一峰的网络日志_files/saved_resource.html"></iframe></div><div id="bsMorePanel" style="display: none;"></div></div><div id="bsPanelHolder"><div id="bsPanel" style="display:none;"><div class="bsTitle"><a style="float:left;height:20px;line-height:20px;font-weight:bold;" class="bsSiteLink" target="_blank" href="http://www.bshare.cn/intro">分享到...</a><a class="bsSiteLink" style="cursor:pointer;float:right;height:20px;line-height:20px;font-weight:bold;" onclick="document.getElementById(&#39;bsPanel&#39;).style.display=&#39;none&#39;;">X</a><div class="bsClear"></div></div><div class="bsClear"></div><div style="padding-left:8px;background:#fff;*height:218px;"><div style="height:47px;border-bottom:1px #ccc solid;padding:4px 0 4px 16px;margin-right:8px;_padding-left:12px;"><div class="bsRlogo" onmouseover="javascript:this.className=&#39;bsRlogoSel&#39;" onmouseout="javascript:this.className=&#39;bsRlogo&#39;"><a href="javascript:;" onclick="javascript:bShare.share(event,&#39;facebook&#39;);return false;" style="text-decoration:none;line-height:120%;"><div style="cursor:pointer;width:24px;height:24px;margin:0 18px 2px;background:url(http://static.bshare.cn/frame/images//logos/m2/facebook.gif) no-repeat;"></div><div style="cursor:pointer;text-align:center;width:60px;height:16px !important;overflow:hidden;color:inherit;white-space:nowrap;line-height:120% !important;">Facebook</div></a></div><div class="bsRlogo" onmouseover="javascript:this.className=&#39;bsRlogoSel&#39;" onmouseout="javascript:this.className=&#39;bsRlogo&#39;"><a href="javascript:;" onclick="javascript:bShare.share(event,&#39;twitter&#39;);return false;" style="text-decoration:none;line-height:120%;"><div style="cursor:pointer;width:24px;height:24px;margin:0 18px 2px;background:url(http://static.bshare.cn/frame/images//logos/m2/twitter.gif) no-repeat;"></div><div style="cursor:pointer;text-align:center;width:60px;height:16px !important;overflow:hidden;color:inherit;white-space:nowrap;line-height:120% !important;">Twitter</div></a></div><div class="bsRlogo" onmouseover="javascript:this.className=&#39;bsRlogoSel&#39;" onmouseout="javascript:this.className=&#39;bsRlogo&#39;"><a href="javascript:;" onclick="javascript:bShare.share(event,&#39;sinaminiblog&#39;);return false;" style="text-decoration:none;line-height:120%;"><div style="cursor:pointer;width:24px;height:24px;margin:0 18px 2px;background:url(http://static.bshare.cn/frame/images//logos/m2/sinaminiblog.gif) no-repeat;"></div><div style="cursor:pointer;text-align:center;width:60px;height:16px !important;overflow:hidden;color:inherit;white-space:nowrap;line-height:120% !important;">新浪微博</div></a></div></div><div class="bsLogoLink"><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="微信" onclick="javascript:bShare.share(event,&#39;weixin&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//logos/s4/weixin.png) no-repeat;">微信</a></div><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="腾讯微博" onclick="javascript:bShare.share(event,&#39;qqmb&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -1512px;">腾讯微博</a></div><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="豆瓣网" onclick="javascript:bShare.share(event,&#39;douban&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -540px;">豆瓣网</a></div><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="饭否" onclick="javascript:bShare.share(event,&#39;fanfou&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -666px;">饭否</a></div><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="雪球" onclick="javascript:bShare.share(event,&#39;xueqiu&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//logos/s4/xueqiu.png) no-repeat;">雪球</a></div><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="电子邮件" onclick="javascript:bShare.share(event,&#39;email&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -612px;">电子邮件</a></div></div><div class="bsLogoLink"><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="Google+" onclick="javascript:bShare.share(event,&#39;gplus&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//logos/s4/gplus.png) no-repeat;">Google+</a></div><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="QQ空间" onclick="javascript:bShare.share(event,&#39;qzone&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -1566px;">QQ空间</a></div><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="QQ好友" onclick="javascript:bShare.share(event,&#39;qqim&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//logos/s4/qqim.png) no-repeat;">QQ好友</a></div><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="Instapaper" onclick="javascript:bShare.share(event,&#39;instapaper&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -954px;">Instapaper</a></div><div class="bsLogo" onmouseover="javascript:this.className=&#39;bsLogoSel&#39;" onmouseout="javascript:this.className=&#39;bsLogo&#39;"><a href="javascript:;" title="美味书签" onclick="javascript:bShare.share(event,&#39;delicious&#39;);return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -432px;">美味书签</a></div></div><div class="bsClear"></div></div><div style="height:20px;line-height:20px;padding:0 8px;border-top:1px solid #e8e8e8;color:#666;background:#f2f2f2;"><div class="buzzButton" style="float:left;">更多平台... <font style="font-weight:normal;">(133)</font></div><div id="bsPower" style="float:right;text-align:right;overflow:hidden;height:100%;"><a class="bsSiteLink" style="font-size:10px;vertical-align:text-bottom;line-height:24px;cursor:pointer;" href="http://www.bshare.cn/" target="_blank"><span style="font-size:10px;vertical-align:text-bottom;"><span style="color:#f60;">b</span>Share</span></a></div></div></div></div></body></html>

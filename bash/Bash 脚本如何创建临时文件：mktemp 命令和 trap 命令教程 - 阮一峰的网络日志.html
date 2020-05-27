@@ -1,0 +1,974 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" id="sixapart-standard"><head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="generator" content="Movable Type  5.2.2">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--link rel="stylesheet" href="http://www.ruanyifeng.com/blog/styles.css" type="text/css" /-->
+<link rel="start" href="http://www.ruanyifeng.com/blog/" title="Home">
+<link rel="alternate" type="application/atom+xml" title="Recent Entries" href="http://feeds.feedburner.com/ruanyifeng">
+<script src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/hm.js"></script><script async="" src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/analytics.js"></script><script type="text/javascript" src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/mt.js"></script>
+<!--
+<rdf:RDF xmlns="http://web.resource.org/cc/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/"
+         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<Work rdf:about="http://www.ruanyifeng.com/blog/2011/09/curl.html">
+<dc:title>curl网站开发指南</dc:title>
+<dc:description>我一向以为，curl只是一个编程用的函数库。...</dc:description>
+<dc:creator>阮一峰</dc:creator>
+<dc:date>2011-09-04T11:20:46+08:00</dc:date>
+<license rdf:resource="http://creativecommons.org/licenses/by-nc-nd/3.0/" />
+</Work>
+<License rdf:about="http://creativecommons.org/licenses/by-nc-nd/3.0/">
+</License>
+</rdf:RDF>
+-->
+
+<style>
+body {
+  background-color: #f5f5d5;
+}
+
+#container::before {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background: rgba(0,0,0,0.1);
+  text-align: center;
+  content: "本站显示不正常，可能因为您使用了广告拦截器。";
+}
+
+</style>
+<script>
+function loadjscssfile(filename, filetype){
+    if (filetype=="js"){ //if filename is a external JavaScript file
+        var fileref=document.createElement('script')
+        fileref.setAttribute("type","text/javascript")
+        fileref.setAttribute("src", filename)
+    }
+    else if (filetype=="css"){ //if filename is an external CSS file
+        var fileref=document.createElement("link")
+        fileref.setAttribute("rel", "stylesheet")
+        fileref.setAttribute("type", "text/css")
+        fileref.setAttribute("href", filename)
+    }
+    if (typeof fileref!="undefined")
+        document.getElementsByTagName("head")[0].appendChild(fileref)
+}
+//loadjscssfile("http://www.ruanyifeng.com/blog/styles.css", "css");
+loadjscssfile('/static/themes/theme_scrapbook/theme_scrapbook.min.css', "css");
+
+
+function checker() {
+// var img = document.querySelector('img[src^="http://www.ruanyifeng.com/blog/images"]');
+var img = document.querySelector('a > img[src*="wangbase.com/blogimg/asset/"]');
+  if (img && window.getComputedStyle(img).display === 'none'){
+    var sponsor = document.querySelector('.entry-sponsor');
+    var prompt = document.createElement('div');
+    prompt.style = 'border: 1px solid #c6c6c6;border-radius: 4px;background-color: #f5f2f0;padding: 15px; font-size: 14px;';
+  prompt.innerHTML = '<p>您使用了广告拦截器，导致本站内容无法显示。</p><p>请将 www.ruanyifeng.com 加入白名单，解除广告屏蔽后，刷新页面。谢谢。</p>';
+    sponsor.parentNode.replaceChild(prompt, sponsor);
+    document.querySelector('#main-content').innerHTML = '';
+  }
+}
+
+setTimeout(checker, 1000);
+</script><link rel="stylesheet" type="text/css" href="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/theme_scrapbook.css">
+
+    
+    <link rel="prev" href="http://www.ruanyifeng.com/blog/2019/12/weekly-issue-88.html" title="科技爱好者周刊：第 88 期">
+    <link rel="next" href="http://www.ruanyifeng.com/blog/2020/01/weekly-issue-89.html" title="科技爱好者周刊：第 89 期">
+    
+    <title>Bash 脚本如何创建临时文件：mktemp 命令和 trap 命令教程 - 阮一峰的网络日志</title>
+<script src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/bsStatic.js" type="text/javascript" charset="utf-8"></script><script src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/bs-engine.js" type="text/javascript" charset="utf-8"></script><style type="text/css">a.bshareDiv,#bsPanel,#bsMorePanel,#bshareF{border:none;background:none;padding:0;margin:0;font:12px Helvetica,Calibri,Tahoma,Arial,宋体,sans-serif;line-height:14px;}#bsPanel div,#bsMorePanel div,#bshareF div{display:block;}.bsRlogo .bsPopupAwd,.bsRlogoSel .bsPopupAwd,.bsLogo .bsPopupAwd,.bsLogoSel .bsPopupAwd{line-height:16px !important;}a.bshareDiv div,#bsFloatTab div{*display:inline;zoom:1;display:inline-block;}a.bshareDiv img,a.bshareDiv div,a.bshareDiv span,a.bshareDiv a,#bshareF table,#bshareF tr,#bshareF td{text-decoration:none;background:none;margin:0;padding:0;border:none;line-height:1.2}a.bshareDiv span{display:inline;float:none;}div.buzzButton{cursor:pointer;font-weight:bold;}.buzzButton .shareCount a{color:#333}.bsStyle1 .shareCount a{color:#fff}span.bshareText{white-space:nowrap;}span.bshareText:hover{text-decoration:underline;}a.bshareDiv .bsPromo,div.bshare-custom .bsPromo{display:none;position:absolute;z-index:100;}a.bshareDiv .bsPromo.bsPromo1,div.bshare-custom .bsPromo.bsPromo1{width:51px;height:18px;top:-18px;left:0;line-height:16px;font-size:12px !important;font-weight:normal !important;color:#fff;text-align:center;background:url(http://static.bshare.cn/frame/images/bshare_box_sprite2.gif) no-repeat 0 -606px;}div.bshare-custom .bsPromo.bsPromo2{background:url(http://static.bshare.cn/frame/images/bshare_promo_sprite.gif) no-repeat;cursor:pointer;}</style><style type="text/css">.bsBox{display:none;z-index:100000001;font-size:12px;background:url(http://static.bshare.cn/frame/images//background-opaque-dark.gif) !important;padding:6px !important;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;}.bsClose{_overflow:hidden;cursor:pointer;position:absolute;z-index:10000000;color:#666;font-weight:bold;font-family:Helvetica,Arial;font-size:14px;line-height:20px;}.bsTop{color:#666;background:#f2f2f2;height:24px;line-height:24px;border-bottom:1px solid #e8e8e8;}.bsTop span{float:left;}.bsFrameDiv,#bsMorePanel{border:none;background:#fff;}.bsReturn{float:right;*margin-right:20px;margin-right:36px;text-align:right;cursor:pointer;line-height:24px;color:#666;opacity:0.5;}#bsReturn:hover{text-decoration:underline;opacity:1;}</style><script src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/bsMore.js" type="text/javascript" charset="utf-8"></script><script src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/bshareS1.js" type="text/javascript" charset="utf-8"></script><style type="text/css">div.bsClear{clear:both;height:0;line-height:0;overflow:hidden;font-size:0;}.bsSearchDiv{padding:5px 15px;background-color:#fafafa;}.bFind-wrapper-top{background:#fff;border-color:#ccc #aaa #aaa #ccc;border-style:solid;border-width:1px;height:16px;padding:4px;margin:0;}.bFind-wrapper-top input{padding:0 !important;border:none !important;box-shadow:none !important;line-height:16px !important;}.bFind-placeholder{background:url("http://static.bshare.cn/css/images/search-icon.gif") no-repeat;display:block;float:left;height:16px;width:16px;}.bFind{background:none;border:none;float:left;font-size:11px !important;height:16px !important;margin-left:3px;outline:none;padding:0;width:400px;}.bsPlatDiv{height:322px;background:#fff;overflow:auto;padding:0 15px;}#bsLogoList{display:block;list-style:none;overflow:hidden;margin:0;padding:0;}#bsLogoList li{float:left;display:inline-block;width:71px;text-align:center;font-size:12px;height:80px;margin:0 !important;}#bsLogoList .bsPlatIcon{cursor:pointer;display:block !important;text-align:center;}#bsLogoList .bsPlatImg{width:32px;height:32px;border:none !important;display:inline-block;}#bsLogoList .bsPlatImg:hover{-moz-border-radius:7px;-webkit-border-radius:7px;border-radius:7px;box-shadow:0 0 15px #a7a8ac;}#bsLogoList .bsPlatName{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;text-align:center;color:#333 !important;margin-top:2px;line-height:140%;*width:70px;}#bsLogoList .bsPromoM{text-align:center;}.bsFooterDiv{height:24px;line-height:24px;padding:0 15px;border-top:1px solid #e8e8e8;background:#f2f2f2;text-align:right;}a.bsLogoLink{color:#666;}.bsLogoLink:hover{text-decoration:underline;}.bsPromoM{background:url(http://static.bshare.cn/frame/images//bshare_box_sprite2.gif) no-repeat top left;}.bsNew,.bsHot,.bsRec,.bsAwd{background-position:0 -552px;width:19px;margin:5px auto 1px;line-height:16px;height:18px;font-size:12px;color:#fff;overflow:hidden;}.bsNew{background-position:0 -570px;}.bsRec{width:30px;background-position:0 -588px;}.bsAwd{background:url(http://static.bshare.cn/frame/images//promot/promote.gif) no-repeat;}</style><script src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/bshare_view.json" type="text/javascript" charset="utf-8"></script><style type="text/css">a.bsSiteLink{text-decoration:none;color:#666;}a.bsSiteLink:hover{text-decoration:underline;}a.bshareDiv{overflow:hidden;height:16px;line-height:18px;font-size:14px;color:#333;padding-left:0;}a.bshareDiv:hover{text-decoration:none;}div.bsTitle{padding:0 8px;border-bottom:1px solid #e8e8e8;color:#666;background:#f2f2f2;text-align:left;}div.buzzButton{cursor:pointer;}div.bsRlogo,div.bsRlogoSel{width:68px;float:left;margin:0;padding:2px 0;}div.bsRlogo a,div.bsRlogoSel a{float:left;}div.bsLogo,div.bsLogoSel{float:left;width:111px;text-align:left;height:auto;padding:2px 4px;margin:2px 0;white-space:nowrap;overflow:hidden;}div.bsLogoSel,div.bsRlogoSel{border:1px solid #ddd;background:#f1f1f1;}div.bsLogo,div.bsRlogo{border:1px solid #fff;background:#fff;}div.bsLogo a,div.bsLogoSel a{display:block;height:16px;line-height:16px;padding:0 0 0 24px;text-decoration:none;float:left;overflow:hidden;}div.bsLogoSel a,div.bsRlogoSel a{color:#000;border:none;}div.bsLogo a,div.bsRlogo a{color:#666;border:none;}div.bsLogoLink{width:121px;overflow:hidden;background:#FFF;float:left;margin:3px 0;}#bsLogin{float:right;text-align:right;overflow:hidden;height:100%;}#bsPanel{position:absolute;z-index:100000000;font-size:12px;width:258px;background:url(http://static.bshare.cn/frame/images/background-opaque-dark.png) !important;padding:6px !important;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;}div.bsClear{clear:both;height:0;line-height:0;font-size:0;overflow:hidden;}div.bsPopupAwd{background:url(http://static.bshare.cn/frame/images//bshare_box_sprite2.gif) no-repeat top left;background-position:0 -624px;width:18px;padding-left:3px;text-align:center;float:left;margin-left: 2px;height:15px;font-size:12px;color:#fff;overflow:hidden;}div.bsRlogo .bsPopupAwd,div.bsRlogoSel .bsPopupAwd{float:left;margin:5px 0 0 -14px;}</style><style type="text/css">a.bsSiteLink{text-decoration:none;color:#666;}a.bsSiteLink:hover{text-decoration:underline;}a.bshareDiv{overflow:hidden;height:16px;line-height:18px;font-size:14px;color:#333;padding-left:0;}a.bshareDiv:hover{text-decoration:none;}div.bsTitle{padding:0 8px;border-bottom:1px solid #e8e8e8;color:#666;background:#f2f2f2;text-align:left;}div.buzzButton{cursor:pointer;}div.bsRlogo,div.bsRlogoSel{width:68px;float:left;margin:0;padding:2px 0;}div.bsRlogo a,div.bsRlogoSel a{float:left;}div.bsLogo,div.bsLogoSel{float:left;width:111px;text-align:left;height:auto;padding:2px 4px;margin:2px 0;white-space:nowrap;overflow:hidden;}div.bsLogoSel,div.bsRlogoSel{border:1px solid #ddd;background:#f1f1f1;}div.bsLogo,div.bsRlogo{border:1px solid #fff;background:#fff;}div.bsLogo a,div.bsLogoSel a{display:block;height:16px;line-height:16px;padding:0 0 0 24px;text-decoration:none;float:left;overflow:hidden;}div.bsLogoSel a,div.bsRlogoSel a{color:#000;border:none;}div.bsLogo a,div.bsRlogo a{color:#666;border:none;}div.bsLogoLink{width:121px;overflow:hidden;background:#FFF;float:left;margin:3px 0;}#bsLogin{float:right;text-align:right;overflow:hidden;height:100%;}#bsPanel{position:absolute;z-index:100000000;font-size:12px;width:258px;background:url(http://static.bshare.cn/frame/images/background-opaque-dark.png) !important;padding:6px !important;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;}div.bsClear{clear:both;height:0;line-height:0;font-size:0;overflow:hidden;}div.bsPopupAwd{background:url(http://static.bshare.cn/frame/images//bshare_box_sprite2.gif) no-repeat top left;background-position:0 -624px;width:18px;padding-left:3px;text-align:center;float:left;margin-left: 2px;height:15px;font-size:12px;color:#fff;overflow:hidden;}div.bsRlogo .bsPopupAwd,div.bsRlogoSel .bsPopupAwd{float:left;margin:5px 0 0 -14px;}</style></head>
+<body id="scrapbook" class="mt-entry-archive one-column">
+<script>
+if (/mobile/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent)) document.body.classList.add('mobile');
+
+/*
+window.addEventListener('load', function(event) {
+  setTimeout(function () {
+    hab('#sup-post-2');
+    hab('#cre-inner');
+  }, 1000);
+});
+*/
+</script>
+    <div id="container">
+        <div id="container-inner">
+
+            <div id="header">
+    <div id="header-inner">
+        <div id="header-content">
+
+
+            <div id="header-name">阮一峰的网络日志 <span id="site_location"> » <a href="http://www.ruanyifeng.com/blog/" accesskey="1">首页</a></span><span id="site_archive"> » <a href="http://www.ruanyifeng.com/blog/archives.html">档案</a></span>
+</div>
+
+<div id="google_search">
+<!-- SiteSearch Google -->
+<form action="https://www.baidu.com/s" target="_blank" method="get" id="cse-search-box">
+  <div>
+  <input type="text" size="20" name="origin" class="searchbox" id="sbi">
+  <input type="hidden" name="wd" value="">
+  <!--input type="image" src="/static/themes/theme_scrapbook/images/top_search_submit.gif" class="searchbox_submit" value="" alt="搜索" name="sa" onclick="this.form.wd.value = this.form.origin.value + ' inurl:www.ruanyifeng.com/blog'" /-->
+  <input type="image" src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/top_search_submit.gif" class="searchbox_submit" value="" alt="搜索" name="sa" onclick="this.form.wd.value = this.form.origin.value + ' 阮一峰'">
+</div>
+</form>
+
+<!-- SiteSearch Google -->
+</div>
+<div id="feed_icon">
+<a href="http://www.ruanyifeng.com/feed.html" title="订阅Feed">
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAUzSURBVHjavFdbbFRVFF3nPjoz7dTWTittaW0jUDRAUqaNojyqREnEQKgfUj9MqqAmhqRt/OCD4CuY+Kckoh+aiGKC+gMJbdHoRysJ8dkhhmJLNdDKtJU+6GMK87j3Hs85d2Z6HzNtMYWb3Dn3NWftvfba+5xNYDl+e6Fkj6yqb/oDRbWq14vlPBLRKCITkxf0ROLt+hNjp1PPSRK4kA3vF1dXNRcWlyA2OQU9eos9opAkAiKxD+XkKO6t15aRWO7J/MgmAZU8MEgexgZHMX518Dh72sYMmVKShnxWuWHdHtxKIDIYTgMuDzgfmSOIQkYMpdUF8OY92Hytt4/jvkg47czzU16iQovM3QFwmNck+Yyduu7D6NA0Z6JR4THntFs9V4tWQg6Ui3s6MwKDncsFTnXKLJhDSeUK3AgPtyhccDzmVs999buRt/1Vm4i0od+hX7+MRG87jPGB/w1u8FPj9xEw7McVrnYuOCvtpjTth3J/nTg99c8LRhKhr6D3dTB5R24bXFwbMXBsyZzeoXaycEpJ95TB09AGX/NpqLVNtw8urnVzLvHjFNxiFqRy2OOHuqUVnue+ACkoWzo4O6lGzTmuHq6nPvY2m9rVqjrIK2rMEKxqyG5NPAKt+wjo0LklgfNxJkZMA3KJvqRUk3z5UFY3QH14P0h+WUY79HPvgv7VuSg4ZRGY1YgZgqXmORccF17sy2ehnf9AeO085K2HQFbtXBScj0LcpgF2cN+WV+DZ/LJQu6gD4R7oV7pBJwbSgtMvfiPoVp56DySwxm7EtkMs1WdAB7qzggsDJKQYsHucSkOudrkiCPWR/fA2nYCn8SNIK4NptSMyAu3sAdDRkIsJdfth0LzSrODUoPNZ4KI9SxJI5UHk7D4GdQfz2us31c7CoHMjRkKuDPHseCMrONVhNcDJwMJpKFVvg9L4OaTiNWm1x789KCqkrXhVBiEz0WYCT2nAzQAD1/vaETv1GrRfP4Vx5cfMNcDPwvP0h0DhanPym7OIf/+O67vcJ1/PCJ4KgdzaUP6Wz+dU+5yIL6fV+PsHGAOdwlPpvvUOyeeAVGyCdqkDNB6DPjsBSrnndfOGevOh3RhGItxvA+fX1CtbGFhgYUFkFMZPR6F1HnClHq8HyubWtJexX06CRmdt33hrd7nA7SFY4qoGpnYuOKcRykPPgDCBcsHx9Iv+fNL2PueBehCWUfYQIIMGLOCcOmXDXsh1+yCt35tUPfvzGFuSvzvoinXOxqa02qOhM6733nVP2MAdaej2XN11DPKjLZCD+yBvahGCo7JfTKAN9UD7s8Oe9zUNIhz8fWI8DG2k38WCFdxugANcXrvTVd1IEbuv3Jour7Hzn7jLMBNfKs7R3i67gRVrbeCOEDhinmWhAatsqdquM2XzHZINhK2cqTjHr/XZdVJUbgN3MWAVXKbSyg9jesRW2xP9di+lwrL5ojM3m2H/kG9hwcIA37c71W6wJdW2J2S5nrjYbq/t1AHAhJsKQeyfPvf6IMJgghPJhFZ4x0KlfLFvt22du45Au/A1SOlGc0P672XXwhLtOcM0kTTEMMd0qkVmMNXxMd/tsedUjInr4SQDgOfeXMSiN0FCL5WHah4L1qqYXPJOJlttd+a5M+YpcG5poLYKQ5f+6JJ4r8bbJYP47hq4r7QAs9PjYNhHJd4o8l5taiwuOpa7AS4XKqI/5NjJbTnaWK92nLdLuhQAJayRNMiygXPBeQN+Qbvu0zDc3y+aUzhbkGR73sI7ljvUnndx2q3t+X8CDAD66FtrIL864AAAAABJRU5ErkJggg==" alt="" style="border: 0pt none;">
+</a></div>
+
+        </div>
+    </div>
+</div>
+
+
+
+            <div id="content">
+                <div id="content-inner">
+
+
+                    <div id="alpha">
+                        <div id="alpha-inner">
+
+
+                            <div id="entry-2148" class="entry-asset asset hentry">
+                                <div class="asset-header">
+<div class="asset-nav entry-nav">
+
+<div class="entry-location">
+<ul>
+<li>上一篇：<a href="http://www.ruanyifeng.com/blog/2019/12/weekly-issue-88.html" title="科技爱好者周刊：第 88 期">科技爱好者周刊：第&nbsp;8</a></li>
+<li>下一篇：<a href="http://www.ruanyifeng.com/blog/2020/01/weekly-issue-89.html" title="科技爱好者周刊：第 89 期">科技爱好者周刊：第&nbsp;8</a></li>
+</ul>
+</div>
+
+
+    
+                                    <div class="entry-categories">
+                                        <p>分类<span class="delimiter">：</span></p>
+                                        <ul>
+                                            <li><a href="http://www.ruanyifeng.com/blog/developer/" rel="tag">开发者手册</a></li>
+                                        </ul>
+                                    </div>
+    
+
+
+                                            
+<div class="entry-location-mobile" style="float: right;">
+<ul>
+<li><a href="http://www.ruanyifeng.com/blog/2019/12/weekly-issue-88.html" title="科技爱好者周刊：第 88 期">⇐&nbsp;</a></li>
+<li><a href="http://www.ruanyifeng.com/blog/2020/01/weekly-issue-89.html" title="科技爱好者周刊：第 89 期">&nbsp;⇒</a></li>
+</ul>
+</div>
+
+</div>
+</div>
+
+                          
+<article class="hentry">
+                                    <h1 id="page-title" class="asset-name entry-title">Bash 脚本如何创建临时文件：mktemp 命令和 trap 命令教程</h1>
+                                            <div id="share_button" class="social-share" style="float:right;padding-right:2em;padding-top:1em;">
+<a class="bshareDiv" href="http://www.bshare.cn/share" style="display: block; text-decoration: none; padding: 0px; margin: 0px; font-size: 12px; height: 21px; width: 51px;"><div class="bsPromo bsPromo1"></div><div class="buzzButton bsStyle10" style="height:21px;color:#333;;background:transparent url(http://static.bshare.cn/frame/images/button_custom10-zh-Orange.gif) no-repeat;text-align:center;width:51px;"></div><div style="clear:both;"></div></a>
+
+
+
+<script type="text/javascript" charset="utf-8" src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/buttonLite.js"></script>
+<script type="text/javascript" charset="utf-8">
+bShare.addEntry({
+    title: document.getElementById("page-title").innerHTML,
+url:window.location.href
+});
+</script>
+</div>
+
+<div class="asset-meta">
+                                        
+
+                                            <p class="vcard author">作者： <a class="fn url" href="http://www.ruanyifeng.com/">阮一峰</a></p>
+                                    <p>日期： <a href="http://www.ruanyifeng.com/blog/2019/12/"><abbr class="published" title="2019-12-29T19:06:00+08:00">2019年12月29日</abbr></a></p>
+
+
+</div>
+
+
+
+
+
+
+
+
+                                
+                                <div class="asset-content entry-content" id="main-content">
+
+                                    <!-- div class="asset-body" -->
+                                        <p>有时，Bash 脚本需要创建临时文件或临时目录。</p>
+
+                                    <!-- /div -->
+
+
+                                    <!-- div id="more" class="asset-more" -->
+                                        <p>常见的做法是，自己在<code>/tmp</code>目录里面生成一个文件，这样做有很多弊端。本文介绍如何安全地处理临时文件。</p>
+
+<p><img src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/bg2019122903.jpg" alt="" title=""></p>
+
+<h2>一、临时文件的安全问题</h2>
+
+<p>直接创建临时文件，尤其在<code>/tmp</code>目录里面，往往会导致安全问题。</p>
+
+<p>首先，<code>/tmp</code>目录是所有人可读写的，任何用户都可以往该目录里面写文件。创建的临时文件也是所有人可读的。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ touch <span class="token operator">/</span>tmp<span class="token operator">/</span>info<span class="token punctuation">.</span>txt
+$ ls <span class="token operator">-</span>l <span class="token operator">/</span>tmp<span class="token operator">/</span>info<span class="token punctuation">.</span>txt
+<span class="token operator">-</span>rw<span class="token operator">-</span>r<span class="token operator">--</span>r<span class="token operator">--</span> <span class="token number">1</span> ruanyf ruanyf <span class="token number">0</span> <span class="token number">12</span>月 <span class="token number">28</span> <span class="token number">17</span><span class="token punctuation">:</span><span class="token number">12</span> <span class="token operator">/</span>tmp<span class="token operator">/</span>info<span class="token punctuation">.</span>txt
+</code></pre></blockquote>
+
+<p>上面命令在<code>/tmp</code>目录直接创建文件，该文件默认是所有人可读的。</p>
+
+<p>其次，如果攻击者知道临时文件的文件名，他可以创建符号链接，链接到临时文件，可能导致系统运行异常。攻击者也可能向脚本提供一些恶意数据。因此，临时文件最好使用不可预测、每次都不一样的文件名。</p>
+
+<p>最后，临时文件使用完毕，应该删除。但是，脚本意外退出时，往往会忽略清理临时文件。</p>
+
+<h2>二、临时文件的最佳实践</h2>
+
+<p>脚本生成临时文件，应该遵循下面的规则。</p>
+
+<blockquote>
+  <ul>
+<li>创建前检查文件是否已经存在。</li>
+<li>确保临时文件已成功创建。</li>
+<li>临时文件必须有权限的限制。</li>
+<li>临时文件要使用不可预测的文件名。</li>
+<li>脚本退出时，要删除临时文件（使用<code>trap</code>命令）。</li>
+</ul>
+</blockquote>
+
+<h2>三、mktemp 命令的用法</h2>
+
+<p><code>mktemp</code>命令就是为安全创建临时文件而设计的。虽然在创建临时文件之前，它不会检查临时文件是否存在，但是它支持唯一文件名和清除机制，因此可以减轻安全攻击的风险。</p>
+
+<p>直接运行<code>mktemp</code>命令，就能生成一个临时文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ mktemp
+<span class="token operator">/</span>tmp<span class="token operator">/</span>tmp<span class="token punctuation">.</span>4GcsWSG4vj
+
+$ ls <span class="token operator">-</span>l <span class="token operator">/</span>tmp<span class="token operator">/</span>tmp<span class="token punctuation">.</span>4GcsWSG4vj
+<span class="token operator">-</span>rw<span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">-</span> <span class="token number">1</span> ruanyf ruanyf <span class="token number">0</span> <span class="token number">12</span>月 <span class="token number">28</span> <span class="token number">12</span><span class="token punctuation">:</span><span class="token number">49</span> <span class="token operator">/</span>tmp<span class="token operator">/</span>tmp<span class="token punctuation">.</span>4GcsWSG4vj
+</code></pre></blockquote>
+
+<p>上面命令中，<code>mktemp</code>命令生成的临时文件名是随机的，而且权限是只有用户本人可读写。</p>
+
+<p>Bash 脚本使用<code>mktemp</code>命令的用法如下。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token comment" spellcheck="true">#!/bin/bash
+</span>
+TMPFILE<span class="token operator">=</span>$<span class="token punctuation">(</span>mktemp<span class="token punctuation">)</span>
+<span class="token keyword">echo</span> <span class="token string">"Our temp file is <span class="token property">$TMPFILE</span>"</span>
+</code></pre></blockquote>
+
+<p>为了确保临时文件创建成功，<code>mktemp</code>命令后面最好使用 OR 运算符（<code>||</code>），指定创建失败时退出脚本。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token comment" spellcheck="true">#!/bin/bash
+</span>
+TMPFILE<span class="token operator">=</span>$<span class="token punctuation">(</span>mktemp<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token keyword">exit</span> <span class="token number">1</span>
+<span class="token keyword">echo</span> <span class="token string">"Our temp file is <span class="token property">$TMPFILE</span>"</span>
+</code></pre></blockquote>
+
+<p>为了保证脚本退出时临时文件被删除，可以使用<code>trap</code>命令指定退出时的清除操作（详见后文）。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token comment" spellcheck="true">#!/bin/bash
+</span>
+trap <span class="token string">'rm -f "<span class="token property">$TMPFILE</span>"'</span> EXIT
+
+TMPFILE<span class="token operator">=</span>$<span class="token punctuation">(</span>mktemp<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token keyword">exit</span> <span class="token number">1</span>
+<span class="token keyword">echo</span> <span class="token string">"Our temp file is <span class="token property">$TMPFILE</span>"</span>
+</code></pre></blockquote>
+
+<h2>四、mktemp 命令的参数</h2>
+
+<p><code>-d</code>参数可以创建一个临时目录。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ mktemp <span class="token operator">-</span>d
+<span class="token operator">/</span>tmp<span class="token operator">/</span>tmp<span class="token punctuation">.</span>Wcau5UjmN6
+</code></pre></blockquote>
+
+<p><code>-p</code>参数可以指定临时文件所在的目录。默认是使用<code>$TMPDIR</code>环境变量指定的目录，如果这个变量没设置，那么使用<code>/tmp</code>目录。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ mktemp <span class="token operator">-</span>p <span class="token operator">/</span>home<span class="token operator">/</span>ruanyf<span class="token operator">/</span>
+<span class="token operator">/</span>home<span class="token operator">/</span>ruanyf<span class="token operator">/</span>tmp<span class="token punctuation">.</span>FOKEtvs2H3
+</code></pre></blockquote>
+
+<p><code>-t</code>参数可以指定临时文件的文件名模板，模板的末尾必须至少包含三个连续的<code>X</code>字符，表示随机字符，建议至少使用六个<code>X</code>。默认的文件名模板是<code>tmp.</code>后接十个随机字符。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ mktemp <span class="token operator">-</span>t mytemp<span class="token punctuation">.</span>XXXXXXX
+<span class="token operator">/</span>tmp<span class="token operator">/</span>mytemp<span class="token punctuation">.</span>yZ1HgZV
+</code></pre></blockquote>
+
+<h2>五、trap 命令的用法</h2>
+
+<p><code>trap</code>命令用来在 Bash 脚本中响应系统信号。</p>
+
+<p>最常见的系统信号就是 SIGINT（中断），即按 Ctrl + C 所产生的信号。<code>trap</code>命令的<code>-l</code>参数，可以列出所有的系统信号。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ trap <span class="token operator">-</span>l
+ <span class="token number">1</span><span class="token punctuation">)</span> SIGHUP   <span class="token number">2</span><span class="token punctuation">)</span> SIGINT   <span class="token number">3</span><span class="token punctuation">)</span> SIGQUIT
+ <span class="token number">4</span><span class="token punctuation">)</span> SIGILL   <span class="token number">5</span><span class="token punctuation">)</span> SIGTRAP  <span class="token number">6</span><span class="token punctuation">)</span> SIGABRT
+ <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+</code></pre></blockquote>
+
+<p><code>trap</code>的命令格式如下。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ trap <span class="token punctuation">[</span>动作<span class="token punctuation">]</span> <span class="token punctuation">[</span>信号<span class="token punctuation">]</span>
+</code></pre></blockquote>
+
+<p>上面代码中，"动作"是一个 Bash 命令，"信号"常用的有以下几个。</p>
+
+<blockquote>
+  <ul>
+<li>HUP：编号1，脚本与所在的终端脱离联系。</li>
+<li>INT：编号2，用户按下 Ctrl + C，意图让脚本中止运行。</li>
+<li>QUIT：编号3，用户按下 Ctrl + 斜杠，意图退出脚本。</li>
+<li>KILL：编号9，该信号用于杀死进程。</li>
+<li>TERM：编号15，这是<code>kill</code>命令发出的默认信号。</li>
+<li>EXIT：编号0，这不是系统信号，而是 Bash 脚本特有的信号，不管什么情况，只要退出脚本就会产生。</li>
+</ul>
+</blockquote>
+
+<p><code>trap</code>命令响应<code>EXIT</code>信号的写法如下。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ trap <span class="token string">'rm -f "<span class="token property">$TMPFILE</span>"'</span> EXIT
+</code></pre></blockquote>
+
+<p>上面命令中，脚本遇到<code>EXIT</code>信号时，就会执行<code>rm -f "$TMPFILE"</code>。</p>
+
+<p>trap 命令的常见使用场景，就是在 Bash 脚本中指定退出时执行的清理命令。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token comment" spellcheck="true">#!/bin/bash
+</span>
+trap <span class="token string">'rm -f "<span class="token property">$TMPFILE</span>"'</span> EXIT
+
+TMPFILE<span class="token operator">=</span>$<span class="token punctuation">(</span>mktemp<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token keyword">exit</span> <span class="token number">1</span>
+ls <span class="token operator">/</span>etc <span class="token operator">&gt;</span> <span class="token property">$TMPFILE</span>
+<span class="token keyword">if</span> grep <span class="token operator">-</span>qi <span class="token string">"kernel"</span> <span class="token property">$TMPFILE</span><span class="token punctuation">;</span> <span class="token keyword">then</span>
+  <span class="token keyword">echo</span> <span class="token string">'find'</span>
+<span class="token keyword">fi</span>
+</code></pre></blockquote>
+
+<p>上面代码中，不管是脚本正常执行结束，还是用户按 Ctrl + C 终止，都会产生<code>EXIT</code>信号，从而触发删除临时文件。</p>
+
+<p>注意，<code>trap</code>命令必须放在脚本的开头。否则，它上方的任何命令导致脚本退出，都不会被它捕获。</p>
+
+<p>如果<code>trap</code>需要触发多条命令，可以封装一个 Bash 函数。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token keyword">function</span> egress <span class="token punctuation">{</span>
+  command1
+  command2
+  command3
+<span class="token punctuation">}</span>
+
+trap egress EXIT
+</code></pre></blockquote>
+
+<h2>六、参考链接</h2>
+
+<ul>
+<li><a href="https://www.putorius.net/working-with-temporary-files.html" target="_blank">Working with Temporary Files and Directories in Shell Scripts</a>, Steven Vona</li>
+<li><a href="https://www.putorius.net/using-trap-to-exit-bash-scripts-cleanly.html" target="_blank">Using Trap to Exit Bash Scripts Cleanly</a>, Steven Vona</li>
+<li><a href="https://mywiki.wooledge.org/SignalTrap" target="_blank">Sending and Trapping Signals</a></li>
+</ul>
+
+<p>（完）</p>
+
+                                    <!-- /div -->
+
+                                </div>
+    <script type="text/javascript" src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/newwindow.js"></script>
+                                <div class="asset-footer">
+
+<h3>文档信息</h3>
+<ul>
+<li>版权声明：自由转载-非商用-非衍生-保持署名（<a href="http://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh">创意共享3.0许可证</a>）</li>
+<li>发表日期： <abbr class="published" title="2019-12-29T19:06:00+08:00">2019年12月29日</abbr></li>
+
+</ul>
+                                </div>
+</article>
+                            </div>
+
+  <div style="display: inline-block ! important;width: 100%;">
+
+  </div>
+
+<div id="related_entries">
+<h2>相关文章</h2>
+<ul>
+
+<li><strong>2020.02.23: <a href="http://www.ruanyifeng.com/blog/2020/02/sparql.html">RDF 和 SPARQL 初探：以维基数据为例</a></strong>
+
+                           <div class="entry-body">
+                              维基百科有一个姐妹项目，叫做"维基数据"（Wikidata）。你可以从维基百科左侧边栏点进去。
+
+                           </div>
+
+</li>
+
+ 
+<li><strong>2020.01.14: <a href="http://www.ruanyifeng.com/blog/2020/01/ffmpeg.html">FFmpeg 视频处理入门教程</a></strong>
+
+                           <div class="entry-body">
+                              FFmpeg 是视频处理最常用的开源软件。
+
+                           </div>
+
+</li>
+
+ 
+<li><strong>2019.12.24: <a href="http://www.ruanyifeng.com/blog/2019/12/git-undo.html">如何撤销 Git 操作？</a></strong>
+
+                           <div class="entry-body">
+                              Git 版本管理时，往往需要撤销某些操作。
+
+                           </div>
+
+</li>
+
+ 
+<li><strong>2019.12.22: <a href="http://www.ruanyifeng.com/blog/2019/12/github_actions.html">GitHub Actions 教程：定时发送天气邮件</a></strong>
+
+                           <div class="entry-body">
+                              2019年11月，GitHub 正式开放了 GitHub Actions 这个功能，现在不用申请就能使用。
+
+                           </div>
+
+</li>
+
+ 
+</ul>
+</div>
+
+
+
+                    
+
+                    <div id="comments" class="comments">
+
+
+    
+    
+        
+    <h2 class="comments-header">留言（8条）</h2>
+
+    <div id="comments-content" class="comments-content" style="clear: left;">
+        
+        <div id="comment-415541" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">TheSRE</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-415541">
+            <p>纠正一下：在/tmp目录下创建临时文件，默认权限是受umask值控制的。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="December 29, 2019  9:12 PM">2019年12月29日 21:12</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2019/12/mktemp.html#comment-415541">#</a>
+ | <a href="#comment-text" title="引用TheSRE的这条留言" onclick="return CommentQuote('comment-quote-415541','TheSRE');">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-415583" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">康</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-415583">
+            <p>请问<br>
+trap 'rm -f "$TMPFILE"' EXIT<br>
+这种写法是不是很危险。<br>
+万一$TMPFILE的内容在后面的程序里被改成了别的文件路径的话。</p>
+
+<p>有没有更好一点的写法呢？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="December 30, 2019  7:29 AM">2019年12月30日 07:29</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2019/12/mktemp.html#comment-415583">#</a>
+ | <a href="#comment-text" title="引用康的这条留言" onclick="return CommentQuote('comment-quote-415583','康');">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-415584" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">阮老师小粉丝</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-415584">
+            <blockquote>
+<pre>引用康的发言：</pre>
+
+<p>请问<br>
+trap 'rm -f "$TMPFILE"' EXIT<br>
+这种写法是不是很危险。<br>
+万一$TMPFILE的内容在后面的程序里被改成了别的文件路径的话。</p>
+
+<p>有没有更好一点的写法呢？</p>
+
+</blockquote>
+
+<p>担心的话换成 “rm -i” 吧</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="December 30, 2019  9:31 AM">2019年12月30日 09:31</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2019/12/mktemp.html#comment-415584">#</a>
+ | <a href="#comment-text" title="引用阮老师小粉丝的这条留言" onclick="return CommentQuote('comment-quote-415584','阮老师小粉丝');">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-415587" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">typebrook</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-415587">
+            <p>謝了阮老師！ 剛好想要一個在shell環境下快速編緝指令的功能，就像按下Ctrl-x-e那樣，<br>
+有了mktemp就很輕鬆寫出來了：</p>
+
+<p>prompt() {<br>
+    TMPFILE=$(mktemp); echo $1 &gt; $TMPFILE &amp;&amp; \<br>
+    vim $TMPFILE &amp;&amp; \<br>
+    sed -i '$ q; s/$/ \\/' $TMPFILE &amp;&amp; \<br>
+    eval $(cat $TMPFILE | tee /dev/tty)<br>
+}<br>
+</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="December 30, 2019 11:48 AM">2019年12月30日 11:48</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2019/12/mktemp.html#comment-415587">#</a>
+ | <a href="#comment-text" title="引用typebrook的这条留言" onclick="return CommentQuote('comment-quote-415587','typebrook');">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-415601" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">jacktan</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-415601">
+            <p>trap 是不是类似finally语句</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="December 31, 2019 12:22 PM">2019年12月31日 12:22</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2019/12/mktemp.html#comment-415601">#</a>
+ | <a href="#comment-text" title="引用jacktan的这条留言" onclick="return CommentQuote('comment-quote-415601','jacktan');">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-415617" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">foo</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-415617">
+            <blockquote>
+<pre>引用阮老师小粉丝的发言：</pre>
+
+<p></p>
+
+<p>担心的话换成 “rm -i” 吧</p>
+
+</blockquote>
+
+<p>bash的declare -r foo可以定义一个只读变量foo，这样不用担心了吧。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="December 31, 2019  3:56 PM">2019年12月31日 15:56</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2019/12/mktemp.html#comment-415617">#</a>
+ | <a href="#comment-text" title="引用foo的这条留言" onclick="return CommentQuote('comment-quote-415617','foo');">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-416735" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">fatofa</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-416735">
+            <p>你好,<br>
+     请问如何在ubuntu上读取和修改windows上的存档属性？<br>
+谢谢</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March 10, 2020  7:44 AM">2020年3月10日 07:44</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2019/12/mktemp.html#comment-416735">#</a>
+ | <a href="#comment-text" title="引用fatofa的这条留言" onclick="return CommentQuote('comment-quote-416735','fatofa');">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-416878" class="comment">
+    <div id="comment-last" class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">流浪的洋葱</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-416878">
+            <blockquote>
+<pre>引用康的发言：</pre>
+
+<p>请问<br>
+trap 'rm -f "$TMPFILE"' EXIT<br>
+这种写法是不是很危险。<br>
+万一$TMPFILE的内容在后面的程序里被改成了别的文件路径的话。</p>
+
+<p>有没有更好一点的写法呢？</p>
+
+</blockquote>
+
+<p>可以这样<br>
+function cleanup() {<br>
+local target="$1"<br>
+if [[ -z "$target" ]]; then<br>
+  return<br>
+fi<br>
+rm -f "$target"<br>
+}</p>
+
+<p>trap 'cleanup "$TMPFILE"' EXIT</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March 16, 2020 10:47 AM">2020年3月16日 10:47</abbr>
+ | <a href="http://www.ruanyifeng.com/blog/2019/12/mktemp.html#comment-416878">#</a>
+ | <a href="#comment-text" title="引用流浪的洋葱的这条留言" onclick="return CommentQuote('comment-quote-416878','流浪的洋葱');">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    </div>
+        
+    
+
+
+    
+    
+    <div class="comments-open" id="comments-open">
+        <h2 class="comments-open-header">我要发表看法</h2>
+        <div class="comments-open-content">
+
+        
+            <div id="comment-greeting"></div>
+
+            <form method="post" action="http://www.ruanyifeng.com/cgi-bin/mtos/mt-comments.cgi" name="comments_form" id="comments-form" onsubmit="return pleaseWait();">
+                <input type="hidden" name="static" value="1">
+                <input type="hidden" name="entry_id" value="2148">
+                <input type="hidden" name="__lang" value="en">
+                <input type="hidden" name="parent_id" value="" id="comment-parent-id">
+                <input type="hidden" name="armor" value="1">
+                <input type="hidden" name="preview" value="">
+                <input type="hidden" name="sid" value="">
+                <div id="comments-open-data">
+            <div id="comments-open-text">
+                    <p><label for="comment-text">您的留言
+                    （HTML标签部分可用）</label></p>
+                    <p><textarea id="comment-text" name="text" rows="10" cols="50"></textarea></p>
+                </div>
+                    <div id="comment-form-name">
+                        <p><label for="comment-author">您的大名：</label></p>
+                        <p><input id="comment-author" name="author" size="30">  <span class="hint"> «-必填</span></p>
+                    </div>
+                    <div id="comment-form-email">
+                        <p><label for="comment-email">电子邮件：</label></p>
+                        <p><input id="comment-email" name="email" size="30">  <span class="hint"> «-必填，不公开</span></p>
+                    </div>
+                    <div id="comment-form-url">
+                        <p><label for="comment-url">个人网址：</label></p>
+                        <p><input id="comment-url" name="url" size="30">  <span class="hint"> «-我信任你，不会填写广告链接</span></p>
+                    </div>
+                    <div id="comment-form-remember-me">
+                        <p>
+                        <label for="comment-bake-cookie">记住个人信息？</label><input type="checkbox" id="comment-bake-cookie" name="bakecookie" onclick="!this.checked?forgetMe(document.comments_form):rememberMe(document.comments_form)" value="1" accesskey="r"></p>
+                    </div>
+                </div>
+                    <div id="comment-form-reply" style="display:none">
+                    <input type="checkbox" id="comment-reply" name="comment_reply" value="" onclick="mtSetCommentParentID()">
+                    <label for="comment-reply" id="comment-reply-label"></label>
+                </div>
+                <div id="comments-open-captcha"></div>
+                <div id="comments-open-footer">
+<div id="wait" style="display:none;">
+<p><strong>正在发表您的评论，请稍候</strong></p>
+<p>
+<input type="text" name="percent" size="3" style="font-family:Arial; color:black;text-align:center; border-width:medium; border-style:none;">           
+<input type="text" name="chart" size="46" style="font-family:Arial;font-weight:bolder; color:black; padding:0px; border-style:none;">
+</p>
+</div>
+
+                    <p><input type="submit" accesskey="s" name="post" id="comment-submit" value="发表">  <span class="hint"> «- 点击按钮</span></p>
+                </div>
+            </form>
+
+
+        </div>
+    </div>
+
+    
+
+
+</div>
+
+
+
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        <script type="text/javascript" src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/prism.js"></script>
+        <script type="text/javascript" src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/checker.js"></script> 
+            <div id="footer">
+<div id="footer-inner">
+  <div id="footer-content">
+
+      
+<!--
+      <section> 
+     </section>
+  <p><a title="Instagram" target="_blank" href="http://instagram.com/ruanyf">Instagram</a></p>
+       <p><a title="订阅" href="https://app.feedblitz.com/f/f.fbz?Sub=348868" target="_blank">邮件订阅</a></p>
+  
+       <h2>Feed</h2>
+       <p><a title="FeedBurner" href="http://feeds.feedburner.com/ruanyifeng" target="_blank">FeedBurner</a></p>
+       <p><a title="atom.xml" href="http://www.ruanyifeng.com/blog/atom.xml" target="_blank">atom.xml</a></p>
+     
+      <p>支付宝：<a title="支付宝" href="alipays://platformapi/startapp?appId=20000067&url=http%3A%2F%2Fwww.ruanyifeng.com%2Fblog" target="_blank">yifeng.ruan@gmail.com</a></p>
+-->
+
+     <section>
+<!--
+       <h2>授权方式</h2>
+       <p><a title="许可证" href="http://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh" target="_blank">自由转载-非商用-非衍生-保持署名</a></p>
+       <h2>微信公号</h2>
+       <h2>社交帐号</h2>
+       <h2>联系方式</h2>
+     -->
+       <p><img src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/bg2020013101.jpg" alt="微信扫描"></p>
+       <p>
+         <a title="微博" href="http://weibo.com/ruanyf" target="_blank">Weibo</a> | 
+         <a title="Twitter" target="_blank" href="https://twitter.com/ruanyf">Twitter</a> |
+         <a title="GitHub" target="_blank" href="https://github.com/ruanyf">GitHub</a>
+       </p>
+     
+     <p>Email: <a title="电子邮件" href="mailto:yifeng.ruan@gmail.com" target="_blank">yifeng.ruan@gmail.com</a></p>
+     </section>
+  
+  
+
+
+  </div>
+</div>
+</div>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-46829782-1', 'ruanyifeng.com');
+  ga('send', 'pageview');
+
+</script>
+
+<script type="text/javascript" src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/stats.js"></script>
+<script>
+var supportImg = document.querySelector('#support-img');
+
+if (supportImg && _hmt) {
+  _hmt.push(['_trackEvent', 'banner', 'load']);
+  supportImg.addEventListener('click', function () {
+    _hmt.push(['_trackEvent', 'banner', 'click']);
+  }, false);
+}
+
+var homepageImg = document.querySelector('#homepage_sponsor');
+if (homepageImg && _hmt) {
+  _hmt.push(['_trackEvent', 'homepage-banner', 'load']);
+  homepageImg.addEventListener('click', function () {
+    _hmt.push(['_trackEvent', 'homepage-banner', 'click']);
+  }, false);
+}
+</script>
+
+
+<div id="share_button_proto" style="display:none;">
+<a class="bshareDiv" href="http://www.bshare.cn/share" style="display: block; text-decoration: none; padding: 0px; margin: 0px; font-size: 12px; height: 21px; width: 51px;"><div class="bsPromo bsPromo1"></div><div class="buzzButton bsStyle10" style="height:21px;color:#333;;background:transparent url(http://static.bshare.cn/frame/images/button_custom10-zh-Orange.gif) no-repeat;text-align:center;width:51px;"></div><div style="clear:both;"></div></a>
+
+
+
+<script type="text/javascript" charset="utf-8" src="Bash%20%E8%84%9A%E6%9C%AC%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%EF%BC%9Amktemp%20%E5%91%BD%E4%BB%A4%E5%92%8C%20trap%20%E5%91%BD%E4%BB%A4%E6%95%99%E7%A8%8B%20-%20%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97_files/buttonLite.js"></script>
+<script type="text/javascript" charset="utf-8">
+bShare.addEntry({
+    title: document.getElementById("page-title").innerHTML,
+url:window.location.href
+});
+</script>
+</div>
+
+<script>
+document.getElementById("share_button").innerHTML=document.getElementById("share_button_proto").innerHTML;
+</script>
+
+
+
+
+
+        </div>
+    </div>
+
+<div id="bsBox" class="bsBox"><div class="bsClose">X</div><div class="bsTop"><div class="bsReturn">选择其他平台 &gt;&gt;</div><span style="margin-left:15px;">分享到</span><span class="bsPlatName"></span></div><div class="bsFrameDiv"><iframe class="bShareFrame" name="bsFrame806" scrolling="no" allowtransparency="true" frameborder="0"></iframe></div><div id="bsMorePanel" style="display: none;"></div></div><div id="bsPanelHolder"><div id="bsPanel" style="display:none;"><div class="bsTitle"><a style="float:left;height:20px;line-height:20px;font-weight:bold;" class="bsSiteLink" target="_blank" href="http://www.bshare.cn/intro">分享到...</a><a class="bsSiteLink" style="cursor:pointer;float:right;height:20px;line-height:20px;font-weight:bold;" onclick="document.getElementById('bsPanel').style.display='none';">X</a><div class="bsClear"></div></div><div class="bsClear"></div><div style="padding-left:8px;background:#fff;*height:218px;"><div style="height:47px;border-bottom:1px #ccc solid;padding:4px 0 4px 16px;margin-right:8px;_padding-left:12px;"><div class="bsRlogo" onmouseover="javascript:this.className='bsRlogoSel'" onmouseout="javascript:this.className='bsRlogo'"><a href="javascript:;" onclick="javascript:bShare.share(event,'facebook');return false;" style="text-decoration:none;line-height:120%;"><div style="cursor:pointer;width:24px;height:24px;margin:0 18px 2px;background:url(http://static.bshare.cn/frame/images//logos/m2/facebook.gif) no-repeat;"></div><div style="cursor:pointer;text-align:center;width:60px;height:16px !important;overflow:hidden;color:inherit;white-space:nowrap;line-height:120% !important;">Facebook</div></a></div><div class="bsRlogo" onmouseover="javascript:this.className='bsRlogoSel'" onmouseout="javascript:this.className='bsRlogo'"><a href="javascript:;" onclick="javascript:bShare.share(event,'twitter');return false;" style="text-decoration:none;line-height:120%;"><div style="cursor:pointer;width:24px;height:24px;margin:0 18px 2px;background:url(http://static.bshare.cn/frame/images//logos/m2/twitter.gif) no-repeat;"></div><div style="cursor:pointer;text-align:center;width:60px;height:16px !important;overflow:hidden;color:inherit;white-space:nowrap;line-height:120% !important;">Twitter</div></a></div><div class="bsRlogo" onmouseover="javascript:this.className='bsRlogoSel'" onmouseout="javascript:this.className='bsRlogo'"><a href="javascript:;" onclick="javascript:bShare.share(event,'sinaminiblog');return false;" style="text-decoration:none;line-height:120%;"><div style="cursor:pointer;width:24px;height:24px;margin:0 18px 2px;background:url(http://static.bshare.cn/frame/images//logos/m2/sinaminiblog.gif) no-repeat;"></div><div style="cursor:pointer;text-align:center;width:60px;height:16px !important;overflow:hidden;color:inherit;white-space:nowrap;line-height:120% !important;">新浪微博</div></a></div></div><div class="bsLogoLink"><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="微信" onclick="javascript:bShare.share(event,'weixin');return false;" style="background:url(http://static.bshare.cn/frame/images//logos/s4/weixin.png) no-repeat;">微信</a></div><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="腾讯微博" onclick="javascript:bShare.share(event,'qqmb');return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -1512px;">腾讯微博</a></div><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="豆瓣网" onclick="javascript:bShare.share(event,'douban');return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -540px;">豆瓣网</a></div><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="饭否" onclick="javascript:bShare.share(event,'fanfou');return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -666px;">饭否</a></div><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="雪球" onclick="javascript:bShare.share(event,'xueqiu');return false;" style="background:url(http://static.bshare.cn/frame/images//logos/s4/xueqiu.png) no-repeat;">雪球</a></div><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="电子邮件" onclick="javascript:bShare.share(event,'email');return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -612px;">电子邮件</a></div></div><div class="bsLogoLink"><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="Google+" onclick="javascript:bShare.share(event,'gplus');return false;" style="background:url(http://static.bshare.cn/frame/images//logos/s4/gplus.png) no-repeat;">Google+</a></div><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="QQ空间" onclick="javascript:bShare.share(event,'qzone');return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -1566px;">QQ空间</a></div><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="QQ好友" onclick="javascript:bShare.share(event,'qqim');return false;" style="background:url(http://static.bshare.cn/frame/images//logos/s4/qqim.png) no-repeat;">QQ好友</a></div><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="Instapaper" onclick="javascript:bShare.share(event,'instapaper');return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -954px;">Instapaper</a></div><div class="bsLogo" onmouseover="javascript:this.className='bsLogoSel'" onmouseout="javascript:this.className='bsLogo'"><a href="javascript:;" title="美味书签" onclick="javascript:bShare.share(event,'delicious');return false;" style="background:url(http://static.bshare.cn/frame/images//slogos_sprite8.png) no-repeat 0 -432px;">美味书签</a></div></div><div class="bsClear"></div></div><div style="height:20px;line-height:20px;padding:0 8px;border-top:1px solid #e8e8e8;color:#666;background:#f2f2f2;"><div class="buzzButton" style="float:left;">更多平台... <font style="font-weight:normal;">(133)</font></div><div id="bsPower" style="float:right;text-align:right;overflow:hidden;height:100%;"><a class="bsSiteLink" style="font-size:10px;vertical-align:text-bottom;line-height:24px;cursor:pointer;" href="http://www.bshare.cn/" target="_blank"><span style="font-size:10px;vertical-align:text-bottom;"><span style="color:#f60;">b</span>Share</span></a></div></div></div></div></body></html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<!-- saved from url=(0064)https://www.pavelkogan.com/2014/05/23/luks-full-disk-encryption/ -->
+<html lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Full disk encryption with LUKS (including /boot) · Pavel Kogan
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="./Full disk encryption with LUKS (including _boot) · Pavel Kogan_files/poole.css">
+  <link rel="stylesheet" href="./Full disk encryption with LUKS (including _boot) · Pavel Kogan_files/syntax.css">
+  <link rel="stylesheet" href="./Full disk encryption with LUKS (including _boot) · Pavel Kogan_files/lanyon.css">
+  <link rel="stylesheet" href="./Full disk encryption with LUKS (including _boot) · Pavel Kogan_files/css">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="https://www.pavelkogan.com/atom.xml">
+</head>
+
+
+  <body>
+
+    <!-- Target for toggling the sidebar `.sidebar-checkbox` is for regular
+     styles, `#sidebar-checkbox` for behavior. -->
+<input type="checkbox" class="sidebar-checkbox" id="sidebar-checkbox">
+
+<!-- Toggleable sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-item">
+    <p></p>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="sidebar-nav-item" href="https://www.pavelkogan.com/">Home</a>
+
+    
+
+    
+    
+      
+        
+      
+    
+      
+        
+      
+    
+      
+        
+          <a class="sidebar-nav-item" href="https://www.pavelkogan.com/about/">About</a>
+        
+      
+    
+      
+        
+          <a class="sidebar-nav-item" href="https://www.pavelkogan.com/archive/">Archive</a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+
+    
+    
+      <span class="sidebar-nav-item"></span>
+    
+    
+      
+        <a class="sidebar-nav-item" href="https://github.com/pavelkogan">GitHub</a>
+      
+    
+      
+        <a class="sidebar-nav-item" href="https://twitter.com/pavel_kogan">Twitter</a>
+      
+    
+      
+        <a class="sidebar-nav-item" href="https://uk.linkedin.com/in/pkogan">LinkedIn</a>
+      
+    
+
+  </nav>
+
+  <div class="sidebar-item">
+    <p>
+      Copyright © 2018 Pavel Kogan
+    </p>
+  </div>
+</div>
+
+
+    <!-- Wrap is the content to shift when toggling the sidebar. We wrap the
+         content to avoid any CSS collisions with our real content. -->
+    <div class="wrap">
+      <div class="masthead">
+        <div class="container">
+          <h3 class="masthead-title">
+            <a href="https://www.pavelkogan.com/" title="Home">Pavel Kogan</a>
+            <small></small>
+          </h3>
+        </div>
+      </div>
+
+      <div class="container content">
+        <div class="post">
+  <h1 class="post-title">Full disk encryption with LUKS (including /boot)</h1>
+  <span class="post-date">23 May 2014</span>
+  <blockquote>
+  <p>Update (25/01/15): I wrote a <a href="https://www.pavelkogan.com/2015/01/25/linux-mint-encryption/">new post</a> about how to achieve the same thing with Linux Mint.</p>
+</blockquote>
+
+<p>While looking for information about how to encrypt my laptop’s hard drive, among the repeated claims that the partition on which <code>/boot</code> resides must remain unencrypted, I found the suggestion that GRUB should be able to handle cryptography since it can be set up with a hashed password.</p>
+
+<p>Being too lazy to want to deal with a separate boot partition, I went looking to see what modules GRUB can load, and there they were<sup id="fnref:1"><a href="https://www.pavelkogan.com/2014/05/23/luks-full-disk-encryption/#fn:1" class="footnote">1</a></sup>: <code>crypto.mod</code>, <code>cryptodisk.mod</code> and even <code>luks.mod</code>!</p>
+
+<p>Since there don’t appear to be any instructions on how to fully encrypt a system including <code>/boot</code>, I’ve decided to make a short guide on how to do it.</p>
+
+<blockquote>
+  <p>This guide will describe setting up an encrypted Arch Linux system. The procedure is mostly distribution-agnostic, but note that anything involving <code>mkinitcpio</code> is Arch Linux specific and must be replaced if another distribution is used.</p>
+</blockquote>
+
+<h2 id="set-up-partitions-lvm-on-luks">Set up partitions (LVM on LUKS)</h2>
+
+<p>This is well-documented elsewhere, so I won’t be explaining it. If something is unfamiliar to you, I recommend reading the <a href="https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system#LVM_on_LUKS">ArchWiki page</a> on the subject before proceeding.</p>
+
+<pre><code>parted -s /dev/sda mklabel msdos
+parted -s /dev/sda mkpart primary 2048s 100%
+cryptsetup luksFormat /dev/sda1
+cryptsetup luksOpen /dev/sda1 lvm
+pvcreate /dev/mapper/lvm
+vgcreate vg /dev/mapper/lvm
+lvcreate -L 4G vg -n swap
+lvcreate -L 15G vg -n root
+lvcreate -l +100%FREE vg -n home
+mkswap -L swap /dev/mapper/vg-swap
+mkfs.ext4 /dev/mapper/vg-root
+mkfs.ext4 /dev/mapper/vg-home
+mount /dev/mapper/vg-root /mnt
+mkdir /mnt/home
+mount /dev/mapper/vg-home /mnt/home
+</code></pre>
+
+<h2 id="install-linux">Install Linux</h2>
+
+<p>At this point you should be in a live system with all partitions mounted, so you can go ahead and run the install. Just be sure not to reboot once it’s done.</p>
+
+<blockquote>
+  <p>Don’t forget to add the <code>lvm2</code> and <code>encrypt</code> hooks to <code>/etc/mkinitcpio.conf</code> and run</p>
+
+  <pre><code>mkinitcpio -p linux
+</code></pre>
+
+</blockquote>
+
+<h2 id="configure-grub">Configure GRUB</h2>
+
+<p>With <code>/boot</code> on an encrypted device, <code>grub-mkconfig</code> should have GRUB load the necessary modules to decrypt and mount it<sup id="fnref:2"><a href="https://www.pavelkogan.com/2014/05/23/luks-full-disk-encryption/#fn:2" class="footnote">2</a></sup>.</p>
+
+<p><code>grub-install</code>, on the other hand, will refuse to work, complain about /boot being encrypted, and demand that <code>GRUB_ENABLE_CRYPTODISK=1</code> be added to the config. This is a <a href="https://savannah.gnu.org/bugs/?41524">bug</a> (in the error message). Instead, add</p>
+
+<pre><code>GRUB_ENABLE_CRYPTODISK=y
+</code></pre>
+
+<p>to <code>/etc/default/grub</code>.
+Now, before trying to find and load the initial ramdisk, GRUB will ask for a passphrase to decrypt <code>/dev/sda1</code>.</p>
+
+<p>Finally, add the <code>cryptdevice</code> kernel parameter<sup id="fnref:3"><a href="https://www.pavelkogan.com/2014/05/23/luks-full-disk-encryption/#fn:3" class="footnote">3</a></sup></p>
+
+<pre><code>GRUB_CMDLINE_LINUX="cryptdevice=/dev/sda1:lvm"
+</code></pre>
+
+<p>and run</p>
+
+<pre><code>grub-mkconfig -o /boot/grub/grub.cfg
+grub-install /dev/sda
+</code></pre>
+
+<p>Reboot, and that’s it. You now have a fully encrypted system.</p>
+
+<h2 id="bonus-login-once">Bonus: Login once</h2>
+
+<p>You’ve probably noticed that there remains the minor annoyance of having to decrypt your drive twice: once for GRUB and once for the kernel. Evidently, when GRUB passes control to the kernel, the encrypted drive is dismounted.</p>
+
+<p>There is, however, a way to open a LUKS device without entering a passphrase: with a keyfile. The <code>encrypt</code> hook can take the file specified in the <code>cryptkey</code> kernel parameter (default: <code>/crypto_keyfile.bin</code>) and use it to unlock the <code>cryptdevice</code>.</p>
+
+<pre><code>dd bs=512 count=4 if=/dev/urandom of=/crypto_keyfile.bin
+cryptsetup luksAddKey /dev/sda1 /crypto_keyfile.bin
+</code></pre>
+
+<p>I tried various methods to get GRUB to load the keyfile into memory and pass it to the kernel, without success. Then, I realised that the <code>initrd</code> image is itself something GRUB loads into memory, and <code>mkinitcpio.conf</code> has a very convenient <code>FILES</code> option…</p>
+
+<pre><code>FILES=/crypto_keyfile.bin
+</code></pre>
+
+<p>Run <code>mkinitcpio</code> again, and when you reboot, you’ll only need to enter your password once.</p>
+
+<h3 id="security-considerations">Security considerations</h3>
+
+<p>While the computer is off, the keyfile is stored inside the encrypted drive, so it is secure. When the computer is on, however, the keyfile is unencrypted, with a copy on the ramdisk. So, you should probably make sure only <em>root</em> can access these files:</p>
+
+<pre><code>chmod 000 /crypto_keyfile.bin  # actually, even root doesn't need to access this
+chmod -R g-rwx,o-rwx /boot     # just to be safe
+</code></pre>
+
+<p>The keyfile will probably also be retained in memory, but so is the LUKS master key. If the attacker has enough access to your system for that to be a problem, encryption is moot. So long as there are no copies of the keyfile anywhere else, you should be fine. In other words, don’t back it up or reuse it elsewhere.</p>
+
+<hr>
+
+<div class="footnotes">
+  <ol>
+    <li id="fn:1">
+      <p>in <code>/boot/grub/i386-pc/</code>&nbsp;<a href="https://www.pavelkogan.com/2014/05/23/luks-full-disk-encryption/#fnref:1" class="reversefootnote">↩</a></p>
+    </li>
+    <li id="fn:2">
+      <p>If it doesn’t—check <code>/boot/grub/grub.cfg</code>—then you can add <code>cryptodisk</code> and <code>luks</code> to <code>GRUB_PRELOAD_MODULES</code>.&nbsp;<a href="https://www.pavelkogan.com/2014/05/23/luks-full-disk-encryption/#fnref:2" class="reversefootnote">↩</a></p>
+    </li>
+    <li id="fn:3">
+      <p><a href="https://wiki.archlinux.org/index.php/GRUB#Root_encryption">https://wiki.archlinux.org/index.php/GRUB#Root_encryption</a>&nbsp;<a href="https://www.pavelkogan.com/2014/05/23/luks-full-disk-encryption/#fnref:3" class="reversefootnote">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+</div>
+
+<div class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+      <li>
+        <h3>
+          <a href="https://www.pavelkogan.com/2015/01/25/linux-mint-encryption/">
+            Linux Mint encryption
+            <small>25 Jan 2015</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="https://www.pavelkogan.com/2014/07/13/nix-shell-on-linux-mint/">
+            nix-shell on Linux Mint
+            <small>13 Jul 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+      <li>
+        <h3>
+          <a href="https://www.pavelkogan.com/2014/07/09/haskell-development-with-nix/">
+            Haskell development with Nix
+            <small>09 Jul 2014</small>
+          </a>
+        </h3>
+      </li>
+    
+  </ul>
+</div>
+
+      </div>
+    </div>
+
+    <label for="sidebar-checkbox" class="sidebar-toggle"></label>
+
+    <script>
+      (function(document) {
+        var toggle = document.querySelector('.sidebar-toggle');
+        var sidebar = document.querySelector('#sidebar');
+        var checkbox = document.querySelector('#sidebar-checkbox');
+
+        document.addEventListener('click', function(e) {
+          var target = e.target;
+
+          if(!checkbox.checked ||
+             sidebar.contains(target) ||
+             (target === checkbox || target === toggle)) return;
+
+          checkbox.checked = false;
+        }, false);
+      })(document);
+    </script>
+  
+
+</body></html>

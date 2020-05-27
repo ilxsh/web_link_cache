@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)https://www.cnblogs.com/jenqz/p/3613829.html -->
+<html lang="zh-cn"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="origin">
+    <meta property="og:description" content="今天在实验室碰到一台机器，根分区和/upgrade分区变成了read-only system.当碰到这个问题的时候，我的第一反应很可能硬件出现了故障，我使用了如下的方法来检测和排除故障：使用dmesg">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Linux 磁盘坏道检测和修复 - jenqz - 博客园</title>
+    
+    <link rel="stylesheet" href="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/blog-common.min.css">
+    <link id="MainCss" rel="stylesheet" href="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/bundle-sea.min.css">
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/bundle-sea-mobile.min.css">
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/jenqz/rss">
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/jenqz/rsd.xml">
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/jenqz/wlwmanifest.xml">
+    <script src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/amp4ads-host-v0.js.download"></script><script async="" src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/analytics.js.download"></script><script src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/jquery-2.2.0.min.js.download"></script>
+    <script src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/blog-common.min.js.download"></script>
+    <script>
+        var currentBlogId = 136278;
+        var currentBlogApp = 'jenqz';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+        var skinName = 'sea';
+    </script>
+    
+    
+    
+<link rel="preload" href="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/f.txt" as="script"><script type="text/javascript" src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/f.txt"></script><script src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/pubads_impl_2020051102.js.download" async=""></script><link rel="prefetch" href="https://683dc657552517595e0d699ca308c653.safeframe.googlesyndication.com/safeframe/1-0-37/html/container.html"><link rel="prefetch" href="https://tpc.googlesyndication.com/safeframe/1-0-37/html/container.html"></head>
+<body>
+    <a name="top"></a>
+    
+    <!--done-->
+<div id="header">
+	
+<!--done-->
+<div class="header">
+	<div class="headerText">
+		<a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/jenqz/">jenqz</a>
+<br>
+		
+好好学习，天天向上。
+
+	</div>
+</div>
+
+
+</div>
+
+<div id="mytopmenu">
+	
+		<div id="mylinks">
+<a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+ &nbsp;
+
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/jenqz/">
+首页</a>
+ &nbsp;
+
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+ &nbsp;
+
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/jenqz">
+联系</a> &nbsp;
+
+<a id="blog_nav_rss" class="menu" href="javascript:void(0)" data-rss="https://www.cnblogs.com/jenqz/rss/">
+订阅</a>
+<a id="blog_nav_rss_image" href="https://www.cnblogs.com/jenqz/rss/">
+    <img src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/xml.gif" alt="订阅">
+</a>&nbsp;
+
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+
+
+</div>
+		<div id="mystats">随笔-
+144&nbsp;
+评论-
+2&nbsp;
+文章-
+3&nbsp;
+<!--trackbacks-<partial name="./Shared/_PingTrackCount.cshtml" model="BlogServer.Web.Models.DetailBlogPage" />-->
+
+</div>
+	
+</div>
+<div id="centercontent">
+	<div id="post_detail">
+<div class="post">
+	<h1 class="postTitle">
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/jenqz/p/3613829.html">Linux 磁盘坏道检测和修复</a>
+</h1>
+	
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <p><span>今天在实验室碰到一台机器，根分区和/upgrade分区变成了read-only system.当碰到这个问题的时候，我的第一反应很可能硬件出现了故障，我使用了如下的方法来检测和排除故障：</span></p>
+<div><ol>
+<li>使用<span style="color: #800000;">dmesg</span>检查是否有关于磁盘错误的信息，果不其然发现大量磁盘扇区错误的信息，如下：&nbsp;<span><em>end_request:&nbsp;</em>I/O error, dev 03:06 (sda), sector &nbsp;</span></li>
+<li><span style="font-family: Tahoma, Verdana, Geneva, Arial, Helvetica, sans-serif; font-size: small;"><span>从上面的输出我们判定扇区可能出现了问题，使用<span style="color: #800000;">badblocks -s -v -o /root/badblocks.log /dev/sda</span>&nbsp;检查硬盘是否产生坏道并输出到badblocks.log中。log大约是这样的模式：64039224&nbsp;64039240&nbsp;64039241&nbsp;64039242&nbsp;64039243&nbsp;64039256&nbsp;64039257&nbsp;64039258&nbsp;64039259&nbsp;687056</span></span></li>
+<li><span style="font-family: Tahoma, Verdana, Geneva, Arial, Helvetica, sans-serif; font-size: small;"><span>可修复修复坏道修复方法：1 使用</span></span>&nbsp;<span><span style="color: #800000;">badblocks -s -w &nbsp;/dev/sda END START END</span>代表需要修复的扇区末端，START代表需要修复的扇区起始端。2 使用fsck -a /dev/sda1</span></li>
+</ol>
+<div><span style="font-family: Tahoma, Verdana, Geneva, Arial, Helvetica, sans-serif; font-size: small;"><span>磁盘坏道分为三种：0磁道坏道，逻辑坏道，硬盘坏道。其中逻辑坏道可以使用上面的方法修复，0磁道坏道的修复方法是隔离0磁道，使用fdsk划分区的时候从1磁道开始划分区。如果是硬盘坏道的话，只能隔离不能修复。硬盘坏道的监测方法：使用上述方法检测修复后，再使用</span></span><span>badblocks -s -v -o /root/badblocks.log /dev/sda</span><span>监测看是否还有坏道存在，如果坏道还是存在的话说明坏道属于硬盘坏道。硬盘坏道隔离方法，首先记录监测出的硬盘坏道，然后分区的时候把硬盘坏道所在的扇区分在一个分区（大小一般大于坏扇区大小），划分出的坏道分区不使用即可达到隔离的目的。隔离只是暂时方案，建议尽快更换硬盘，因为坏道会扩散，以免以后出现严重的数据问题。</span></div>
+</div>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+
+
+    <div id="blog_post_info">
+<div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(3613829,cb_blogId,1);green_channel_success(this,&#39;谢谢推荐！&#39;);">好文要顶</a>
+        <a id="green_channel_follow" onclick="follow(&#39;4c6019ff-6340-e211-aa8f-842b2b196315&#39;);" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/jenqz/" target="_blank"><img src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/u477318.jpg" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/jenqz/">jenqz</a><br>
+            <a href="https://home.cnblogs.com/u/jenqz/followees/">关注 - 3</a><br>
+            <a href="https://home.cnblogs.com/u/jenqz/followers/">粉丝 - 2</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow(&#39;4c6019ff-6340-e211-aa8f-842b2b196315&#39;);return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(3613829,&#39;Digg&#39;)">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(3613829,&#39;Bury&#39;)">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+    <div class="clear"></div>
+    <div id="post_next_prev">
+
+    <a href="https://www.cnblogs.com/jenqz/p/3611563.html" class="p_n_p_prefix">« </a> 上一篇：    <a href="https://www.cnblogs.com/jenqz/p/3611563.html" title="发布于 2014-03-19 15:37">ie11 .pac代理脚本无法使用的问题</a>
+    <br>
+    <a href="https://www.cnblogs.com/jenqz/p/3616692.html" class="p_n_p_prefix">» </a> 下一篇：    <a href="https://www.cnblogs.com/jenqz/p/3616692.html" title="发布于 2014-03-21 23:31">centos6.5安装配置nginx+php+mysql+httpsqs+ttserver+redis</a>
+
+</div>
+</div>
+	<div class="postDesc">posted on 
+<span id="post-date">2014-03-20 15:22</span>&nbsp;
+<a href="https://www.cnblogs.com/jenqz/">jenqz</a>&nbsp;
+阅读(<span id="post_view_count">9712</span>)&nbsp;
+评论(<span id="post_comment_count">0</span>)&nbsp;
+<a href="https://i.cnblogs.com/EditPosts.aspx?postid=3613829" rel="nofollow">编辑</a>&nbsp;
+<a href="javascript:void(0)" onclick="AddToWz(3613829);return false;">收藏</a></div>
+</div>
+
+
+<script src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/highlight.min.js.download"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 136278, cb_blogApp = 'jenqz', cb_blogUserGuid = '4c6019ff-6340-e211-aa8f-842b2b196315';
+    var cb_entryId = 3613829, cb_entryCreatedDate = '2014-03-20 15:22', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+    loadSideColumnAd();
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="https://www.cnblogs.com/jenqz/p/3613829.html#" onclick="return RefreshPage();">刷新页面</a><a href="https://www.cnblogs.com/jenqz/p/3613829.html#top">返回顶部</a></div>
+    <div id="comment_form_container" style="visibility: visible;"><div class="login_tips">
+    注册用户登录后才能发表评论，请 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login(&#39;commentform&#39;);">登录</a>
+     或 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，
+    <a href="https://www.cnblogs.com/">访问</a> 网站首页。
+</div></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"><a href="https://developer.huaweiuniversity.com/portal/courses/HuaweiX+CBGHWDCN030/about?source=bky" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-华为开发者学院文字链投放&#39;)">【推荐】AI大咖带您解锁深度学习算法，华为开发者学院直播间福利仅29元！</a><br><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-ucancode&#39;)">【推荐】超50万行VC++源码: 大型组态工控、电力仿真CAD与GIS源码库</a><br><a href="https://developer.aliyun.com/article/740731?utm_content=g_1000104143https://developer.aliyun.com/article/740731?utm_content=g_1000104143" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-阿里云开发者社区&#39;)">【推荐】2019 Flink Forward 大会最全视频来了！5大专题不容错过</a><br><a href="https://developer.aliyun.com/ask/257928?utm_content=g_1000088948" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T2-阿里云开发者社区&#39;)">【推荐】精品问答：精品问答：Python 技术 1000 问</a><br></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/gpt.js.download"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CO2Ws7zss-kCFUOvvQodh5sMZw"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border: 0px; vertical-align: bottom;" data-google-container-id="1" data-load-complete="true" src="./Linux 磁盘坏道检测和修复 - jenqz - 博客园_files/saved_resource.html"></iframe></div></div>
+    </div>
+    <div id="under_post_news"><div class="recomm-block"><b>相关博文：</b><br>·  <a title="centos出现磁盘坏掉，怎么修复和检测。" href="https://www.cnblogs.com/perry-monk/p/4303557.html" target="_blank" onclick="clickRecomItmem(4303557)">centos出现磁盘坏掉，怎么修复和检测。</a><br>·  <a title="Linux 磁盘坏道检测和修复" href="https://www.cnblogs.com/zhenzhong/p/3816287.html" target="_blank" onclick="clickRecomItmem(3816287)">Linux 磁盘坏道检测和修复</a><br>·  <a title="centos出现磁盘坏道，怎么检索和修复" href="https://www.cnblogs.com/1111zhiping-tian/p/8418945.html" target="_blank" onclick="clickRecomItmem(8418945)">centos出现磁盘坏道，怎么检索和修复</a><br>·  <a title="磁盘blk_update_request: I/O error" href="https://www.cnblogs.com/chris-cp/p/6340289.html" target="_blank" onclick="clickRecomItmem(6340289)">磁盘blk_update_request: I/O error</a><br>·  <a title="磁盘blk_update_request:I/Oerror" href="https://www.cnblogs.com/wangjq19920210/p/9238910.html" target="_blank" onclick="clickRecomItmem(9238910)">磁盘blk_update_request:I/Oerror</a><br>»  <a target="_blank" href="https://recomm.cnblogs.com/blogpost/3613829">更多推荐...</a><div id="cnblogs_t5"><a href="https://developer.aliyun.com/article/721818?utm_content=g_1000088934" target="_blank" onclick="ga(&#39;send&#39;, &#39;event&#39;, &#39;Link&#39;, &#39;click&#39;, &#39;T5-阿里云开发者社区&#39;)">20本必看的阿里精品免费电子书</a></div></div></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CNecsbzss-kCFUOvvQodh5sMZw">
+            <script>
+                if (new Date() >= new Date(2018, 9, 13)) {
+                    googletag.cmd.push(function () { googletag.display("div-gpt-ad-1539008685004-0"); });
+                }
+            </script>
+        <div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none; width: 468px; height: 60px;"></div></div>
+    </div>
+    <div id="under_post_kb">
+<div class="itnews c_ad_block">
+    <b>最新 IT 新闻</b>:
+    <br>
+ ·              <a href="https://news.cnblogs.com/n/661957/" target="_blank">贝索斯上美国热搜 2026年或成世界上首个“万亿富翁”</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/661955/" target="_blank">免费！NVIDIA为《我的世界》RTX版新增5个全新地图</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/661953/" target="_blank">世界最大主权财富基金遭遇网络攻击：被骗走1000万美元</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/661954/" target="_blank">再也不怕被窥屏了！苹果新专利显示器获批：可调隐私模式</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/661951/" target="_blank">Intel正式发布第十代博锐：普及10核心、性能提升达40％</a>
+            <br>
+    » <a href="https://news.cnblogs.com/" title="IT 新闻" target="_blank">更多新闻...</a>
+</div></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        deliverBigBanner();
+setTimeout(function() { incrementViewCount(cb_entryId); }, 50);        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div></div>
+
+
+</div>
+<div id="leftcontent">
+	
+		<div id="leftcontentcontainer">
+			
+<div id="sidebar_news" class="newsItem"><!--done-->
+<div class="newsItem">
+	
+<div id="blog-news">
+    
+    <div id="profile_block">
+        昵称：
+        <a href="https://home.cnblogs.com/u/jenqz/">
+            jenqz
+        </a>
+        <br>
+        园龄：
+        <a href="https://home.cnblogs.com/u/jenqz/" title="入园时间：2012-12-07">
+            7年5个月
+        </a>
+        <br>
+        粉丝：
+        <a href="https://home.cnblogs.com/u/jenqz/followers/">
+            2
+        </a>
+        <br>
+        关注：
+        <a href="https://home.cnblogs.com/u/jenqz/followees/">
+            3
+        </a>
+        <div id="p_b_follow">
+<a href="javascript:void(0)" onclick="follow(&#39;4c6019ff-6340-e211-aa8f-842b2b196315&#39;)">+加关注</a></div>
+        <script>getFollowStatus('4c6019ff-6340-e211-aa8f-842b2b196315');</script>
+    </div>
+</div>
+</div>
+
+</div>
+
+<div id="sidebar_ad"></div>
+			<div id="calendar"><div id="blog-calendar" style="">
+
+<table id="blogCalendar" class="Cal" cellspacing="0" cellpadding="0" title="Calendar" border="0">
+    <tbody>
+        <tr>
+            <td colspan="7">
+                <table class="CalTitle" cellspacing="0" border="0">
+                    <tbody>
+                        <tr>
+                            <td class="CalNextPrev">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2020/04/15&#39;); return false;">&lt;</a>
+                            </td>
+                            <td align="center">2020年5月</td>
+                            <td align="right" class="CalNextPrev">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2020/06/15&#39;); return false;">&gt;</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+                    <th class="CalDayHeader" align="center" abbr="日" scope="col">日</th>
+                    <th class="CalDayHeader" align="center" abbr="一" scope="col">一</th>
+                    <th class="CalDayHeader" align="center" abbr="二" scope="col">二</th>
+                    <th class="CalDayHeader" align="center" abbr="三" scope="col">三</th>
+                    <th class="CalDayHeader" align="center" abbr="四" scope="col">四</th>
+                    <th class="CalDayHeader" align="center" abbr="五" scope="col">五</th>
+                    <th class="CalDayHeader" align="center" abbr="六" scope="col">六</th>
+        </tr>
+            <tr>
+                            <td class="CalOtherMonthDay" align="center">26</td>
+                            <td class="CalOtherMonthDay" align="center">27</td>
+                            <td class="CalOtherMonthDay" align="center">28</td>
+                            <td class="CalOtherMonthDay" align="center">29</td>
+                            <td class="CalOtherMonthDay" align="center">30</td>
+                        <td class="" align="center">
+                            1
+                        </td>
+                    <td class="CalWeekendDay" align="center">
+                        2
+                    </td>
+            </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            3
+                        </td>
+                            <td class="" align="center">
+                                4
+                            </td>
+                            <td class="" align="center">
+                                5
+                            </td>
+                            <td class="" align="center">
+                                6
+                            </td>
+                            <td class="" align="center">
+                                7
+                            </td>
+                            <td class="" align="center">
+                                8
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            9
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            10
+                        </td>
+                            <td class="" align="center">
+                                11
+                            </td>
+                            <td class="" align="center">
+                                12
+                            </td>
+                            <td class="" align="center">
+                                13
+                            </td>
+                            <td class="" align="center">
+                                14
+                            </td>
+                            <td class="CalTodayDay" align="center">
+                                15
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            16
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            17
+                        </td>
+                            <td class="" align="center">
+                                18
+                            </td>
+                            <td class="" align="center">
+                                19
+                            </td>
+                            <td class="" align="center">
+                                20
+                            </td>
+                            <td class="" align="center">
+                                21
+                            </td>
+                            <td class="" align="center">
+                                22
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            23
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            24
+                        </td>
+                            <td class="" align="center">
+                                25
+                            </td>
+                            <td class="" align="center">
+                                26
+                            </td>
+                            <td class="" align="center">
+                                27
+                            </td>
+                            <td class="" align="center">
+                                28
+                            </td>
+                            <td class="" align="center">
+                                29
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            30
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            31
+                        </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                1
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                2
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                3
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                4
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                5
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            6
+                        </td>
+                </tr>
+    </tbody>
+</table></div></div>                
+                    <script>loadBlogDefaultCalendar();</script><br>
+			<div id="blog-sidecolumn">
+<!-- 搜索 -->
+<div id="sidebar_search" class="sidebar-block">
+    <div id="sidebar_search" class="mySearch">
+        <h3 class="catListTitle">搜索</h3>
+        <div id="sidebar_search_box">
+            <div id="widget_my_zzk" class="div_my_zzk">
+                <input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk">
+            </div>
+            <div id="widget_my_google" class="div_my_zzk">
+                <input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 常用链接 -->
+<div id="sidebar_shortcut" class="sidebar-block">
+    
+<h3 class="catListTitle">
+常用链接
+</h3>
+<ul>
+        <li>
+
+<a href="https://www.cnblogs.com/jenqz/p/" title="我的博客的随笔列表">我的随笔</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/jenqz/MyComments.html" title="我的发表过的评论列表">我的评论</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/jenqz/OtherPosts.html" title="我评论过的随笔列表">我的参与</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/jenqz/RecentComments.html" title="我的博客的评论列表">最新评论</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/jenqz/tag/" title="我的博客的标签列表">我的标签</a>
+</li>
+</ul>
+
+<!-- TODO: 检查是否有使用这一部分的控件，如果没有则应该删除。 -->
+<div id="itemListLin_con" style="display:none">
+    <ul>
+
+    </ul>
+</div>
+
+</div>
+
+<!-- 最新随笔 -->
+
+
+
+<!-- 我的标签 -->
+<div id="sidebar_toptags" class="sidebar-block">
+    
+<h3>我的标签</h3>
+<div id="MyTag">
+    <ul>
+        
+        <li>
+            <a href="https://www.cnblogs.com/jenqz/tag/c%23/">c#</a>(3)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/jenqz/tag/java/">java</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/jenqz/tag/jquery/">jquery</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/jenqz/tag/sqlite/">sqlite</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/jenqz/tag/webservice/">webservice</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/jenqz/tag/windows%20service/">windows service</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/jenqz/tag/%E6%89%A9%E5%B1%95%E6%96%B9%E6%B3%95/">扩展方法</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/jenqz/tag/%E7%B1%BB%E5%BA%93/">类库</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/jenqz/tag/.net/">.net</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/jenqz/tag/andriod%20json%20bom/">andriod json bom</a>(1)
+        </li>
+    
+
+    </ul>
+</div>
+
+</div>
+
+<!-- 积分与排名 -->
+
+
+<!-- 随笔分类、随笔档案、文章分类、新闻分类、相册、链接 -->
+<div id="sidebar_categories">
+    
+		<h3 class="catListTitle">
+
+随笔分类
+
+
+</h3>
+				<ul class="catList">
+			
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/category/436559.html" rel="" target="">
+    c#知识(4)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/category/437902.html" rel="" target="">
+    Java(2)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/category/437558.html" rel="" target="">
+    PHP(8)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/category/437559.html" rel="" target="">
+    数据库(1)
+</a>
+
+</li>
+			
+				</ul>
+		<h3 class="catListTitle">
+
+随笔档案
+
+
+</h3>
+				<ul class="catList">
+			
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2017/08.html" rel="" target="">
+    2017年8月(2)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2017/07.html" rel="" target="">
+    2017年7月(2)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2017/01.html" rel="" target="">
+    2017年1月(1)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2016/11.html" rel="" target="">
+    2016年11月(2)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2016/10.html" rel="" target="">
+    2016年10月(1)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2016/09.html" rel="" target="">
+    2016年9月(3)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2016/08.html" rel="" target="">
+    2016年8月(1)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2016/07.html" rel="" target="">
+    2016年7月(1)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2016/06.html" rel="" target="">
+    2016年6月(4)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2016/03.html" rel="" target="">
+    2016年3月(1)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2016/02.html" rel="" target="">
+    2016年2月(5)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2016/01.html" rel="" target="">
+    2016年1月(5)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/12.html" rel="" target="">
+    2015年12月(4)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/11.html" rel="" target="">
+    2015年11月(7)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/10.html" rel="" target="">
+    2015年10月(11)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/09.html" rel="" target="">
+    2015年9月(2)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/08.html" rel="" target="">
+    2015年8月(2)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/07.html" rel="" target="">
+    2015年7月(10)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/06.html" rel="" target="">
+    2015年6月(3)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/05.html" rel="" target="">
+    2015年5月(3)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/04.html" rel="" target="">
+    2015年4月(3)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/03.html" rel="" target="">
+    2015年3月(6)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/02.html" rel="" target="">
+    2015年2月(4)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2015/01.html" rel="" target="">
+    2015年1月(3)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2014/12.html" rel="" target="">
+    2014年12月(3)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2014/10.html" rel="" target="">
+    2014年10月(1)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2014/09.html" rel="" target="">
+    2014年9月(2)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2014/08.html" rel="" target="">
+    2014年8月(5)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2014/07.html" rel="" target="">
+    2014年7月(2)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2014/06.html" rel="" target="">
+    2014年6月(5)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2014/05.html" rel="" target="">
+    2014年5月(2)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2014/04.html" rel="" target="">
+    2014年4月(9)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2014/03.html" rel="" target="">
+    2014年3月(5)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2014/01.html" rel="" target="">
+    2014年1月(8)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2013/12.html" rel="" target="">
+    2013年12月(1)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2013/06.html" rel="" target="">
+    2013年6月(1)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2013/01.html" rel="" target="">
+    2013年1月(4)
+</a>
+
+</li>
+				<li class="catListItem"> 
+<a href="https://www.cnblogs.com/jenqz/archive/2012/12.html" rel="" target="">
+    2012年12月(10)
+</a>
+
+</li>
+			
+				</ul>
+
+
+</div>
+
+<!-- 最新评论 -->
+<div id="sidebar_recentcomments" class="sidebar-block">
+    <div id="recent_comments_wrap" class="RecentComment">
+    <h3 class="catListTitle">最新评论</h3>
+    <div class="RecentCommentBlock">
+        <ul>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/jenqz/archive/2012/12/14/2818474.html">1. Re:httpwebrequest 用GET方法请求时报无法发送具有此谓词类型的内容正文</a></li>
+                    <li class="recent_comment_body">写错了吧</li>
+                    <li class="recent_comment_author">--熊仔其人</li>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/jenqz/p/4505531.html">2. Re:DDoS-Deflate安装及配置</a></li>
+                    <li class="recent_comment_body">DDoS-Deflate 很好，防止ddos攻击</li>
+                    <li class="recent_comment_author">--民工也Coding</li>
+        </ul>
+    </div>
+</div>
+</div>
+
+
+
+<!-- 阅读排行榜 -->
+<div id="sidebar_topviewedposts" class="sidebar-block">
+    
+<div id="topview_posts_wrap">
+    <h3 class="catListTitle">阅读排行榜</h3>
+    <div id="TopViewPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/jenqz/p/5222237.html">
+                            1. Windows下查看进程及结束进程命令[转](12148)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/jenqz/p/3613829.html">
+                            2. Linux 磁盘坏道检测和修复(9712)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/jenqz/p/3662652.html">
+                            3. JS 索引数组、关联数组和静态数组、动态数组(4868)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/jenqz/p/4929871.html">
+                            4. 关于centos7下扩充和减小xfs逻辑分区大小的问题(4803)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/jenqz/archive/2012/12/14/2818474.html">
+                            5. httpwebrequest 用GET方法请求时报无法发送具有此谓词类型的内容正文(4645)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<!-- 评论排行榜 -->
+<div id="sidebar_topcommentedposts" class="sidebar-block">
+    
+<div id="topfeedback_posts_wrap">
+    <h3 class="catListTitle">评论排行榜</h3>
+    <div id="TopFeedbackPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/jenqz/archive/2012/12/14/2818474.html">
+                            1. httpwebrequest 用GET方法请求时报无法发送具有此谓词类型的内容正文(1)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/jenqz/p/4505531.html">
+                            2. DDoS-Deflate安装及配置(1)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<!-- 推荐排行榜 -->
+<div id="sidebar_topdiggedposts" class="sidebar-block">
+    
+<div id="topdigg_posts_wrap">
+    <div class="catListView">
+        <h3 class="catListTitle">推荐排行榜</h3>
+        <div id="TopDiggPostsBlock">
+            <ul style="word-break: break-all">
+                        <li>
+                            <a href="https://www.cnblogs.com/jenqz/archive/2012/12/14/2818474.html">
+                                1. httpwebrequest 用GET方法请求时报无法发送具有此谓词类型的内容正文(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/jenqz/p/5141537.html">
+                                2. semanage: 未找到命令(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/jenqz/p/5141456.html">
+                                3. Centos 7 修改SSH端口号(1)
+                            </a>
+                        </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</div></div>
+                    <script>loadBlogSideColumn();</script></div>
+	
+</div>
+<!--done-->
+<div class="footer">
+	Powered by: <a href="http://www.cnblogs.com/">博客园</a>
+	Copyright © 2020 jenqz
+<br><span id="poweredby">Powered by .NET Core on Kubernetes</span>
+
+</div>
+
+
+
+
+
+
+    
+
+</body></html>
