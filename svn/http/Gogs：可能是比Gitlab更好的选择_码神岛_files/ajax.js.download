@@ -1,0 +1,78 @@
+define(['jquery'], function($){
+    return function(options, done, fail){
+    	if(options.needLogin === true && !/MISU_COOKIES/i.test(document.cookie)){
+    		window.location.href = '//www.misuland.com/login.html?redirectPage=' + encodeURIComponent(window.location.href);
+    		return;
+    	}
+        $.ajax({
+            url: options.url,
+            type: options.type || 'GET',
+            dataType: options.dataType || 'json',
+            data: options.data || {},
+            xhrFields:{
+            	withCredentials:true
+        	},
+            success: function(data){
+				try {
+					var res;
+					if (typeof data === 'string') {
+						res = window.JSON.parse(data)
+					} else {
+						res = data
+					}
+					if (res && typeof res.code !== 'undefined') {
+						// 未登录
+						if (res.code === 2222) {
+							window.location.href = '//www.misuland.com/login.html?redirectPage=' + encodeURIComponent(window.location.href);
+							return
+						}
+						// 错误
+						if (res.code === 1111) {
+							// 唤醒滑动验证
+							if (res.msg == '400') {
+								getNC().then(function(){
+									_nvc_nc.upLang('cn', {
+										_startTEXT: "请按住滑块，拖动到最右边",
+										_yesTEXT: "验证通过",
+										_error300: "哎呀，出错了，点击<a href=\"javascript:__nc.reset()\">刷新</a>再来一次",
+										_errorNetwork: "网络不给力，请<a href=\"javascript:__nc.reset()\">点击刷新</a>",
+									})
+									_nvc_nc.reset()
+								})
+								return
+							}
+							// 唤醒刮刮卡验证
+							if (res.msg == '600') {
+								getSC().then(function(){})
+								return
+							}
+							// 唤醒问答验证
+							if (res.msg == '700') {
+								getLC()
+								return
+							}
+							alert(res.msg);
+							window.location.reload();
+							return
+						}
+						// 成功
+						typeof done === 'function' && done(res.msg)
+					} else {
+						typeof done === 'function' && done(data)
+					}
+				}catch(e){
+					typeof done === 'function' && done(data)
+				}
+				
+				/*
+            	if(data == 'ERROR'){
+            		window.location.href = '//www.misuland.com/login.html?redirectPage=' + encodeURIComponent(window.location.href);
+            		return;
+            	}
+            	try{done(data)}catch(e){}
+				*/
+            },
+            error: function(data){try{fail(data)}catch(e){}}
+        })
+    }
+})
