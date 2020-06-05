@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="origin">
+    <meta property="og:description" content="使用如下的XML配置 其实原理是投机取巧： 1、type使用block 2、增加source节点 3、target其实用了ide，这个不需要太看重，可以是scsi或者virtio，可以多次尝试 总结：">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>CentOS 7下KVM挂载物理硬盘/硬盘直通 - EasonJim - 博客园</title>
+    <link id="favicon" rel="shortcut icon" href="https://common.cnblogs.com/favicon.ico?v=20200522" type="image/x-icon">
+    
+    <link rel="stylesheet" href="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+    <link id="MainCss" rel="stylesheet" href="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-simplememory.css">
+    <link type="text/css" rel="stylesheet" href="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/custom.css">
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-SimpleMemory-mobile.css">
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/EasonJim/rss">
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/EasonJim/rsd.xml">
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/EasonJim/wlwmanifest.xml">
+    <script src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script async="" src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script type="text/javascript" src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/encoder.js"></script><script src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js"></script>
+    <script>
+        var currentBlogId = 120001;
+        var currentBlogApp = 'EasonJim';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+        var skinName = 'SimpleMemory';
+    </script>
+    
+    
+    
+<link rel="preload" href="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2020052102.js" async=""></script></head>
+<body>
+    <a name="top"></a>
+    <div id="page_begin_html">
+        <!--向上按钮开始-->
+<!--<span id="back-to-top"><a href="#top">TOP</a></span>-->
+<!--向上按钮结束-->
+<!--文章导航样式开始-->
+<!--<link href="//files.cnblogs.com/files/EasonJim/sidetoolbar.nav.css" rel="stylesheet">-->
+<!--文章导航样式结束-->
+    </div>
+    
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+        <a id="lnkBlogLogo" href="https://www.cnblogs.com/EasonJim/"><img id="blogLogo" src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.gif" alt="返回主页"></a>		
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/EasonJim/">Jim</a>
+</h1>
+<h2>
+<p>easonjim</p>
+<p>Code, code and more code.</p>
+</h2>
+
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li>
+</li>
+<li>
+
+</li>
+<li>
+
+
+</li>
+<li>
+</li>
+<li>
+
+<!--<partial name="./Shared/_XmlLink.cshtml" model="Model" /></li>--></li>
+<li>
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+</ul>
+
+
+		<div class="blogStats">
+			
+			<span id="stats_post_count">随笔 - 
+2371&nbsp; </span>
+<span id="stats_article_count">文章 - 
+0&nbsp; </span>
+<span id="stats-comment_count">评论 - 
+381</span>
+
+			
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		<div id="post_detail">
+    <!--done-->
+    <div id="topics">
+        <div class="post">
+            <h1 class="postTitle">
+                
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/EasonJim/p/11629211.html">CentOS 7下KVM挂载物理硬盘/硬盘直通</a>
+
+            </h1>
+            <div class="clear"></div>
+            <div class="postBody">
+                
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <p>使用如下的XML配置</p>
+<div class="cnblogs_code">
+<pre><span style="color: #0000ff;">&lt;</span><span style="color: #800000;">disk </span><span style="color: #ff0000;">type</span><span style="color: #0000ff;">='block'</span><span style="color: #ff0000;"> device</span><span style="color: #0000ff;">='disk'</span><span style="color: #0000ff;">&gt;</span>
+  <span style="color: #0000ff;">&lt;</span><span style="color: #800000;">driver </span><span style="color: #ff0000;">name</span><span style="color: #0000ff;">='qemu'</span><span style="color: #ff0000;"> type</span><span style="color: #0000ff;">='raw'</span><span style="color: #0000ff;">/&gt;</span>
+  <span style="color: #0000ff;">&lt;</span><span style="color: #800000;">source </span><span style="color: #ff0000;">dev</span><span style="color: #0000ff;">='/dev/sda'</span><span style="color: #0000ff;">/&gt;</span>
+  <span style="color: #0000ff;">&lt;</span><span style="color: #800000;">target </span><span style="color: #ff0000;">dev</span><span style="color: #0000ff;">='hdb'</span><span style="color: #ff0000;"> bus</span><span style="color: #0000ff;">='ide'</span><span style="color: #0000ff;">/&gt;</span>
+<span style="color: #0000ff;">&lt;/</span><span style="color: #800000;">disk</span><span style="color: #0000ff;">&gt;</span></pre>
+</div>
+<p>其实原理是投机取巧：</p>
+<p>1、type使用block</p>
+<p>2、增加source节点</p>
+<p>3、target其实用了ide，这个不需要太看重，可以是scsi或者virtio，可以多次尝试</p>
+<p>总结：</p>
+<p>硬盘直通其实可以解决速度慢的问题，可以将硬盘的读写损耗降到1%。</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>参考：</p>
+<p><a href="https://chubuntu.com/questions/15902/add-physical-disk-to-kvm-virtual-machine.html" target="_blank">https://chubuntu.com/questions/15902/add-physical-disk-to-kvm-virtual-machine.html</a></p>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block"><div id="BlogPostCategory">
+    分类: 
+            <a href="https://www.cnblogs.com/EasonJim/category/811268.html" target="_blank">服务器运维-[Linux/Mac/Ubuntu/CentOS/Windows]</a></div>
+<div id="EntryTag">
+    标签: 
+            <a href="https://www.cnblogs.com/EasonJim/tag/linux/">linux</a>,             <a href="https://www.cnblogs.com/EasonJim/tag/centos/">centos</a>,             <a href="https://www.cnblogs.com/EasonJim/tag/kvm/">kvm</a></div>
+
+    <div id="blog_post_info">
+<div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(11629211,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+        <a id="green_channel_follow" onclick="follow('be671204-c2b3-e111-aa3f-842b2b196315');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/EasonJim/" target="_blank"><img src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/20190421171207.png" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/EasonJim/">EasonJim</a><br>
+            <a href="https://home.cnblogs.com/u/EasonJim/followees/">关注 - 4</a><br>
+            <a href="https://home.cnblogs.com/u/EasonJim/followers/">粉丝 - 318</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('be671204-c2b3-e111-aa3f-842b2b196315');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(11629211,'Digg')">
+        <span class="diggnum" id="digg_count">0</span>
+    </div>
+    <div class="buryit" onclick="votePost(11629211,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+    <div class="clear"></div>
+    <div id="post_next_prev">
+
+    <a href="https://www.cnblogs.com/EasonJim/p/11161101.html" class="p_n_p_prefix">« </a> 上一篇：    <a href="https://www.cnblogs.com/EasonJim/p/11161101.html" title="发布于 2019-07-09 23:01">宽带测速网站收集</a>
+
+</div>
+</div>
+            </div>
+            <div class="postDesc">posted @ 
+<span id="post-date">2019-10-07 02:53</span>&nbsp;
+<a href="https://www.cnblogs.com/EasonJim/">EasonJim</a>&nbsp;
+阅读(<span id="post_view_count">1395</span>)&nbsp;
+评论(<span id="post_comment_count">0</span>)&nbsp;
+<a href="https://i.cnblogs.com/EditPosts.aspx?postid=11629211" rel="nofollow">编辑</a>&nbsp;
+<a href="javascript:void(0)" onclick="AddToWz(11629211);return false;">收藏</a></div>
+        </div>
+	    
+	    
+    </div><!--end: topics 文章、评论容器-->
+</div>
+<script src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/highlight.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 120001, cb_blogApp = 'EasonJim', cb_blogUserGuid = 'be671204-c2b3-e111-aa3f-842b2b196315';
+    var cb_entryId = 11629211, cb_entryCreatedDate = '2019-10-07 02:53', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+    loadSideColumnAd();
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container" style="visibility: visible;"><div class="login_tips">
+    注册用户登录后才能发表评论，请 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a>
+     或 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，
+    <a href="https://www.cnblogs.com/">访问</a> 网站首页。
+</div></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"><a href="https://workbench.aliyun.com/camp?spm=a1z389.11499242.0.0.65452413tQ3COu&amp;utm_content=g_1000132392" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-阿里云-云开发平台')">【推荐】全面上云时代你的开发方式已过时，快来免费体验阿里云云开发平台</a><br><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-ucancode')">【推荐】超50万行VC++源码: 大型组态工控、电力仿真CAD与GIS源码库</a><br><a href="https://www.wenjuan.com/s/3uIjeq0/" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-博客园问卷调查')">【推荐】了解你才能更懂你，博客园首发问卷调查，助力社区新升级</a><br><a href="https://fineui.com/" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-FineUI')">【推荐】12年经典 UI 控件库 FineUI，支持 ASP.NET Core 3.1</a><br></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block" style="">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CPr8vZ2c6ukCFU9lYAod7nAIgw"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+    </div>
+    <div id="under_post_news"></div>
+    <div id="cnblogs_c2" class="c_ad_block" style="">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CPv8vZ2c6ukCFU9lYAod7nAIgw"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+    </div>
+    <div id="under_post_kb"></div>
+    <div id="HistoryToday" class="c_ad_block">
+<b>历史上的今天：</b>
+<br>
+
+2018-10-07    <a href="https://www.cnblogs.com/EasonJim/p/9752137.html">CentOS 7下KVM支持虚拟化/嵌套虚拟化配置</a>
+    <br>
+2018-10-07    <a href="https://www.cnblogs.com/EasonJim/p/9752031.html">Linux/CentOS实现交换机-简单的交换机实现</a>
+    <br>
+2018-10-07    <a href="https://www.cnblogs.com/EasonJim/p/9751894.html">Ubuntu下实现软路由（转）</a>
+    <br>
+2018-10-07    <a href="https://www.cnblogs.com/EasonJim/p/9751729.html">CentOS下KVM配置NAT网络（网络地址转换模式）</a>
+    <br>
+2018-10-07    <a href="https://www.cnblogs.com/EasonJim/p/9751378.html">CentOS 7安装tunctl</a>
+    <br>
+2018-10-07    <a href="https://www.cnblogs.com/EasonJim/p/9751358.html">CentOS下KVM网卡设置成网桥时获取镜像端口的流量</a>
+    <br>
+2018-10-07    <a href="https://www.cnblogs.com/EasonJim/p/9751075.html">将网桥的配置写进去/etc/sysconfig/network-scripts/ifcfg-xxx</a>
+    <br>
+</div>
+    <script type="text/javascript">
+        fixPostBody();
+        deliverBigBanner();
+setTimeout(function() { incrementViewCount(cb_entryId); }, 50);        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div>
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+
+
+<div id="sidebar_ad"></div>
+			<div id="blog-calendar" style="display:none"></div><script>loadBlogDefaultCalendar();</script>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn">
+<!-- 搜索 -->
+<div id="sidebar_search" class="sidebar-block">
+    <div id="sidebar_search" class="mySearch">
+        <h3 class="catListTitle">搜索</h3>
+        <div id="sidebar_search_box">
+            <div id="widget_my_zzk" class="div_my_zzk">
+                <input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk">
+            </div>
+            <div id="widget_my_google" class="div_my_zzk">
+                <input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 常用链接 -->
+
+
+<!-- 最新随笔 -->
+
+
+
+<!-- 我的标签 -->
+<div id="sidebar_toptags" class="sidebar-block">
+    <div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+
+        <li>
+            <a href="https://www.cnblogs.com/EasonJim/tag/java/">java</a>(718)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/EasonJim/tag/linux/">linux</a>(686)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/EasonJim/tag/ubuntu/">ubuntu</a>(287)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/EasonJim/tag/spring/">spring</a>(211)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/EasonJim/tag/mac/">mac</a>(143)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/EasonJim/tag/centos/">centos</a>(130)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/EasonJim/tag/shell/">shell</a>(97)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/EasonJim/tag/maven/">maven</a>(94)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/EasonJim/tag/mysql/">mysql</a>(77)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/EasonJim/tag/spring-boot/">spring-boot</a>(74)
+        </li>
+    <li>
+        <a href="https://www.cnblogs.com/EasonJim/tag/">更多</a>
+    </li>
+
+</ul>
+</div>
+
+
+</div>
+
+<!-- 积分与排名 -->
+
+
+<!-- 随笔分类、随笔档案、文章分类、新闻分类、相册、链接 -->
+<div id="sidebar_categories">
+    
+        <div id="sidebar_postcategory" class="catListPostCategory sidebar-block">
+            <h3 class="catListTitle">
+                
+
+随笔分类
+
+
+
+            </h3>
+
+
+            <ul>
+
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/867017.html" rel="" target="">
+    Web前端-[HTML/CSS/JS](129)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/1036182.html" rel="" target="">
+    编程语言-[Assembly](10)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/810993.html" rel="" target="">
+    编程语言-[AU3](5)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/1030889.html" rel="" target="">
+    编程语言-[C++](5)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/721464.html" rel="" target="">
+    编程语言-[dotNET](119)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/812353.html" rel="" target="">
+    编程语言-[Java](764)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/876019.html" rel="" target="">
+    编程语言-[Node.js](27)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/803539.html" rel="" target="">
+    编程语言-[PHP](15)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/915783.html" rel="" target="">
+    编程语言-[Python](3)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/810991.html" rel="" target="">
+    持续集成CI-[CCNET/Jenkins](72)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/1283572.html" rel="" target="">
+    电子电路-家电/电视/电冰箱/热水器/微波炉/电饭煲(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/1063051.html" rel="" target="">
+    分布式-[集群/方案/工具/设计](80)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/811268.html" rel="" target="">
+    服务器运维-[Linux/Mac/Ubuntu/CentOS/Windows](999)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/874250.html" rel="" target="">
+    其它-[GitHub使用技巧](9)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/726162.html" rel="" target="">
+    其它-[大杂烩](65)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/721712.html" rel="" target="">
+    其它-[电商产品开发](7)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/703405.html" rel="" target="">
+    其它-[个人开源项目](31)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/473664.html" rel="" target="">
+    其它-[工具实用技巧](189)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/726020.html" rel="" target="">
+    其它-[开发规范](22)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/728314.html" rel="" target="">
+    其它-[微信集成开发](9)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/810477.html" rel="" target="">
+    其它-[正则表达式](2)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/1063050.html" rel="" target="">
+    软件测试-[工具/方案/压力](6)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/801153.html" rel="" target="">
+    手机开发-[Android](2)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/728312.html" rel="" target="">
+    手机开发-[iOS](10)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/475875.html" rel="" target="">
+    数据库技术-[MySQL/Oracle/SQLServer](120)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/1265511.html" rel="" target="">
+    网络-[路由/交换机/H3C/华为/思科/中兴](44)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/908557.html" rel="" target="">
+    项目管理-[CMMI](4)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/category/811586.html" rel="" target="">
+    源代码管理-[Git/SVN](11)
+</a>
+ 
+
+                        </li>
+
+            </ul>
+
+
+        </div>
+        <div id="sidebar_imagecategory" class="catListImageCategory sidebar-block">
+            <h3 class="catListTitle">
+                
+
+相册
+
+
+
+            </h3>
+
+
+            <ul>
+
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/gallery/1215983.html" rel="nofollow noopener noreferrer" target="">
+    阿里云栖(1)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/gallery/933065.html" rel="nofollow noopener noreferrer" target="">
+    啊哆表情包(3)
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://www.cnblogs.com/EasonJim/gallery/1216042.html" rel="nofollow noopener noreferrer" target="">
+    环信(5)
+</a>
+ 
+
+                        </li>
+
+            </ul>
+
+
+        </div>
+        <div id="sidebar_links874252" class="catList sidebar-block">
+            <h3 class="catListTitle">
+                
+
+我的链接
+
+
+
+            </h3>
+
+
+            <ul>
+
+                        <li>
+                            
+<a href="https://github.com/easonjim" rel="nofollow noopener noreferrer" target="_blank">
+    My GitHub
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="https://easonjim.github.io/MyLinkFavorites/index.html" rel="nofollow noopener noreferrer" target="_blank">
+    My Link Favorites
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="http://easonjim.cnblogs.com/" rel="nofollow noopener noreferrer" target="_blank">
+    My Email
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="http://www.cnblogs.com/EasonJim/tag/%E4%B9%A6%E5%8D%95/" rel="nofollow noopener noreferrer" target="_blank">
+    My Books
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="http://www.cnblogs.com/EasonJim/tag/software/" rel="nofollow noopener noreferrer" target="_blank">
+    My Softwares
+</a>
+ 
+
+                        </li>
+                        <li>
+                            
+<a href="http://music.163.com/#/playlist?id=138254897" rel="nofollow noopener noreferrer" target="_blank">
+    My Music
+</a>
+ 
+
+                        </li>
+
+            </ul>
+
+
+        </div>
+
+</div>
+
+<!-- 最新评论 -->
+
+
+
+
+<!-- 阅读排行榜 -->
+
+
+<!-- 评论排行榜 -->
+
+
+<!-- 推荐排行榜 -->
+</div>
+                    <script>loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+		<!--done-->
+Copyright © 2020 EasonJim
+<br><span id="poweredby">Powered by .NET Core on Kubernetes</span>
+
+
+
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+    <div id="page_end_html">
+        <!--cnzz统计开始-->
+<div style="display:none;">
+<script type="text/javascript">
+var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cspan id='cnzz_stat_icon_1258637387'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s95.cnzz.com/z_stat.php%3Fid%3D1258637387' type='text/javascript'%3E%3C/script%3E"));
+</script><span id="cnzz_stat_icon_1258637387"><a href="https://www.cnzz.com/stat/website.php?web_id=1258637387" target="_blank" title="站长统计">站长统计</a></span><script src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/z_stat.js" type="text/javascript"></script><script src="CentOS%207%E4%B8%8BKVM%E6%8C%82%E8%BD%BD%E7%89%A9%E7%90%86%E7%A1%AC%E7%9B%98_%E7%A1%AC%E7%9B%98%E7%9B%B4%E9%80%9A%20-%20EasonJim%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/core.js" charset="utf-8" type="text/javascript"></script>
+</div>
+<!--cnzz统计结束-->
+<!--自定义JS开始-->
+<script type="text/javascript">
+//声明版权
+//$('#footer').html($('#footer').html()+'<br/>'+'博客中部分文章为转载修改，有些文章已经无法找到原作者，如有侵权请马上联系我修改：easonjim#163.com');
+$('#footer').html($('#footer').html()+'(easonjim@163.com)');
+//设置文章标题样式
+//$('.postTitle').removeClass('postTitle').addClass("postTitle_new");
+$('.entrylistPosttitle').removeClass('entrylistPosttitle').addClass("entrylistPosttitle_new");
+//设置阅读原文按钮
+$('.c_b_p_desc_readmore').remove();
+//设置头像
+/*$('#lnkBlogLogo').before('<img src="//pic.cnblogs.com/avatar/417876/20130423213605.png" alt="EasonJim的头像" class="img_avatar" style="width: 80px;margin-bottom: 5px;margin-right: 10px;float:left;">');*/
+//显示主页内容，需要配合CSS使用
+//$('body').show();
+//文章页a标签加_blank
+$('.postTitle_new .postTitle2').attr('target','_blank');
+$('.PostList .postTitl2 a').attr('target','_blank');
+$('.postTitle a.postTitle2').attr('target','_blank');
+$('.entrylistItem .entrylistPosttitle_new a').attr('target','_blank');
+//查看原图
+//$('#cnblogs_post_body p img').after(function(){ return  '<div><a href="'+$(this).attr('src')+'" target="_blank">查看原图</a><div>'});
+//为CI的文章加入加群功能
+//if($('.postTitle a').html().toLowerCase().indexOf('jenkins')!=-1 ||$('.postTitle a').html().toLowerCase().indexOf('ccnet')!=-1){
+ $('#MySignature').after('<div style="width: 100%;float: left;"><div style="float: left;">==>CCNET/Jenkins持续集成交流群【190402937】：</div><div style="float: left;"><a target="_blank" href="//shang.qq.com/wpa/qunwpa?idkey=d22e130cc8d8a2f4f44fb0fc95cba2149e6d223efa1e5427100c705c1f36c090"><img border="0" src="//pub.idqqimg.com/wpa/images/group.png" alt="CCNET/JENKINS自动构建" title="CCNET/JENKINS自动构建"></a></div><div style="float: left;"><==</div></div>');
+}
+//为Maven的文章加入加群功能
+//if($('.postTitle a').html().toLowerCase().indexOf('maven')!=-1 ||$('.postTitle a').html().toLowerCase().indexOf('jeesite')!=-1){
+ $('#MySignature').after('<div style="width: 100%;float: left;"><div style="float: left;">==>Maven项目构建交流群【555363474】：</div><div style="float: left;"><a target="_blank" href="//shang.qq.com/wpa/qunwpa?idkey=2a26b9d07e11521a9ad230079e35d36d2ff51f080408e189053605320505fcab"><img border="0" src="//pub.idqqimg.com/wpa/images/group.png" alt="Maven项目构建" title="Maven项目构建"></a></div><div style="float: left;"><==</div></div>');
+}
+//为Ubuntu/CentOS的文章加入加群功能
+//if($('.postTitle a').html().toLowerCase().indexOf('ubuntu')!=-1 ||$('.postTitle a').html().toLowerCase().indexOf('linux')!=-1||$('.postTitle a').html().toLowerCase().indexOf('centos')!=-1){
+ $('#MySignature').after('<div style="width: 100%;float: left;"><div style="float: left;">==>CentOS/Ubuntu使用交流群【668289059】：</div><div style="float: left;"><a target="_blank" href="//shang.qq.com/wpa/qunwpa?idkey=43463d103499170ca30288851f70099d7dabf066d740c680fbc38c5de517c10e"><img border="0" src="//pub.idqqimg.com/wpa/images/group.png" alt="CentOS/Ubuntu使用交流群" title="CentOS/Ubuntu使用交流群"></a></div><div style="float: left;"><==</div></div>');
+}
+//为Mac的文章加入加群功能
+//if($('.postTitle a').html().toLowerCase().indexOf('mac')!=-1){
+ $('#MySignature').after('<div style="width: 100%;float: left;"><div style="float: left;">==>Mac使用交流群【555023193】：</div><div style="float: left;"><a target="_blank" href="//shang.qq.com/wpa/qunwpa?idkey=b977535614ea067d390c9714479a177157449a460f71b8b84a2ed321b6d36673"><img border="0" src="//pub.idqqimg.com/wpa/images/group.png" alt="Mac使用交流群" title="Mac使用交流群"></a></div><div style="float: left;"><==</div></div>');
+}
+//为RouterOS的文章加入加群功能
+//if($('.postTitle a').html().toLowerCase().indexOf('routeros')!=-1){
+ $('#MySignature').after('<div style="width: 100%;float: left;"><div style="float: left;">==>RouterOS软路由入门交流群【137428734】</div><div style="float: left;"><==</div></div>');
+}
+//为iptables的文章加入加群功能
+//if($('.postTitle a').html().toLowerCase().indexOf('openvpn')!=-1||$('.postTitle a').html().toLowerCase().indexOf('iptables')!=-1){
+ $('#MySignature').after('<div style="width: 100%;float: left;"><div style="float: left;">==>iptables交流群【864947146】</div><div style="float: left;"><==</div></div>');
+}
+</script>
+<!--自定义JS结束-->
+<!--文章导航样式开始-->
+<!--<script src="//cdn.bootcss.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>-->
+<!--<script type="text/javascript" src="//files.cnblogs.com/files/EasonJim/sidetoolbar.nav.js"></script>-->
+<!--文章导航样式结束-->
+<!--图片点击放大开始-->
+<script type="text/javascript">
+$(function(){
+    $('#cnblogs_post_body p img').wrap(function(){
+        return '<a href="' + this.src + '" title="点击查看原图" target="_blank" class="aimg"></a>';
+    })
+});
+</script>
+<!--图片点击放大结束-->
+<!--Email格式化开始-->
+<!--<script type="text/javascript">
+$(function(){
+  $("#blog-sidecolumn").bind('DOMNodeInserted', function(e) {  
+    $('#CatList_LinkList_2_Link_1').attr('href','mailto:easonjim@163.com');  
+  });
+});
+</script>  -->
+<!--Email格式化结束-->
+<!--带宽太贵了，不播了-->
+<!--<embed style="width:1px;height:1px;" height="100" width="100" src="//easonjim-files.oss-cn-hangzhou.aliyuncs.com/music.mp3"></embed>-->
+    </div>
+
+
+</body></html>

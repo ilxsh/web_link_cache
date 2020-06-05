@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="never">
+    <meta property="og:description" content="Linux系统的启动方式有点复杂，而且总是有需要优化的地方。传统的Linux系统启动过程主要由著名的init进程（也被称为SysV init启动系统）处理，而基于init的启动系统被认为有效率不足的问">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>走进Linux之systemd启动过程 - cosomsap - 博客园</title>
+    <link id="favicon" rel="shortcut icon" href="https://common.cnblogs.com/favicon.ico?v=20200522" type="image/x-icon">
+    
+    <link rel="stylesheet" href="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+    <link id="MainCss" rel="stylesheet" href="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-chinaheart.css">
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-chinaheart-mobile.css">
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/swordxia/rss">
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/swordxia/rsd.xml">
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/swordxia/wlwmanifest.xml">
+    <script src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script async="" src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js"></script>
+    <script>
+        var currentBlogId = 188994;
+        var currentBlogApp = 'swordxia';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+        var skinName = 'ChinaHeart';
+    </script>
+    
+    
+    
+<link rel="preload" href="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2020052102.js" async=""></script></head>
+<body>
+    <a name="top"></a>
+    
+    
+<!--done-->
+<div id="home">
+<div id="header">
+	<div id="blogTitle">
+	<a href="https://www.cnblogs.com/swordxia/"></a>			
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/swordxia/">欧阳归来</a>
+</h1>
+<h2>
+
+</h2>
+
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+	<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+</li>
+	<li>
+<a href="https://home.cnblogs.com/u/swordxia/">园子</a></li>
+	<li>
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/swordxia/">
+首页</a>
+</li>
+	<li>
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+</li>
+	<li>
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/cosomsap">
+联系</a></li>
+	<li>
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+	<li>
+<a id="blog_nav_rss" class="menu" href="javascript:void(0)" data-rss="https://www.cnblogs.com/swordxia/rss/">
+订阅</a>
+	
+<a id="blog_nav_rss_image" href="https://www.cnblogs.com/swordxia/rss/">
+    <img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/xml.gif" alt="订阅">
+</a></li>
+</ul>
+
+
+
+		<div class="clear"></div>
+		<div class="blogStats">
+			
+			<!--done-->
+随笔- 
+109&nbsp;
+文章- 
+0&nbsp;
+评论- 
+2&nbsp;
+
+
+			
+						
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+
+<div id="main">
+	<div id="topicList">
+	<div class="forFlow">
+		<div id="post_detail">
+<!--done-->
+<div id="topics">
+	<div class="post">
+		<h1 class="postTitle">
+			
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/swordxia/p/4521428.html">走进Linux之systemd启动过程</a>
+
+		</h1>
+		<div class="clear"></div>
+		<div class="postBody">
+			
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <p>Linux系统的启动方式有点复杂，而且总是有需要优化的地方。传统的Linux系统启动过程主要由著名的init进程（也被称为SysV
+ init启动系统）处理，而基于init的启动系统被认为有效率不足的问题，systemd是Linux系统机器的另一种启动方式，宣称弥补了以<a href="http://0pointer.de/blog/projects/self-documented-boot.html">传统Linux SysV init</a>为
+ 基础的系统的缺点。在这里我们将着重讨论systemd的特性和争议，但是为了更好地理解它，也会看一下通过传统的以SysV 
+init为基础的系统的Linux启动过程是什么样的。友情提醒一下，systemd仍然处在测试阶段，而未来发布的Linux操作系统也正准备用 
+systemd启动管理程序替代当前的启动过程（LCTT 译注：截止到本文发表，主流的Linux发行版已经有很多采用了 systemd）。</p>
+<h3 id="toc_1">理解Linux启动过程</h3>
+<p>在我们打开Linux电脑的电源后第一个启动的进程就是init。分配给init进程的PID是1。它是系统其他所有进程的父进程。当一台 
+Linux电脑启动后，处理器会先在系统存储中查找BIOS，之后BIOS会检测系统资源然后找到第一个引导设备，通常为硬盘，然后会查找硬盘的主引导记
+ 录（MBR），然后加载到内存中并把控制权交给它，以后的启动过程就由MBR控制。</p>
+<p>主引导记录会初始化引导程序（Linux上有两个著名的引导程序，GRUB和LILO，80%的Linux系统在用GRUB引导程序），这个时候 
+GRUB或LILO会加载内核模块。内核会马上查找/sbin下的“init”程序并执行它。从这里开始init成为了Linux系统的父进程。init
+ 
+读取的第一个文件是/etc/inittab，通过它init会确定我们Linux操作系统的运行级别。它会从文件/etc/fstab里查找分区表信息
+ 
+然后做相应的挂载。然后init会启动/etc/init.d里指定的默认启动级别的所有服务/脚本。所有服务在这里通过init一个一个被初始化。在这
+ 个过程里，init每次只启动一个服务，所有服务/守护进程都在后台执行并由init来管理。</p>
+<p>关机过程差不多是相反的过程，首先init停止所有服务，最后阶段会卸载文件系统。</p>
+<p>以上提到的启动过程有一些不足的地方。而用一种更好的方式来替代传统init的需求已经存在很长时间了。也产生了许多替代方案。其中比较著名的有Upstart，Epoch，Muda和Systemd。而Systemd获得最多关注并被认为是目前最佳的方案。</p>
+<h3 id="toc_2">理解Systemd</h3>
+<p>开发Systemd的主要目的就是减少系统引导时间和计算开销。Systemd（系统管理守护进程），最开始以GNU 
+GPL协议授权开发，现在已转为使用GNU 
+LGPL协议，它是如今讨论最热烈的引导和服务管理程序。如果你的Linux系统配置为使用Systemd引导程序，它取替传统的SysV 
+init，启动过程将交给systemd处理。Systemd的一个核心功能是它同时支持SysV init的后开机启动脚本。</p>
+<p>Systemd引入了并行启动的概念，它会为每个需要启动的守护进程建立一个套接字，这些套接字对于使用它们的进程来说是抽象的，这样它们可以允许
+ 
+不同守护进程之间进行交互。Systemd会创建新进程并为每个进程分配一个控制组（cgroup）。处于不同控制组的进程之间可以通过内核来互相通信。<a href="http://0pointer.de/blog/projects/self-documented-boot.html">systemd处理开机启动进程</a>的方式非常漂亮，和传统基于init的系统比起来优化了太多。让我们看下Systemd的一些核心功能。</p>
+<ul>
+<li>和init比起来引导过程简化了很多</li>
+<li>Systemd支持并发引导过程从而可以更快启动</li>
+<li>通过控制组来追踪进程，而不是PID</li>
+<li>优化了处理引导过程和服务之间依赖的方式</li>
+<li>支持系统快照和恢复</li>
+<li>监控已启动的服务；也支持重启已崩溃服务</li>
+<li>包含了systemd-login模块用于控制用户登录</li>
+<li>支持加载和卸载组件</li>
+<li>低内存使用痕迹以及任务调度能力</li>
+<li>记录事件的Journald模块和记录系统日志的syslogd模块</li>
+</ul>
+<p>Systemd同时也清晰地处理了系统关机过程。它在/usr/lib/systemd/目录下有三个脚本，分别叫systemd- 
+halt.service，systemd-poweroff.service，systemd-reboot.service。这几个脚本会在用户选择
+ 关机，重启或待机时执行。在接收到关机事件时，systemd首先卸载所有文件系统并停止所有内存交换设备，断开存储设备，之后停止所有剩下的进程。</p>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203724enh95nh9idhkyglc.json" alt=""></p>
+<h3 id="toc_3">Systemd结构概览</h3>
+<p>让我们看一下Linux系统在使用systemd作为引导程序时的开机启动过程的结构性细节。为了简单，我们将在下面按步骤列出来这个过程：</p>
+<p><strong>1.</strong> 当你打开电源后电脑所做的第一件事情就是BIOS初始化。BIOS会读取引导设备设定，定位并传递系统控制权给MBR（假设硬盘是第一引导设备）。</p>
+<p><strong>2.</strong> 
+MBR从Grub或LILO引导程序读取相关信息并初始化内核。接下来将由Grub或LILO继续引导系统。如果你在grub配置文件里指定了 
+systemd作为引导管理程序，之后的引导过程将由systemd完成。Systemd使用“target”来处理引导和服务管理过程。这些 
+systemd里的“target”文件被用于分组不同的引导单元以及启动同步进程。</p>
+<p><strong>3.</strong> systemd执行的第一个目标是<strong>default.target</strong>。但实际上default.target是指向<strong>graphical.target</strong>的
+ 软链接。Linux里的软链接用起来和Windows下的快捷方式一样。文件Graphical.target的实际位置是/usr/lib 
+/systemd/system/graphical.target。在下面的截图里显示了graphical.target文件的内容。</p>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203329njlvc2p3c12el22p.json" alt=""></p>
+<p><strong>4.</strong> 在这个阶段，会启动<strong>multi-user.target</strong>而这个target将自己的子单元放在目录“/etc/systemd/system/multi-user.target.wants”里。这个target为多用户支持设定系统环境。非root用户会在这个阶段的引导过程中启用。防火墙相关的服务也会在这个阶段启动。</p>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203329k5cv7y6cl6rsfofz.json" alt=""></p>
+<p>"multi-user.target"会将控制权交给另一层“<strong>basic.target</strong>”。</p>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203330e173g84w17qkg3kc.json" alt=""></p>
+<p><strong>5.</strong> "basic.target"单元用于启动普通服务特别是图形管理服务。它通过/etc/systemd/system/basic.target.wants目录来决定哪些服务会被启动，basic.target之后将控制权交给<strong>sysinit.target</strong>.</p>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203330av1cz6zs3us8cyzs.json" alt=""></p>
+<p><strong>6.</strong> "sysinit.target"会启动重要的系统服务例如系统挂载，内存交换空间和设备，内核补充选项等等。sysinit.target在启动过程中会传递给<strong>local-fs.target</strong>。这个target单元的内容如下面截图里所展示。</p>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203331k66nojnty66466na.json" alt=""></p>
+<p><strong>7.</strong> local-fs.target，这个target单元不会启动用户相关的服务，它只处理底层核心服务。这个target会根据/etc/fstab和/etc/inittab来执行相关操作。</p>
+<h3 id="toc_4">系统引导性能分析</h3>
+<p>Systemd提供了工具用于识别和定位引导相关的问题或性能影响。<strong>Systemd-analyze</strong>是一个内建的命令，可以用来检测引导过程。你可以找出在启动过程中出错的单元，然后跟踪并改正引导组件的问题。在下面列出一些常用的systemd-analyze命令。</p>
+<p><strong>systemd-analyze time</strong> 用于显示内核和普通用户空间启动时所花的时间。</p>
+<ol class="linenums">
+<li class="L0"><code><span class="pln">$ systemd<span class="pun">-<span class="pln">analyze time</span></span></span></code></li>
+<li class="L1"><code></code></li>
+<li class="L2"><code><span class="typ">Startup<span class="pln"> finished <span class="kwd">in<span class="pln"> <span class="lit">1440ms<span class="pln"> <span class="pun">(<span class="pln">kernel<span class="pun">)<span class="pln"> <span class="pun">+<span class="pln"> <span class="lit">3444ms<span class="pln"> <span class="pun">(<span class="pln">userspace<span class="pun">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></code></li>
+</ol>
+<p><strong>systemd-analyze blame</strong> 会列出所有正在运行的单元，按从初始化开始到当前所花的时间排序，通过这种方式你就知道哪些服务在引导过程中要花较长时间来启动。</p>
+<ol class="linenums">
+<li class="L0"><code><span class="pln">$ systemd<span class="pun">-<span class="pln">analyze blame</span></span></span></code></li>
+<li class="L1"><code></code></li>
+<li class="L2"><code><span class="lit">2001ms<span class="pln"> mysqld<span class="pun">.<span class="pln">service</span></span></span></span></code></li>
+<li class="L3"><code><span class="lit">234ms<span class="pln"> httpd<span class="pun">.<span class="pln">service</span></span></span></span></code></li>
+<li class="L4"><code><span class="lit">191ms<span class="pln"> vmms<span class="pun">.<span class="pln">service</span></span></span></span></code></li>
+</ol>
+<p><strong>systemd-analyze verify</strong> 显示在所有系统单元中是否有语法错误。</p>
+<p><strong>systemd-analyze plot</strong> 可以用来把整个引导过程写入一个SVG格式文件里。整个引导过程非常长不方便阅读，所以通过这个命令我们可以把输出写入一个文件，之后再查看和分析。下面这个命令就是做这个。</p>
+<ol class="linenums">
+<li class="L0"><code><span class="pln">systemd<span class="pun">-<span class="pln">analyze plot <span class="pun">&gt;<span class="pln"> boot<span class="pun">.<span class="pln">svg</span></span></span></span></span></span></span></code></li>
+</ol>
+<h3 id="toc_5">Systemd的争议</h3>
+<p>Systemd并没有幸运地获得所有人的青睐，一些专家和管理员对于它的工作方式和开发有不同意见。根据对于Systemd的批评，它不是“类 
+Unix”方式因为它试着替换一些系统服务。一些专家也不喜欢使用二进制配置文件的想法。据说编辑systemd配置非常困难而且没有一个可用的图形工 
+具。</p>
+<h3 id="toc_6">如何在Ubuntu 14.04和12.04上测试Systemd</h3>
+<p>本来，Ubuntu决定从Ubuntu 16.04 LTS开始使用Systemd来替换当前的引导过程。Ubuntu 16.04预计在2016年4月发布，但是考虑到Systemd的流行和需求，刚刚发布的<strong>Ubuntu 15.04</strong>采
+ 用它作为默认引导程序。另外，Ubuntu 14.04 Trusty Tahr和Ubuntu 12.04 Precise 
+Pangolin的用户可以在他们的机器上测试Systemd。测试过程并不复杂，你所要做的只是把相关的PPA包含到系统中，更新仓库并升级系统。</p>
+<p><strong>声明</strong>：请注意它仍然处于Ubuntu的测试和开发阶段。升级测试包可能会带来一些未知错误，最坏的情况下有可能损坏你的系统配置。请确保在尝试升级前已经备份好重要数据。</p>
+<p>在终端里运行下面的命令来添加PPA到你的Ubuntu系统里：</p>
+<ol class="linenums">
+<li class="L0"><code><span class="pln">sudo add<span class="pun">-<span class="pln">apt<span class="pun">-<span class="pln">repository ppa<span class="pun">:<span class="pln">pitti<span class="pun">/<span class="pln">systemd</span></span></span></span></span></span></span></span></span></code></li>
+</ol>
+<p>你将会看到警告信息因为我们尝试使用临时/测试PPA，而它们是不建议用于实际工作机器上的。</p>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203331gq30tzrtjo23tq3r.json" alt=""></p>
+<p>然后运行下面的命令更新APT包管理仓库。</p>
+<ol class="linenums">
+<li class="L0"><code><span class="pln">sudo apt<span class="pun">-<span class="kwd">get<span class="pln"> update</span></span></span></span></code></li>
+</ol>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203332uzqvf52rqfipfd2a.json" alt=""></p>
+<p>运行下面的命令升级系统。</p>
+<ol class="linenums">
+<li class="L0"><code><span class="pln">sudo apt<span class="pun">-<span class="kwd">get<span class="pln"> dist<span class="pun">-<span class="pln">upgrade</span></span></span></span></span></span></code></li>
+</ol>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203332aisj9qis2bs2e9me.json" alt=""></p>
+<p>就这些，你应该已经可以在你的Ubuntu系统里看到Systemd配置文件了，打开/lib/systemd/目录可以看到这些文件。</p>
+<p>好吧，现在让我们编辑一下grub配置文件指定systemd作为默认引导程序。可以使用Gedit文字编辑器编辑grub配置文件。</p>
+<ol class="linenums">
+<li class="L0"><code><span class="pln">sudo gedit <span class="pun">/<span class="pln">etc<span class="pun">/<span class="kwd">default<span class="pun">/<span class="pln">grub</span></span></span></span></span></span></span></code></li>
+</ol>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203333vrrl22jpktsrxljh.json" alt=""></p>
+<p>在文件里修改GRUB<em>CMDLINE</em>LINUX_DEFAULT项，设定它的参数为：“<strong>init=/lib/systemd/systemd</strong>”</p>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203334udokzqhbzrqw7kbl.json" alt=""></p>
+<p>就这样，你的Ubuntu系统已经不再使用传统的引导程序了，改为使用Systemd管理器。重启你的机器然后查看systemd引导过程吧。</p>
+<p><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/203337oocokqr0rrd7g343.json" alt=""></p>
+<h3 id="toc_7">结论</h3>
+<p>Systemd毫无疑问为改进Linux引导过程前进了一大步；它包含了一套漂亮的库和守护进程配合工作来优化系统引导和关闭过程。许多Linux
+ 发行版正准备将它作为自己的正式引导程序。在以后的Linux发行版中，我们将有望看到systemd开机。但是另一方面，为了获得成功并广泛应 
+用，systemd仍需要认真处理批评意见。</p>
+<hr>
+<p>via: <a href="http://linoxide.com/linux-how-to/systemd-boot-process/">http://linoxide.com/linux-how-to/systemd-boot-process/</a></p>
+<p>作者：<a href="http://linoxide.com/author/arunrz/">Aun Raza</a> 译者：<a href="https://github.com/zpl1025">zpl1025</a> 校对：<a href="https://github.com/wxy">wxy</a></p>
+<p>本文由 <a href="https://github.com/LCTT/TranslateProject">LCTT</a> 原创翻译，<a href="http://linux.cn/">Linux中国</a> 荣誉推出</p>
+<p>来源：<a href="https://linux.cn/article-5457-1.html">https://linux.cn/article-5457-1.html</a></p>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block"><div id="BlogPostCategory">
+    分类: 
+            <a href="https://www.cnblogs.com/swordxia/category/602088.html" target="_blank">Linux</a></div>
+<div id="EntryTag">
+    标签: 
+            <a href="https://www.cnblogs.com/swordxia/tag/Linux/">Linux</a>,             <a href="https://www.cnblogs.com/swordxia/tag/systemd/">systemd</a>,             <a href="https://www.cnblogs.com/swordxia/tag/%E5%90%AF%E5%8A%A8/">启动</a></div>
+
+    <div id="blog_post_info">
+<div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(4521428,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+        <a id="green_channel_follow" onclick="follow('0736a8ed-85ef-e311-8d02-90b11c0b17d6');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/swordxia/" target="_blank"><img src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/sample_face.gif" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/swordxia/">cosomsap</a><br>
+            <a href="https://home.cnblogs.com/u/swordxia/followees/">关注 - 1</a><br>
+            <a href="https://home.cnblogs.com/u/swordxia/followers/">粉丝 - 36</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('0736a8ed-85ef-e311-8d02-90b11c0b17d6');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(4521428,'Digg')">
+        <span class="diggnum" id="digg_count">2</span>
+    </div>
+    <div class="buryit" onclick="votePost(4521428,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+    <div class="clear"></div>
+    <div id="post_next_prev">
+
+    <a href="https://www.cnblogs.com/swordxia/p/4502908.html" class="p_n_p_prefix">« </a> 上一篇：    <a href="https://www.cnblogs.com/swordxia/p/4502908.html" title="发布于 2015-05-14 11:36">11个让你吃惊的 Linux 终端命令</a>
+    <br>
+    <a href="https://www.cnblogs.com/swordxia/p/4521444.html" class="p_n_p_prefix">» </a> 下一篇：    <a href="https://www.cnblogs.com/swordxia/p/4521444.html" title="发布于 2015-05-22 09:08">Linux有问必答：如何在Linux中修改环境变量PATH</a>
+
+</div>
+</div>
+		</div>
+		<div class="postDesc">posted @ 
+<span id="post-date">2015-05-22 08:58</span>&nbsp;
+<a href="https://www.cnblogs.com/swordxia/">cosomsap</a>&nbsp;
+阅读(<span id="post_view_count">9920</span>)&nbsp;
+评论(<span id="post_comment_count">0</span>)&nbsp;
+<a href="https://i.cnblogs.com/EditPosts.aspx?postid=4521428" rel="nofollow">编辑</a>&nbsp;
+<a href="javascript:void(0)" onclick="AddToWz(4521428);return false;">收藏</a></div>
+	</div>
+	
+	
+</div><!--end: topics 文章、评论容器-->
+<script src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/highlight.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 188994, cb_blogApp = 'swordxia', cb_blogUserGuid = '0736a8ed-85ef-e311-8d02-90b11c0b17d6';
+    var cb_entryId = 4521428, cb_entryCreatedDate = '2015-05-22 08:58', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+    loadSideColumnAd();
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container" style="visibility: visible;"><div class="login_tips">
+    注册用户登录后才能发表评论，请 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a>
+     或 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，
+    <a href="https://www.cnblogs.com/">访问</a> 网站首页。
+</div></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"><a href="https://workbench.aliyun.com/camp?spm=a1z389.11499242.0.0.65452413tQ3COu&amp;utm_content=g_1000132392" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-阿里云-云开发平台')">【推荐】全面上云时代你的开发方式已过时，快来免费体验阿里云云开发平台</a><br><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-ucancode')">【推荐】超50万行VC++源码: 大型组态工控、电力仿真CAD与GIS源码库</a><br><a href="https://www.wenjuan.com/s/3uIjeq0/" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-博客园问卷调查')">【推荐】了解你才能更懂你，博客园首发问卷调查，助力社区新升级</a><br><a href="https://fineui.com/" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-FineUI')">【推荐】12年经典 UI 控件库 FineUI，支持 ASP.NET Core 3.1</a><br></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="%E8%B5%B0%E8%BF%9BLinux%E4%B9%8Bsystemd%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%20-%20cosomsap%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CPWJx4Oi6ukCFUGzlgodf8QPbQ"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+    </div>
+    <div id="under_post_news"><div class="recomm-block"><b>相关博文：</b><br>·  <a title="CentOS 7 学习笔记（二）systemd" href="https://www.cnblogs.com/limt/p/4521545.html" target="_blank" onclick="clickRecomItmem(4521545)">CentOS 7 学习笔记（二）systemd</a><br>·  <a title="Centos7新特性——systemd取代init管理服务" href="https://www.cnblogs.com/tangxuliang/p/9242385.html" target="_blank" onclick="clickRecomItmem(9242385)">Centos7新特性——systemd取代init管理服务</a><br>·  <a title="centos7启动过程及systemd详细说明" href="https://www.cnblogs.com/mfyang/p/7275966.html" target="_blank" onclick="clickRecomItmem(7275966)">centos7启动过程及systemd详细说明</a><br>·  <a title="[systemd]Linux系统启动之systemd" href="https://www.cnblogs.com/aaronLinux/p/6861425.html" target="_blank" onclick="clickRecomItmem(6861425)">[systemd]Linux系统启动之systemd</a><br>·  <a title="linux问题-CentOS7和以往版本的变化" href="https://www.cnblogs.com/xccnblogs/p/4886435.html" target="_blank" onclick="clickRecomItmem(4886435)">linux问题-CentOS7和以往版本的变化</a><br>»  <a target="_blank" href="https://recomm.cnblogs.com/blogpost/4521428">更多推荐...</a></div></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CPaJx4Oi6ukCFUGzlgodf8QPbQ"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+    </div>
+    <div id="under_post_kb">
+<div class="itnews c_ad_block">
+    <b>最新 IT 新闻</b>:
+    <br>
+ ·              <a href="https://news.cnblogs.com/n/663495/" target="_blank">Zoom漏洞：超50万个Zoom账户泄露并在Dark Web出售</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/663494/" target="_blank">微软中国CTO韦青：“新基建”下企业如何做数字化转型？</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/663493/" target="_blank">华为P40 Pro+登场开售：100倍双目变焦有多强？样张实测给你看</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/663492/" target="_blank">GQ报道 | 罗永浩：薛定谔的理想主义</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/663491/" target="_blank">阅文新合同破顽疾，网文行业如何走入下半程</a>
+            <br>
+    » <a href="https://news.cnblogs.com/" title="IT 新闻" target="_blank">更多新闻...</a>
+</div></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        deliverBigBanner();
+setTimeout(function() { incrementViewCount(cb_entryId); }, 50);        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div></div>
+
+
+	</div><!--end: forFlow -->
+	</div><!--end: topicList 文章列表容器-->
+
+	<div id="sideBar">
+		<div id="sideBarMain">
+			
+<div id="sidebar_news" class="newsItem"><!--done-->
+<div class="newsItem">
+<h3 class="catListTitle">公告</h3>
+	
+<div id="blog-news">
+    
+    <div id="profile_block">
+        昵称：
+        <a href="https://home.cnblogs.com/u/swordxia/">
+            cosomsap
+        </a>
+        <br>
+        园龄：
+        <a href="https://home.cnblogs.com/u/swordxia/" title="入园时间：2014-06-09">
+            5年11个月
+        </a>
+        <br>
+        粉丝：
+        <a href="https://home.cnblogs.com/u/swordxia/followers/">
+            36
+        </a>
+        <br>
+        关注：
+        <a href="https://home.cnblogs.com/u/swordxia/followees/">
+            1
+        </a>
+        <div id="p_b_follow">
+<a href="javascript:void(0)" onclick="follow('0736a8ed-85ef-e311-8d02-90b11c0b17d6')">+加关注</a></div>
+        <script>getFollowStatus('0736a8ed-85ef-e311-8d02-90b11c0b17d6');</script>
+    </div>
+</div>
+</div>
+
+</div>
+
+<div id="sidebar_ad"></div>
+			<div id="calendar"><div id="blog-calendar" style="">
+
+<table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0" border="0">
+    <tbody>
+        <tr>
+            <td colspan="7">
+                <table class="CalTitle" cellspacing="0" border="0">
+                    <tbody>
+                        <tr>
+                            <td class="CalNextPrev">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar('2020/05/05'); return false;">&lt;</a>
+                            </td>
+                            <td align="center">2020年6月</td>
+                            <td class="CalNextPrev" align="right">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar('2020/07/05'); return false;">&gt;</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+                    <th class="CalDayHeader" abbr="日" scope="col" align="center">日</th>
+                    <th class="CalDayHeader" abbr="一" scope="col" align="center">一</th>
+                    <th class="CalDayHeader" abbr="二" scope="col" align="center">二</th>
+                    <th class="CalDayHeader" abbr="三" scope="col" align="center">三</th>
+                    <th class="CalDayHeader" abbr="四" scope="col" align="center">四</th>
+                    <th class="CalDayHeader" abbr="五" scope="col" align="center">五</th>
+                    <th class="CalDayHeader" abbr="六" scope="col" align="center">六</th>
+        </tr>
+            <tr>
+                            <td class="CalOtherMonthDay" align="center">31</td>
+                        <td class="" align="center">
+                            1
+                        </td>
+                        <td class="" align="center">
+                            2
+                        </td>
+                        <td class="" align="center">
+                            3
+                        </td>
+                        <td class="" align="center">
+                            4
+                        </td>
+                        <td class="CalTodayDay" align="center">
+                            5
+                        </td>
+                    <td class="CalWeekendDay" align="center">
+                        6
+                    </td>
+            </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            7
+                        </td>
+                            <td class="" align="center">
+                                8
+                            </td>
+                            <td class="" align="center">
+                                9
+                            </td>
+                            <td class="" align="center">
+                                10
+                            </td>
+                            <td class="" align="center">
+                                11
+                            </td>
+                            <td class="" align="center">
+                                12
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            13
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            14
+                        </td>
+                            <td class="" align="center">
+                                15
+                            </td>
+                            <td class="" align="center">
+                                16
+                            </td>
+                            <td class="" align="center">
+                                17
+                            </td>
+                            <td class="" align="center">
+                                18
+                            </td>
+                            <td class="" align="center">
+                                19
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            20
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            21
+                        </td>
+                            <td class="" align="center">
+                                22
+                            </td>
+                            <td class="" align="center">
+                                23
+                            </td>
+                            <td class="" align="center">
+                                24
+                            </td>
+                            <td class="" align="center">
+                                25
+                            </td>
+                            <td class="" align="center">
+                                26
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            27
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            28
+                        </td>
+                            <td class="" align="center">
+                                29
+                            </td>
+                            <td class="" align="center">
+                                30
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                1
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                2
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                3
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            4
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalOtherMonthDay" align="center">
+                            5
+                        </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                6
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                7
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                8
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                9
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                10
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            11
+                        </td>
+                </tr>
+    </tbody>
+</table></div><script>loadBlogDefaultCalendar();</script></div>
+			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn">
+<!-- 搜索 -->
+<div id="sidebar_search" class="sidebar-block">
+    <div id="sidebar_search" class="mySearch">
+        <h3 class="catListTitle">搜索</h3>
+        <div id="sidebar_search_box">
+            <div id="widget_my_zzk" class="div_my_zzk">
+                <input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk">
+            </div>
+            <div id="widget_my_google" class="div_my_zzk">
+                <input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 常用链接 -->
+<div id="sidebar_shortcut" class="sidebar-block">
+    <div class="catListLink">
+<h3 class="catListTitle">
+常用链接
+</h3>
+<ul>
+		<li>
+
+<a href="https://www.cnblogs.com/swordxia/p/" title="我的博客的随笔列表">我的随笔</a>
+</li>
+		<li>
+
+<a href="https://www.cnblogs.com/swordxia/MyComments.html" title="我的发表过的评论列表">我的评论</a>
+</li>
+		<li>
+
+<a href="https://www.cnblogs.com/swordxia/OtherPosts.html" title="我评论过的随笔列表">我的参与</a>
+</li>
+		<li>
+
+<a href="https://www.cnblogs.com/swordxia/RecentComments.html" title="我的博客的评论列表">最新评论</a>
+</li>
+		<li>
+
+<a href="https://www.cnblogs.com/swordxia/tag/" title="我的博客的标签列表">我的标签</a>
+</li>
+
+<li><a id="itemListLink" onclick="this.blur();WarpClass('itemListLink', 'itemListLin_con');return false;" href="#">更多链接</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+<ul>
+
+</ul>
+</div>
+</div>
+
+
+</div>
+
+<!-- 最新随笔 -->
+
+
+
+<!-- 我的标签 -->
+<div id="sidebar_toptags" class="sidebar-block">
+    <div class="catListTag">
+<h3 class="catListTitle">我的标签</h3>
+<ul>
+
+        <li>
+            <a href="https://www.cnblogs.com/swordxia/tag/Linux/">Linux</a>(44)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/swordxia/tag/LNMP/">LNMP</a>(6)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/swordxia/tag/LAMP/">LAMP</a>(5)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/swordxia/tag/%E7%9B%91%E6%8E%A7/">监控</a>(5)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/swordxia/tag/Zabbix/">Zabbix</a>(4)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/swordxia/tag/suse/">suse</a>(3)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/swordxia/tag/%E5%B7%A5%E5%85%B7/">工具</a>(3)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/swordxia/tag/%E5%91%BD%E4%BB%A4/">命令</a>(3)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/swordxia/tag/CentOS/">CentOS</a>(3)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/swordxia/tag/Mysql/">Mysql</a>(3)
+        </li>
+    <li>
+        <a href="https://www.cnblogs.com/swordxia/tag/">更多</a>
+    </li>
+
+</ul>
+</div>
+
+
+</div>
+
+<!-- 积分与排名 -->
+
+
+<!-- 随笔分类、随笔档案、文章分类、新闻分类、相册、链接 -->
+<div id="sidebar_categories">
+    
+<div class="catListPostCategory">
+<h3 class="catListTitle">
+
+随笔分类
+
+
+</h3>
+
+
+<ul>
+
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/602088.html" rel="" target="">
+    Linux(51)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/796268.html" rel="" target="">
+    MYSQL(7)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/695740.html" rel="" target="">
+    python(2)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/732320.html" rel="" target="">
+    SAP(3)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/746599.html" rel="" target="">
+    Zabbix(5)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/588349.html" rel="" target="">
+    安全(3)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/588339.html" rel="" target="">
+    操作系统(6)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/588350.html" rel="" target="">
+    管理(7)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/597447.html" rel="" target="">
+    软件工程(7)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/588344.html" rel="" target="">
+    网络(12)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/598030.html" rel="" target="">
+    网站优化(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/588341.html" rel="" target="">
+    邮件服务器(9)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/category/588347.html" rel="" target="">
+    自动化运维(26)
+</a>
+ 
+</li>
+
+</ul>
+
+
+</div>
+<div class="catListPostArchive">
+<h3 class="catListTitle">
+
+随笔档案
+
+
+</h3>
+
+
+<ul>
+
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2018/05.html" rel="" target="">
+    2018年5月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2018/01.html" rel="" target="">
+    2018年1月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2017/12.html" rel="" target="">
+    2017年12月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2017/11.html" rel="" target="">
+    2017年11月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2017/10.html" rel="" target="">
+    2017年10月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2017/09.html" rel="" target="">
+    2017年9月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2017/08.html" rel="" target="">
+    2017年8月(3)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2017/04.html" rel="" target="">
+    2017年4月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2016/12.html" rel="" target="">
+    2016年12月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2016/11.html" rel="" target="">
+    2016年11月(3)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2016/10.html" rel="" target="">
+    2016年10月(2)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2016/08.html" rel="" target="">
+    2016年8月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2016/06.html" rel="" target="">
+    2016年6月(2)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2016/05.html" rel="" target="">
+    2016年5月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2016/03.html" rel="" target="">
+    2016年3月(3)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2016/01.html" rel="" target="">
+    2016年1月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2015/12.html" rel="" target="">
+    2015年12月(2)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2015/11.html" rel="" target="">
+    2015年11月(1)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2015/10.html" rel="" target="">
+    2015年10月(9)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2015/09.html" rel="" target="">
+    2015年9月(2)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2015/08.html" rel="" target="">
+    2015年8月(4)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2015/07.html" rel="" target="">
+    2015年7月(6)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2015/06.html" rel="" target="">
+    2015年6月(15)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2015/05.html" rel="" target="">
+    2015年5月(7)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2015/04.html" rel="" target="">
+    2015年4月(9)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2015/03.html" rel="" target="">
+    2015年3月(8)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2014/08.html" rel="" target="">
+    2014年8月(7)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2014/07.html" rel="" target="">
+    2014年7月(11)
+</a>
+ 
+</li>
+<li>
+<a href="https://www.cnblogs.com/swordxia/archive/2014/06.html" rel="" target="">
+    2014年6月(4)
+</a>
+ 
+</li>
+
+</ul>
+
+
+</div>
+
+
+</div>
+
+<!-- 最新评论 -->
+<div id="sidebar_recentcomments" class="sidebar-block">
+    <div class="catListComment">
+<h3 class="catListTitle">最新评论</h3>
+
+	<div class="RecentCommentBlock">
+        <ul>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/swordxia/p/4560456.html">1. Re:Linux网络统计工具/命令</a></li>
+                    <li class="recent_comment_body"><p>大佬，我可以将你的文章转载吗？会标记署名以及出处</p>
+</li>
+                    <li class="recent_comment_author">--少年强</li>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/swordxia/p/4440610.html">2. Re:国内无线频谱资源分配图集</a></li>
+                    <li class="recent_comment_body">谢谢分享</li>
+                    <li class="recent_comment_author">--J_Y</li>
+        </ul>
+    </div>
+</div>
+
+
+</div>
+
+
+
+<!-- 阅读排行榜 -->
+<div id="sidebar_topviewedposts" class="sidebar-block">
+    <div class="catListView">
+<h3 class="catListTitle">阅读排行榜</h3>
+	<div id="TopViewPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/swordxia/p/4968801.html">
+                            1. Windows server 2012 AD DS 搭建步骤(12526)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/swordxia/p/4616054.html">
+                            2. CentOS 6.5中linux grub修复(10995)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/swordxia/p/4521428.html">
+                            3. 走进Linux之systemd启动过程(9920)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/swordxia/p/4666231.html">
+                            4. 互联网扫描器 ZMap 完全手册(7971)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/swordxia/p/5591712.html">
+                            5. Zabbix3.x安装图解教程(7325)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+
+
+</div>
+
+<!-- 评论排行榜 -->
+<div id="sidebar_topcommentedposts" class="sidebar-block">
+    <div class="catListFeedback">
+<h3 class="catListTitle">评论排行榜</h3>
+	<div id="TopFeedbackPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/swordxia/p/4440610.html">
+                            1. 国内无线频谱资源分配图集(1)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/swordxia/p/4560456.html">
+                            2. Linux网络统计工具/命令(1)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+
+
+</div>
+
+<!-- 推荐排行榜 -->
+<div id="sidebar_topdiggedposts" class="sidebar-block">
+    
+<div id="topdigg_posts_wrap">
+    <div class="catListView">
+        <h3 class="catListTitle">推荐排行榜</h3>
+        <div id="TopDiggPostsBlock">
+            <ul style="word-break:break-all">
+                        <li>
+                            <a href="https://www.cnblogs.com/swordxia/p/7643934.html">
+                                1. 从苦逼到牛逼，详解Linux运维工程师的打怪升级之路(4)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/swordxia/p/4521428.html">
+                                2. 走进Linux之systemd启动过程(2)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/swordxia/p/4545448.html">
+                                3. 架构设计之如何评审架构设计说明书(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/swordxia/p/4666231.html">
+                                4. 互联网扫描器 ZMap 完全手册(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/swordxia/p/7379715.html">
+                                5. 自定义SAP用户密码规则(1)
+                            </a>
+                        </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</div></div>
+                    <script>loadBlogSideColumn();</script>
+			</div>
+			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	</div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer">
+	</div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+    
+
+
+</body></html>
