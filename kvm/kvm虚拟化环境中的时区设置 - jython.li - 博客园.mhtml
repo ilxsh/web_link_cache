@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="origin" />
+    <meta property="og:description" content="guest OS时间保持 kvm技术是全虚拟化，guest OS并不需要做修改就可以直接运行，然而在计时方面却存在问题，guest OS计时的一种方式是通过时钟中断计数，进而换算得到，但host产生的" />
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>kvm虚拟化环境中的时区设置 - jython.li - 博客园</title>
+    <link id="favicon" rel="shortcut icon" href="//common.cnblogs.com/favicon.ico?v=20200522" type="image/x-icon" />
+    
+    <link rel="stylesheet" href="/css/blog-common.min.css?v=OkWhT11pACV4T_PiDJL8x9WKPwjvEyWNCWQ475DeMM0" />
+    <link id="MainCss" rel="stylesheet" href="/skins/lessismore/bundle-lessismore.min.css?v=zbVMf2M2JAlJ02H61dM8SlvD_g-Qf1GNTSQ53ByHeUE" />
+    <link type="text/css" rel="stylesheet" href="https://www.cnblogs.com/jython/custom.css?v=CJTYCY8QLc4b7awJeIvc5saKM7Q=" />
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="/skins/lessismore/bundle-lessismore-mobile.min.css?v=Otzr_DUMhAugos8F7Z0b7x-ofHw1cMPe7pwCJG8K3rw" />
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/jython/rss" />
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/jython/rsd.xml" />
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/jython/wlwmanifest.xml" />
+    <script src="https://common.cnblogs.com/scripts/jquery-2.2.0.min.js"></script>
+    <script src="/js/blog-common.min.js?v=vV4imX1ebLq2xPxSzhr9B0eW28ml5Xc7CSXMptQoB78"></script>
+    <script>
+        var currentBlogId = 198288;
+        var currentBlogApp = 'jython';
+        var cb_enable_mathjax = true;
+        var isLogined = false;
+        var skinName = 'LessIsMore';
+    </script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+        tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']], processClass: 'math', processEscapes: true },
+        TeX: {
+        equationNumbers: { autoNumber: ['AMS'], useLabelIds: true },
+        extensions: ['extpfeil.js', 'mediawiki-texvc.js'],
+        Macros: {bm: "\\boldsymbol"}
+        },
+        'HTML-CSS': { linebreaks: { automatic: true } },
+        SVG: { linebreaks: { automatic: true } }
+        });
+    </script>
+    <script src="https://mathjax.cnblogs.com/2_7_5/MathJax.js?config=TeX-AMS-MML_HTMLorMML&amp;v=20200504"></script>
+    
+</head>
+<body>
+    <a name="top"></a>
+    
+    <div id="home">
+    <div id="header">
+        <div id="blogTitle">
+            
+<div class="title"><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/jython/">jython.li</a>
+</div>
+<div class="subtitle">
+OpenStack源码交流群: 538850354
+</div>
+
+        </div>
+        <div id="navigator">
+            
+<ul id="navList">
+    <li id="nav_sitehome"><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+</li>
+    <li id="nav_myhome">
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/jython/">
+首页</a>
+</li>
+    <li id="nav_newpost">
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+</li>
+    <li id="nav_contact">
+</li>
+    <li id="nav_rss">
+<a id="blog_nav_rss" class="menu" href="javascript:void(0)" data-rss="https://www.cnblogs.com/jython/rss/">
+订阅</a></li>
+    <li id="nav_admin">
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+</ul>
+
+            <div class="blogStats">
+                
+<span id="stats_post_count">随笔 - 
+20&nbsp;</span>
+<span id="stats_article_count">文章 - 
+0&nbsp;</span>
+<!-- <span id="stats-comment_count"></span> -->
+<span id="stats_comment_count">评论 - 
+2</span>
+            </div>
+        </div>
+    </div>
+    <div id="main">
+        <div id="mainContent">
+            <div class="forFlow">
+                <div id="post_detail">
+    <div id="topics">
+        <div class="post">
+            <h1 class="postTitle">
+                
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/jython/p/5396523.html">kvm虚拟化环境中的时区设置</a>
+
+            </h1>
+            <div class="clear"></div>
+            <div class="postBody">
+                
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <h3>guest OS时间保持</h3>
+<p>kvm技术是全虚拟化，guest OS并不需要做修改就可以直接运行，然而在计时方面却存在问题，guest OS计时的一种方式是通过时钟中断计数，进而换算得到，但host产生的时钟中断不能及时到达所有guest OS，因为guest OS中的中断并不是真正的硬件中断，它是由host注入的中断</p>
+<p>许多网络应用，web中的sessions验证等，都会调用系统时间，guest OS中若时间有误，则会引起程序出错，为此，kvm给guest vms提供了一个半虚拟化时钟(kvm-clock),在RHEL5.5及其以上版本中，都使用了kvm-clock作为默认时钟源，可以在guest 中使用下面命令查看是否使用了kvm-clock</p>
+<div class="cnblogs_code">
+<pre><span style="color: #0000ff;">cat</span> /sys/devices/system/clocksource/clocksource0/current_clocksource<br />kvm-clock</pre>
+</div>
+<p>在kvm-clock方式下，guest OS不能直接访问Host时钟，Host把系统时间写入一个guest可以读取的内存页，这样guest就可以读取此内存页设置自身硬件时间，但是Host并不是实时更新时间到此内存页，而是在发生一个vm event(vm关机，重启等)时才更新，因此此种方式也不能保持guest时间准确无误</p>
+<p>在继续之前，我们要先理解系统时间和硬件时间等概念</p>
+<h3>UTC时间 与 本地时间</h3>
+<p>UTC时间：又称世界标准时间、世界统一时间，UTC是以原子钟校准的，世界其它地区是以此为基准时间加上自己时区来设置其本地时间的</p>
+<p>本地时间：由于处在不同的时区，本地时间一般与UTC是不同的，换算方法就是</p>
+<div class="cnblogs_code">
+<pre>本地时间 = UTC + 时区 或 UTC = 本地时间 - 时区</pre>
+</div>
+<p>时区东为正，西为负，在中国，时区为东八区，也就是 +8区，本地时间都使用北京时间，在linux上显示就是 CST, 所以CST=UTC+(+8小时) 或 UTC=CST-(+8小时)</p>
+<p><em><span style="font-size: 12px;">（China Standard Time，中国标准时，注意美国的中部标准时Central Standard Time也缩写为CST）</span></em></p>
+<h3>系统时间 与 硬件时间</h3>
+<p>硬件时间:主板上BIOS中的时间，由主板电池供电来维持运行，系统开机时要读取这个时间，并根据它来设定系统时间（注意：系统启动时根据硬件时间设定系统时间的过程可能存在时区换算，根据/etc/localtime）</p>
+<p>系统时间: 就是我们执行 date 命令看到的时间，linux系统下所有的时间调用（除了直接访问硬件时间的命令）都是使用的这个时间。</p>
+<p>/etc/localtime 这个文件用来设置系统的时区，将 /usr/share/zoneinfo/ 中相应时区文件拷贝到/etc下并重命名为 localtime 即可修改时区设置(也可以使用tzselect命令修改)，而且这种修改对 date 命令是即时生效的。不论是 date 还是 hwclock 都会用到这个文件，系统会根据这个文件的时区设置来进行UTC和本地时间之间的换算。</p>
+<h3>libvirt中设置虚拟机硬件时钟</h3>
+<p>kvm虚拟机一般使用libvirt进行管理，在虚拟机配置的xml文件中，有关于虚拟机硬件时钟设置项</p>
+<div class="cnblogs_code">
+<pre>  <span style="color: #0000ff;">&lt;</span><span style="color: #800000;">clock </span><span style="color: #ff0000;">offset</span><span style="color: #0000ff;">='localtime'</span><span style="color: #0000ff;">&gt;</span>
+  <span style="color: #0000ff;">&lt;/</span><span style="color: #800000;">clock</span><span style="color: #0000ff;">&gt;</span></pre>
+</div>
+<p>clock的offset属性有"utc","localtime","timezone","variable"四个可选项</p>
+<p>如果guest OS是Linux系统，应该选用"utc"，guest OS在启动时便会向host同步一次utc时间，然后根据/etc/localtime中设置的时区，来计算系统时间</p>
+<p>如果guest OS是windows系统，则应该选用"localtime"，guest OS在启动时向host同步一次系统时间</p>
+<h3>集群环境</h3>
+<p>在虚拟机集群环境中，不能够只依赖kvm管理进程提供的计时功能，文章开头也提及这种计时并不很精确，而libvirt中配置的"clock offset"选项，是用于配置虚拟机硬件时钟，虚拟机中的系统时间还要再加上相应的时区换算得到，根据以上分析，集群环境多台虚拟机时间配置需要以下几步：</p>
+<ol>
+<li>libvirt中设置正确的"clock offset"</li>
+<li>虚拟机中设置正确的时区（/etc/localtime）</li>
+<li>搭建内部ntp服务器，每个五分钟进行一次时间同步</li>
+</ol>
+</div>
+<div id="MySignature"></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+    <div id="blog_post_info"></div>
+    <div class="clear"></div>
+    <div id="post_next_prev"></div>
+</div>
+            </div>
+            <div class="postDesc">posted @ 
+<span id="post-date">2016-04-19 15:48</span>&nbsp;
+<a href="https://www.cnblogs.com/jython/">jython.li</a>&nbsp;
+阅读(<span id="post_view_count">...</span>)&nbsp;
+评论(<span id="post_comment_count">...</span>)&nbsp;
+<a href="https://i.cnblogs.com/EditPosts.aspx?postid=5396523" rel="nofollow">编辑</a>&nbsp;
+<a href="javascript:void(0)" onclick="AddToWz(5396523);return false;">收藏</a></div>
+        </div>
+<script src="https://common.cnblogs.com/highlight/9.12.0/highlight.min.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 198288, cb_blogApp = 'jython', cb_blogUserGuid = '0d328513-a33d-e411-b908-9dcfd8948a71';
+    var cb_entryId = 5396523, cb_entryCreatedDate = '2016-04-19 15:48', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+    loadSideColumnAd();
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container"></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;"></div>
+    </div>
+    <div id="under_post_news"></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;"></div>
+    </div>
+    <div id="under_post_kb"></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        deliverBigBanner();
+setTimeout(function() { incrementViewCount(cb_entryId); }, 50);        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div>    </div>
+</div>
+            </div>
+        </div>
+
+        <div id="sideBar">
+            <div id="sideBarMain">
+                
+<div id="sidebar_news" class="newsItem">
+            <script>loadBlogNews();</script>
+</div>
+
+<div id="sidebar_ad"></div>
+                <div id="calendar"><div id="blog-calendar" style="display:none"></div></div>                
+                <script>loadBlogDefaultCalendar();</script>
+                <div id="leftcontentcontainer">
+                    <!-- begin:SingleColumn -->
+                    <div id="blog-sidecolumn"></div>
+                    <script>loadBlogSideColumn();</script>
+                    <!-- end:  SingleColumn -->
+                </div>
+            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <div class="clear"></div>
+    <div id="footer">
+        <!--done-->
+Copyright &copy; 2020 jython.li
+<br /><span id="poweredby">Powered by .NET Core on Kubernetes</span>
+
+    </div>
+</div>
+
+    
+</body>
+</html>

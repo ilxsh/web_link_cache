@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html xmlns:wb="https://open.weibo.com/wb" style="transform: none;" lang="zh-CN"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+<meta property="og:description" content="WireGuard 是 Jason A. Donenfeld 开发的开源VPN协议。目前支持Linux, macOS, Android 以及 OpenWrt。iOS 和 Windows 官方客户端还在开发，但第三方 Windows 客户端已经出现。WireGuard 被视为下一代VPN协议，用来替代OpenVPN，IPSec等VPN协议。">
+<meta property="og:type" content="acticle">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:site_name" content="Debian社区">
+<meta property="og:title" content="WireGuard简明介绍及使用指引">
+<meta property="og:url" content="https://www.debian.cn/archives/3631"> 
+<meta property="og:image" content="https://www.debian.cn/wp-content/uploads/2020/01/wireguard-perf.jpg">
+<link rel="profile" href="https://gmpg.org/xfn/11">
+<link rel="pingback" href="https://www.debian.cn/xmlrpc.php">
+<title>WireGuard简明介绍及使用指引 – Debian社区</title>
+<link rel="stylesheet" id="jquery.slimbox-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery.css" type="text/css" media="all">
+<link rel="stylesheet" id="dashicons-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/dashicons.css" type="text/css" media="all">
+<link rel="stylesheet" id="admin-bar-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/admin-bar.css" type="text/css" media="all">
+<link rel="stylesheet" id="wp-block-library-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/style.css" type="text/css" media="all">
+<link rel="stylesheet" id="bp-member-block-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/member.css" type="text/css" media="all">
+<link rel="stylesheet" id="bbp-default-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/bbpress.css" type="text/css" media="all">
+<link rel="stylesheet" id="bp-admin-bar-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/admin-bar_002.css" type="text/css" media="all">
+<link rel="stylesheet" id="bp-nouveau-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/buddypress.css" type="text/css" media="screen">
+<link rel="stylesheet" id="wp-syntax-css-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/wp-syntax.css" type="text/css" media="all">
+<link rel="stylesheet" id="prettify-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prettify.css" type="text/css" media="all">
+<link rel="stylesheet" id="begin-style-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/style_002.css" type="text/css" media="all">
+<link rel="stylesheet" id="fonts-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/fonts.css" type="text/css" media="all">
+<link rel="stylesheet" id="highlight-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/highlight.css" type="text/css" media="all">
+<link rel="stylesheet" id="bbpress-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/bbp.css" type="text/css" media="all">
+<link rel="stylesheet" id="tablepress-default-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/default.css" type="text/css" media="all">
+<link rel="stylesheet" id="jquery-ui-search-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery-ui.css" type="text/css" media="all">
+<link rel="stylesheet" id="buddypress-global-search-css" href="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/buddypress-global-search.css" type="text/css" media="all">
+<script type="text/javascript" async="" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/analytics.js"></script><script src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/hm.js"></script><script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery_003.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/widget-members.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery-query.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery-cookie.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery-scroll-to.js"></script>
+<!--[if lt IE 9]>
+<script type='text/javascript' src='https://www.debian.cn/wp-content/themes/begin/js/html5.js?ver=2020/03/05'></script>
+<![endif]-->
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/owl.js"></script>
+<link rel="canonical" href="https://www.debian.cn/archives/3631">
+
+	<script type="text/javascript">var ajaxurl = 'https://www.debian.cn/wp-admin/admin-ajax.php';</script>
+
+<script type="text/javascript">
+	jQuery(document).ready(function($){	
+	    var select = $('a[href$=".bmp"],a[href$=".gif"],a[href$=".jpg"],a[href$=".jpeg"], a[href$=".png"],a[href$=".BMP"],a[href$=".GIF"],a[href$=".JPG"],a[href$=".JPEG"],a[href$=".PNG"]');
+		select.slimbox();
+	});
+</script>
+<style>@media screen and (min-width: 1600px) {#content, .header-sub, .nav-top, #top-menu, #navigation-top, #mobile-nav, #main-search, .bread, .footer-widget, .links-box, .g-col, .links-group #links, .logo-box, #menu-container-o {width: 90%%;}@media screen and (max-width: 90%%) {#content, .bread, .footer-widget, .links-box, #top-menu, #navigation-top, .nav-top, #main-search, #search-main, #mobile-nav, .header-sub, .bread, .g-col, .links-group #links {width: 98%;}}}</style><style type="text/css" media="print">#wpadminbar { display:none; }</style>
+	<style type="text/css" media="screen">
+	html { margin-top: 32px !important; }
+	* html body { margin-top: 32px !important; }
+	@media screen and ( max-width: 782px ) {
+		html { margin-top: 46px !important; }
+		* html body { margin-top: 46px !important; }
+	}
+</style>
+	<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?3aff0c2fd782479e7c1fc2ec4cc31f17";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<style>.theiaStickySidebar:after {content: ""; display: table; clear: both;}</style><style>.theiaStickySidebar:after {content: ""; display: table; clear: both;}</style><script charset="UTF-8" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/bundle.js"></script><script charset="UTF-8" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/iframeWidget.js"></script></head>
+<body class="bp-nouveau post-template-default single single-post postid-3631 single-format-standard admin-bar no-customize-support js" ontouchstart="" style="transform: none;"><iframe style="display: none;" id="sina_anywhere_iframe"></iframe>
+<div id="page" class="hfeed site" style="transform: none;">
+	<header id="masthead" class="site-header da site-header-s">
+	<div id="header-main" class="header-main sliding headroom--top headroom--not-bottom">
+				<nav id="header-top" class="header-top da">
+			<div class="nav-top">
+			<div id="user-profile">
+					<div class="user-login">欢迎光临！</div>
+			
+						<div class="nav-set">
+			 	<div class="nav-login">
+					<div class="show-layer" data-show-layer="login-layer" role="button"><i class="be be-timerauto"></i>登录</div>
+				</div>
+				<div class="clear"></div>
+			</div>
+			
+	<div class="clear"></div>
+</div>	
+	<div class="menu-%e4%b8%bb%e5%af%bc%e8%88%aa%e8%8f%9c%e5%8d%95-container"><ul id="menu-%e4%b8%bb%e5%af%bc%e8%88%aa%e8%8f%9c%e5%8d%95" class="top-menu sf-js-enabled sf-arrows"><li id="menu-item-3264" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-3264"><a href="https://www.debian.cn/category/uncategorized/">综合分类</a></li>
+<li id="menu-item-3007" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-3007"><a href="https://www.debian.cn/category/distribution/">发行版</a></li>
+<li id="menu-item-3274" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-3274"><a href="https://www.debian.cn/category/cloud/">云计算</a></li>
+<li id="menu-item-3014" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-has-children menu-item-3014"><a href="https://www.debian.cn/category/developer/" class="sf-with-ul">开发者</a>
+<ul class="sub-menu" style="display: none;">
+	<li id="menu-item-3009" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-3009"><a href="https://www.debian.cn/category/midware/">中间件</a></li>
+	<li id="menu-item-3279" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-3279"><a href="https://www.debian.cn/category/database/">数据库</a></li>
+	<li id="menu-item-3015" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-3015"><a href="https://www.debian.cn/category/os/">操作系统</a></li>
+	<li id="menu-item-3008" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-3008"><a href="https://www.debian.cn/category/arch/">运维架构</a></li>
+</ul>
+</li>
+<li id="menu-item-3012" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-3012"><a href="https://www.debian.cn/category/security/">安全</a></li>
+<li id="menu-item-3020" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-3020"><a href="https://www.debian.cn/category/webmasters/">站长工具</a></li>
+</ul></div></div>
+		</nav><!-- #top-header -->
+				<div id="menu-container" class="da">
+			<div id="navigation-top" class="bgt">
+				<span class="nav-search"></span>												<div class="logo-sites">
+												<p class="site-title"><a href="https://www.debian.cn/" title="Debian社区" rel="home"><span class="logo-small"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/debian-logo-90.png" alt="Debian社区"></span>Debian社区</a></p>
+					<p class="site-description clear-small">Debian爱好者的社区</p>
+						</div><!-- .logo-site -->
+
+				<div id="site-nav-wrap">
+					<div id="sidr-close">
+						<span class="toggle-sidr-close"><i class="be be-cross"></i></span>
+																<div class="mobile-login mobile-login-l show-layer" data-show-layer="login-layer" role="button"><i class="be be-timerauto"></i><span class="mobile-login-t">登录</span></div>
+											</div>
+					<nav id="site-nav" class="main-nav">
+									<span id="navigation-toggle" class="bars"><i class="be be-menu"></i></span>
+		<div class="menu-%e5%af%bc%e8%88%aa%e6%a0%8f%e5%a4%a7%e8%8f%9c%e5%8d%95-container"><ul id="menu-%e5%af%bc%e8%88%aa%e6%a0%8f%e5%a4%a7%e8%8f%9c%e5%8d%95" class="down-menu nav-menu sf-js-enabled sf-arrows"><li id="menu-item-3747" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-3747"><a href="https://www.debian.cn/sitemaster">安全专题</a></li>
+<li id="menu-item-3748" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-3748"><a href="https://www.debian.cn/infras">运维与架构</a></li>
+<li id="menu-item-3858" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-3858"><a href="https://www.debian.cn/forums/">社区论坛</a></li>
+<li id="menu-item-3749" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-3749"><a href="https://www.debian.cn/about">关于本站</a></li>
+</ul></div><div id="overlay"></div>
+					</nav>
+				</div>
+												<span class="weibo">
+	<wb:follow-button uid="5622835497" width="67" height="24"><iframe src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/followbutton.html" scrolling="no" marginheight="0" width="67" height="24" frameborder="0"></iframe></wb:follow-button>
+</span>				<div class="clear"></div>
+			</div>
+		</div>
+	</div>
+</header><!-- #masthead -->
+<div id="search-main" class="da">
+	<div class="off-search wow fadeInRight animated"></div>
+	<div class="off-search-a"></div>
+	<div class="search-wrap wow fadeInDown animated">
+					<div class="searchbar da">
+				<form method="get" id="searchform-so" action="https://www.debian.cn/">
+					<span class="search-input">
+						<input type="text" name="s" id="so" class="bk da" placeholder="输入搜索内容" required="">
+						<button type="submit" id="searchsubmit-so" class="bk da"><i class="be be-search"></i></button>
+					</span>
+										<div class="clear"></div>
+				</form>
+			</div>
+		
+				<div class="searchbar da">
+			<script>
+			function g(formname) {
+				var url = "https://www.baidu.com/baidu";
+				if (formname.s[1].checked) {
+					formname.ct.value = "2097152";
+				} else {
+					formname.ct.value = "0";
+				}
+				formname.action = url;
+				return true;
+			}
+			</script>
+			<form name="f1" onsubmit="return g(this)" target="_blank">
+				<span class="search-input">
+					<input name="word" class="swap_value bk da" placeholder="输入百度站内搜索关键词">
+					<input name="tn" type="hidden" value="bds">
+					<input name="cl" type="hidden" value="3">
+					<input name="ct" type="hidden">
+					<input name="si" type="hidden" value="www.debian.cn">
+					<button type="submit" id="searchbaidu" class="search-close bk da"><i class="be be-baidu"></i></button>
+					<input name="s" class="choose" type="radio">
+					<input name="s" class="choose" type="radio" checked="checked">
+				</span>
+			</form>
+		</div>
+		
+		
+				<div class="clear"></div>
+
+				<nav class="search-nav hz">
+			<h4 class="hz">搜索热点</h4>
+			<div class="clear"></div>
+					</nav>
+			</div>
+	<div class="off-search-b">
+		<div class="clear"></div>
+	</div>
+</div>		<nav class="bread">
+		<a class="crumbs" href="https://www.debian.cn/">首页</a><i class="be be-arrowright"></i><a href="https://www.debian.cn/category/security/" rel="category tag">安全</a><i class="be be-arrowright"></i><a href="https://www.debian.cn/category/developer/" rel="category tag">开发者</a><i class="be be-arrowright"></i><a href="https://www.debian.cn/category/arch/" rel="category tag">运维架构</a><i class="be be-arrowright"></i>WireGuard简明介绍及使用指引					</nav>
+	
+	
+
+<div class="header-sub">
+<div id="header-widget" class="wow fadeInUp">
+		<div class="clear"></div>
+</div>
+</div>
+
+	
+	<div id="content" class="site-content" style="transform: none;">
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main" role="main">
+
+			
+				<article id="post-3631" class="ms bk post-3631 post type-post status-publish format-standard hentry category-security category-developer category-arch tag-shadowsocks tag-wireguard tag-vpn soos">
+		<header class="entry-header">
+														<h1 class="entry-title">WireGuard简明介绍及使用指引</h1>										</header><!-- .entry-header -->
+
+	<div class="entry-content">
+		
+						<ul class="single-meta"><li class="comment"><a href="https://www.debian.cn/archives/3631#respond"><i class="be be-speechbubble"></i> 评论</a></li><li class="views"><i class="be be-eye"></i> 4,708</li><li class="r-hide"><span class="off-side"></span></li></ul>			
+							<div class="single-content more-content more-area">
+							
+				
+				
+<p>WireGuard 是 Jason A. Donenfeld 开发的开源<a href="https://www.debian.cn/tag/vpn/" title="查看与 VPN 相关的文章" target="_blank">VPN</a>协议。目前支持Linux, macOS, Android 以及 OpenWrt。iOS 和 Windows 官方客户端还在开发，但第三方 Windows 客户端已经出现。<strong><a rel="external nofollow" target="_blank" href="https://www.wireguard.com/">WireGuard</a> 被视为下一代VPN协议，用来替代OpenVPN，IPSec等VPN协议。</strong></p>
+
+
+
+<span id="more-3631"></span>
+
+
+
+<p>WireGuard 协议作为 Linux 
+内核模块运行，所以效率极高。使用了最先进的加密技术(利用Curve25519进行密钥交换，ChaCha20和Poly1305用于数据认
+证，BLAKE2用于散列)，安全性毋庸置疑。WireGuard 
+是为嵌入式设备开发的，支持IP地址漫游，也就是网络断开再连，对它不会有影响。WireGuard 使用 UDP 
+协议传输数据，在不使用的情况下默认不会传输任何 UDP 数据包，所以比常规VPN省电很多，可以像ShadowSocks一样一直挂着使用。</p>
+
+
+
+<p>WireGuard协议的速度几乎秒杀其它VPN协议，<a rel="noreferrer noopener" target="_blank" href="https://www.wireguard.com/performance/">测试结果</a>如下图；</p>
+
+
+
+<div class="wp-block-image"><figure class="aligncenter size-large"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/wireguard-perf.jpg" alt="WireGuard简明介绍及使用指引" class="wp-image-3632"></figure></div>
+
+
+
+<p>WireGuard 受到 Linus 本人的推荐，将整合到最新版Linux Kernel中，安装部署更方便。WireGuard 总共几千行代码，只需十分钟就能搞定一台WireGuard服务器。</p>
+
+
+
+<p>Wireguard安全性高。极佳的VPN漫游特性，设备支持广泛。内核级别的端对端隧道加密技术，拥有良好的加密特性。Wireguard配置文
+件由两部分组成：interface和peer。服务器端、客户端互为平等关系。支持预共享密钥preshared key加密，防止量子计算攻击。</p>
+
+
+
+<p>国际著名项目，开源代码审计，Windows/iOS/Android客户端完美支持。</p>
+
+
+
+<p>典型的 <a href="https://www.debian.cn/tag/wireguard/" title="查看与 wireguard 相关的文章" target="_blank">wireguard</a> 服务器端配置文件：</p>
+
+
+
+<pre class="wp-block-preformatted prettyprint linenums prettyprinted" style=""><ol class="linenums"><li class="L0"><span class="pun">[</span><span class="typ">Interface</span><span class="pun">]</span></li><li class="L1"><span class="typ">PrivateKey</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> yAnz5TF</span><span class="pun">+</span><span class="pln">lXXJte14tji3zlMNq</span><span class="pun">+</span><span class="pln">hd2rYUIgJBgB3fBmk</span><span class="pun">=</span></li><li class="L2"><span class="typ">ListenPort</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="lit">51520</span></li><li class="L3"><span class="pun">[</span><span class="typ">Peer</span><span class="pun">]</span></li><li class="L4"><span class="typ">PublicKey</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg</span><span class="pun">=</span></li><li class="L5"><span class="typ">AllowedIPs</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="lit">10.192</span><span class="pun">.</span><span class="lit">122.3</span><span class="pun">/</span><span class="lit">32</span><span class="pun">,</span><span class="pln"> </span><span class="lit">10.192</span><span class="pun">.</span><span class="lit">124.1</span><span class="pun">/</span><span class="lit">24</span></li></ol></pre>
+
+
+
+<p>典型的客户端配置文件：</p>
+
+
+
+<pre class="wp-block-preformatted prettyprint linenums prettyprinted" style=""><ol class="linenums"><li class="L0"><span class="pun">[</span><span class="typ">Interface</span><span class="pun">]</span></li><li class="L1"><span class="typ">PrivateKey</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> gI6EdUSYvn8ugXOt8QQD6Yc</span><span class="pun">+</span><span class="typ">JyiZxIhp3GInSWRfWGE</span><span class="pun">=</span></li><li class="L2"><span class="typ">ListenPort</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="lit">21841</span></li><li class="L3"><span class="pun">[</span><span class="typ">Peer</span><span class="pun">]</span></li><li class="L4"><span class="typ">PublicKey</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="typ">HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw</span><span class="pun">=</span></li><li class="L5"><span class="typ">Endpoint</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="lit">142.99</span><span class="pun">.</span><span class="lit">55.66</span><span class="pun">:</span><span class="lit">51520</span></li><li class="L6"><span class="typ">AllowedIPs</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="lit">0.0</span><span class="pun">.</span><span class="lit">0.0</span><span class="pun">/</span><span class="lit">0</span></li></ol></pre>
+
+
+
+<p>国内运营商对 udp 使用限制比较多，可能导致你所在地区体验较差。</p>
+
+
+
+<p>官方原版wireguard是端对端全局代理，中国用户无法智能区分国内外流量。wireguard没有自带流量统计、多用户管理功能，这是目前wireguard没有被商家使用的原因。</p>
+
+
+
+<p>在当前环境下，建议你优先使用wireguard代理，因为它安全性更高，速度稳定可靠。小众产品反倒生存长久；ss可备用；人在江湖，总要备几架梯子。</p>
+
+
+
+<p>实测发现，<a rel="external nofollow" target="_blank" href="https://s.debian.cn/vultr">Vultr</a>升级内核后，完美支持wireguard，效果很好。<a rel="external nofollow" target="_blank" href="https://s.debian.cn/linode">Linode</a>采用了定制版内核，安装较为复杂。</p>
+<!-- AI CONTENT END 1 -->
+
+				
+				
+			</div>
+
+				<div class="all-content-box">
+		<div class="all-content bk">继续阅读</div>
+	</div>
+															
+							<div class="clear"></div>
+<div id="social">
+	<div class="social-main">
+		<span class="like">
+			<a href="javascript:;" data-action="ding" data-id="3631" title="点赞" class="da dingzan"><i class="be be-thumbs-up-o"></i>赞 <i class="count">
+				0</i>
+			</a>
+		</span>
+		<div class="share-sd">
+			<span class="share-s"><a href="javascript:void(0)" id="share-s" class="da" title="分享"><i class="be be-share"></i>分享</a></span>
+			<div id="share" class="bgt"><div class="beginshare share-component social-share"><a class="social-share-icon icon-qq" href="http://connect.qq.com/widget/shareqq/index.html?url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631&amp;title=WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA&amp;source=WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA&amp;desc=&amp;pics=https%3A%2F%2Fwww.debian.cn%2Fwp-content%2Fuploads%2Fdebian-logo-90.png" target="_blank"></a><a class="social-share-icon icon-qzone" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631&amp;title=WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA&amp;desc=&amp;summary=&amp;site=WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA" target="_blank"></a><a class="social-share-icon icon-douban" href="http://shuo.douban.com/!service/share?href=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631&amp;name=WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA&amp;text=&amp;image=https%3A%2F%2Fwww.debian.cn%2Fwp-content%2Fuploads%2Fdebian-logo-90.png&amp;starid=0&amp;aid=0&amp;style=11" target="_blank"></a><a class="social-share-icon icon-weibo" href="http://service.weibo.com/share/share.php?url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631&amp;title=WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA&amp;pic=https%3A%2F%2Fwww.debian.cn%2Fwp-content%2Fuploads%2Fdebian-logo-90.png&amp;appkey=" target="_blank"></a><a class="social-share-icon icon-wechat" href="javascript:;" tabindex="-1"><div class="wechat-qrcode da bottom"><h4 class="da">分享到微信朋友圈</h4><div class="qrcode"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAHYUlEQVR4nO1c0XXcOAxECSlBJbgDoxSV4A6MElKCOjFKcAdRCeng7id7N55djkCunNgO5z28ZxnkDMChs0xC2czsn3cOtzaqHAFzfFA7ivwKPdqjMQ2xach/mIYcGJK/irsnNrEoDMXDdT3/ilFtF/xBdT1DMAfO2w7qqUSaMIQLGwEX7YM8rR2UJ2mrvqs/nYq/irBpyBV/FHM9/FWETUOu+KOY6+GvIqzDkOoHERbWU3SVn+tCJIxLkVMcUdR2q/etQmlPQ2wa0s3PdSESxqXIKY4oarvV+/4Uhqxm9gLhEFtxURgJ434S/0/I7ZRDRFFb9ca5T2HIlbjIjRjSEyPaqjfOTUM6Y0Rb9ca5L2dIQoSZPf4Kh68fzexV1PVKPBhV7bXYG+e+nCEqN1KXgtJGuODn3DTkoC4FpY1wwc+5achBXQpKG+GCn3PvYogX41ux6IXmvUDsomic9yQafSX+DfiT9DCC5rWgevtm9fVChHUYMgJVNKO6ixQ/RtLYPNDo7Zu1vThPIYhzGmIf2JDN3h4pMbzxNT/zHylY9ELzEmLnwhrzVpqHfxtPmpeQ22meMgRrXOD7TvOebGy9MDbuu7KD7gmHhoLFB3JJuSzmgnLKkFbObXwdqjEN6ci5ja/DNMQ+qSH+zoFH4oVyL1Y7egYUzP+iu8KcB5r3ALmFcrgIO3G2DOk52o7GH4XapYiw9o7yE7RVqLq+HKYhN/Bsb+884XMVq+DAZ6d52HgK7YBxu13fbapo38pdIu3ahEtwzS0sQnstcpiZ3h1V5AFPa7dVtcPeGjeiXeXv6RvhQotrlpiGTEO6tcPazVW1P40hClWBPEE8bGxRUPs9NsOotsM476hLYhoyru0wzjvqkpiGjGs7jPOOuiRCxLPdPkLeyl2+xiJtkGMljhXmbKY3EXJyrqXNNbe0ORYYt4hxir8Mt3N2w8gOzo66qtFT14eE2zTkQ8FtGvJuGBF3mudibFp7IRAhxqm6FL+qS2lXgdrZkZOYhkxDpiEK1cZX02/CYu4ZYrf2guG4tOtaLuFQx9LBj/MUQtRV1U7iXKH+VWg7cQ7tRBbH3FmhGqhyuOBBhOCIonYWtY60pyH2gQ3Z7O2dIcR3+/9O03fKJXD8hHFp128xZSN2LgywWPveV9UQ5ODYBEcAh1MOX3fYiBPvEjCU9tAuZSTMSZELayOENudGDBnlwJpd8KscQ675NGQachMhtDn3pQ1xiI2SL3b7Ov/RZwjOU2/CYuxcGGCBGu/5DMFecdxGOYwFOPhe1gb1MwfmknptaWG9ZlbfRUnzsjivJ1rwDo6rBgGtn4IeJHCkyFV7u0IIkmnINRI4UuS6DHm09hEsIdS1/+92fYy9Ne+WsZfYRdGL3X/sZeC4zdrHfdR2GodvAL/a9VpeeuM3hVv8j1yYcjLt7UJWgfMUf3Tkzjakp64Rbe/pexoyDZmGqL5HDOGjLb4G8GDt1wU4cNxeLJrftD36TQ4X/rT20XMT2ouonz9DmPOidfQZgvOGDOnZDZhjjOzS7Khr9KegCtTuqUtiGvIFDNmtfgcJc27tu1FK24FvpdwKuY04Nsgl5bAOzrWwWPs/qHbK4RpwXTwOn4cMSVG0QhzojexShBOHn6zN/Cp8cN40pEOb+achB3BrL8oZ2sz/Rw1RyKJY0LyqdnQ0dIYhI/xqTVKM47qmIXcE8qs1STGO65qG3BHIr9YkxTiu681D2u27Vs83njF+AMdOHBzMee+43WoL5oIjBQeuyUa5TawP8q/WBtc1vINVAy0EjVVQdSFS1OIHGq26Wtouxo1qX2EaMg2Zhiic3TgXPVpYtS4Ea6tARMe8EUO66pqGTENK+GsNCQgkYaw0FmOBcYvIubWPznHjGaM1jvlbjSbxGc3DnJrXio3mbaIXFb8VYefvYIdxLsZFR51n/3Rmh/ZvRdg05BCP1r53NJLjcXgtP0TRypDV2nec8Fe1qjtbG9WFWCjXMuSb6M2FNt/Zkqgu0Gg4aEXHvBZU4z2BUHWF0HaRG+nN7KTmpiHTkL/DkM3ad5CqoX7VuGpcFb1a+47Tk9BWvb1Y+05YyxB+HUF9hjxZe41QO+m5KT4KLswhF3ZsRO8ORn7WVr1V6+B5I30zZN/TkE9kyKP1H21VYavV38JF/k00gPwPxImvQnBvShtjE33jM/9xicdx/o3bw4ZUdxEuioucQnToVflT9HaGdjWS9KYhN3o7Q3sacqDNSNHbGdpfzpAXax89vRj4+aVehVgGtTf4vnoVQuX49Y0W/x83RO6UAbyHdsD3k3JZzFX5pyEF7YDvJ+WymPuUhuz29ij6aLePl3yERLA2Hj0XGpsiEAF8/K+26i1c9WYXjgvW/iiGVLVT8LG24q8iBOcZcVXXNEQjBOc0xP5yQ0bgxOnF5lh7pC7WPrs3RgJ/ihwHIjg3DRlH2jSkS/vTG5JWuzcVIrfZxzSEe+N5rZxCAv9OHLuohbUDojnprHAQDzEuqNCzDenapUVkh16ZfxoyDZmGtPAvshHLeg4IsLcAAAAASUVORK5CYII="></div><div class="help"><p>微信扫一下</p><p>将本文分享至朋友圈</p></div></div></a></div></div>
+		</div>
+		<div class="clear"></div>
+
+		<div class="shang-p">
+			<div class="shang-empty bgt"><span class="da"></span></div>
+							<span id="shang" class="fadeInDown animated bk da">
+					<span class="shang-main da">
+						<h4><i class="be be-favorite" aria-hidden="true"></i> 您可以选择一种方式赞助本站</h4>												
+																		<span class="clear"></span>
+					</span>
+				</span>
+				<span class="shang-s"><a class="da" title="赞助本站">赏</a></span>
+					</div>
+	</div>
+		<span class="clear"></span>
+</div>			
+									<footer class="single-footer">
+				<div class="single-cat-tag"><div class="single-cat"><i class="be be-sort"></i><a href="https://www.debian.cn/category/security/" rel="category tag">安全</a> <a href="https://www.debian.cn/category/developer/" rel="category tag">开发者</a> <a href="https://www.debian.cn/category/arch/" rel="category tag">运维架构</a></div></div>			</footer><!-- .entry-footer -->
+
+				<div class="clear"></div>
+	</div><!-- .entry-content -->
+
+	</article><!-- #post -->
+
+<div class="single-tag"><ul class="wow fadeInUp"><li><a href="https://www.debian.cn/tag/shadowsocks/" rel="tag" style="background:#ff9966">Shadowsocks</a></li><li><a href="https://www.debian.cn/tag/wireguard/" rel="tag" style="background:#ea4563">wireguard</a></li><li><a href="https://www.debian.cn/tag/vpn/" rel="tag" style="background:#4fad7b">VPN</a></li></ul></div>
+									<div class="authorbio wow fadeInUp ms bk">
+					<img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/5b271d588a255caee1f2e2e50aac24df.jpeg" alt="avatar" class="avatar avatar-64" width="64" height="64">				<ul class="spostinfo">
+											<li>本文由 <a href="https://www.debian.cn/archives/author/3/" title="由joseph发布" rel="author">joseph</a> 发表于 2019年11月28日</li>
+						<li class="reprinted"><strong>除非特殊声明，本站文章均为原创，转载请务必保留本文链接</strong></li>
+			</ul>
+	<div class="clear"></div>
+</div>
+				
+				
+									<div class="related-article">
+	
+					<article id="post-3939" class="wow fadeInUp post ms bk doclose">
+	
+			<figure class="thumbnail">
+				<a href="https://www.debian.cn/archives/3939"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_007.jpeg" alt="Debian 在其内核中测试启用 WireGuard"></a>			<span class="cat"><a href="https://www.debian.cn/category/security/">安全</a></span>
+			</figure>
+
+			<header class="entry-header">
+				<h2 class="entry-title"><a href="https://www.debian.cn/archives/3939" rel="bookmark">Debian 在其内核中测试启用 WireGuard</a></h2>			</header>
+			<div class="entry-content">
+				<div class="archive-content">
+					WireGuard 是 Linux Kernel 5.6 新增的重要功能之一，经过多年的开发，现在可以作为内核代码树之外的模块提供（DKMS）。Linux Kernel 5.6 也已将其合并进内核主线...				</div>
+
+				<span class="entry-meta">
+					<span class="date">03月24日</span><span class="views"><i class="be be-eye"></i> 634</span><span class="comment"><a href="https://www.debian.cn/archives/3939#respond"><span class="no-comment"><i class="be be-speechbubble"></i> 评论</span></a></span>				</span>
+				<div class="clear"></div>
+				<span class="title-l"></span>
+			</div>
+		</article>
+	
+	
+	
+					<article id="post-3630" class="wow fadeInUp post ms bk doclose">
+	
+			<figure class="thumbnail">
+				<a href="https://www.debian.cn/archives/3630"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/Vl0ha8.jpg" alt="Linux kernel 5.5正式版发布"></a>			<span class="cat"><a href="https://www.debian.cn/category/uncategorized/">综合分类</a></span>
+			</figure>
+
+			<header class="entry-header">
+				<h2 class="entry-title"><a href="https://www.debian.cn/archives/3630" rel="bookmark">Linux kernel 5.5正式版发布</a></h2>			</header>
+			<div class="entry-content">
+				<div class="archive-content">
+					稳定的Linux 内核版本 5.5&nbsp;版已正式发布。此前Linus Torvalds曾在Linux 5.5-rc7发布的声明中指出，他可能在下周最终发布5.5稳定版。目前5.5稳定版如约而至。 （更多&amp;...				</div>
+
+				<span class="entry-meta">
+					<span class="date">01月28日</span><span class="views"><i class="be be-eye"></i> 1,373</span><span class="comment"><a href="https://www.debian.cn/archives/3630#respond"><span class="no-comment"><i class="be be-speechbubble"></i> 评论</span></a></span>				</span>
+				<div class="clear"></div>
+				<span class="title-l"></span>
+			</div>
+		</article>
+	
+	
+	
+					<article id="post-951" class="wow fadeInUp post ms bk doclose">
+	
+			<figure class="thumbnail">
+				<a href="https://www.debian.cn/archives/951"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/Vl0ha8.jpg" alt="Debian 上安装搭建 Shadowsocks 服务"></a>			<span class="cat"><a href="https://www.debian.cn/category/security/">安全</a></span>
+			</figure>
+
+			<header class="entry-header">
+				<h2 class="entry-title"><a href="https://www.debian.cn/archives/951" rel="bookmark">Debian 上安装搭建 Shadowsocks 服务</a></h2>			</header>
+			<div class="entry-content">
+				<div class="archive-content">
+					在使用了一段时间后，决定由 CentOS 转移到 Debian 上，以便在低配置的服务器上网站能更加的稳定，Shadowsocks 服务也有之前的 python 版本转移到了 shadowsocks-...				</div>
+
+				<span class="entry-meta">
+					<span class="date">10月12日</span><span class="views"><i class="be be-eye"></i> 7,575</span><span class="comment"><a href="https://www.debian.cn/archives/951#respond"><span class="no-comment"><i class="be be-speechbubble"></i> 评论</span></a></span>				</span>
+				<div class="clear"></div>
+				<span class="title-l"></span>
+			</div>
+		</article>
+	
+	
+		<div class="clear"></div>
+</div>
+<div class="domargin"></div>				
+				
+				
+				<nav class="nav-single wow fadeInUp">
+					<a href="https://www.debian.cn/archives/3533" rel="prev"><span class="meta-nav ms bk"><span class="post-nav"><i class="be be-arrowleft"></i> 上一篇</span><br>Debian下安装配置 Hadoop 3.1.3 集群</span></a><a href="https://www.debian.cn/archives/3539" rel="next"><span class="meta-nav ms bk"><span class="post-nav">下一篇 <i class="be be-arrowright"></i></span><br>Debian Stretch 安装配置 Jenkins</span></a>					<div class="clear"></div>
+				</nav>
+								
+	<nav class="navigation post-navigation" role="navigation" aria-label="文章">
+		<h2 class="screen-reader-text">文章导航</h2>
+		<div class="nav-links"><div class="nav-previous"><a href="https://www.debian.cn/archives/3533" rel="prev"><span class="meta-nav-r" aria-hidden="true"><i class="be be-arrowleft"></i></span></a></div><div class="nav-next"><a href="https://www.debian.cn/archives/3539" rel="next"><span class="meta-nav-l" aria-hidden="true"><i class="be be-arrowright"></i></span></a></div></div>
+	</nav>				
+				
+			
+		</main><!-- .site-main -->
+	</div><!-- .content-area -->
+
+<div id="sidebar" class="widget-area all-sidebar" style="position: relative; overflow: visible; box-sizing: border-box; min-height: 1px;">
+
+	
+			
+	
+	<div class="theiaStickySidebar" style="padding-top: 0px; padding-bottom: 1px; position: static; transform: none;"><aside id="advert-3" class="widget advert wow fadeInUp ms bk"><h3 class="widget-title bkx da"><span class="title-i"><span></span><span></span><span></span><span></span></span>腾讯云</h3>
+<div id="advert_widget">
+	<a href="https://s.debian.cn/qc10" target="_blank"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/qc618-345x200.jpg"></a></div>
+
+<div class="clear"></div></aside><aside id="zmtabs-2" class="widget widget_zm_tabs wow fadeInUp ms bk">
+<div class="zm-tabs-nav group tab-count-3"><span class="zm-tab tab-recent"><a href="javascript:"><i class="be be-file"></i><span>最新文章</span></a></span><span class="zm-tab tab-popular"><a href="javascript:"><i class="be be-favoriteoutline"></i><span>热评文章</span></a></span><span class="zm-tab tab-viewe"><a href="javascript:"><i class="be be-eye"></i><span>热门文章</span></a></span></div>
+	<div class="zm-tabs-container">
+
+								<div class="new_cat">
+				<ul id="tab-recent-2" class="zm-tab group thumbs-enabled" style="display:block;">
+					<h4>最新文章</h4>
+										<li>
+													<span class="thumbnail">
+								<a href="https://www.debian.cn/archives/4140"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_003.png" alt="Raspberry Pi 支持 Vulkan 最新进展"></a>							</span>
+							<span class="new-title"><a href="https://www.debian.cn/archives/4140" rel="bookmark">Raspberry Pi 支持 Vulkan 最新进展</a></span>
+							<span class="date">06/13</span>
+							<span class="views"><i class="be be-eye"></i> 35</span>											</li>
+										<li>
+													<span class="thumbnail">
+								<a href="https://www.debian.cn/archives/4136"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_009.jpeg" alt="Raspberry Pi 4 发布 8G 内存版本"></a>							</span>
+							<span class="new-title"><a href="https://www.debian.cn/archives/4136" rel="bookmark">Raspberry Pi 4 发布 8G 内存版本</a></span>
+							<span class="date">05/30</span>
+							<span class="views"><i class="be be-eye"></i> 219</span>											</li>
+										<li>
+													<span class="thumbnail">
+								<a href="https://www.debian.cn/archives/4128"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_002.png" alt="80％ 的 Oracle JDK 用户正在考虑替代方案"></a>							</span>
+							<span class="new-title"><a href="https://www.debian.cn/archives/4128" rel="bookmark">80％ 的 Oracle JDK 用户正在考虑替代方案</a></span>
+							<span class="date">05/27</span>
+							<span class="views"><i class="be be-eye"></i> 118</span>											</li>
+										<li>
+													<span class="thumbnail">
+								<a href="https://www.debian.cn/archives/4124"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune.jpeg" alt="史上最大规模天猫618启动：优惠力度空前"></a>							</span>
+							<span class="new-title"><a href="https://www.debian.cn/archives/4124" rel="bookmark">史上最大规模天猫618启动：优惠力度空前</a></span>
+							<span class="date">05/27</span>
+							<span class="views"><i class="be be-eye"></i> 51</span>											</li>
+										<li>
+													<span class="thumbnail">
+								<a href="https://www.debian.cn/archives/4121"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_008.jpeg" alt="Proxmox VE 6.2发布 开源虚拟机平台"></a>							</span>
+							<span class="new-title"><a href="https://www.debian.cn/archives/4121" rel="bookmark">Proxmox VE 6.2发布 开源虚拟机平台</a></span>
+							<span class="date">05/18</span>
+							<span class="views"><i class="be be-eye"></i> 503</span>											</li>
+														</ul><!--/.zm-tab-->
+			</div>
+		
+		
+			
+			<div class="new_cat">
+				<ul id="tab-popular-2" class="zm-tab group thumbs-enabled">
+					<h4>热评文章</h4>
+										<li>
+													<span class="thumbnail">
+								<a href="https://www.debian.cn/archives/955"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_005.jpeg" alt="Debian 9 Stretch 发布，献给已故的创始人 Ian"></a>							</span>
+							<span class="new-title"><a href="https://www.debian.cn/archives/955" rel="bookmark">Debian 9 Stretch 发布，献给已故的创始人 Ian</a></span>
+							<span class="date">06/18</span>
+							<span class="discuss"><i class="be be-speechbubble"></i> 3</span>
+											</li>
+										<li>
+													<span class="thumbnail">
+								<a href="https://www.debian.cn/archives/968"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_006.jpeg" alt="配置 Debian Stretch 的安装源"></a>							</span>
+							<span class="new-title"><a href="https://www.debian.cn/archives/968" rel="bookmark">配置 Debian Stretch 的安装源</a></span>
+							<span class="date">06/19</span>
+							<span class="discuss"><i class="be be-speechbubble"></i> 2</span>
+											</li>
+										<li>
+													<span class="thumbnail">
+								<a href="https://www.debian.cn/archives/2846"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_004.png" alt="Debian 社区陷入尴尬  或群龙无首"></a>							</span>
+							<span class="new-title"><a href="https://www.debian.cn/archives/2846" rel="bookmark">Debian 社区陷入尴尬  或群龙无首</a></span>
+							<span class="date">03/14</span>
+							<span class="discuss"><i class="be be-speechbubble"></i> 2</span>
+											</li>
+										<li>
+													<span class="thumbnail">
+								<a href="https://www.debian.cn/archives/1"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_002.jpeg" alt="悼念声明 缅怀创始人 Ian Murdock"></a>							</span>
+							<span class="new-title"><a href="https://www.debian.cn/archives/1" rel="bookmark">悼念声明 缅怀创始人 Ian Murdock</a></span>
+							<span class="date">12/31</span>
+							<span class="discuss"><i class="be be-speechbubble"></i> 2</span>
+											</li>
+										<li>
+													<span class="thumbnail">
+								<a href="https://www.debian.cn/archives/3089"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_012.jpeg" alt="三种SSL证书之间有什么区别"></a>							</span>
+							<span class="new-title"><a href="https://www.debian.cn/archives/3089" rel="bookmark">三种SSL证书之间有什么区别</a></span>
+							<span class="date">05/30</span>
+							<span class="discuss"><i class="be be-speechbubble"></i> 2</span>
+											</li>
+														</ul><!--/.zm-tab-->
+			</div>
+		
+		
+			<div class="new_cat">
+				<ul id="tab-viewe-2" class="zm-tab group">
+					<h4>热门文章</h4>
+																		<li><span class="thumbnail"><a href="https://www.debian.cn/archives/4054"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_011.jpeg" alt="Ubuntu 20.04 LTS 正式版发布"></a></span><span class="new-title"><a href="https://www.debian.cn/archives/4054" rel="bookmark">Ubuntu 20.04 LTS 正式版发布</a></span><span class="date">04/24</span><span class="views"><i class="be be-eye"></i> 960</span></li><li><span class="thumbnail"><a href="https://www.debian.cn/archives/3929"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune.png" alt="LMDE 4 Debbie 正式版发布"></a></span><span class="new-title"><a href="https://www.debian.cn/archives/3929" rel="bookmark">LMDE 4 Debbie 正式版发布</a></span><span class="date">03/23</span><span class="views"><i class="be be-eye"></i> 904</span></li><li><span class="thumbnail"><a href="https://www.debian.cn/archives/4111"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_003.jpeg" alt="Debian 10.4 Buster发布 请尽快更新"></a></span><span class="new-title"><a href="https://www.debian.cn/archives/4111" rel="bookmark">Debian 10.4 Buster发布 请尽快更新</a></span><span class="date">05/10</span><span class="views"><i class="be be-eye"></i> 822</span></li><li><span class="thumbnail"><a href="https://www.debian.cn/archives/3969"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_004.jpeg" alt="Linux kernel 5.6 正式版发布"></a></span><span class="new-title"><a href="https://www.debian.cn/archives/3969" rel="bookmark">Linux kernel 5.6 正式版发布</a></span><span class="date">03/30</span><span class="views"><i class="be be-eye"></i> 814</span></li><li><span class="thumbnail"><a href="https://www.debian.cn/archives/4062"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prune_010.jpeg" alt="树莓派基于 Raspbian 的 Windows XP 现已可用"></a></span><span class="new-title"><a href="https://www.debian.cn/archives/4062" rel="bookmark">树莓派基于 Raspbian 的 Windows XP 现已可用</a></span><span class="date">04/28</span><span class="views"><i class="be be-eye"></i> 737</span></li>																				</ul><!--/.zm-tab-->
+			</div>
+
+		
+		
+	</div>
+
+<div class="clear"></div></aside></div></div>
+
+<div class="clear"></div>	</div><!-- .site-content -->
+	<div class="clear"></div>
+					<div id="footer-widget-box" class="site-footer bgt">
+	<div class="footer-widget bgt">
+		<aside id="custom_html-9" class="widget_text widget widget_custom_html wow fadeInUp"><h3 class="widget-title bkx da"><span class="s-icon"></span>关于本站</h3><div class="textwidget custom-html-widget">Debian社区是Debian爱好者建立并维护。关注Debian的生态环境，包括桌面、企业级应用、企业基础设施等，欢迎交流！</div><div class="clear"></div></aside><aside id="media_image-3" class="widget widget_media_image wow fadeInUp"><h3 class="widget-title bkx da"><span class="s-icon"></span>关注公众号</h3><div style="width: 110px" class="wp-caption alignnone"><img class="image about-me-img clearfix" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/wechat-100x100.png" alt="Debian社区公众号" width="100" height="100"><p class="wp-caption-text">Debian社区</p></div><div class="clear"></div></aside>		<div class="clear"></div>
+	</div>
+</div>
+	<footer id="colophon" class="site-footer bgt" role="contentinfo">
+		<div class="site-info">
+			Debian是<a href="http://www.spi-inc.org/">SPI</a>注册商标. Copyright© Debian.cn			<div class="add-info">
+				<a href="https://www.debian.cn/sitemap.xml">网站地图</a> - <a href="https://www.debian.cn/forums">社区论坛</a> - <a href="https://www.debian.cn/ads">广告合作</a> - <a href="https://www.debian.cn/privacy">隐私声明</a> - <script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/z_stat.js"></script><script src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/core_002.js" charset="utf-8" type="text/javascript"></script><a href="https://www.cnzz.com/stat/website.php?web_id=1278088890" target="_blank" title="站长统计">站长统计</a>				<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async="" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/js.js"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-3882781-13');
+</script>				<div class="clear"></div>
+											</div>
+
+				</div><!-- .site-info -->
+			</footer><!-- .site-footer -->
+	<div class="login-overlay" id="login-layer">
+	<div id="login">
+		
+		<div id="login-tab" class="login-tab-product fadeInDown animated da bk">
+		    <h2 class="login-tab-hd">
+
+													<span class="login-tab-hd-con login-current"><a href="javascript:">登录</a></span>
+								
+															<span class="login-tab-hd-con"><a href="javascript:">注册</a></span>
+									
+				<span class="login-tab-hd-con"><a href="javascript:">找回密码</a></span>		    </h2>
+		
+			<div class="login-tab-bd login-dom-display">
+				<div class="login-tab-bd-con login-current">
+					<div id="tab1_login" class="tab_content_login">
+						<form id="login-box" class="wp-user-form" action="https://www.debian.cn/wp-login.php" method="post" novalidate="novalidate">
+							<p class="status"></p>
+							<p>
+								<label class="icon" for="username">用户名</label>
+								<input class="input-control da" id="username" type="text" placeholder="" name="username" required="" aria-required="true">
+							</p>
+							<p>
+								<label for="password">密码</label>
+								<input class="input-control da" id="password" type="password" placeholder="" name="password" required="" aria-required="true">
+							</p>
+							<p class="login-form"><style type="text/css">.wp-connect-login-button,.t_login_text{margin:0;padding:0}.t_login_button{margin:0;padding:5px 0}.t_login_button a{margin:0;padding-right:3px;border:0;line-height:25px}.t_login_button a img{display:inline;border:none}</style><!-- 使用社交帐号登录 来自 WordPress连接微博 插件 --></p><div class="wp-connect-login-button"><div class="t_login_text t_login_text1">您可以用合作网站帐号登录:</div><div class="connectBox1 t_login_button"><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=weixin&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="微信" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_weixin.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=qzone&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="QQ" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_qzone.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=sina&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="新浪微博" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_sina.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=taobao&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="淘宝网" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_taobao.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=douban&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="豆瓣" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_douban.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=renren&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="人人网" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_renren.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=kaixin001&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="开心网" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_kaixin001.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=facebook&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Facebook" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_facebook.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=twitter&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Twitter" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_twitter.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=google&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Google" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_google.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=yahoo&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Yahoo" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_yahoo.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=linkedin&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="LinkedIn" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_linkedin.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=github&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="GitHub" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_github.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=baidu&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="百度" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_baidu.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=360&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="360" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_360.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=msn&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Microsoft" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_msn.png"></a></div></div><p></p>
+
+							<p class="login_fields">
+								<input class="user-submit da bk" type="submit" name="user-submit" value="登录">
+								<input type="hidden" id="security" name="security" value="dd8e2c7439">
+								<input type="hidden" name="redirect_to" value="/archives/3631">
+								<input type="hidden" name="user-cookie" value="1">
+
+								</p><p class="rememberme pretty success">
+									<input type="checkbox" name="rememberme" value="forever" checked="checked" id="rememberme">
+									<label for="rememberme" type="checkbox">
+										<i class="mdi" data-icon=""></i>
+										记住我的登录信息									</label>
+								</p>
+							<p></p>
+						</form>
+					</div>
+				</div>
+
+						
+										<div class="login-tab-bd-con" style="display: none;">
+						<div id="tab2_login" class="tab_content_login">
+															<form method="post" action="https://www.debian.cn/wp-login.php?action=register" class="wp-user-form">
+									<div class="username">
+										<label for="user_login">用户名</label>
+										<input type="text" name="user_login" size="20" id="user_reg" class="da" required="required">
+									</div>
+									<div class="password">
+										<label for="user_email">电子邮件地址</label>
+										<input type="text" name="user_email" size="25" id="user_email" class="da" required="required">
+									</div>
+									<div class="login_fields">
+										
+<p>
+	<label for="user_pwd1">密码(至少6位)*</label><br>
+	<input id="user_pwd1" class="input da" type="password" size="25" value="" name="user_pass" required="required">
+</p>
+<p>
+	<label for="user_pwd2">重复密码*</label><br>
+	<input id="user_pwd2" class="input da" type="password" size="25" value="" name="user_pass2" required="required">
+</p>
+
+<input type="hidden" name="spam_check" value="97d79a232706620a5ce512c07c0211c4">
+<!-- 使用社交帐号登录 来自 WordPress连接微博 插件 --><div class="wp-connect-login-button"><div class="t_login_text t_login_text2">您可以用合作网站帐号登录:</div><div class="connectBox2 t_login_button"><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=weixin&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="微信" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_weixin.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=qzone&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="QQ" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_qzone.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=sina&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="新浪微博" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_sina.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=taobao&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="淘宝网" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_taobao.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=douban&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="豆瓣" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_douban.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=renren&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="人人网" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_renren.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=kaixin001&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="开心网" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_kaixin001.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=facebook&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Facebook" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_facebook.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=twitter&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Twitter" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_twitter.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=google&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Google" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_google.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=yahoo&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Yahoo" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_yahoo.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=linkedin&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="LinkedIn" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_linkedin.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=github&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="GitHub" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_github.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=baidu&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="百度" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_baidu.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=360&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="360" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_360.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=msn&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Microsoft" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_msn.png"></a></div></div>										<input type="submit" name="user-submit" value="注册" class="user-submit">
+																				<input type="hidden" name="redirect_to" value="/archives/3631?register=true">
+										<input type="hidden" name="user-cookie" value="1">
+									</div>
+								</form>
+													</div>
+					</div>
+									
+								<div class="login-tab-bd-con" style="display: none;">
+					<div id="tab3_login" class="tab_content_login">
+						<p class="message">输入用户名或电子邮箱地址，您会收到一封新密码链接的电子邮件。</p>
+						<form method="post" action="https://www.debian.cn/wp-login.php?action=lostpassword" class="wp-user-form">
+							<div class="username">
+								<label for="user_login" class="hide">用户名或电子邮件地址</label>
+								<input type="text" name="user_login" size="20" id="user_log" class="da" required="required">
+							</div>
+							<div class="login_fields">
+								<div class="login-form"><!-- 使用社交帐号登录 来自 WordPress连接微博 插件 --><div class="wp-connect-login-button"><div class="t_login_text t_login_text3">您可以用合作网站帐号登录:</div><div class="connectBox3 t_login_button"><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=weixin&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="微信" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_weixin.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=qzone&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="QQ" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_qzone.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=sina&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="新浪微博" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_sina.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=taobao&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="淘宝网" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_taobao.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=douban&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="豆瓣" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_douban.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=renren&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="人人网" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_renren.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=kaixin001&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="开心网" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_kaixin001.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=facebook&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Facebook" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_facebook.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=twitter&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Twitter" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_twitter.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=google&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Google" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_google.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=yahoo&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Yahoo" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_yahoo.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=linkedin&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="LinkedIn" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_linkedin.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=github&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="GitHub" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_github.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=baidu&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="百度" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_baidu.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=360&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="360" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_360.png"></a><a href="https://www.debian.cn/wp-content/plugins/wp-connect/login.php?go=msn&amp;redirect_url=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631" title="Microsoft" rel="nofollow"><img src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/btn_msn.png"></a></div></div></div>
+								<input type="submit" name="user-submit" value="获取新密码" class="user-submit">
+																<input type="hidden" name="redirect_to" value="/archives/3631?reset=true">
+								<input type="hidden" name="user-cookie" value="1">
+							</div>
+						</form>
+					</div>
+				</div>
+				
+			</div>
+		</div>
+
+			</div>
+</div>		<ul id="scroll" class="bgt">
+	<li class="log log-no"><a class="log-button" title="文章目录"><i class="be be-menu"></i></a><div class="log-prompt" style="display: none;"><div class="log-arrow">文章目录<i class="be be-playarrow"></i></div></div></li>
+	<li><a class="scroll-home" href="https://www.debian.cn/" title="首页" rel="home"><i class="be be-home"></i></a></li>	<li><a class="scroll-h ms" title="返回顶部"><i class="be be-arrowup"></i></a></li>		<li><a class="scroll-b ms" title="转到底部"><i class="be be-arrowdown"></i></a></li>			<ul class="night-day">
+			<li><span class="night-main"><a class="m-night" onclick="switchMode()" title="夜间模式"><span class="m-moon"><span></span></span></a></span></li>
+			<li><a class="m-day" onclick="switchMode()" title="白天模式"><i class="be be-loader"></i></a></li>
+		</ul>
+		<li><a class="scroll-search ms" title="搜索"><i class="be be-search"></i></a></li>	<li class="gb2-site ms"><a id="gb2big5" href="javascript:StranBody()" title="繁體"><span>繁</span></a></li>		</ul>
+					<script src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/wb.js" type="text/javascript" charset="utf-8"></script>
+		
+	</div><!-- .site -->
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery-ui.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/qaptcha.js"></script>
+<script type="text/javascript">var QaptchaJqueryPage="https://www.debian.cn/wp-content/themes/begin/inc/qaptcha.jquery.php"</script>
+<script type="text/javascript">$(document).ready(function(){$('.qaptcha').QapTcha();});</script>
+	<script type="text/javascript">
+		/* <![CDATA[ */
+		var ajax_login_object = {"redirecturl":"https:\/\/www.debian.cn\/archives\/3631","ajaxurl":"https:\/\/www.debian.cn\/wp-admin\/admin-ajax.php","loadingmessage":"\u8bf7\u7a0d\u7b49"};
+		/* ]]> */
+	</script><script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/hoverintent-js.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/admin-bar.js"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+var BP_Nouveau = {"ajaxurl":"https:\/\/www.debian.cn\/wp-admin\/admin-ajax.php","confirm":"\u786e\u5b9a\uff1f","show_x_comments":"\u663e\u793a\u6240\u6709%d\u6761\u8bc4\u8bba","unsaved_changes":"\u60a8\u7684\u4e2a\u4eba\u8d44\u6599\u66f4\u6539\u5c1a\u672a\u4fdd\u5b58\u3002\u5982\u679c\u79bb\u5f00\u6b64\u9875\u9762\uff0c\u60a8\u7684\u66f4\u6539\u5c06\u4f1a\u4e22\u5931\u3002","object_nav_parent":"#buddypress","objects":{"1":"members","4":"xprofile","5":"friends","7":"settings","8":"notifications"},"nonces":{"members":"e42f8ebe41","xprofile":"ff9f234037","friends":"6f098e859f","settings":"9c2c8d3005","notifications":"b145de1c40"}};
+/* ]]> */
+</script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/buddypress-nouveau.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/comment-reply.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/wp-syntax.js"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+var viewsCacheL10n = {"admin_ajax_url":"https:\/\/www.debian.cn\/wp-admin\/admin-ajax.php","post_id":"3631"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/postviews-cache.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/prettify.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/superfish.js"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+var wpl_ajax_url = "https:\/\/www.debian.cn\/wp-admin\/admin-ajax.php";
+/* ]]> */
+</script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/begin-script.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/validate.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/gb2big5.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery_004.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/sticky.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery-ias.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/jquery_002.js"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+var ajax_tab = {"ajax_url":"https:\/\/www.debian.cn\/wp-admin\/admin-ajax.php"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/begin-tab.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/fancybox.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/getqqinfo.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/comments-ajax-qt.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/core.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/widget.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/position.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/menu.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/wp-polyfill.js"></script>
+<script type="text/javascript">
+( 'fetch' in window ) || document.write( '<script src="https://www.debian.cn/wp-includes/js/dist/vendor/wp-polyfill-fetch.min.js?ver=3.0.0"></scr' + 'ipt>' );( document.contains ) || document.write( '<script src="https://www.debian.cn/wp-includes/js/dist/vendor/wp-polyfill-node-contains.min.js?ver=3.42.0"></scr' + 'ipt>' );( window.DOMRect ) || document.write( '<script src="https://www.debian.cn/wp-includes/js/dist/vendor/wp-polyfill-dom-rect.min.js?ver=3.42.0"></scr' + 'ipt>' );( window.URL && window.URL.prototype && window.URLSearchParams ) || document.write( '<script src="https://www.debian.cn/wp-includes/js/dist/vendor/wp-polyfill-url.min.js?ver=3.6.4"></scr' + 'ipt>' );( window.FormData && window.FormData.prototype.keys ) || document.write( '<script src="https://www.debian.cn/wp-includes/js/dist/vendor/wp-polyfill-formdata.min.js?ver=3.0.12"></scr' + 'ipt>' );( Element.prototype.matches && Element.prototype.closest ) || document.write( '<script src="https://www.debian.cn/wp-includes/js/dist/vendor/wp-polyfill-element-closest.min.js?ver=2.0.2"></scr' + 'ipt>' );
+</script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/dom-ready.js"></script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/a11y.js"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+var uiAutocompleteL10n = {"noResults":"\u672a\u627e\u5230\u7ed3\u679c\u3002","oneResult":"\u627e\u52301\u4e2a\u7ed3\u679c\u3002\u4f7f\u7528\u4e0a\u4e0b\u65b9\u5411\u952e\u6765\u5bfc\u822a\u3002","manyResults":"\u627e\u5230%d\u4e2a\u7ed3\u679c\u3002\u4f7f\u7528\u4e0a\u4e0b\u65b9\u5411\u952e\u6765\u5bfc\u822a\u3002","itemSelected":"\u5df2\u9009\u62e9\u9879\u76ee\u3002"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/autocomplete.js"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+var BBOSS_GLOBAL_SEARCH = {"nonce":"d8f807f310","action":"bboss_global_search_ajax","debug":"1","ajaxurl":"https:\/\/www.debian.cn\/wp-admin\/admin-ajax.php","loading_msg":"Loading Suggestions","enable_ajax_search":"yes","per_page":"5"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="WireGuard%E7%AE%80%E6%98%8E%E4%BB%8B%E7%BB%8D%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95%20%E2%80%93%20Debian%E7%A4%BE%E5%8C%BA_files/buddypress-global-search.js"></script>
+		<div id="wpadminbar" class="nojq">
+							<a class="screen-reader-shortcut" href="#wp-toolbar" tabindex="1">跳至工具栏</a>
+						<div class="quicklinks" id="wp-toolbar" role="navigation" aria-label="工具栏">
+				<ul id="wp-admin-bar-root-default" class="ab-top-menu"><li id="wp-admin-bar-bp-login"><a class="ab-item" href="https://www.debian.cn/wp-login.php?redirect_to=https%3A%2F%2Fwww.debian.cn%2Farchives%2F3631">登录</a></li><li id="wp-admin-bar-bp-register"><a class="ab-item" href="https://www.debian.cn/register/">注册</a></li></ul><ul id="wp-admin-bar-top-secondary" class="ab-top-secondary ab-top-menu"><li id="wp-admin-bar-search" class="admin-bar-search"><div class="ab-item ab-empty-item" tabindex="-1"><form action="https://www.debian.cn/" method="get" id="adminbarsearch"><input class="adminbar-input ui-autocomplete-input" name="s" id="adminbar-search" type="text" maxlength="150" autocomplete="off"><label for="adminbar-search" class="screen-reader-text">搜索</label><input type="submit" class="adminbar-button" value="搜索"></form></div></li></ul>			</div>
+					</div>
+
+		
+<div id="lbCenter" style="display: none;"><div id="lbImage"><div style="position: relative;"><a id="lbPrevLink" href="#"></a><a id="lbNextLink" href="#"></a></div></div></div><div id="lbBottomContainer" style="display: none;"><div id="lbBottom"><div id="lbOverlay" style="display: none;"></div><div id="lbCaption"></div><div id="lbNumber"></div><div style="clear: both;"></div></div></div><div id="sidr-main" class="sidr left" style=""><div class="sidr-inner">
+						<span class="toggle-sidr-close"><i class="be be-cross"></i></span>
+																<div class="mobile-login mobile-login-l show-layer" data-show-layer="login-layer" role="button"><i class="be be-timerauto"></i><span class="mobile-login-t">登录</span></div>
+											</div><div class="sidr-inner">
+									<span id="sidr-id-navigation-toggle" class="bars"><i class="be be-menu"></i></span>
+		<div class="menu-%e5%af%bc%e8%88%aa%e6%a0%8f%e5%a4%a7%e8%8f%9c%e5%8d%95-container"><ul id="sidr-id-menu-%sidr-id-e5%sidr-id-af%sidr-id-bc%sidr-id-e8%sidr-id-88%sidr-id-aa%sidr-id-e6%sidr-id-a0%sidr-id-8f%sidr-id-e5%sidr-id-a4%sidr-id-a7%sidr-id-e8%sidr-id-8f%sidr-id-9c%sidr-id-e5%sidr-id-8d%sidr-id-95" class="down-menu nav-menu sf-js-enabled sf-arrows"><li id="sidr-id-menu-item-3747" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-3747"><a href="https://www.debian.cn/sitemaster">安全专题</a></li>
+<li id="sidr-id-menu-item-3748" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-3748"><a href="https://www.debian.cn/infras">运维与架构</a></li>
+<li id="sidr-id-menu-item-3858" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-3858"><a href="https://www.debian.cn/forums/">社区论坛</a></li>
+<li id="sidr-id-menu-item-3749" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-3749"><a href="https://www.debian.cn/about">关于本站</a></li>
+</ul></div><div id="sidr-id-overlay"></div>
+					</div></div><ul class="ui-autocomplete ui-front ui-menu ui-widget ui-widget-content" id="ui-id-1" tabindex="0" style="display: none;"></ul><span role="status" aria-live="assertive" aria-relevant="additions" class="ui-helper-hidden-accessible"></span><div id="a11y-speak-polite" class="a11y-speak-region" style="position: absolute;margin: -1px;padding: 0;height: 1px;width: 1px;overflow: hidden;clip: rect(1px, 1px, 1px, 1px);-webkit-clip-path: inset(50%);clip-path: inset(50%);border: 0;word-wrap: normal !important;" aria-live="polite" aria-relevant="additions text" aria-atomic="true"></div><div id="a11y-speak-assertive" class="a11y-speak-region" style="position: absolute;margin: -1px;padding: 0;height: 1px;width: 1px;overflow: hidden;clip: rect(1px, 1px, 1px, 1px);-webkit-clip-path: inset(50%);clip-path: inset(50%);border: 0;word-wrap: normal !important;" aria-live="assertive" aria-relevant="additions text" aria-atomic="true"></div></body></html>

@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<!-- saved from url=(0040)https://blog.51cto.com/lumay0526/2051317 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="https://blog.51cto.com/favicon.ico">
+        <title>Windows Server 2016中添加AD域控制器-皇昕-51CTO博客</title>
+    <meta name="keywords" content="AD, DS">
+<meta name="description" content="AD域控制器一台往往都是不够的，一般都是需要两台或者两台以上，这样不至于一台AD域控制器瘫痪，导致整个架构无法运行，AD域是整个架构的核心；在上个文档中已经说了如何创建一台AD域，接下来我们看看如何在现有的AD域中添加域控制器。主题：部署环境先决条件安装角色添加域控制器部署环境编号服务器名称IP地址操作系统001AD1192.168.100.250WindowsServer2016Datacent">    <link href="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/header.css" rel="stylesheet"><link href="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/other.css" rel="stylesheet"><link href="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/right.css" rel="stylesheet"><link href="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/blog_details.css" rel="stylesheet"><link href="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/highlight.css" rel="stylesheet">
+    <script type="text/javascript" async="" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/vds.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/push.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/hm.js.download"></script><script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/jquery.min.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/cookie.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/login.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/common.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/mbox.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/follow.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/vip.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/window.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/share.js.download"></script><style></style><link rel="stylesheet" href="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/share_style0_16.css"></head>
+<body>
+<img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s4.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s4.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s4.51cto.com/images/blog/202006/12/12a93e064eb980d392ade2d96e1d4581.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url(&#39;https://s4.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png&#39;) 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=12" target="_blank">
+  <img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/017225af7badc249b32ff2746fa4f695.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li><a href="https://blog.51cto.com/">首页</a></li>
+      <li><a href="https://blog.51cto.com/original">文章</a></li>
+      <li><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+        <li>
+            <a href="http://aix.51cto.com/activity/index.html?blog" target="_blank">大咖来了</a>
+        </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com/" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com/" target="_blank">WOT</a>
+            <a href="http://www.51cto.com/" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li>
+			<a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Flumay0526%2F2051317&amp;logintype=reg" target="_self">注册</a>
+			<!--领VIP图标-->
+			<span style="position: absolute;top:0px;">
+				<a href="https://edu.51cto.com/center/activity/member-activity" target="_blank">
+					<img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/50768f7d453813db433782e76c9f1d44.png">
+				</a>
+			</span>
+		  </li>
+          <li class="login"><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Flumay0526%2F2051317" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index" target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onclick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/box.js.download"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s4.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=12" class="closeMB" target="_blank" styel="display:block;"><img src="https://s4.51cto.com/images/blog/202006/12/9560dbc4eeb061cf22adc67cb0caddc0.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog162',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/entrance.js.download" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box" style="min-height: 876px;">
+    	<link rel="stylesheet" href="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/mdeShow.css">
+<link rel="stylesheet" href="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/tinyscrollbar.css">
+<script type="text/javascript" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/jquery.tinyscrollbar.js.download"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">Windows Server 2016中添加AD域控制器</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/lumay0526" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="8604645" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/957c7fbb488df66ddbeffb9241e074a6.jpg"></a>
+				</div>
+				<a href="https://blog.51cto.com/lumay0526" class="name fl" target="_blank" style="margin-right:0;">皇昕</a>
+									                	                    <a id="checkFollow1_8604645" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">6</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">133551人阅读</a>
+				<a href="javascript:;" class="time fr">2017-12-16 16:39:29</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content">
+					<div class="con artical-content editor-preview-side"><p>AD域控制器一台往往都是不够的，一般都是需要两台或者两台以上，这样不至于一台AD域控制器瘫痪，导致整个架构无法运行，AD域是整个架构的核心；在上个文档中已经说了<a href="https://blog.51cto.com/lumay0526/2046844" style="color: rgb(66, 133, 244);">如何创建一台AD域</a>，接下来我们看看如何在现有的AD域中添加域控制器。</p>
+<h2>主题：</h2>
+<ul>
+<li><a href="https://blog.51cto.com/lumay0526/2051317#%E9%83%A8%E7%BD%B2%E7%8E%AF%E5%A2%83" rel="nofollow" style="color: rgb(66, 133, 244);">部署环境</a></li>
+<li><a href="https://blog.51cto.com/lumay0526/2051317#%E5%85%88%E5%86%B3%E6%9D%A1%E4%BB%B6" rel="nofollow" style="color: rgb(66, 133, 244);">先决条件</a></li>
+<li><a href="https://blog.51cto.com/lumay0526/2051317#%E5%AE%89%E8%A3%85%E8%A7%92%E8%89%B2" rel="nofollow" style="color: rgb(66, 133, 244);">安装角色</a></li>
+<li><a href="https://blog.51cto.com/lumay0526/2051317#%E6%B7%BB%E5%8A%A0%E5%9F%9F%E6%8E%A7%E5%88%B6%E5%99%A8" rel="nofollow" style="color: rgb(66, 133, 244);">添加域控制器</a></li>
+</ul>
+<h2>部署环境</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">编号</th>
+<th style="text-align: center;">服务器名称</th>
+<th style="text-align: center;">IP地址</th>
+<th style="text-align: left;">操作系统</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">001</td>
+<td style="text-align: center;">AD1</td>
+<td style="text-align: center;">192.168.100.250</td>
+<td style="text-align: left;">Windows Server 2016 Datacenter Evaluation</td>
+</tr>
+<tr>
+<td style="text-align: center;">002</td>
+<td style="text-align: center;">AD2</td>
+<td style="text-align: center;">192.168.100.251</td>
+<td style="text-align: left;">Windows Server 2016 Datacenter Evaluation</td>
+</tr>
+</tbody>
+</table>
+<h2>先决条件</h2>
+<p>1、已经有一台AD域控制器，<a href="https://blog.51cto.com/lumay0526/2046844" style="color: rgb(66, 133, 244);">创建AD域</a>  <br>2、设置IP地址，DNS指向第一台域控制器，这里就不多讲了，我只附一张图  <br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/5953f8627117a7da3898116bf378ecda.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>3、设置计算机名<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/49e12b28cf9deaf05b97d78e9b01a708.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"></p>
+<h2>安装角色</h2>
+<p>在需要添加为域控制器的服务器上打开“服务器管理器”，点击“添加角色和功能”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/e5974f96bcbfa939c54178d3bcadfa2d.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>弹出“添加角色和功能向导”，点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/f614875098ef18a0f1d1d79afadde661.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>安装类型选择“基于角色或基于功能的安装”，点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/944ce1fec82e25468c20ad04519f62ce.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>服务器选择“从服务器池中选择服务器”，选中“AD2”，点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/27dfca8b6c550c714afb5cc03ccb6f2e.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>服务器角色选择“Active Directory域服务”，会弹出“添加Active Directory域服务所需的功能？”，点击“添加功能”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/7811ebf1765c64ef6f45ffc03c13c1aa.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>选中“Active Directory域服务”后，点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/5e9f0e291398f9299dc570722384c224.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>功能这里直接点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/c0d4ab4eb060e090e1e5b5fe7c433a12.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/6a423628f0615400d42b1512fd0a0acc.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>确认配置这里将“如果需要，自动重新启动目标服务器”打勾，点击“安装”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/e9b5bb7fabbdbbc3f6ebfd1b74ac2047.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>AD域服务角色安装完成，点“关闭”，当然也可以点击“将此服务器提升为域控制器”来添加域控制器，这里不这么做<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/0c88fc9f79f998b5b2d1bf0f82d9c302.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"></p>
+<h2>添加域控制器</h2>
+<p>回到该服务器的“服务器管理器”，点击“通知”-“将此服务器提升为域控制器”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/71af8e641d4ddb9a43d0b626a103f313.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>部署配置如下  <br>选择部署操作“将域控制器添加到现有域”选中  <br>指定此操作的域信息  <br>域：“contoso.com”  <br>然后点击“更改”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/6e9fe88beca76dd9c7dde8ae89fe87b1.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>输入部署操作的凭据，点击“确定”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/e5914f076f37226ece26a68c486c6368.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>部署配置配置完成，点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/dae01044dc584a7d1d63674d2da0d3a4.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>域控制器选项这里只配置“键入目录服务还原模式密码”，点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/e01f66439f7bd06a90c950d7b36d2b9b.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>DNS选项这里直接点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/6ad077754402f0ba9c93b6fc896d5022.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>其他选项，选择复制自的域控，这里为“AD.contoso.com”，点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/fa916ddaffeb0f44a94231e98136bde8.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>指定AD DS数据库、日志文件和SYSVOL的位置都放置D盘，点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/5050db94bdbf0e698e485bcc7d763689.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>确认配置，点击“下一步”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/650ac2b3be6dee8ba1aec75e7e22bdc5.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>先决条件检查已通过，点击“安装”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/ea4843987f332fe09413c7ef4de7e3fc.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>正在配置<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/525f6efc8e22b824abbc758356440581.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>配置完成后会自动重新启动服务器<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/c94278856404c14573442226d921192a.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>服务器重新启动之后，输入密码，这里需要输入域管理员密码<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/2c3f1f4abc2f9165f1a99b08d95fbe5d.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>进入桌面后，在“服务器管理器”中点“工具”-“Active Directory用户和计算机”<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/9a37fe7b8d411427c101abf94f11a45b.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>打开“Active Directory用户和计算机”后，展开contoso.com域，点击“Domain Controllers”可以看到AD1和AD2<br><img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/3b7febff082462272a19c01f5d62231f.png" alt="Windows Server 2016中添加AD域控制器" style="cursor: pointer;"><br>到这里添加域控制器就部署完成了</p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者皇昕的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+									<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=AD" target="_blank">AD</a>
+																								<a href="https://blog.51cto.com/search/result?q=+DS" target="_blank"> DS</a>
+															                				<a class="last" href="https://blog.51cto.com/lumay0526/category1.html" target="_blank"><i></i>Windows Server</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="2051317" userid="8604645">7</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1592191824220">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina">微博</a>
+					  <a class="bds_sqq" data-cmd="sqq">QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin">微信</a>
+					  <img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/qr-url">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/lumay0526/2049064" title="Windows Server 2016 Hyper-V 虚拟机导出和导入">
+						上一篇：Windows Server 2...</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/lumay0526/2106544" title="Windows Server 2016之RDS部署">
+						下一篇：Windows Server 2...</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/lumay0526" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="8604645" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/957c7fbb488df66ddbeffb9241e074a6.jpg">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/lumay0526" target="_blank" style="display:inline-block;">皇昕</a>
+										<h3>12篇文章，135W+人气，112粉丝</h3>
+									</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_8604645" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/lumay0526" class="header-img" target="_blank">
+						<img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可" maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="8604645">
+					<input type="hidden" class="reply_id" value="2051317">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+							<div class="comment-number" id="comment_pl">
+					<p class="number fl"><span class="comment_number">6</span>条评论</p>
+					<a class="time-last time fr comment-sort" id="sort-desc" flag="desc" page="1">按时间倒序</a>
+				    <a class="time-first time fr comment-sort on" id="sort-asc" flag="asc" page="2">按时间正序</a>
+				    <div class="clear"></div>
+				</div>
+						<div class="commentList"><div class="commentList-box cbox-707823" id="707823"><div class="comment-1 publish_user_id reply_id_box comment_number-list" rid="707823"><div class="top"><div class="is-vip-bg-6 fl header-con"><a href="https://blog.51cto.com/13743423" class="header-img"><img class="is-vip-img-bg is-vip-img-4" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/noavatar_middle.gif"></a></div><div class="head-right jf-list-box"><p class="name"><a href="https://blog.51cto.com/13743423">wx5af5115f8373b</a></p><div class="time"><span class="fl">1楼&nbsp;&nbsp;2018-05-11 11:50:04</span><span class="reply-btn fr" data-type="1"></span><span class="zan fr" blog_id="707823" type="2" userid="13733423"></span><div class="clear"></div></div><input type="hidden" class="reply_id" value="707823"><input type="hidden" class="user_id" value="13733423"><input type="hidden" class="first_pid" value="707823"></div></div><div class="con">您好   在使用windows server 2106安装AD时遇到很多问题  想向你请教一下</div></div><div class="comment-2"><ul class="comment-2-list" flag="707823"></ul></div></div><div class="commentList-box cbox-717593" id="717593"><div class="comment-1 publish_user_id reply_id_box comment_number-list" rid="717593"><div class="top"><div class="is-vip-bg-6 fl header-con"><a href="https://blog.51cto.com/13945196" class="header-img"><img class="is-vip-img-bg is-vip-img-4" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/noavatar_middle.gif"></a></div><div class="head-right jf-list-box"><p class="name"><a href="https://blog.51cto.com/13945196">wx5b8666ddbb8fa</a></p><div class="time"><span class="fl">2楼&nbsp;&nbsp;2018-08-29 17:31:48</span><span class="reply-btn fr" data-type="1">2</span><span class="zan fr" blog_id="717593" type="2" userid="13935196"></span><div class="clear"></div></div><input type="hidden" class="reply_id" value="717593"><input type="hidden" class="user_id" value="13935196"><input type="hidden" class="first_pid" value="717593"></div></div><div class="con">你好，我之前用03的搭过域，现在公司要求用2016的去配置，在网上看你的教程搭配好了，有个问题我想请教下，我现在是两台服务器做的主从域控，在Domain control里面也能看到两台了，现在有个问题，就是我的两台域控服务器都不能本地登录了，登录的时候就提示用户名和密码错误，百度了很多，没有找到解决的资料，希望能从你这里得到一点方向。或者说因为账户问题还是说2016的系统升为域控后就不能本地登录了？盼回复，谢谢</div></div><div class="comment-2"><ul class="comment-2-list" flag="717593"><li class="publish_user_id jf-list-box reply_id_box comment_number-list comment-2-cb cbox-717601"><div class="top 8604645c_i_r8604645"><a class="author fl">作者</a><a class="name fl" href="https://blog.51cto.com/lumay0526">皇昕</a><a class="name fl" href="https://blog.51cto.com/13945196">:@wx5b8666ddbb8fa&nbsp;</a><div class="clear"></div></div><div class="con">2016的AD是没有主备之分，第一台AD服务器安装好操作系统登录设置密码，再部署AD域，系统第一次设置的用户及密码会应用到AD的域管理员用户上。</div><div class="bot"><p class="time">2018-08-29 17:51:56</p><p class="reply reply-btn" data-type="2">回复</p><div class="clear"></div></div><input type="hidden" class="reply_id" value="717601"><input type="hidden" class="user_id" value="8604645"><input type="hidden" class="first_pid" value="717593"></li><li class="publish_user_id jf-list-box reply_id_box comment_number-list comment-2-cb cbox-717611"><div class="top 8604645c_i_r13935196"><a class="name fl" href="https://blog.51cto.com/13945196">wx5b8666ddbb8fa</a><a class="name fl" href="https://blog.51cto.com/lumay0526">:@皇昕&nbsp;</a><div class="clear"></div></div><div class="con">你说的这个我明白，就是第一台服务器提升为域控的时候，第一台服务器的本地初始账号和密码就成了域控的登录账号和密码。我的账号登录域控没问题，就是不能登录本地了。我刚刚吧第二台域控降级删除了，现在第二台服务器相当于只是一个域用户了，是可以用之前的账号进行本地登录的。现在给我的感觉就是域控制器不能直接本地登录，域用户可以本地登录和域登录，原因应该是域策略里面哪里有禁止了域控制器不能本地登录，不知道我这个分析对不对</div><div class="bot"><p class="time">2018-08-29 18:17:41</p><p class="reply reply-btn" data-type="2">回复</p><div class="clear"></div></div><input type="hidden" class="reply_id" value="717611"><input type="hidden" class="user_id" value="13935196"><input type="hidden" class="first_pid" value="717593"></li></ul></div></div><div class="commentList-box cbox-726564" id="726564"><div class="comment-1 publish_user_id reply_id_box comment_number-list" rid="726564"><div class="top"><div class="is-vip-bg-6 fl header-con"><a href="https://blog.51cto.com/5938968" class="header-img"><img class="is-vip-img-bg is-vip-img-4" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/noavatar_middle.gif"></a></div><div class="head-right jf-list-box"><p class="name"><a href="https://blog.51cto.com/5938968">liu18770043443</a></p><div class="time"><span class="fl">3楼&nbsp;&nbsp;2019-01-04 15:40:31</span><span class="reply-btn fr" data-type="1"></span><span class="zan fr" blog_id="726564" type="2" userid="5928968"></span><div class="clear"></div></div><input type="hidden" class="reply_id" value="726564"><input type="hidden" class="user_id" value="5928968"><input type="hidden" class="first_pid" value="726564"></div></div><div class="con">您好，我在装辅助域控的时候，装完我的主域控管理员账户就被重置了，想问下是不是有什么设置控制？</div></div><div class="comment-2"><ul class="comment-2-list" flag="726564"></ul></div></div><div class="commentList-box cbox-735264" id="735264"><div class="comment-1 publish_user_id reply_id_box comment_number-list" rid="735264"><div class="top"><div class="is-vip-bg-6 fl header-con"><a href="https://blog.51cto.com/64568" class="header-img"><img class="is-vip-img-bg is-vip-img-4" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/noavatar_middle.gif"></a></div><div class="head-right jf-list-box"><p class="name"><a href="https://blog.51cto.com/64568">zhework</a></p><div class="time"><span class="fl">4楼&nbsp;&nbsp;2019-07-09 10:36:21</span><span class="reply-btn fr" data-type="1"></span><span class="zan fr" blog_id="735264" type="2" userid="54568"></span><div class="clear"></div></div><input type="hidden" class="reply_id" value="735264"><input type="hidden" class="user_id" value="54568"><input type="hidden" class="first_pid" value="735264"></div></div><div class="con">写的很详细，重点很突出，请问一个问题， 在输入添加凭证时 enterprise administrator  还是 domain <br>administrator ？</div></div><div class="comment-2"><ul class="comment-2-list" flag="735264"></ul></div></div></div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog" style="display: block;"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);" style="display: block;"></a>
+		<div class="directoryBox"><span class="top-icon"></span><div class="list directory"><ul class="directory-list"><li class="lv1">主题：</li><li class="lv1">部署环境</li><li class="lv1">先决条件</li><li class="lv1">安装角色</li><li class="lv1 on">添加域控制器</li><div class="arrow" style="top: 143px;"></div></ul></div><span class="bot-icon"></span></div></div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="https://blog.51cto.com/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/10" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/9d82eccb4e3c371eaeac41193bbef757.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/10" target="_blank"> 基于Kubernetes企业级容器云平台落地与实践</a>
+									<h3 class="white-space">容器私有云平台实践之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/lizhenliang" target="_blank">李振良OK</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>705人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="10" href="https://blog.51cto.com/cloumn/detail/10" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>512人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="5" href="https://blog.51cto.com/cloumn/detail/5" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>584人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="6" href="https://blog.51cto.com/cloumn/detail/6" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/8" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/5366d1f50328a62facbf5db1d91c319a.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/8" target="_blank"> VMware vSAN中小企业应用案例</a>
+									<h3 class="white-space">掌握VMware超融合技术</h3>
+									<h4 class="white-space">共41章&nbsp;|&nbsp;<a href="https://blog.51cto.com/wangchunhai" target="_blank">王春海</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>439人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="8" href="https://blog.51cto.com/cloumn/detail/8" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1970人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="18" href="https://blog.51cto.com/cloumn/detail/18" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/lumay0526/2310018?source=dra" target="_blank">Windows Server 2016之RDS配置证书</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/lumay0526/2172135?source=dra" target="_blank">Windows Server 2016之RDS部署之添加RD网关</a>
+															<a class="white-space" href="https://blog.51cto.com/lumay0526/2046844?source=drt" target="_blank">Windows Server 2016中部署AD</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/hubuxcg/1636719?source=drt" target="_blank">基于Windows 2012R2 AD RADIUS无线认证</a>
+															<a class="white-space" href="https://blog.51cto.com/dufei/1657656?source=drt" target="_blank">Windows Server 2012 AD DS环境下域用户自动加入本地管理员组</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/yaabb163/987138?source=drt" target="_blank">Windows  2012服务器建立域控（AD DS）详解</a>
+															<a class="white-space" href="https://blog.51cto.com/26885426/1351243?source=drt" target="_blank"> windows server 2008 R2 AD 域之---组策略软件分发</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/hbxtyzh/58496?source=drt" target="_blank">IBM DS3400双机配置</a>
+															<a class="white-space" href="https://blog.51cto.com/lijie1977/1874761?source=drt" target="_blank">中小型网络的域环境搭建－－第三季（搭建AD域服务器）</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/itzhongxin/1918291?source=drt" target="_blank">Windows server 2008 R2 配置AD域控服务并为用户设置统一桌面</a>
+															<a class="white-space" href="https://blog.51cto.com/dnscn/1657462?source=drt" target="_blank">使用AD组策略实现USB 只读、读写、禁用的管控</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/rainbird/197794?source=drt" target="_blank">Samba通过ad域进行认证并限制空间大小</a>
+															<a class="white-space" href="https://blog.51cto.com/boyhong/2495957?source=drh" target="_blank">部署WDS服务来批量安装捕获的Win10系统映像</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/wangchunhai/2440120?source=drh" target="_blank">Windows Server 2008 R2文件服务器升级到Windows Server 2016</a>
+															<a class="white-space" href="https://blog.51cto.com/14464303/2422952?source=drh" target="_blank">如何搭建DHCP服务器及自动获取IP地址及相关操作</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/djclouds/2365505?source=drh" target="_blank">Hyper-V 2016 配置管理系列（Part3）</a>
+															<a class="white-space" href="https://blog.51cto.com/rdsrv/2320221?source=drh" target="_blank">WinSrv2019使用DNS构建基于地理位置感知的应用负载均衡</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/wzde2012/2167010?source=drh" target="_blank">Windows Server 2019 System Insights</a>
+															<a class="white-space" href="https://blog.51cto.com/wzde2012/2116290?source=drh" target="_blank">RDS2016 Multipoint Role</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/yoke88/2107244?source=drh" target="_blank">使用FSRM的Task 的自定义Action功能并利用Hardlink功能来备份数据</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box" style="position: fixed;top: 40%;left:49%;">
+		<div class="group_git_box">
+                	 <img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/f84902630cd49eab16f7895cd73e3092.png" style="width:50px;height:50px;"> 	
+			<!--<img src="https://s4.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box" style="display: none;">
+			<img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+		
+		<div><!--学院领VIP-->
+            <a href="https://edu.51cto.com/center/activity/member-activity?qd=bokexiaotu" target="_blank">
+                <img src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/556fdbd28b29d2a48a431a95f9e06c90.gif" style="width:55px;margin-top: 10px;">
+            </a>
+        </div>
+		
+	</div>
+	<div class="the-lowest-bg" style="display: block;">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="2051317" userid="8604645">7</span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>7</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number">6</font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1592191824220">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/qr-url"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_8604645" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a href="https://blog.51cto.com/lumay0526" class="b-name fr">皇昕</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/lumay0526" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="8604645" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/957c7fbb488df66ddbeffb9241e074a6.jpg"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+<script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/countDown.js.download"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '2051317'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'8604645',
+            'blog_id':'2051317'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/lumay0526';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='8604645'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '0'
+    	nicknameurl = 'https://blog.51cto.com/lumay0526'
+    	nickname = '皇昕'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_8604645'),'8604645','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_8604645'),'8604645','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_8604645'),'8604645','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("AD\u57df\u63a7\u5236\u5668\u4e00\u53f0\u5f80\u5f80\u90fd\u662f\u4e0d\u591f\u7684\uff0c\u4e00\u822c\u90fd\u662f\u9700\u8981\u4e24\u53f0\u6216\u8005\u4e24\u53f0\u4ee5\u4e0a\uff0c\u8fd9\u6837\u4e0d\u81f3\u4e8e\u4e00\u53f0AD\u57df\u63a7\u5236\u5668\u762b\u75ea\uff0c\u5bfc\u81f4\u6574\u4e2a\u67b6\u6784\u65e0\u6cd5\u8fd0\u884c\uff0cAD\u57df\u662f\u6574\u4e2a\u67b6\u6784\u7684\u6838\u5fc3\uff1b\u5728\u4e0a\u4e2a\u6587\u6863\u4e2d\u5df2\u7ecf\u8bf4\u4e86[\u5982\u4f55\u521b\u5efa\u4e00\u53f0AD\u57df](https:\/\/blog.51cto.com\/lumay0526\/2046844)\uff0c\u63a5\u4e0b\u6765\u6211\u4eec\u770b\u770b\u5982\u4f55\u5728\u73b0\u6709\u7684AD\u57df\u4e2d\u6dfb\u52a0\u57df\u63a7\u5236\u5668\u3002\n\n## \u4e3b\u9898\uff1a\n\n- [\u90e8\u7f72\u73af\u5883](#\u90e8\u7f72\u73af\u5883)\n- [\u5148\u51b3\u6761\u4ef6](#\u5148\u51b3\u6761\u4ef6)\n- [\u5b89\u88c5\u89d2\u8272](#\u5b89\u88c5\u89d2\u8272)\n- [\u6dfb\u52a0\u57df\u63a7\u5236\u5668](#\u6dfb\u52a0\u57df\u63a7\u5236\u5668)\n\n## \u90e8\u7f72\u73af\u5883\n\n| \u7f16\u53f7 | \u670d\u52a1\u5668\u540d\u79f0 | IP\u5730\u5740 | \u64cd\u4f5c\u7cfb\u7edf |\n| :---: | :-----: | :------: | :-----|\n| 001 | AD1 | 192.168.100.250 | Windows Server 2016 Datacenter Evaluation |\n| 002 | AD2 | 192.168.100.251 | Windows Server 2016 Datacenter Evaluation |\n\n## \u5148\u51b3\u6761\u4ef6\n\n1\u3001\u5df2\u7ecf\u6709\u4e00\u53f0AD\u57df\u63a7\u5236\u5668\uff0c[\u521b\u5efaAD\u57df](https:\/\/blog.51cto.com\/lumay0526\/2046844)  \n2\u3001\u8bbe\u7f6eIP\u5730\u5740\uff0cDNS\u6307\u5411\u7b2c\u4e00\u53f0\u57df\u63a7\u5236\u5668\uff0c\u8fd9\u91cc\u5c31\u4e0d\u591a\u8bb2\u4e86\uff0c\u6211\u53ea\u9644\u4e00\u5f20\u56fe  \n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/5953f8627117a7da3898116bf378ecda.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n3\u3001\u8bbe\u7f6e\u8ba1\u7b97\u673a\u540d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/49e12b28cf9deaf05b97d78e9b01a708.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\n## \u5b89\u88c5\u89d2\u8272\n\n\u5728\u9700\u8981\u6dfb\u52a0\u4e3a\u57df\u63a7\u5236\u5668\u7684\u670d\u52a1\u5668\u4e0a\u6253\u5f00\u201c\u670d\u52a1\u5668\u7ba1\u7406\u5668\u201d\uff0c\u70b9\u51fb\u201c\u6dfb\u52a0\u89d2\u8272\u548c\u529f\u80fd\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/e5974f96bcbfa939c54178d3bcadfa2d.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u5f39\u51fa\u201c\u6dfb\u52a0\u89d2\u8272\u548c\u529f\u80fd\u5411\u5bfc\u201d\uff0c\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/f614875098ef18a0f1d1d79afadde661.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u5b89\u88c5\u7c7b\u578b\u9009\u62e9\u201c\u57fa\u4e8e\u89d2\u8272\u6216\u57fa\u4e8e\u529f\u80fd\u7684\u5b89\u88c5\u201d\uff0c\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/944ce1fec82e25468c20ad04519f62ce.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u670d\u52a1\u5668\u9009\u62e9\u201c\u4ece\u670d\u52a1\u5668\u6c60\u4e2d\u9009\u62e9\u670d\u52a1\u5668\u201d\uff0c\u9009\u4e2d\u201cAD2\u201d\uff0c\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/27dfca8b6c550c714afb5cc03ccb6f2e.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u670d\u52a1\u5668\u89d2\u8272\u9009\u62e9\u201cActive Directory\u57df\u670d\u52a1\u201d\uff0c\u4f1a\u5f39\u51fa\u201c\u6dfb\u52a0Active Directory\u57df\u670d\u52a1\u6240\u9700\u7684\u529f\u80fd\uff1f\u201d\uff0c\u70b9\u51fb\u201c\u6dfb\u52a0\u529f\u80fd\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/7811ebf1765c64ef6f45ffc03c13c1aa.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u9009\u4e2d\u201cActive Directory\u57df\u670d\u52a1\u201d\u540e\uff0c\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/5e9f0e291398f9299dc570722384c224.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u529f\u80fd\u8fd9\u91cc\u76f4\u63a5\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/c0d4ab4eb060e090e1e5b5fe7c433a12.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/6a423628f0615400d42b1512fd0a0acc.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u786e\u8ba4\u914d\u7f6e\u8fd9\u91cc\u5c06\u201c\u5982\u679c\u9700\u8981\uff0c\u81ea\u52a8\u91cd\u65b0\u542f\u52a8\u76ee\u6807\u670d\u52a1\u5668\u201d\u6253\u52fe\uff0c\u70b9\u51fb\u201c\u5b89\u88c5\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/e9b5bb7fabbdbbc3f6ebfd1b74ac2047.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\nAD\u57df\u670d\u52a1\u89d2\u8272\u5b89\u88c5\u5b8c\u6210\uff0c\u70b9\u201c\u5173\u95ed\u201d\uff0c\u5f53\u7136\u4e5f\u53ef\u4ee5\u70b9\u51fb\u201c\u5c06\u6b64\u670d\u52a1\u5668\u63d0\u5347\u4e3a\u57df\u63a7\u5236\u5668\u201d\u6765\u6dfb\u52a0\u57df\u63a7\u5236\u5668\uff0c\u8fd9\u91cc\u4e0d\u8fd9\u4e48\u505a\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/0c88fc9f79f998b5b2d1bf0f82d9c302.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\n## \u6dfb\u52a0\u57df\u63a7\u5236\u5668\n\n\u56de\u5230\u8be5\u670d\u52a1\u5668\u7684\u201c\u670d\u52a1\u5668\u7ba1\u7406\u5668\u201d\uff0c\u70b9\u51fb\u201c\u901a\u77e5\u201d-\u201c\u5c06\u6b64\u670d\u52a1\u5668\u63d0\u5347\u4e3a\u57df\u63a7\u5236\u5668\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/71af8e641d4ddb9a43d0b626a103f313.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u90e8\u7f72\u914d\u7f6e\u5982\u4e0b  \n\u9009\u62e9\u90e8\u7f72\u64cd\u4f5c\u201c\u5c06\u57df\u63a7\u5236\u5668\u6dfb\u52a0\u5230\u73b0\u6709\u57df\u201d\u9009\u4e2d  \n\u6307\u5b9a\u6b64\u64cd\u4f5c\u7684\u57df\u4fe1\u606f  \n\u57df\uff1a\u201ccontoso.com\u201d  \n\u7136\u540e\u70b9\u51fb\u201c\u66f4\u6539\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/6e9fe88beca76dd9c7dde8ae89fe87b1.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u8f93\u5165\u90e8\u7f72\u64cd\u4f5c\u7684\u51ed\u636e\uff0c\u70b9\u51fb\u201c\u786e\u5b9a\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/e5914f076f37226ece26a68c486c6368.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u90e8\u7f72\u914d\u7f6e\u914d\u7f6e\u5b8c\u6210\uff0c\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/dae01044dc584a7d1d63674d2da0d3a4.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u57df\u63a7\u5236\u5668\u9009\u9879\u8fd9\u91cc\u53ea\u914d\u7f6e\u201c\u952e\u5165\u76ee\u5f55\u670d\u52a1\u8fd8\u539f\u6a21\u5f0f\u5bc6\u7801\u201d\uff0c\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/e01f66439f7bd06a90c950d7b36d2b9b.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\nDNS\u9009\u9879\u8fd9\u91cc\u76f4\u63a5\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/6ad077754402f0ba9c93b6fc896d5022.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u5176\u4ed6\u9009\u9879\uff0c\u9009\u62e9\u590d\u5236\u81ea\u7684\u57df\u63a7\uff0c\u8fd9\u91cc\u4e3a\u201cAD.contoso.com\u201d\uff0c\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/fa916ddaffeb0f44a94231e98136bde8.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u6307\u5b9aAD DS\u6570\u636e\u5e93\u3001\u65e5\u5fd7\u6587\u4ef6\u548cSYSVOL\u7684\u4f4d\u7f6e\u90fd\u653e\u7f6eD\u76d8\uff0c\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/5050db94bdbf0e698e485bcc7d763689.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u786e\u8ba4\u914d\u7f6e\uff0c\u70b9\u51fb\u201c\u4e0b\u4e00\u6b65\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/650ac2b3be6dee8ba1aec75e7e22bdc5.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u5148\u51b3\u6761\u4ef6\u68c0\u67e5\u5df2\u901a\u8fc7\uff0c\u70b9\u51fb\u201c\u5b89\u88c5\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/ea4843987f332fe09413c7ef4de7e3fc.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u6b63\u5728\u914d\u7f6e\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/525f6efc8e22b824abbc758356440581.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u914d\u7f6e\u5b8c\u6210\u540e\u4f1a\u81ea\u52a8\u91cd\u65b0\u542f\u52a8\u670d\u52a1\u5668\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/c94278856404c14573442226d921192a.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u670d\u52a1\u5668\u91cd\u65b0\u542f\u52a8\u4e4b\u540e\uff0c\u8f93\u5165\u5bc6\u7801\uff0c\u8fd9\u91cc\u9700\u8981\u8f93\u5165\u57df\u7ba1\u7406\u5458\u5bc6\u7801\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/2c3f1f4abc2f9165f1a99b08d95fbe5d.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u8fdb\u5165\u684c\u9762\u540e\uff0c\u5728\u201c\u670d\u52a1\u5668\u7ba1\u7406\u5668\u201d\u4e2d\u70b9\u201c\u5de5\u5177\u201d-\u201cActive Directory\u7528\u6237\u548c\u8ba1\u7b97\u673a\u201d\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/9a37fe7b8d411427c101abf94f11a45b.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u6253\u5f00\u201cActive Directory\u7528\u6237\u548c\u8ba1\u7b97\u673a\u201d\u540e\uff0c\u5c55\u5f00contoso.com\u57df\uff0c\u70b9\u51fb\u201cDomain Controllers\u201d\u53ef\u4ee5\u770b\u5230AD1\u548cAD2\n![](https:\/\/s4.51cto.com\/images\/blog\/201712\/16\/3b7febff082462272a19c01f5d62231f.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u5230\u8fd9\u91cc\u6dfb\u52a0\u57df\u63a7\u5236\u5668\u5c31\u90e8\u7f72\u5b8c\u6210\u4e86", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"Windows Server 2016中添加AD域控制器",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s4.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1592191821; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})
+</script>
+</div>
+<script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/marked.min.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/highlight.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/detail_mp.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/detail.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/details_new.js.download"></script><script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/copy.js.download"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/pageview.html"></iframe>
+</div>
+
+<script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/pvlog.js.download"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type="text/javascript">
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/jquery.cookie.js.download"></script>
+<script src="./Windows Server 2016中添加AD域控制器-皇昕-51CTO博客_files/time-on-page.js.download" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+
+
+<div id="zhichiBtnBox" style="position: fixed; z-index: 2147483583; box-shadow: rgba(15, 66, 76, 0.25) 0px 0px 14px 0px; width: 60px; height: 60px; border-radius: 50%; background-color: rgb(66, 133, 244); background-image: url(&quot;//www.sobot.com/chat/frame/imgs/icon.png&quot;); background-repeat: no-repeat; background-position: 18px -58px; right: 40px; bottom: 90px; display: none;"><a hidefocus="" id="zhichiBtn" style="position:relative;text-decoration: none; outline: none; font-family: Microsoft Yahei, Arial, Helvetica; color: #fff; font-size: 16px; display: inline-block; margin: 0; padding: 0; border: none; line-height:43px; float:none;width:100%;height:100%;border-radius:50%;"><span class="zc-advice-icon-btn-title" style="box-shadow: rgba(107, 113, 114, 0.15) 0px 2px 4px 0px; border: 1px solid rgb(235, 239, 240); font-family: &quot;Microsoft Yahei&quot;, Arial, Helvetica; color: rgb(85, 85, 86); font-size: 13px; margin: 0px; text-align: right; background: rgb(255, 255, 255); position: absolute; top: 15px; right: 70px; text-overflow: ellipsis; white-space: nowrap; word-break: normal; display: none; border-radius: 3px; padding: 0px 5px; height: 30px; line-height: 30px;">咨询在线客服</span></a><i style="position:absolute;top:0px;right:0px;padding:1px;line-height:20px;text-align:center;color:#fff;font-weight:bold;height:18px;min-width:18px;background-color:#ed5c5c;border-radius:18px;font-size:12px;display:none;font-style:normal;" id="zhichiCount"></i></div></body></html>

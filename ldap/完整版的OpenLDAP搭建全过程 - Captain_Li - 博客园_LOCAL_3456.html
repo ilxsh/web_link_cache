@@ -1,0 +1,3116 @@
+<!DOCTYPE html>
+<html lang="zh-cn"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="origin">
+    <meta property="og:description" content="总结： 先写总结，再写正文，嘿嘿嘿。这还是第一次认真的写个文档，写个总结，哈哈。大概在一个月前，第一次听说这个东西，完全没有概念，刚开始的时候看理论的知识，看了几次之后就没看了，看不懂啊。太抽象了，真">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>完整版的OpenLDAP搭建全过程 - Captain_Li - 博客园</title>
+    <link id="favicon" rel="shortcut icon" href="https://common.cnblogs.com/favicon.ico?v=20200522" type="image/x-icon">
+    
+    <link rel="stylesheet" href="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.css">
+    <link id="MainCss" rel="stylesheet" href="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-anothereon001.css">
+    <link type="text/css" rel="stylesheet" href="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/custom.css">
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-anothereon001-mobile.css">
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/lemon-le/rss">
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/lemon-le/rsd.xml">
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/lemon-le/wlwmanifest.xml">
+    <script src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/amp4ads-host-v0.js"></script><script async="" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/analytics.js"></script><script type="text/javascript" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/encoder.js"></script><script src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-2.js"></script>
+    <script src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.js"></script>
+    <script>
+        var currentBlogId = 267590;
+        var currentBlogApp = 'lemon-le';
+        var cb_enable_mathjax = false;
+        var isLogined = false;
+        var skinName = 'AnotherEon001';
+    </script>
+    
+    
+    
+<style type="text/css">.heart{width: 10px;height: 10px;position: fixed;background: #f00;transform: rotate(45deg);-webkit-transform: rotate(45deg);-moz-transform: rotate(45deg);}.heart:after,.heart:before{content: '';width: inherit;height: inherit;background: inherit;border-radius: 50%;-webkit-border-radius: 50%;-moz-border-radius: 50%;position: absolute;}.heart:after{top: -5px;}.heart:before{left: -5px;}</style><link rel="preload" href="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js" as="script"><script type="text/javascript" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/integrator.js"></script><script src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/pubads_impl_2020052102.js" async=""></script></head>
+<body>
+    <a name="top"></a>
+    <div id="page_begin_html">
+        <!-- 添加博客顶部博主信息-->
+<p style="text-align: center;font-size:35px;margin-bottom:5px;margin-top:20px;opacity: 0.5">欢迎来到李先生的博客</p>
+
+
+<!-- 添加顶部滚动信息（公告）例子：《沁园春.雪》-->
+<div id="Scroll_info" style="text-align: center;color:red;font-size:13px;padding:5px;opacity: 0.5">深山的鹿，不知归处；万般皆苦，只可自渡。</div>
+<!--<script> -->
+ <!--      function func(){  -->
+<!--           var tag = document.getElementById('Scroll_info');  -->
+<!--           var content = tag.innerText;  -->
+<!--           var f = content.charAt(0);  -->
+ <!--          var l = content.substring(1,content.length);  -->
+   <!--        var new_content = l + f;  -->
+ <!--          tag.innerText = new_content;  -->
+<!--       }  -->
+  <!--     setInterval('func()',1600);  -->
+<!--</script>  -->
+
+
+<!-- 创建新的导航栏，内容可更改为你自己的-->
+<div id="shwtop">
+    <ul style="margin-left:0px;margin-right: 0px;" class="test11">
+        <div class="dropdown">
+            <a href="https://www.cnblogs.com/" class="dropbtn">博客园首页</a>
+            <div class="dropdown-content">
+
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <a href="https://www.cnblogs.com/lemon-le/" class="dropbtn">我的首页</a>
+            <div class="dropdown-content">
+
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <a href="#" class="dropbtn">Linux系统</a>
+            <div class="dropdown-content">
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/873353.html">Linux基础</a>
+				<!--  <a class="menu" href=""  >Linux性能</a>  -->
+				<!--  <a class="menu" href=""  >算法</a>  -->
+				<a class="menu" href="https://www.cnblogs.com/lemon-le/category/934302.html">OpenLDAP</a>				
+            </div>
+        </div>
+
+		<div class="dropdown">
+            <a href="#" class="dropbtn">脚本</a>
+            <div class="dropdown-content">
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/870996.html">Shell</a>
+				<a class="menu" href="https://www.cnblogs.com/lemon-le/category/1234611.html">Go</a>
+            </div>
+        </div>
+		
+		<div class="dropdown">
+            <a href="#" class="dropbtn">Linux服务</a>
+            <div class="dropdown-content">
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/1109697.html" target="_Blank">Nginx</a>
+            </div>
+        </div>
+		
+		<div class="dropdown">
+            <a href="#" class="dropbtn">监控</a>
+            <div class="dropdown-content">
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/1032331.html" target="_Blank">Zabbix</a>
+            </div>
+        </div>
+		
+		<div class="dropdown">
+            <a href="#" class="dropbtn">容器</a>
+            <div class="dropdown-content">
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/1220294.html" target="_Blank">Docker</a>
+				<a class="menu" href="https://www.cnblogs.com/lemon-le/category/1335802.html" target="_Blank">K8s</a>
+            </div>
+        </div>
+
+		<div class="dropdown">
+            <a href="#" class="dropbtn">数据库</a>
+            <div class="dropdown-content">
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/1218573.html" target="_Blank">Mysql</a>
+				<a class="menu" href="https://www.cnblogs.com/lemon-le/category/1030770.html" target="_Blank">MongoDB</a>
+				<a class="menu" href="https://www.cnblogs.com/lemon-le/category/1234598.html" target="_Blank">Redis</a>
+            </div>
+        </div>
+		
+        <div class="dropdown">
+            <a href="#" class="dropbtn">Python开发</a>
+            <div class="dropdown-content">
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/973964.html" target="_Blank">Python基础</a>
+			<!-- 	<a class="menu" href=""  target="_Blank">Python爬虫</a>   -->
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/1006831.html" target="_Blank">Django</a>
+				<a class="menu" href="https://www.cnblogs.com/lemon-le/category/1012370.html" target="_Blank">Fabric</a>
+            </div>
+        </div>
+
+
+        <div class="dropdown">
+            <a href="#" class="dropbtn">大数据</a>
+            <div class="dropdown-content">
+				<a class="menu" href="https://www.cnblogs.com/lemon-le/category/1402525.html" target="_Blank">ELK</a>
+            <!--     <a class="menu" href=""  target="_Blank">Zookeeper</a>  -->
+             <!--    <a class="menu" href=""  target="_Blank">Spark</a>  -->
+			<!-- 	<a class="menu" href=""  target="_Blank">Kafka</a>  -->
+			<!-- 	<a class="menu" href=""  target="_Blank">Hadoop</a>  -->
+            </div>
+        </div>
+
+		 <div class="dropdown">
+            <a href="#" class="dropbtn">虚拟化</a>
+            <div class="dropdown-content">
+            <!--     <a class="menu" href=""  target="_Blank">KVM</a>  -->
+			<!-- 	<a class="menu" href=""  target="_Blank">Openstack</a>  -->
+            </div>
+        </div>		
+
+		 <div class="dropdown">
+            <a href="#" class="dropbtn">自动化</a>
+            <div class="dropdown-content">
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/1001177.html" target="_Blank">Ansible</a>
+            </div>
+        </div>		
+
+
+        <div class="dropdown">
+            <a href="#" class="dropbtn">DevOps</a>
+            <div class="dropdown-content">
+            <!--     <a class="menu" href=""  target="_Blank">持续集成</a>       -->
+            <!--     <a class="menu" href=""  target="_Blank">流水线</a>  -->
+			<!-- 	<a class="menu" href=""  target="_Blank">微服务</a>			 -->	
+            </div>
+        </div>
+
+
+        <div class="dropdown">
+            <a href="#" class="dropbtn">思考人生</a>
+            <div class="dropdown-content">
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/908629.html" target="_Blank">工作总结</a>
+				<a class="menu" href="https://www.cnblogs.com/lemon-le/category/1114957.html" target="_Blank">疑难杂症</a>				
+                <a class="menu" href="https://www.cnblogs.com/lemon-le/category/1399896.html" target="_Blank">情感生活</a>
+				<a class="menu" href="https://www.cnblogs.com/lemon-le/category/1112049.html" target="_Blank">创业想法</a>				
+            </div>
+        </div>
+
+    </ul>
+</div>
+
+
+<!-- 添加页面放大和缩小功能按键 -->
+<div id="divExpandViewArea" onclick="$('#main_container').css({'margin-left':'-195px'});$('#leftmenu').css({'display':'none'});">扩大</div>
+<div id="divCollapseViewArea" onclick="$('#main_container').css({'margin-left':'0px'});$('#leftmenu').css({'display':'block'});">缩小</div>
+
+
+
+
+<!-- 博客页面脚添加Github链接或其他链接 -->
+<!-- 页面右上角 -->
+<a href="https://github.com/Lemon-le" title="我的github地址" target="_Blank" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#FD6C6C; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    </div>
+    <div id="wrapper">
+<div id="header">
+
+<div id="top">
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/lemon-le/">李先生</a>
+</h1>
+<div id="subtitle">
+在平凡中坚持前行，总有一天会遇到不一样的自己。
+</div>
+</div>
+<div id="sub"><div class="BlogStats">随笔 - 
+189, 文章 - 
+0, 评论 - 
+122, 引用 - 
+0</div>
+
+</div>
+
+
+
+
+</div>
+<div id="main_container">
+<div id="main_content">
+<div id="content">
+	<div id="post_detail">
+    <div class="post">
+        <h2>
+            
+<a id="cb_post_title_url" class="postTitle2" href="https://www.cnblogs.com/lemon-le/p/6266921.html">完整版的OpenLDAP搭建全过程</a>
+
+        </h2>
+        <div class="postbody">
+            
+<div id="cnblogs_post_body" class="blogpost-body ">
+    <div>总结：</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;先写总结，再写正文，嘿嘿嘿。这还是第一次认真的写个文档，写个总结，哈哈。大概在一个月前，第一次听说这个东西，完全没有概念，刚开始的时
+候看理论的知识，看了几次之后就没看了，看不懂啊。太抽象了，真的太抽象了。然后就把它晾在一边了，又过了一段时间，想了想，既然知道了这个东西，还是得
+好好学学，好好了解一下。整个过程<span style="line-height: 1.6;">是在虚拟机上测试完成，期间遇到了太多太多的坑，一个问题就是好几天。这些只是基础的一些东西，还得好好的看看官方文档，嘿嘿嘿。</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;最大的收获就是整个学习过程中的解决问题的办法和思想，理论的知识看不懂，没关系，一定要一定要动手去做，有时候看书，觉得挺有理，但是不去
+动手做，永远都学不会，当你动手做的过程中就慢慢的理解了这个东西是干嘛的；还有一点就是不要怕难，就算一个东西再难，只要肯花时间，肯动手做，一定学的
+会；还有思考的方式，当你在一个问题是纠结一天了，几天的时候，不要陷进去了，换个方向想想，另一种解决办法马上就出来了。</span></div>
+<div>&nbsp;</div>
+<div>文档信息</div>
+<div>目 &nbsp; &nbsp; &nbsp; &nbsp;的：搭建一套完整的OpenLDAP系统，实现账号的统一管理。</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 1：OpenLDAP服务端的搭建</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 2：PhpLDAPAdmin的搭建</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 3<span style="line-height: 1.6;">：OpenLDAP的打开日志信息</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span style="line-height: 1.6;">&nbsp;4：OpenLDAP与migrationtools实现导入系统账号的相关信息</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<span style="line-height: 1.6;">5：</span><span style="line-height: 1.6;">OpenLDAP客户端的配置</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 6<span style="line-height: 1.6;">：</span><span style="line-height: 1.6;">OpenLDAP与SSH</span></div>
+<div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 7：OpenLDAP限制用户登录系统</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 8：OpenLDAP强制用户一登录系统更改密码</div>
+</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 9：<span style="line-height: 1.6;">OpenLDAP与系统账号结合Samba</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span style="line-height: 1.6;">10：OpenLDAP的主从</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;11：OpenLDAP的双主</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span></div>
+<div><span style="line-height: 1.6;">作</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; </span><span style="line-height: 1.6;">者：李</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">乐 &nbsp; &nbsp; &nbsp; &nbsp;</span></div>
+<div>日 &nbsp; &nbsp; &nbsp; &nbsp;期：2017-01-09<span style="line-height: 1.6;"><br></span></div>
+<div>联系方式：836217653@qq.com</div>
+<div>&nbsp;</div>
+<div><span style="color: #ff0000;"><strong>系统环境信息</strong></span></div>
+<div>操作系统：CentOS release 6.7</div>
+<div>&nbsp;</div>
+<div><span style="color: #ff0000;"><strong>基础的环境准备</strong></span>：</div>
+<div><strong><span style="color: #ff99cc;">关闭防火墙</span></strong>：/etc/init.d/iptables stop &nbsp;&amp;&amp;&nbsp;chkconfig iptables off</div>
+<div><span style="color: #ff99cc;"><strong>关闭NetworkManager</strong></span>：/etc/init.d/NetworkManager stop &amp;&amp; chkconfig NetworkManager off</div>
+<div><span style="line-height: 1.6;"><span style="color: #ff99cc;"><strong>SeLinux设为disabled</strong></span>：getenforce 是否为</span>Disabled，若不是，则修改：</div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">1：临时的生效 &nbsp;setenforce 0，再</span><span style="line-height: 1.6;">getenforce的时候为</span><span style="line-height: 1.6;">permissive</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">2：修改配置文件，然后重启 &nbsp;vim /etc/sysconfig/selinux 把SELINUX=disabled</span></div>
+<div><span style="color: #ff99cc;"><strong>yum源仓库的配置</strong></span>：</div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">1）mkdir /yum</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">2）vim&nbsp;/etc/yum.repos.d/ll.repo</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;[local]</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; name = local</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; baseurl = file:///yum</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; gpgcheck = 0</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; enabled = 1</div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">3）挂载 mount /mnt/hgfs/软件/CentOS-6.7-x86_64-bin-DVD1to2/CentOS-6.7-x86_64-bin-DVD1.iso /yum -o loop&nbsp;</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">4）yum clean all 清除缓存</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">5）yum makecache 创建缓存</span></div>
+<div>&nbsp;</div>
+<div><span style="color: #ff00ff;"><strong>一：OpenLDAP服务器的搭建</strong></span></div>
+<div>&nbsp;</div>
+<div>1）安装OpenLDAP的相关</div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">&nbsp; &nbsp;</span><span style="line-height: 1.6;">yum -y install openldap openldap-servers openldap-clients openldap-devel compat-openldap &nbsp; 其中</span><span style="line-height: 1.6;"><span style="color: #ff00ff;">compat-openldap</span>这个包与主从有很大的关系</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div><span style="line-height: 1.6;">安装完后，可以看到自动创建了ldap用户：</span></div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231900494-390779836.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</div>
+<div>可以通过rpm -qa |grep openldap查看安装了哪些包：</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231900806-474010325.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div><span style="line-height: 1.6;">2</span><span style="line-height: 1.6;">）OpenLDAP的相关配置文件信息</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; /etc/openldap/slapd.conf：OpenLDAP的主配置文件，记录根域信息，管理员名称，密码，日志，权限等</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; /etc/openldap/slapd.d/*：这下面是</span><span style="line-height: 1.6;">/etc/openldap/slapd.conf配置信息生成的文件，每修改一次配置信息，这里的东西就要重新生成</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; /etc/openldap/schema/*：OpenLDAP的schema存放的地方</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; /var/lib/ldap/*：OpenLDAP的数据文件</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; /usr/share/openldap-servers/slapd.conf.obsolete 模板配置文件</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; /usr/share/openldap-servers/DB_CONFIG.example 模板数据库配置文件</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp;</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; </span><span style="line-height: 1.6;">OpenLDAP监听的端口：</span></div>
+<div>&nbsp; &nbsp; &nbsp; 默认监听端口：389（明文数据传输）</div>
+<div>&nbsp; &nbsp; &nbsp; 加密监听端口：636（密文数据传输）</div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span></div>
+<div><span style="line-height: 1.6;">3）初始化OpenLDAP的配置</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp;&nbsp;</span>cp /usr/share/openldap-servers/DB_CONFIG.example /var/lib/ldap/DB_CONFIG</div>
+<div>&nbsp; &nbsp; &nbsp; cp /usr/share/openldap-servers/slapd.conf.obsolete /etc/openldap/slapd.conf</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>4）修改配置文件</div>
+<div>&nbsp; &nbsp; &nbsp; 首先，slappasswd生成密文密码123456，拷贝这个到/etc/openldap/slapd.conf里</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231901025-813415793.png" alt="" border="0"></div>
+<div><span style="line-height: 1.6;">&nbsp;</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp;这里的rootpw必须顶格写，而且与后面的密码文件用</span><span style="line-height: 1.6; color: #ff0000;"><strong>Tab键</strong></span><span style="line-height: 1.6;">隔开&nbsp;</span>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231901369-96288261.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;修改对应的</div>
+<div>&nbsp; &nbsp; &nbsp;<img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231901681-1910337547.html" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231901931-597376332.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div><span style="line-height: 1.6;">5）重新生成配置文件信息文件</span></div>
+<div>&nbsp; &nbsp; &nbsp; 先检测<span style="line-height: 1.6;">/etc/openldap/slapd.conf是否有错误：</span>slaptest -f /etc/openldap/slapd.conf</div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp;&nbsp;</span><img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231902385-1835882832.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; 这里报错是因为在第三步后没有重新生成配置文件，启动slapd。而是直接修改配置文件去了。先启动slapd：/etc/init.d/slapd restart</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231902666-1515855592.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp;这里又报错，这是因为没有给/var/lib/ldap授权，授权后chown -R ldap.ldap /var/lib/ldap/，再重启slapd，<span style="line-height: 1.6;">/etc/init.d/slapd restart，可以看到成功的</span></div>
+<div>&nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231902947-441226326.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp; 接着回到<span style="line-height: 1.6;">检测</span><span style="line-height: 1.6;">/etc/openldap/slapd.conf是否有错误：</span><span style="line-height: 1.6;">slaptest -f /etc/openldap/slapd.conf</span></div>
+<div>&nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231903213-1353227814.png" alt="" border="0"></div>
+<div>&nbsp; 可以看到没问题，然后重新生成配置文件的配置信息：</div>
+<div>&nbsp; 先删除最先的配置文件生成的信息：rm -rf /etc/openldap/slapd.d/*</div>
+<div>&nbsp; 重新生成：slaptest -f /etc/openldap/slapd.conf -F /etc/openldap/slapd.d/</div>
+<div>&nbsp; 查看是否生成的是自己修改的配置文件信息：cat /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}bdb.ldif</div>
+<div>&nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231903510-1487907791.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp;授权：chown -R ldap.ldap /etc/openldap/slapd.d/</div>
+<div>&nbsp;重启：/etc/init.d/slapd restart</div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231903931-1051326147.png" alt="" border="0"></div>
+<div>&nbsp;&nbsp;</div>
+<div>&nbsp;到这里为止，OpenLDAP服务端基本上完成了，我们可以通过PhpLDAPAdmin来登录看一下，那先得安装PhpLDAPAdmin</div>
+<div>&nbsp;</div>
+<div><strong><span style="color: #ff00ff;">二：<span style="line-height: 1.6;">PhpLDAPAdmin的搭建</span></span></strong></div>
+<div>&nbsp;</div>
+<div>1）<span style="line-height: 1.6;">安装EPEL仓库，镜像里没有</span><span style="line-height: 1.6;">PhpLDAPAdmin这个的安装包，所以得安装</span><span style="line-height: 1.6;">EPEL仓库</span></div>
+<div>&nbsp; &nbsp; &nbsp; rpm -ivh &nbsp;<a style="line-height: 1.6;" href="http://mirrors.ukfast.co.uk/sites/dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm">http://mirrors.ukfast.co.uk/sites/dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm</a><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span></div>
+<div>&nbsp; &nbsp; &nbsp; yum clean all&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; yum makecache</div>
+<div>&nbsp;</div>
+<div><span style="line-height: 1.6;">2）安装</span><span style="line-height: 1.6;">PhpLDAPAdmin</span></div>
+<div>&nbsp; &nbsp; &nbsp;yum install -y phpldapadmin</div>
+<div><span style="line-height: 1.6;">&nbsp;</span></div>
+<div><span style="line-height: 1.6;">3）修改phpldapadmin的配置文件，访问控制权限vim /etc/httpd/conf.d/phpldapadmin.conf，允许谁访问</span></div>
+<div><img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231904260-1649858772.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>4）修改配置文件：vim /etc/phpldapadmin/config.php</div>
+<div>&nbsp; &nbsp; &nbsp; $servers-&gt;setValue('login','attr','dn'); &nbsp; &nbsp;这一行的注释去掉</div>
+<div>&nbsp; &nbsp; //$servers-&gt;setValue('login','attr','uid'); &nbsp;这一行注释掉</div>
+<div>&nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231904510-1875476167.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>5）重启httpd服务/etc/init.d/httpd restart</div>
+<div>&nbsp;</div>
+<div>6）在浏览器输入OpenLDAP服务端的IP &nbsp; &nbsp; &nbsp; &nbsp;10.0.0.138/ldapadmin</div>
+<div>&nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231904791-397125213.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div><span style="line-height: 1.6;">7）登录，输入管理员的DN，也就是配置文件里配置的</span></div>
+<div>&nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231905103-377896150.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>8）认证，报错</div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231905431-868330612.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp;这是因为在第一步搭建OpenLDAP服务端的时候，并没有把管理员的账号信息导入，编辑root.ldif，然后导入</div>
+<div>&nbsp;<span style="color: #009300;">dn: dc=lemon,dc=com</span></div>
+<div><span style="color: #009300;">&nbsp;objectclass: dcObject</span></div>
+<div><span style="color: #009300;">&nbsp;objectclass: organization</span></div>
+<div><span style="color: #009300;">&nbsp;o: Yunzhi,Inc.</span></div>
+<div><span style="color: #009300;">&nbsp;dc: lemon</span></div>
+<div>&nbsp;</div>
+<div><span style="color: #009300;">&nbsp;dn: cn=Captain,dc=lemon,dc=com</span></div>
+<div><span style="color: #009300;">&nbsp;objectclass: organizationalRole</span></div>
+<div><span style="color: #009300;">&nbsp;cn: Captain</span></div>
+<div>&nbsp;这里得注意每一个属性： <span style="color: #ff0000;"><strong>后必须有空格，但是值的后面不能有任何空格</strong></span></div>
+<div>&nbsp;然后导入：ldapadd -x -D "cn=Captain,dc=lemon,dc=com" -W -f root.ldif</div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231905681-1543202759.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp;然后再通过浏览器去访问的话：</div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231905963-1588039011.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; 也可以通过命令行查询：<span style="color: #ff0000;"><strong>ldapsearch -x -b "cn=Captain,dc=lemon,dc=com"</strong></span></div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231906228-1134093580.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp;到这里，PhpLDAPAdmin搭建完了，接下来，咱们得把<span style="color: #ff0000;"><strong>日志</strong></span>打开，这样的话好排错，嘿嘿嘿</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div><span style="color: #ff00ff;"><strong>三：OpenLDAP的打开日志信息</strong></span></div>
+<div>&nbsp;</div>
+<div>1：现在配置文件里加上日志行 ，这里的日志级别有很多种，-1的话会记录很多日志信息</div>
+<div>&nbsp; &nbsp; &nbsp;vim /etc/openldap/slapd.conf 加上<strong><span style="color: #ff0000;">loglevel -1</span></strong></div>
+<div>&nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231906510-1823862717.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp;&nbsp; 这里修改了配置文件，所有得重新生成配置文件的信息</div>
+<div>&nbsp; &nbsp;&nbsp;rm -rf /etc/openldap/slapd.d/*</div>
+<div>&nbsp; &nbsp;&nbsp;slaptest -f /etc/openldap/slapd.conf -F /etc/openldap/slapd.d/</div>
+<div>&nbsp; &nbsp;&nbsp;chown -R ldap.ldap /etc/openldap/slapd.d/</div>
+<div>&nbsp;</div>
+<div>2：在 vim /etc/rsyslog.conf加上</div>
+<div>&nbsp; &nbsp; &nbsp; local4.* &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;/var/log/slapd/slapd.log</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231906791-1209058579.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp;然后重启/etc/init.d/rsyslog restart</div>
+<div>&nbsp;</div>
+<div>3：创建日志文件目录，授权</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;mkdir /var/log/slapd</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;chmod 755 /var/log/slapd/</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;chown ldap.ldap /var/log/slapd/</div>
+<div>&nbsp;</div>
+<div>4：重启slapd服务，/etc/init.d/slapd restart</div>
+<div>5：就可以看到日志信息了cat /var/log/slapd/slapd.log</div>
+<div>&nbsp;</div>
+<div><strong style="line-height: 1.6; color: #ff00ff;">四</strong><span style="line-height: 1.6; color: #ff00ff;"><strong>：<span style="line-height: 1.6;">OpenLDAP与migrationtools实现导入系统账号的相关信息</span></strong></span></div>
+<div>&nbsp;</div>
+<div>1：安装<span style="line-height: 1.6;">migrationtools</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;yum -y install migrationtools</div>
+<div>&nbsp;</div>
+<div>2：修改<span style="line-height: 1.6;">migrationtools的配置文件，在</span><span style="line-height: 1.6;">/usr/share/migrationtools/这个目录下有很多</span><span style="line-height: 1.6;">migrationtools的文件</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; vim&nbsp;</span><span style="line-height: 1.6;">/usr/share/migrationtools/</span><span style="line-height: 1.6;">migrate_common.ph 修改以下的两个地方</span></div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231907072-409789475.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp;3：生成基础的数据文件，可以自己修改这个生成的base.ldif文件，把不需要的去掉</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;<span style="line-height: 1.6;">/usr/share/migrationtools</span><span style="line-height: 1.6;">/migrate_base.pl &gt; base.ldif</span></div>
+<div>&nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231907603-1965279553.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>4：把base.ldif导入OpenLDAP</div>
+<div>&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;ldapadd -x -D "cn=Captain,dc=lemon,dc=com" -W -f base.ldif</div>
+<div>&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231908010-1186987047.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp; 这里会报错，我们<span style="color: #ff0000;"><strong>可以通过-c参数强制加入</strong></span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231908322-601912446.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>导入之后，通过PhpLdapAdmin可以看到已经导入进来了：</div>
+<div>&nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231908619-945914484.html" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div><span style="line-height: 1.6;">&nbsp;</span></div>
+<div><span style="line-height: 1.6;">&nbsp;5：把系统的用户生成ldif文件</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<span style="line-height: 1.6;">cd &nbsp;/usr/share/migrationtools</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;./migrate_passwd.pl /etc/passwd passwd.ldif</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;./migrate_group.pl /etc/group group.ldif</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;<img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231908947-372285000.png" alt="" border="0">
+<div>&nbsp; &nbsp;可以看到生成的文件，然后根据自己需要修改这两个ldif文件：</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp; &nbsp;passwd.ldif只留一个test1测试用户：</div>
+<div>&nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231909322-41647009.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp;group.ldif留对应的test1：</div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231909838-565541215.html" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp;把用户导入进去：<span style="color: #ff0000;"><strong>ldapadd -x -D "cn=Captain,dc=lemon,dc=com" -W -f passwd.ldif</strong></span></div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231910353-978326000.png" alt="" border="0"></div>
+<div>&nbsp;把组导进去：<span style="color: #ff0000;"><strong>ldapadd -x -D "cn=Captain,dc=lemon,dc=com" -W -f group.ldif</strong></span></div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231911041-810700205.png" alt="" border="0"></div>
+<div>&nbsp;然后就可以看到：</div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231911447-508531031.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>在这里就已经完成把系统的账号属性导入了OpenLDAP，然后就通过添加OpenLDAP用户，来进行验证，所以得先做好客户端的设置</div>
+<div>&nbsp;</div>
+<div><span style="color: #ff00ff;"><strong>五：OpenLDAP客户端的配置</strong></span></div>
+<div>&nbsp;</div>
+<div>1：停掉sssd服务 &nbsp;service sssd stop &amp;&amp; chkconfig sssd off</div>
+<div>&nbsp;</div>
+<div>2：安装nslcd服务 &nbsp;<span style="line-height: 1.6;">yum install nss-pam-ldapd</span></div>
+<div><span style="line-height: 1.6;">&nbsp;</span></div>
+<div><span style="line-height: 1.6;">3：修改</span>vim /etc/nslcd.conf这个配置文件</div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp;</span><img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231911697-2065880883.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>4：修改vim /etc/pam_ldap.conf</div>
+<div>&nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231911916-2084220578.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231912228-1331167616.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>5：&nbsp;vim /etc/pam.d/system-auth 修改，把sss行的注释掉，改成ldap的</div>
+<div>&nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231912494-579426234.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>6：vim /etc/nsswitch.conf &nbsp; 修改<span style="line-height: 1.6;">nsswitch.conf配置文件，修改后，默认登录的用户通过本地配置文件进行查找并匹配。当匹配不到用户信息时，会通过后端配置的LDAP认证服务进行匹配</span></div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231912775-200000877.png" alt="" border="0"></div>
+<div>7：vim /etc/sysconfig/authconfig &nbsp; 确保标记的已打开为yes</div>
+<div>&nbsp; &nbsp; &nbsp;USESHADOW=yes 启用密码验证</div>
+<div>&nbsp; &nbsp; &nbsp;USELDAPAUTH=yes 启用OpenLDAP验证</div>
+<div>&nbsp; &nbsp; &nbsp;USELOCAUTHORIZE=yes 启用本地验证</div>
+<div>&nbsp; &nbsp; &nbsp;USELDAP=yes &nbsp;启用LDAP认证协议</div>
+<div>&nbsp;</div>
+<div>&nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231913025-1421106406.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>8：重启<span style="line-height: 1.6;">nslcd服务&nbsp;</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp;/etc/init.d/nslcd restart</span></div>
+<div><span style="line-height: 1.6;">&nbsp;</span></div>
+<div><span style="line-height: 1.6;">9：验证，先通过OpenLDAP增加一个用户，在test1的基础上，复制一个test2的条目</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231913697-43288504.png" alt="" border="0"></div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231914010-2121790727.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>后面的根据自己的修改</div>
+<div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231914306-1098604527.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>可以看到已经成功的添加了test2的用户，这是OpenLDAP添加的，在本地是没有的，用cat /etc/passwd 看是没有test2用户的</div>
+<div><strong><span style="color: #ff0000;">测试：su - test2</span></strong></div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231914525-650938160.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>在<span style="line-height: 1.6;">/etc/pam.d/system-auth</span><span style="line-height: 1.6;">配置文件里添加这一行：</span><span style="line-height: 1.6; color: #ff0000;"><strong>session &nbsp; &nbsp; optional &nbsp; &nbsp; &nbsp;pam_mkhomedir.so skel=/etc/skel/ umask=0022</strong></span></div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231914822-1025817870.html" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>重启&nbsp;<span style="line-height: 1.6;">/etc/init.d/nslcd restart</span></div>
+<div>在进行测试：就可以了</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231915119-2096004521.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>
+<div>查看系统用户列表：</div>
+<div>服务端查询：<span style="color: #ff0000;"><strong>ldapsearch -x -b "ou=People,dc=lemon,dc=com" |grep dn</strong></span></div>
+<div>客户端查询：<span style="line-height: 1.6;"><span style="color: #ff0000;"><strong>ldapsearch -H ldap://10.0.0.138 -x -b "ou=People,dc=lemon,dc=com" |grep dn</strong></span></span></div>
+
+
+
+
+
+
+</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231915385-1499328019.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>查询单个用户：<span style="color: #ff0000;"><strong>ldapsearch -x -b "uid=test1,ou=People,dc=lemon,dc=com" |grep dn</strong></span></div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231915666-1698967938.html" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div>客户端的配置到这里ok啦。有账号肯定要能通过ssh登录系统</div>
+<div>&nbsp;</div>
+<div><span style="color: #ff00ff;"><strong>六：OpenLDAP与SSH</strong></span></div>
+<div>1：vim /etc/ssh/sshd_config&nbsp;</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231916150-622227790.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>2：vim /etc/pam.d/sshd &nbsp;<span style="line-height: 1.6;">用于第一次登陆的账户自动创建家目录</span></div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231916416-161447240.png" alt="" border="0">
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>3：vim /etc/pam.d/password-auth</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231917041-728271420.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>4：重启sshd</div>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<div><span style="color: #ff00ff;"><strong>七：OpenLDAP限制用户登录系统</strong></span></div>
+<div>在账号中，不能让每个用户都能登录系统，所以要限制用户登录</div>
+<div>&nbsp;</div>
+<div>1：vim /etc/pam.d/sshd 在这里加上pam_access.so模块</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231917353-279283933.html" alt="" border="0">
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>2：vim /etc/security/access.conf &nbsp;这里限制test2用户ssh登录系统</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231917619-1465821711.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div><span style="color: #ff00ff;">测试：可以看到就只有test2登录不上</span></div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231917916-1954285312.html" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div><span style="color: #ff00ff;"><strong>八：<span style="line-height: 1.6;">OpenLDAP强制用户一登录系统更改密码</span></strong></span></div>
+<div>&nbsp;</div>
+<div>1：修改配置文件
+<div>&nbsp; &nbsp; &nbsp; 在前面打开注释</div>
+<div>&nbsp; &nbsp; &nbsp; moduleload ppolicy.la</div>
+<div>
+<div>&nbsp; &nbsp; &nbsp; modulepath /usr/lib/openldap</div>
+<div>&nbsp; &nbsp; &nbsp; modulepath /usr/lib64/openldap</div>
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div>
+<div>还要在database config前面加上这两段</div>
+<div>&nbsp;</div>
+<div>
+<div><span style="color: #ff99cc;"><strong>access to attrs=userPassword</strong></span></div>
+<div><span style="color: #ff99cc;"><strong>&nbsp; &nbsp; &nbsp; &nbsp; by self write</strong></span></div>
+<div><span style="color: #ff99cc;"><strong>&nbsp; &nbsp; &nbsp; &nbsp; by anonymous auth</strong></span></div>
+<div><span style="color: #ff99cc;"><strong>&nbsp; &nbsp; &nbsp; &nbsp; by dn="cn=Captain,dc=lemon,dc=com" write</strong></span></div>
+<div><span style="color: #ff99cc;"><strong>&nbsp; &nbsp; &nbsp; &nbsp; by * none</strong></span></div>
+<div><span style="color: #ff99cc;"><strong>&nbsp;</strong></span></div>
+<div><span style="color: #ff99cc;"><strong>access to *</strong></span></div>
+<div><span style="color: #ff99cc;"><strong>&nbsp; &nbsp; &nbsp; &nbsp; by self write</strong></span></div>
+<div><span style="color: #ff99cc;"><strong>&nbsp; &nbsp; &nbsp; &nbsp; by dn="cn=Captain,dc=lemon,dc=com" write</strong></span></div>
+<div><span style="color: #ff99cc;"><strong>&nbsp; &nbsp; &nbsp; &nbsp; by * read</strong></span></div>
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231918244-1948294169.png" alt="" border="0">
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>在文件的末尾添加：</div>
+<div>
+<div><span style="color: #ff99cc;"><strong>overlay ppolicy</strong></span></div>
+<div><span style="color: #ff99cc;"><strong><span style="line-height: 1.6;">ppolicy_default cn=Captain,ou=</span>pwpolicies<span style="line-height: 1.6;">,dc=lemon,dc=com</span></strong></span></div>
+
+
+
+
+
+
+</div>
+<div><span style="line-height: 1.6;">&nbsp;</span></div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231918728-1803420629.png" alt="" border="0">
+<div>&nbsp;<span style="line-height: 1.6;">&nbsp;</span></div>
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>2：重新生成配置文件数据库：</div>
+<div>
+<div>[root@lele openldap]# vim /etc/openldap/slapd.conf&nbsp;</div>
+<div>[root@lele openldap]# rm -rf /etc/openldap/slapd.d/*</div>
+<div>[root@lele openldap]# &nbsp;slaptest -f /etc/openldap/slapd.conf -F /etc/openldap/slapd.d</div>
+<div>config file testing succeeded</div>
+<div>[root@lele openldap]# chown -R ldap.ldap /etc/openldap/slapd.d/</div>
+<div>[root@lele openldap]# /etc/init.d/slapd restart</div>
+<div>Stopping slapd: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[ &nbsp;OK &nbsp;]</div>
+<div>Starting slapd: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[ &nbsp;OK &nbsp;]</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<div>可以通过配置文件的数据信息看到ppolicy模块已经加进来了</div>
+<div><span style="color: #ff0000;"><strong>cat /etc/openldap/slapd.d/cn\=config/cn\=module\{0\}.ldif</strong></span></div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231919025-1143336983.png" alt="" border="0">
+<div>&nbsp;</div>
+<div>3：<span style="line-height: 1.6;">编辑</span></div>
+
+
+
+
+
+
+</div>
+<div>
+<div>
+<div>cat 1.ldif&nbsp;</div>
+<div>dn: ou=pwpolicies,dc=lemon,dc=com</div>
+<div>objectClass: organizationalUnit</div>
+<div>ou: pwpolicies</div>
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div>
+<div>4：ldapadd -x -D "cn=Captain,dc=lemon,dc=com" -W -f 1.ldif</div>
+<div>添加进去</div>
+
+
+
+
+
+
+</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231919447-291862264.html" alt="" border="0"></div>
+<div>可以在PhpLdapAdmin上看到：</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231919681-981072864.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>5：<strong style="line-height: 1.6;">添加<span style="line-height: 1.6;">cn=Captain,ou=pwpolicies,dc=lemon,dc=com这个的一些属性值</span></strong></div>
+<div>
+<div>[root@ll ~]# cat 2.ldif&nbsp;</div>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>dn: cn=Captain,ou=pwpolicies,dc=lemon,dc=<span style="color: #000000;">com
+cn: Captain
+objectClass: pwdPolicy
+objectClass: person
+pwdAllowUserChange: TRUE
+pwdAttribute: userPassword
+pwdExpireWarning: </span><span style="color: #800080;">259200</span><span style="color: #000000;">
+pwdFailureCountInterval: </span><span style="color: #800080;">0</span><span style="color: #000000;">
+pwdGraceAuthNLimit: </span><span style="color: #800080;">5</span><span style="color: #000000;">
+pwdInHistory: </span><span style="color: #800080;">5</span><span style="color: #000000;">
+pwdLockout: TRUE
+pwdLockoutDuration: </span><span style="color: #800080;">300</span><span style="color: #000000;">
+pwdMaxAge: </span><span style="color: #800080;">2592000</span><span style="color: #000000;">
+pwdMaxFailure: </span><span style="color: #800080;">5</span><span style="color: #000000;">
+pwdMinAge: </span><span style="color: #800080;">0</span><span style="color: #000000;">
+pwdMinLength: </span><span style="color: #800080;">8</span><span style="color: #000000;">
+pwdMustChange: TRUE
+pwdSafeModify: TRUE
+sn: dummy value</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>&nbsp;</p>
+</div>
+<div>&nbsp;</div>
+<div>把属性值添加进去</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231920041-1150330316.html" alt="" border="0"></div>
+<div>在PhpLdapAdmin可以看到：<br>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231920353-1894043234.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>6：在vim /etc/pam_ldap.conf中的末尾添加：使得客户端能识别服务端的密码策略</div>
+<div>
+<div>&nbsp; &nbsp;&nbsp; pam_password md5</div>
+<div>&nbsp; &nbsp; &nbsp;bind_policy soft</div>
+<div>&nbsp; &nbsp; &nbsp;pam_lookup_policy yes</div>
+<div>&nbsp; &nbsp; &nbsp;pam_password clear_remove_old</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div>7：重启nslcd</div>
+<div>&nbsp; &nbsp; &nbsp;/etc/init.d/nslcd restart</div>
+<div>&nbsp;</div>
+<div>8：测试</div>
+<div>
+<div>修改用户的属性，用test3做测试</div>
+<div>
+<div>[root@ll ~]# cat modify.ldif&nbsp;</div>
+<div>dn: uid=test3,ou=people,dc=lemon,dc=com</div>
+<div>changetype: modify</div>
+<div>replace: pwdReset</div>
+<div>pwdReset: TRUE</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div>ldapmodify -x -D "cn=Captain,dc=le,dc=com" -W -f modify.ldif &nbsp;导入</div>
+
+
+
+
+
+
+</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231920588-1022361791.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div><strong style="line-height: 1.6;"><span style="color: #ff0000;">ldapwhoami -x -D uid=test3,ou=people,dc=lemon,dc=com -W -e ppolicy -v &nbsp;&nbsp;</span></strong><span style="line-height: 1.6;">查看test3用户的策略信息</span></div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231920806-1264582589.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>这里显示输入test3 的原始密码，然后输入新修改的密码</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231921025-145160391.png" alt="" border="0">
+<div>&nbsp;</div>
+<div>&nbsp;当修改完后，就没有必须改变密码的那一句话了</div>
+
+
+
+
+
+
+</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231921385-1595997282.png" alt="" border="0">
+<div>&nbsp;</div>
+<div>&nbsp;这里可以啦</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div><span style="color: #ff00ff;"><strong>九：OpenLDAP与系统账号结合Samba</strong></span></div>
+<div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; &nbsp;</span><span style="line-height: 1.6;">默
+认的Samba服务器支持本地系统用户（smbpasswd添加后）访问Samba资源，不支持OpenLDAP服务器账号访问Samba共享资源，配置
+完后，OpenLDAP每新增一个用户，就自动支持Samba，就可以用这个账号直接访问Samba，不需要存在于本地用户，不用smbpasswd用户</span></div>
+<div>&nbsp;</div>
+<div>1：安装samba</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;yum -y install samba</div>
+<div>2：把Samba.schema文件拷贝到LDAP的schema目录下，把原来的覆盖掉</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;cp /usr/share/doc/samba-3.6.23/LDAP/samba.schema /etc/openldap/schema/</div>
+<div>3：修改配置文件vim /etc/openldap/slapd.conf</div>
+<div>&nbsp; &nbsp; &nbsp; 在include的地方，加上Samba的schema</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231921635-353567156.html" alt="" border="0"></div>
+<div>&nbsp;3：修改了配置文件，就有重新生成配置文件数据</div>
+<div>&nbsp; &nbsp; &nbsp; rm -rf /etc/openldap/slapd.d/*</div>
+<div>&nbsp; &nbsp; &nbsp; slaptest -f /etc/openldap/slapd.conf -F /etc/openldap/slapd.d/</div>
+<div>&nbsp; &nbsp; &nbsp; config file testing succeeded</div>
+<div>&nbsp; &nbsp; &nbsp; chown -R ldap.ldap /etc/openldap/slapd.d/</div>
+<div>&nbsp; &nbsp; &nbsp; /etc/init.d/slapd restart</div>
+<div>&nbsp;</div>
+<div>4：修改Samba的配置文件</div>
+<div>&nbsp; &nbsp; &nbsp; 添加：</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;security = user</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; passdb backend = ldapsam:ldap://10.0.0.138</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; ldap suffix = "dc=lemon,dc=com"</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; ldap group suffix = "cn=group"</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; ldap user suffix = "ou=people"</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; ldap admin dn = "cn=Captain,dc=lemon,dc=com"</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; ldap delete dn = no</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; pam password change = yes</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; ldap passwd sync = yes</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; ldap ssl = no</div>
+<div>&nbsp;</div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231922166-1229674366.png" alt="" border="0"></div>
+<div>&nbsp;对应这里的</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231922728-798240165.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>在最后的时候添加共享的文件：</div>
+<div>[public]</div>
+<div>comment = Public Stuff</div>
+<div>path = /tmp/lile</div>
+<div>public = yes</div>
+<div>writable = yes</div>
+<div>printable = no</div>
+<div>&nbsp;</div>
+<div>5：创建共享文件夹，并且授权</div>
+<div>&nbsp; &nbsp; &nbsp;mkdir /tmp/lile</div>
+<div>&nbsp; &nbsp; &nbsp;chmod 777 /tmp/lile/</div>
+<div>&nbsp;</div>
+<div>6：<span style="line-height: 1.6;">把OpenLDAP的密码传给Samba，<span style="color: #ff0000;"><strong>smbpasswd -w 123456 &nbsp;这里的密码是OpenLDAP的管理员密码</strong></span></span><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; &nbsp;</span></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231923072-1005661482.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp;若不加，会报错：</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231923306-633987413.html" alt="" border="0"></div>
+<div>&nbsp;<span style="line-height: 1.6;">&nbsp;</span></div>
+<div><span style="line-height: 1.6;">7：重启smb</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; /etc/init.d/smb restart</span></div>
+<div><span style="line-height: 1.6;">&nbsp; &nbsp; &nbsp; /etc/init.d/nmb restart</span></div>
+<div>&nbsp;</div>
+<div>8： &nbsp;Samba开通之后，可以看到这里的开关也打开了</div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231923666-415465583.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div><span style="line-height: 1.6;">&nbsp;9：测试</span></div>
+<div><span style="line-height: 1.6;">先把系统用户test1用smbpasswd -a test1 加到Samba的用户下，就可以看到：</span></div>
+<div><span style="line-height: 1.6;">test1用户下多了Samba的特性，原来是没有的</span></div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231924181-725864165.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>然后基于test1，在PhpLdapAdmin添加test2用户，不用smbpasswd，就只是OpenLDAP用户，复制的时候一定要重新改一下这里的密码，要不然登不进，</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231924431-1563540908.png" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>
+<div>&nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231924681-1272408806.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;然后，就可以用windos去访问了，这里有一个概念就是<span style="color: #ff0000;"><strong>OpenLDAP添加了的用户，不要再用smbpasswd去添加了，可以直接登录Samba</strong></span></div>
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<div><span style="color: #ff00ff;"><strong>十：<span style="line-height: 1.6;">OpenLDAP的主从</span></strong></span></div>
+<div>&nbsp;</div>
+<div>1：做主从和双主的时候，一定要确认安装了<span style="line-height: 1.6;">&nbsp;</span><span style="line-height: 1.6; color: #ff00ff;"><strong>compat-openldap这个包</strong></span></div>
+<div>2：<span style="color: #ff0000;"><strong>在主上的配置文件 &nbsp; 10.0.0.138</strong></span>：</div>
+<div>&nbsp; &nbsp; &nbsp;备份原来的配置文件：<span style="line-height: 1.6;">cp /etc/openldap/slapd.conf /etc/openldap/slapd.bak</span></div>
+<div>&nbsp; &nbsp; &nbsp;先停掉服务 /etc/init.d/slapd stop</div>
+<div>&nbsp; &nbsp; &nbsp;vim /etc/openldap/slapd.conf 修改配置文件</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;添加 &nbsp; &nbsp; &nbsp; index entryCSN,entryUUID &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;eq</div>
+<div>&nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231924978-434143576.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;这里的注释去掉：</div>
+<div>&nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231925244-1951455407.html" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231925494-307063263.png" alt="" border="0"></div>
+<div>&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;在文件的最后添加：</div>
+<div>&nbsp; &nbsp; &nbsp;<strong><span style="color: #ff99cc;">overlay syncprov &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>后端工作再overlay模式</strong></div>
+<div><strong><span style="color: #ff99cc;">&nbsp; &nbsp; &nbsp;syncprov-checkpoint 100 10 &nbsp; </span>当满足修改100个条目或者10分钟的条件时主动以推的方式执行</strong></div>
+<div><strong><span style="color: #ff99cc;">&nbsp; &nbsp; &nbsp;syncprov-sessionlog 100 &nbsp; &nbsp; &nbsp; &nbsp;</span>会话日志条目的最大数量</strong></div>
+<div>&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;<img style="line-height: 1.6;" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231925791-648259845.png" alt="" border="0"></div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;然后重新生成配置文件的数据文件：</div>
+<div>&nbsp; &nbsp; &nbsp;rm -rf /etc/openldap/slapd.d/*</div>
+<div>&nbsp; &nbsp; &nbsp;slaptest -f /etc/openldap/slapd.conf -F /etc/openldap/slapd.d/</div>
+<div>&nbsp; &nbsp; &nbsp;<span style="line-height: 1.6;">chown -R ldap.ldap /etc/openldap/slapd.conf&nbsp;</span></div>
+<div>&nbsp; &nbsp; &nbsp;chown -R ldap.ldap /etc/openldap/slapd.d</div>
+<div>&nbsp; &nbsp; &nbsp;/etc/init.d/slapd restart</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</div>
+<div><span style="line-height: 1.6;">3：</span><span style="line-height: 1.6; color: #ff0000;"><strong>导出主的数据文件&nbsp;ldapsearch -x -b 'dc=lemon,dc=com' &gt; root.ldif，拷贝到从上</strong></span><strong style="line-height: 1.6; color: #ff0000;">scp &nbsp; &nbsp;scp root.ldif 10.0.0.140:~/</strong></div>
+<div>4：<span style="color: #ff0000;"><strong>把主的配置文件slapd.conf 拷贝到从10.0.0.140上 用scp /etc/openldap/slapd.conf 10.0.0.140:~/</strong></span></div>
+<div>5：从上从主上拷贝了配置文件，</div>
+<div><span style="color: #ff0000;"><strong>去掉</strong></span>：</div>
+<div>
+<div>&nbsp; &nbsp; &nbsp; overlay syncprov</div>
+<div>&nbsp; &nbsp; &nbsp; syncprov-checkpoint 100 10</div>
+<div>&nbsp; &nbsp; &nbsp; syncprov-sessionlog 100</div>
+
+
+
+
+
+
+</div>
+<div><span style="color: #ff0000;"><strong>然后再加上</strong></span></div>
+<p><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231926119-902288786.html" alt="" border="0"></p>
+<div><span style="line-height: 1.6;">&nbsp;</span>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>syncrepl rid=003</strong></span></div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>provider=ldap://10.0.0.138:389/</strong></span></div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>type=refreshOnly</strong></span></div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>retry="60
+ 10 600 +" &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; 尝试时间</strong></span></div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>interval=00:00:00:10
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp;设置同步更新时间（日：时：分：秒）</strong></span></div>
+<div><span style="line-height: 1.6; background-color: #ffffff;"><span style="color: #800080;"><strong>searchbase="dc=lemon,dc=com" &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</strong></span></span></div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>scope=sub
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 匹配根域所有条目</strong></span></div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>schemachecking=off
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp;同步更新时是否开启schema语法检测</strong></span></div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>bindmethod=simple
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp;同步验证模式为简单模式（即明文）</strong></span></div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>binddn="cn=Captain,dc=lemon,dc=com" &nbsp; &nbsp; &nbsp; &nbsp;使用Captain用户读取目录树信息</strong></span></div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>attrs="*,+"
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+同步所有属性信息</strong></span></div>
+<div><span style="color: #800080; background-color: #ffffff;"><strong>credentials=123456
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+&nbsp; &nbsp; 管理员密码</strong></span></div>
+<div><span style="line-height: 1.6;">&nbsp;</span></div>
+<div><span style="line-height: 1.6;">&nbsp;重新生成数据配置文件</span></div>
+<div>&nbsp;&nbsp;<span style="line-height: 1.6;">rm -rf /etc/openldap/slapd.d/*</span></div>
+<div>&nbsp; slaptest -f /etc/openldap/slapd.conf -F /etc/openldap/slapd.d/</div>
+<div>&nbsp;&nbsp;<span style="line-height: 1.6;">chown -R ldap.ldap /etc/openldap/slapd.conf&nbsp;</span></div>
+<div>&nbsp; chown -R ldap.ldap /etc/openldap/slapd.d</div>
+<div>&nbsp; /etc/init.d/slapd restart</div>
+<div>&nbsp;</div>
+<div>6：测试</div>
+<div>在主的10.0.0.138上添加一个test7的用户，在从上刷新一下，是同步到的</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231926400-1877942653.png" alt="" border="0"><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231926635-1339424210.html" alt="" border="0">
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<div><span style="color: #ff00ff;"><strong>&nbsp;十一：OpenLDAP的双主</strong></span></div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div>在主从的基础上，修改配置，<span style="color: #ff0000;"><strong>这是主的</strong></span></div>
+<div>&nbsp;</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231926963-739872058.html" alt="" border="0">
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>
+<div>serverID 2</div>
+<div>overlay syncprov</div>
+<div>syncrepl rid=001&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong><span style="color: #ff0000;">（这里的格式一定要注意，中间这一段要用Tab键Tab一下，如果不的话会报错如下）</span></strong></div>
+<div>　　provider=ldap://10.0.0.140</div>
+<div>　　type=refreshAndPersist</div>
+<div>　　searchbase="dc=lemon,dc=com"</div>
+<div>　　schemachecking=simple</div>
+<div>　　binddn="cn=Captain,dc=lemon,dc=com"</div>
+<div>　　credentials=123456</div>
+<div>　　retry="60 +"</div>
+<div>mirrormode on</div>
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20180524150802348-1267435895.png" alt=""> </div>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<div><span style="color: #ff0000;"><strong>这是从的</strong></span>：</div>
+<div><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/746846-20170109231927228-585243971.html" alt="" border="0">
+<div>&nbsp;</div>
+
+
+
+
+
+
+</div>
+<div>
+<div>serverID 1</div>
+<div>overlay syncprov</div>
+<div>syncrepl rid=001&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong><span style="color: #ff0000;">（这里的格式一定要注意，中间这一段要用Tab键Tab一下）</span></strong></div>
+<div>　　provider=ldap://10.0.0.138:389/</div>
+<div>　　retry="60 10 600 +"</div>
+<div>　　searchbase="dc=lemon,dc=com"</div>
+<div>　　schemachecking=off</div>
+<div>　　bindmethod=simple</div>
+<div>　　binddn="cn=Captain,dc=lemon,dc=com"</div>
+<div>　　credentials=123456</div>
+<div>mirrormode on</div>
+
+
+
+
+
+
+</div>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<div><strong><span style="color: #ff0000;">测试</span></strong>：在两台机上分别新建一个用户，看是否在对方能刷新到，主从与双主都只是备份的关系，若一台挂了，立即切换到另一台，则需做高可用和负载均衡</div>
+<div>&nbsp;</div>
+<p><br><br></p>
+</div>
+<div id="MySignature" style="display: block;"><div>作者：<a href="https://www.cnblogs.com/lemon-le/">李乐</a></div>
+<div>出处：<a href="https://www.cnblogs.com/lemon-le/">https://www.cnblogs.com/lemon-le/
+</a></div>
+
+<p>-------------------------------------------</p>
+<p>个性签名：在平凡中坚持前行，总有一天会遇见不一样的自己！</p>
+<p>如果觉得这篇文章对你有小小的帮助的话，记得在右下角点个<span>“推荐”</span>哦，博主在此感谢！</p>
+<p></p>
+<p>万水千山总是情，打赏一分行不行，所以如果你心情还比较高兴，也是可以扫码打赏博主，哈哈哈(っ•̀ω•́)っ✎⁾⁾！</p>
+<img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/o_w2.png" alt="微信公众号">
+<img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/o_wechat.png" alt="微信打赏">
+<img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/o_zhifubao.png" alt="微信打赏">
+<p>&nbsp;&nbsp;&nbsp;微信公众号&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;微信打赏&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;支付宝打赏</p></div>
+<div class="clear"></div>
+<div id="blog_post_info_block"><div id="BlogPostCategory">
+    分类: 
+            <a href="https://www.cnblogs.com/lemon-le/category/934302.html" target="_blank">OpenLDAP</a></div>
+
+
+    <div id="blog_post_info">
+<div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(6266921,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+        <a id="green_channel_follow" onclick="follow('232a797c-6ee6-e411-b908-9dcfd8948a71');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/icon_weibo_24.png" alt=""></a>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/lemon-le/" target="_blank"><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/20200528100706.png" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/lemon-le/">Captain_Li</a><br>
+            <a href="https://home.cnblogs.com/u/lemon-le/followees/">关注 - 44</a><br>
+            <a href="https://home.cnblogs.com/u/lemon-le/followers/">粉丝 - 105</a>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow">
+                <a href="javascript:void(0);" onclick="follow('232a797c-6ee6-e411-b908-9dcfd8948a71');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(6266921,'Digg')">
+        <span class="diggnum" id="digg_count">12</span>
+    </div>
+    <div class="buryit" onclick="votePost(6266921,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+    <div class="clear"></div>
+    <div id="post_next_prev">
+
+    <a href="https://www.cnblogs.com/lemon-le/p/d668fc96897e0aed2d3f5a2fa0ce0497.html" class="p_n_p_prefix">« </a> 上一篇：    <a href="https://www.cnblogs.com/lemon-le/p/d668fc96897e0aed2d3f5a2fa0ce0497.html" title="发布于 2017-01-07 14:00">OpenLDAP一登录系统就修改密码</a>
+    <br>
+    <a href="https://www.cnblogs.com/lemon-le/p/6290932.html" class="p_n_p_prefix">» </a> 下一篇：    <a href="https://www.cnblogs.com/lemon-le/p/6290932.html" title="发布于 2017-01-16 20:06">记录第一次服务器出现问题的过程以及心情</a>
+
+</div>
+</div>
+        </div>
+        <p class="postfoot">
+            posted on 
+<span id="post-date">2017-01-09 23:19</span>&nbsp;
+<a href="https://www.cnblogs.com/lemon-le/">Captain_Li</a>&nbsp;
+阅读(<span id="post_view_count">94211</span>)&nbsp;
+评论(<span id="post_comment_count">15</span>)&nbsp;
+<a href="https://i.cnblogs.com/EditPosts.aspx?postid=6266921" rel="nofollow">编辑</a>&nbsp;
+<a href="javascript:void(0)" onclick="AddToWz(6266921);return false;">收藏</a>
+        </p>
+    </div>
+</div>
+
+<script src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/highlight.js"></script>
+<script>markdown_highlight();</script>
+<script>
+    var allowComments = true, cb_blogId = 267590, cb_blogApp = 'lemon-le', cb_blogUserGuid = '232a797c-6ee6-e411-b908-9dcfd8948a71';
+    var cb_entryId = 6266921, cb_entryCreatedDate = '2017-01-09 23:19', cb_postType = 1; 
+    loadViewCount(cb_entryId);
+    loadSideColumnAd();
+</script><a name="!comments"></a>
+<div id="blog-comments-placeholder">
+
+<div id="comment_pager_top">
+    
+</div>
+
+<a name="评论"></a>
+<div id="comments">
+<h3>评论</h3>
+	<div class="feedbackNoItems"></div>
+			<div class="post">
+				<h2>
+					
+<a href="#3971098" class="layer">#1楼</a>
+<a name="3971098" id="comment_anchor_3971098"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_3971098" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    博主你好，我使用Centos7配置<br>1.OpenLDAP服务器的搭建中的徘徊<br>一直在slapd.conf配置文件中出错，有正常slapd.conf文件吗？<br>Redirecting to /bin/systemctl restart slapd.service<br>Job
+ for slapd.service failed because the control process exited with error 
+code. See "systemctl status slapd.service" and "journalctl -xe" for 
+details.
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(3971098, 'Digg', this.parentElement, false);">
+                支持(1)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(3971098, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        <span id="comment_3971098_avatar" style="display:none">
+            https://pic.cnblogs.com/face/1285205/20171220200229.png
+        </span>
+
+				<div class="postfoot">
+					
+<span class="comment_date">2018-05-09 22:05</span>
+
+ | 
+
+            <a id="a_comment_author_3971098" href="https://www.cnblogs.com/aixiaoxiaoyu/" target="_blank">艾小小雨</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#3981228" class="layer">#2楼</a>
+<a name="3981228" id="comment_anchor_3981228"></a>
+[<span class="louzhu">楼主</span>]
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_3981228" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    <a href="#3971098" title="查看所回复的评论" onclick="commentManager.renderComments(0,50,3971098);">@</a>
+艾小小雨<br>你好，根据安装好的配置文件，然后根据博文配置就行，报什么错可以贴出来看看
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(3981228, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(3981228, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        <span id="comment_3981228_avatar" style="display:none">
+            https://pic.cnblogs.com/face/746846/20200528100706.png
+        </span>
+
+				<div class="postfoot">
+					
+<span class="comment_date">2018-05-24 15:02</span>
+
+ | 
+
+            <a id="a_comment_author_3981228" href="https://www.cnblogs.com/lemon-le/" target="_blank">Captain_Li</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4006211" class="layer">#3楼</a>
+<a name="4006211" id="comment_anchor_4006211"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4006211" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    楼主您好， 我这没有slapd.conf.obsolete文件
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4006211, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4006211, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        <span id="comment_4006211_avatar" style="display:none">
+            https://pic.cnblogs.com/face/1316299/20180208160354.png
+        </span>
+
+				<div class="postfoot">
+					
+<span class="comment_date">2018-06-26 16:50</span>
+
+ | 
+
+            <a id="a_comment_author_4006211" href="https://www.cnblogs.com/wsy1030/" target="_blank">活蹦乱跳的鱼</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4006258" class="layer">#4楼</a>
+<a name="4006258" id="comment_anchor_4006258"></a>
+[<span class="louzhu">楼主</span>]
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4006258" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    <a href="#4006211" title="查看所回复的评论" onclick="commentManager.renderComments(0,50,4006211);">@</a>
+活蹦乱跳的鱼<br>你的是怎么安装的
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4006258, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4006258, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        <span id="comment_4006258_avatar" style="display:none">
+            https://pic.cnblogs.com/face/746846/20200528100706.png
+        </span>
+
+				<div class="postfoot">
+					
+<span class="comment_date">2018-06-26 17:29</span>
+
+ | 
+
+            <a id="a_comment_author_4006258" href="https://www.cnblogs.com/lemon-le/" target="_blank">Captain_Li</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4012942" class="layer">#5楼</a>
+<a name="4012942" id="comment_anchor_4012942"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4012942" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    同上啊，哪有/etc/openldap/slapd.conf这个文件啊。安装一个ldap简直是够了。凸(艹皿艹 )
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4012942, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4012942, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        
+
+				<div class="postfoot">
+					
+<span class="comment_date">2018-07-05 10:12</span>
+
+ | 
+
+            <a id="a_comment_author_4012942" href="https://home.cnblogs.com/u/1057492/" target="_blank">LittleLawson</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4013240" class="layer">#6楼</a>
+<a name="4013240" id="comment_anchor_4013240"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4013240" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    <a href="#3971098" title="查看所回复的评论" onclick="commentManager.renderComments(0,50,3971098);">@</a>
+艾小小雨<br>我今天也是用centos 7装，结果报错。一直无法启动。还有那个slap.conf文件，根本没有！简直是气死人啊
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4013240, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4013240, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        
+
+				<div class="postfoot">
+					
+<span class="comment_date">2018-07-05 14:44</span>
+
+ | 
+
+            <a id="a_comment_author_4013240" href="https://home.cnblogs.com/u/1057492/" target="_blank">LittleLawson</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4013643" class="layer">#7楼</a>
+<a name="4013643" id="comment_anchor_4013643"></a>
+[<span class="louzhu">楼主</span>]
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4013643" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    <a href="#4013240" title="查看所回复的评论" onclick="commentManager.renderComments(0,50,4013240);">@</a>
+LittleLawson<br>淡定 淡定 淡定  有一种办法叫在centos6 上安装，然后把配置文件拷贝过去
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4013643, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4013643, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        <span id="comment_4013643_avatar" style="display:none">
+            https://pic.cnblogs.com/face/746846/20200528100706.png
+        </span>
+
+				<div class="postfoot">
+					
+<span class="comment_date">2018-07-05 21:22</span>
+
+ | 
+
+            <a id="a_comment_author_4013643" href="https://www.cnblogs.com/lemon-le/" target="_blank">Captain_Li</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4032596" class="layer">#8楼</a>
+<a name="4032596" id="comment_anchor_4032596"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4032596" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    你好楼主   那个想问下为什么在导入用户的时候老是出现下面的错误啊，小白很头疼<img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/1454501-20180731160358592-1021278791.png" alt="" "="" border="0">
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4032596, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4032596, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        
+
+				<div class="postfoot">
+					
+<span class="comment_date">2018-07-31 16:04</span>
+
+ | 
+
+            <a id="a_comment_author_4032596" href="https://www.cnblogs.com/txrorqcc/" target="_blank">唐筱蕊</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4226190" class="layer">#9楼</a>
+<a name="4226190" id="comment_anchor_4226190"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4226190" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    /etc/openldap/slapd.conf  这个文件可以从/usr/share/openldap-servers/slapd.conf.obsolete拷贝一份到该位置
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4226190, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4226190, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        
+
+				<div class="postfoot">
+					
+<span class="comment_date">2019-04-09 13:45</span>
+
+ | 
+
+            <a id="a_comment_author_4226190" href="https://home.cnblogs.com/u/1652106/" target="_blank">Sdy丶太阳</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4259849" class="layer">#10楼</a>
+<a name="4259849" id="comment_anchor_4259849"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4259849" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    您好，请教一个问题。我现在ldap客户端是centos系统，已经可以正常登陆。
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4259849, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4259849, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        
+
+				<div class="postfoot">
+					
+<span class="comment_date">2019-05-20 12:01</span>
+
+ | 
+
+            <a id="a_comment_author_4259849" href="https://home.cnblogs.com/u/1656062/" target="_blank">hjhhao</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4259850" class="layer">#11楼</a>
+<a name="4259850" id="comment_anchor_4259850"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4259850" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    现在的问题是我想sudo su -  到root权限，但是报
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4259850, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4259850, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        
+
+				<div class="postfoot">
+					
+<span class="comment_date">2019-05-20 12:03</span>
+
+ | 
+
+            <a id="a_comment_author_4259850" href="https://home.cnblogs.com/u/1656062/" target="_blank">hjhhao</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4259852" class="layer">#12楼</a>
+<a name="4259852" id="comment_anchor_4259852"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4259852" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    sudo: PAM account management error: Permission denied这个错误
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4259852, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4259852, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        
+
+				<div class="postfoot">
+					
+<span class="comment_date">2019-05-20 12:03</span>
+
+ | 
+
+            <a id="a_comment_author_4259852" href="https://home.cnblogs.com/u/1656062/" target="_blank">hjhhao</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4259853" class="layer">#13楼</a>
+<a name="4259853" id="comment_anchor_4259853"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4259853" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    是需要那个配置文件还要改吗
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4259853, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4259853, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        
+
+				<div class="postfoot">
+					
+<span class="comment_date">2019-05-20 12:03</span>
+
+ | 
+
+            <a id="a_comment_author_4259853" href="https://home.cnblogs.com/u/1656062/" target="_blank">hjhhao</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4282373" class="layer">#14楼</a>
+<a name="4282373" id="comment_anchor_4282373"></a>
+
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4282373" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    x.x.x.x/ldapadmin 在虚拟机里正常进去<br>但是在真机中提示<br>You don't have permission to access /ldapadmin on this server.<br>这个在哪里配置
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4282373, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4282373, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        
+
+				<div class="postfoot">
+					
+<span class="comment_date">2019-06-18 14:38</span>
+
+ | 
+
+            <a id="a_comment_author_4282373" href="https://home.cnblogs.com/u/1700863/" target="_blank">Tell_941sb</a>
+
+				</div>
+			</div>
+			<div class="post">
+				<h2>
+					
+<a href="#4286380" class="layer">#15楼</a>
+<a name="4286380" id="comment_anchor_4286380"></a>
+
+        <span id="comment-maxId" style="display:none">4286380</span>
+        <span id="comment-maxDate" style="display:none">2019/6/24 下午4:49:50</span>
+
+					&nbsp;&nbsp;
+
+<span class="comment_actions">
+    
+    
+    
+    
+</span>
+
+
+				</h2>
+				
+<div id="comment_body_4286380" data-format-type="Ubb" class="blog_comment_body cnblogs-ubb">
+    痛苦  找了一整天的安装 没一个能成功的 LDAP 你够了
+</div>
+        <div class="comment_vote">
+            <span class="comment_error" style="color: red"></span>
+            <a href="javascript:void(0);" class="comment_digg" onclick="return voteComment(4286380, 'Digg', this.parentElement, false);">
+                支持(0)
+            </a>
+            <a href="javascript:void(0);" class="comment_burry" onclick="return voteComment(4286380, 'Bury', this.parentElement, false);">
+                反对(0)
+            </a>
+        </div>
+        <span id="comment_4286380_avatar" style="display:none">
+            https://pic.cnblogs.com/face/723399/20160301183251.png
+        </span>
+
+				<div class="postfoot">
+					
+<span class="comment_date">2019-06-24 16:49</span>
+
+ | 
+
+            <a id="a_comment_author_4286380" href="https://www.cnblogs.com/rocky24/" target="_blank">rocky_24</a>
+
+				</div>
+			</div>
+</div>
+
+<div id="comment_pager_bottom">
+    
+</div>
+
+
+</div>
+<script>
+    var commentManager = new blogCommentManager();
+    commentManager.renderComments(0);
+</script>
+
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a></div>
+    <div id="comment_form_container" style="visibility: visible;"><div class="login_tips">
+    注册用户登录后才能发表评论，请 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login('commentform');">登录</a>
+     或 
+    <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，
+    <a href="https://www.cnblogs.com/">访问</a> 网站首页。
+</div></div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+    <div id="ad_t2"><a href="https://workbench.aliyun.com/camp?spm=a1z389.11499242.0.0.65452413tQ3COu&amp;utm_content=g_1000132392" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-阿里云-云开发平台')">【推荐】全面上云时代你的开发方式已过时，快来免费体验阿里云云开发平台</a><br><a href="http://www.ucancode.com/index.htm" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-ucancode')">【推荐】超50万行VC++源码: 大型组态工控、电力仿真CAD与GIS源码库</a><br><a href="https://www.wenjuan.com/s/3uIjeq0/" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-博客园问卷调查')">【推荐】了解你才能更懂你，博客园首发问卷调查，助力社区新升级</a><br><a href="https://fineui.com/" target="_blank" onclick="ga('send', 'event', 'Link', 'click', 'T2-FineUI')">【推荐】12年经典 UI 控件库 FineUI，支持 ASP.NET Core 3.1</a><br></div>
+    <div id="opt_under_post"></div>
+    <script async="async" src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/gpt.js"></script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot("/1090369/C1", [300, 250], "div-gpt-ad-1546353474406-0").addService(googletag.pubads());
+            googletag.defineSlot("/1090369/C2", [468, 60], "div-gpt-ad-1539008685004-0").addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <div id="cnblogs_c1" class="c_ad_block">
+        <div id="div-gpt-ad-1546353474406-0" style="height:250px; width:300px;" data-google-query-id="CL7t-9mZ6ukCFREJXAodrUwGfg"><div id="google_ads_iframe_/1090369/C1_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C1_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C1_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="1" data-load-complete="true" width="300" height="250" frameborder="0"></iframe></div></div>
+    </div>
+    <div id="under_post_news"><div class="recomm-block"><b>相关博文：</b><br>·  <a title="centos6.5环境openldap实战之ldap配置详解及web管理工具lam（ldap-account-manager）使用详解" href="https://www.cnblogs.com/reblue520/p/6239773.html" target="_blank" onclick="clickRecomItmem(6239773)">centos6.5环境openldap实战之ldap配置详解及web管理工具lam（ldap-account-manager）使用详解</a><br>·  <a title="Centos7下Yum安装OpenLdap" href="https://www.cnblogs.com/Kevin-1967/p/8931304.html" target="_blank" onclick="clickRecomItmem(8931304)">Centos7下Yum安装OpenLdap</a><br>·  <a title="OpenLDAP一登录系统就修改密码" href="https://www.cnblogs.com/lemon-le/p/d668fc96897e0aed2d3f5a2fa0ce0497.html" target="_blank" onclick="clickRecomItmem(6259255)">OpenLDAP一登录系统就修改密码</a><br>·  <a title="LDAP服务部署" href="https://www.cnblogs.com/liwanliangblog/p/7145221.html" target="_blank" onclick="clickRecomItmem(7145221)">LDAP服务部署</a><br>·  <a title="Centos cn=config配置Openldap服务器大全" href="https://www.cnblogs.com/donneyliu/p/Centos-Openldap-Server-cn-config.html" target="_blank" onclick="clickRecomItmem(4926181)">Centos cn=config配置Openldap服务器大全</a><br>»  <a target="_blank" href="https://recomm.cnblogs.com/blogpost/6266921">更多推荐...</a></div></div>
+    <div id="cnblogs_c2" class="c_ad_block">
+        <div id="div-gpt-ad-1539008685004-0" style="height:60px; width:468px;" data-google-query-id="CL_t-9mZ6ukCFREJXAodrUwGfg"><div id="google_ads_iframe_/1090369/C2_0__container__" style="border: 0pt none;"><iframe id="google_ads_iframe_/1090369/C2_0" title="3rd party ad content" name="google_ads_iframe_/1090369/C2_0" scrolling="no" marginwidth="0" marginheight="0" style="border: 0px none; vertical-align: bottom;" srcdoc="" data-google-container-id="2" data-load-complete="true" width="468" height="60" frameborder="0"></iframe></div></div>
+    </div>
+    <div id="under_post_kb">
+<div class="itnews c_ad_block">
+    <b>最新 IT 新闻</b>:
+    <br>
+ ·              <a href="https://news.cnblogs.com/n/663495/" target="_blank">Zoom漏洞：超50万个Zoom账户泄露并在Dark Web出售</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/663494/" target="_blank">微软中国CTO韦青：“新基建”下企业如何做数字化转型？</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/663493/" target="_blank">华为P40 Pro+登场开售：100倍双目变焦有多强？样张实测给你看</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/663492/" target="_blank">GQ报道 | 罗永浩：薛定谔的理想主义</a>
+            <br>
+ ·              <a href="https://news.cnblogs.com/n/663491/" target="_blank">阅文新合同破顽疾，网文行业如何走入下半程</a>
+            <br>
+    » <a href="https://news.cnblogs.com/" title="IT 新闻" target="_blank">更多新闻...</a>
+</div></div>
+    <div id="HistoryToday" class="c_ad_block"></div>
+    <script type="text/javascript">
+        fixPostBody();
+        deliverBigBanner();
+setTimeout(function() { incrementViewCount(cb_entryId); }, 50);        deliverAdT2();
+        deliverAdC1();
+        deliverAdC2();
+        loadNewsAndKb();
+        loadBlogSignature();
+LoadPostCategoriesTags(cb_blogId, cb_entryId);        LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+        GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+        loadOptUnderPost();
+        GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+    </script>
+</div>
+
+</div>
+</div>
+<div id="leftmenu">
+
+
+<h3>导航</h3>
+<ul>
+    <li>
+        <a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+
+    </li>
+    <li>
+        
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/lemon-le/">
+首页</a>
+
+    </li>
+    <li>
+        
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+
+    </li>
+    <li>
+        
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/Captain_Li">
+联系</a>
+    </li>
+    <li>
+        
+<a id="blog_nav_rss" class="menu" href="javascript:void(0)" data-rss="https://www.cnblogs.com/lemon-le/rss/">
+订阅</a>
+        
+<a id="blog_nav_rss_image" href="https://www.cnblogs.com/lemon-le/rss/">
+    <img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/xml.gif" alt="订阅">
+</a>
+    </li>
+    <li>
+        
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+
+    </li>
+</ul>
+
+
+<div id="blog-calendar" style="">
+
+<table id="blogCalendar" class="Cal" title="Calendar" cellspacing="0" cellpadding="0" border="0">
+    <tbody>
+        <tr>
+            <td colspan="7">
+                <table class="CalTitle" cellspacing="0" border="0">
+                    <tbody>
+                        <tr>
+                            <td class="CalNextPrev">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar('2020/05/05'); return false;">&lt;</a>
+                            </td>
+                            <td align="center">2020年6月</td>
+                            <td class="CalNextPrev" align="right">
+                                <a href="javascript:void(0);" onclick="loadBlogCalendar('2020/07/05'); return false;">&gt;</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+                    <th class="CalDayHeader" abbr="日" scope="col" align="center">日</th>
+                    <th class="CalDayHeader" abbr="一" scope="col" align="center">一</th>
+                    <th class="CalDayHeader" abbr="二" scope="col" align="center">二</th>
+                    <th class="CalDayHeader" abbr="三" scope="col" align="center">三</th>
+                    <th class="CalDayHeader" abbr="四" scope="col" align="center">四</th>
+                    <th class="CalDayHeader" abbr="五" scope="col" align="center">五</th>
+                    <th class="CalDayHeader" abbr="六" scope="col" align="center">六</th>
+        </tr>
+            <tr>
+                            <td class="CalOtherMonthDay" align="center">31</td>
+                        <td class="" align="center">
+                            1
+                        </td>
+                        <td class="" align="center">
+                            2
+                        </td>
+                        <td class="" align="center">
+                            3
+                        </td>
+                        <td class="" align="center">
+                            4
+                        </td>
+                        <td class="CalTodayDay" align="center">
+                            5
+                        </td>
+                    <td class="CalWeekendDay" align="center">
+                        6
+                    </td>
+            </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            7
+                        </td>
+                            <td class="" align="center">
+                                8
+                            </td>
+                            <td class="" align="center">
+                                9
+                            </td>
+                            <td class="" align="center">
+                                10
+                            </td>
+                            <td class="" align="center">
+                                11
+                            </td>
+                            <td class="" align="center">
+                                12
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            13
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            14
+                        </td>
+                            <td class="" align="center">
+                                15
+                            </td>
+                            <td class="" align="center">
+                                16
+                            </td>
+                            <td class="" align="center">
+                                17
+                            </td>
+                            <td class="" align="center">
+                                18
+                            </td>
+                            <td class="" align="center">
+                                19
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            20
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            21
+                        </td>
+                            <td class="" align="center">
+                                22
+                            </td>
+                            <td class="" align="center">
+                                23
+                            </td>
+                            <td class="" align="center">
+                                24
+                            </td>
+                            <td class="" align="center">
+                                25
+                            </td>
+                            <td class="" align="center">
+                                26
+                            </td>
+                        <td class="CalWeekendDay" align="center">
+                            27
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalWeekendDay" align="center">
+                            28
+                        </td>
+                            <td class="" align="center">
+                                29
+                            </td>
+                            <td class="" align="center">
+                                30
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                1
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                2
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                3
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            4
+                        </td>
+                </tr>
+                <tr>
+                        <td class="CalOtherMonthDay" align="center">
+                            5
+                        </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                6
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                7
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                8
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                9
+                            </td>
+                            <td class="CalOtherMonthDay" align="center">
+                                10
+                            </td>
+                        <td class="CalOtherMonthDay" align="center">
+                            11
+                        </td>
+                </tr>
+    </tbody>
+</table></div><script>loadBlogDefaultCalendar();</script>
+
+<div id="sidebar_news" class="newsItem"><meta name="vs_showGrid" content="False">
+<h3>公告</h3>
+
+<div id="blog-news">
+    <!-- 添加公告栏图片并指向首页链接 -->
+<div align="center">
+    <a href="https://www.cnblogs.com/lemon-le/">
+    <img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/ziji5.bmp"></a> 
+</div>
+
+<p class="wenzi">想买保时捷的运维李先生</p>
+<div align="center"><a href="http://www.amazingcounters.com/"><img src="%E5%AE%8C%E6%95%B4%E7%89%88%E7%9A%84OpenLDAP%E6%90%AD%E5%BB%BA%E5%85%A8%E8%BF%87%E7%A8%8B%20-%20Captain_Li%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/counter.html" alt="AmazingCounters.com" border="0"></a></div>
+<p>-----------------------------</p>
+
+
+
+
+
+<!-- 添加公告栏时钟 -->
+<div id="clockdiv">
+    <canvas id="dom" width="120" height="120">时钟canvas</canvas>
+</div>
+<script type="text/javascript">window['__document_write_ajax_callbacks__']['4']();</script><script type="text/javascript">window['__document_write_ajax_callbacks__']['5']();</script><script type="text/javascript" defer="defer">window['__document_write_ajax_callbacks__']['1']();</script>
+
+<!-- 为页面添加爱心特效 -->
+<script type="text/javascript">window['__document_write_ajax_callbacks__']['6']();</script><script type="text/javascript">window['__document_write_ajax_callbacks__']['2']();</script>
+    <div id="profile_block">
+        昵称：
+        <a href="https://home.cnblogs.com/u/lemon-le/">
+            Captain_Li
+        </a>
+        <br>
+        园龄：
+        <a href="https://home.cnblogs.com/u/lemon-le/" title="入园时间：2015-04-19">
+            5年1个月
+        </a>
+        <br>
+        粉丝：
+        <a href="https://home.cnblogs.com/u/lemon-le/followers/">
+            105
+        </a>
+        <br>
+        关注：
+        <a href="https://home.cnblogs.com/u/lemon-le/followees/">
+            44
+        </a>
+        <div id="p_b_follow">
+<a href="javascript:void(0)" onclick="follow('232a797c-6ee6-e411-b908-9dcfd8948a71')">+加关注</a></div>
+        <script type="text/javascript">window['__document_write_ajax_callbacks__']['7']();</script><script>window['__document_write_ajax_callbacks__']['3']();</script>
+    </div>
+</div>
+
+</div>
+
+<div id="sidebar_ad"></div>
+<div id="blog-sidecolumn">
+<!-- 搜索 -->
+<div id="sidebar_search" class="sidebar-block">
+    <div id="sidebar_search" class="mySearch">
+        <h3 class="catListTitle">搜索</h3>
+        <div id="sidebar_search_box">
+            <div id="widget_my_zzk" class="div_my_zzk">
+                <input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk">
+            </div>
+            <div id="widget_my_google" class="div_my_zzk">
+                <input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 常用链接 -->
+<div id="sidebar_shortcut" class="sidebar-block">
+    
+<h3 class="catListTitle">
+常用链接
+</h3>
+<ul>
+        <li>
+
+<a href="https://www.cnblogs.com/lemon-le/p/" title="我的博客的随笔列表">我的随笔</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/lemon-le/MyComments.html" title="我的发表过的评论列表">我的评论</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/lemon-le/OtherPosts.html" title="我评论过的随笔列表">我的参与</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/lemon-le/RecentComments.html" title="我的博客的评论列表">最新评论</a>
+</li>
+        <li>
+
+<a href="https://www.cnblogs.com/lemon-le/tag/" title="我的博客的标签列表">我的标签</a>
+</li>
+</ul>
+
+<!-- TODO: 检查是否有使用这一部分的控件，如果没有则应该删除。 -->
+<div id="itemListLin_con" style="display:none">
+    <ul>
+
+    </ul>
+</div>
+
+</div>
+
+<!-- 最新随笔 -->
+
+
+
+<!-- 我的标签 -->
+<div id="sidebar_toptags" class="sidebar-block">
+    
+<h3>我的标签</h3>
+<div id="MyTag">
+    <ul>
+        
+        <li>
+            <a href="https://www.cnblogs.com/lemon-le/tag/ES%20%E6%89%BE%E4%B8%8D%E5%88%B0master/">ES 找不到master</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/lemon-le/tag/Fabric%20%40runs_once/">Fabric @runs_once</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/lemon-le/tag/Fabric%20settings/">Fabric settings</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/lemon-le/tag/jenkins/">jenkins</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/lemon-le/tag/Kerberos/">Kerberos</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/lemon-le/tag/load%20average/">load average</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/lemon-le/tag/Mariadb/">Mariadb</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/lemon-le/tag/Master%20Node/">Master Node</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/lemon-le/tag/mysql%E5%AD%97%E7%AC%A6%E9%9B%86/">mysql字符集</a>(1)
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/lemon-le/tag/nginx%20location/">nginx location</a>(1)
+        </li>
+    <li>
+        <a href="https://www.cnblogs.com/lemon-le/tag/">更多</a>
+    </li>
+
+    </ul>
+</div>
+
+</div>
+
+<!-- 积分与排名 -->
+<div id="sidebar_scorerank" class="sidebar-block">
+    <h3>积分与排名</h3>
+<ul>
+    <li>
+        积分 - 
+209798
+    </li>
+    <li>
+        排名 - 
+2424
+    </li>
+</ul>
+</div>
+
+<!-- 随笔分类、随笔档案、文章分类、新闻分类、相册、链接 -->
+<div id="sidebar_categories">
+    
+		<h3>
+
+随笔分类
+
+
+</h3>
+				<ul>
+			
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1001177.html" rel="" target="">
+    Ansible(4)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1006831.html" rel="" target="">
+    Django(1)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1220294.html" rel="" target="">
+    Docker(15)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1402525.html" rel="" target="">
+    ELK(7)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1012370.html" rel="" target="">
+    Fabric(3)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1234611.html" rel="" target="">
+    go(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1335802.html" rel="" target="">
+    k8s(7)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/873353.html" rel="" target="">
+    Linux基础(56)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1403187.html" rel="" target="">
+    Linux性能(1)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1030770.html" rel="" target="">
+    MongoDB(3)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1218573.html" rel="" target="">
+    mysql(3)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1109697.html" rel="" target="">
+    nginx(6)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/934302.html" rel="" target="">
+    OpenLDAP(13)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/973964.html" rel="" target="">
+    Python(13)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1234598.html" rel="" target="">
+    redis(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/870996.html" rel="" target="">
+    Shell(18)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1032331.html" rel="" target="">
+    zabbix(19)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1403190.html" rel="" target="">
+    Zookeeper(1)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/908629.html" rel="" target="">
+    工作总结(13)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1399896.html" rel="" target="">
+    情感生活(1)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1403202.html" rel="" target="">
+    微服务(1)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/category/1114957.html" rel="" target="">
+    疑难杂症(1)
+</a>
+
+</li>
+			
+				</ul>
+		<h3>
+
+随笔档案
+
+
+</h3>
+				<ul>
+			
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2020/05.html" rel="" target="">
+    2020年5月(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2020/04.html" rel="" target="">
+    2020年4月(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2020/03.html" rel="" target="">
+    2020年3月(4)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2019/12.html" rel="" target="">
+    2019年12月(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2019/11.html" rel="" target="">
+    2019年11月(6)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2019/10.html" rel="" target="">
+    2019年10月(4)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2019/09.html" rel="" target="">
+    2019年9月(6)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2019/07.html" rel="" target="">
+    2019年7月(1)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2019/05.html" rel="" target="">
+    2019年5月(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2019/04.html" rel="" target="">
+    2019年4月(6)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2019/03.html" rel="" target="">
+    2019年3月(7)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2019/02.html" rel="" target="">
+    2019年2月(4)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/12.html" rel="" target="">
+    2018年12月(1)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/11.html" rel="" target="">
+    2018年11月(5)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/10.html" rel="" target="">
+    2018年10月(7)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/09.html" rel="" target="">
+    2018年9月(3)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/07.html" rel="" target="">
+    2018年7月(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/06.html" rel="" target="">
+    2018年6月(13)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/05.html" rel="" target="">
+    2018年5月(6)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/04.html" rel="" target="">
+    2018年4月(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/03.html" rel="" target="">
+    2018年3月(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/02.html" rel="" target="">
+    2018年2月(4)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2018/01.html" rel="" target="">
+    2018年1月(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/12.html" rel="" target="">
+    2017年12月(4)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/11.html" rel="" target="">
+    2017年11月(7)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/10.html" rel="" target="">
+    2017年10月(1)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/09.html" rel="" target="">
+    2017年9月(2)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/07.html" rel="" target="">
+    2017年7月(9)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/06.html" rel="" target="">
+    2017年6月(6)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/05.html" rel="" target="">
+    2017年5月(7)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/04.html" rel="" target="">
+    2017年4月(8)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/03.html" rel="" target="">
+    2017年3月(6)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/02.html" rel="" target="">
+    2017年2月(4)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2017/01.html" rel="" target="">
+    2017年1月(6)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2016/12.html" rel="" target="">
+    2016年12月(10)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2016/11.html" rel="" target="">
+    2016年11月(10)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2016/10.html" rel="" target="">
+    2016年10月(5)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2016/09.html" rel="" target="">
+    2016年9月(4)
+</a>
+
+</li>
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/archive/2016/08.html" rel="" target="">
+    2016年8月(7)
+</a>
+
+</li>
+			
+				</ul>
+		<h3>
+
+相册
+
+
+</h3>
+				<ul>
+			
+				<li>
+<a href="https://www.cnblogs.com/lemon-le/gallery/871591.html" rel="nofollow noopener noreferrer" target="">
+    生活(11)
+</a>
+
+</li>
+			
+				</ul>
+
+
+</div>
+
+<!-- 最新评论 -->
+<div id="sidebar_recentcomments" class="sidebar-block">
+    <div id="recent_comments_wrap" class="RecentComment">
+    <h3 class="catListTitle">最新评论</h3>
+    <div class="RecentCommentBlock">
+        <ul>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/lemon-le/p/11932813.html">1. Re:Filebeat自定义索引 &amp;&amp; 多output过滤</a></li>
+                    <li class="recent_comment_body"><p>赞, 我配置了两天, 去es中文社区找到你了, 我的版本是7.3</p>
+</li>
+                    <li class="recent_comment_author">--suveng</li>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/lemon-le/p/11558990.html">2. Re:contab路径问题（脚本调用另一个文件）</a></li>
+                    <li class="recent_comment_body"><p>6666</p>
+</li>
+                    <li class="recent_comment_author">--规格严格-功夫到家</li>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/lemon-le/p/11780148.html">3. Re:CPU爆满后的无助感</a></li>
+                    <li class="recent_comment_body"><p>6666</p>
+</li>
+                    <li class="recent_comment_author">--规格严格-功夫到家</li>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/lemon-le/p/11723028.html">4. Re:JMXtrans + InfluxDB + Grafana实现Zookeeper性能指标监控</a></li>
+                    <li class="recent_comment_body"><p>666</p>
+</li>
+                    <li class="recent_comment_author">--规格严格-功夫到家</li>
+                    <li class="recent_comment_title"><a href="https://www.cnblogs.com/lemon-le/p/11644777.html">5. Re:Zookeeper通过四字命令基础监控（Zabbix）</a></li>
+                    <li class="recent_comment_body"><p>6666666</p>
+</li>
+                    <li class="recent_comment_author">--规格严格-功夫到家</li>
+        </ul>
+    </div>
+</div>
+</div>
+
+
+
+<!-- 阅读排行榜 -->
+<div id="sidebar_topviewedposts" class="sidebar-block">
+    
+<div id="topview_posts_wrap">
+    <h3 class="catListTitle">阅读排行榜</h3>
+    <div id="TopViewPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/lemon-le/p/7132038.html">
+                            1. MongoDB的启动与停止（一）(99559)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/lemon-le/p/6266921.html">
+                            2. 完整版的OpenLDAP搭建全过程(94210)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/lemon-le/p/7800879.html">
+                            3. nginx里proxy_pass有无/的区别(26335)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/lemon-le/p/6096166.html">
+                            4. samba的简单用法总结(13636)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/lemon-le/p/d668fc96897e0aed2d3f5a2fa0ce0497.html">
+                            5. OpenLDAP一登录系统就修改密码(10680)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<!-- 评论排行榜 -->
+<div id="sidebar_topcommentedposts" class="sidebar-block">
+    
+<div id="topfeedback_posts_wrap">
+    <h3 class="catListTitle">评论排行榜</h3>
+    <div id="TopFeedbackPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/lemon-le/p/6060049.html">
+                            1. 大四到毕业到现在的一年时间(27)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/lemon-le/p/6266921.html">
+                            2. 完整版的OpenLDAP搭建全过程(15)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/lemon-le/p/d668fc96897e0aed2d3f5a2fa0ce0497.html">
+                            3. OpenLDAP一登录系统就修改密码(9)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/lemon-le/p/6443735.html">
+                            4. 如果哪天你看到我疯了，其实是你疯了(8)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/lemon-le/p/8537157.html">
+                            5. 苦苦的追寻，奈何~~（一年三份工作的总结）(8)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<!-- 推荐排行榜 -->
+<div id="sidebar_topdiggedposts" class="sidebar-block">
+    
+<div id="topdigg_posts_wrap">
+    <div class="catListView">
+        <h3 class="catListTitle">推荐排行榜</h3>
+        <div id="TopDiggPostsBlock">
+            <ul style="word-break: break-all">
+                        <li>
+                            <a href="https://www.cnblogs.com/lemon-le/p/6266921.html">
+                                1. 完整版的OpenLDAP搭建全过程(12)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/lemon-le/p/8537157.html">
+                                2. 苦苦的追寻，奈何~~（一年三份工作的总结）(5)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/lemon-le/p/10515069.html">
+                                3. 修改Docker默认的网段(4)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/lemon-le/p/11551367.html">
+                                4. 磁盘告警之---神奇的魔法（Sparse file）(4)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/lemon-le/p/11932813.html">
+                                5. Filebeat自定义索引 &amp;&amp; 多output过滤(3)
+                            </a>
+                        </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</div></div>
+                    <script>loadBlogSideColumn();</script>
+
+</div>
+</div>
+<div class="clear"></div>
+<div id="footer">
+<p id="footer">
+	Powered by: 
+	<br>
+	
+	<a href="https://www.cnblogs.com/" id="footer_site_link">博客园</a>
+	<br>
+	Copyright © 2020 Captain_Li
+<br><span id="poweredby">Powered by .NET Core on Kubernetes</span>
+
+</p>
+
+
+</div>
+</div>
+
+
+    
+
+
+<script type="text/javascript">
+
+(function(window,document,undefined){
+    var hearts = [];
+    
+    window.requestAnimationFrame = (function(){
+        return window.requestAnimationFrame || 
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+         window.oRequestAnimationFrame ||
+         window.msRequestAnimationFrame ||
+         function (callback){
+             setTimeout(callback,1000/60);
+         }
+    })();
+    
+    init();
+
+    function init(){
+        css(".heart{width: 10px;height: 10px;position: fixed;background: #f00;transform: rotate(45deg);-webkit-transform: rotate(45deg);-moz-transform: rotate(45deg);}.heart:after,.heart:before{content: '';width: inherit;height: inherit;background: inherit;border-radius: 50%;-webkit-border-radius: 50%;-moz-border-radius: 50%;position: absolute;}.heart:after{top: -5px;}.heart:before{left: -5px;}");
+        attachEvent();
+        gameloop();
+    }
+
+    function gameloop(){
+        for(var i=0;i<hearts.length;i++){
+            if(hearts[i].alpha <=0){
+                document.body.removeChild(hearts[i].el);
+                hearts.splice(i,1);
+                continue;
+             }
+
+             hearts[i].y--;
+             hearts[i].scale += 0.004;
+             hearts[i].alpha -= 0.013;
+             hearts[i].el.style.cssText = "left:"+hearts[i].x+"px;top:"+hearts[i].y+"px;opacity:"+hearts[i].alpha+";transform:scale("+hearts[i].scale+","+hearts[i].scale+") rotate(45deg);background:"+hearts[i].color;
+        }
+
+        requestAnimationFrame(gameloop);
+    }
+
+    function attachEvent(){
+        var old = typeof window.onclick==="function" && window.onclick;
+        window.onclick = function(event){
+            old && old();
+            createHeart(event);
+        }
+    }
+
+    function createHeart(event){
+        var d = document.createElement("div");
+        d.className = "heart";
+        hearts.push({
+            el : d,
+            x : event.clientX - 5,
+            y : event.clientY - 5,
+            scale : 1,
+            alpha : 1,
+            color : randomColor()
+        });
+
+        document.body.appendChild(d);
+    }
+
+    function css(css){
+        var style = document.createElement("style");
+        style.type="text/css";
+        try{
+            style.appendChild(document.createTextNode(css));
+        }
+        catch(ex){
+            style.styleSheet.cssText = css;
+        }
+
+        document.getElementsByTagName('head')[0].appendChild(style);
+    }
+
+    function randomColor(){
+        return "rgb("+(~~(Math.random()*255))+","+(~~(Math.random()*255))+","+(~~(Math.random()*255))+")";
+    }
+    
+})(window,document);
+</script><script type="text/javascript">getFollowStatus('232a797c-6ee6-e411-b908-9dcfd8948a71');</script></body></html>

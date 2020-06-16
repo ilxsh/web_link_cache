@@ -1,0 +1,49 @@
+var surprise_word = $('[data-word]').data('word');
+if (surprise_word != '') surprise(surprise_word);
+
+zbp.plugin.on("comment.postsuccess", "surprise", function (i,x) {
+    var json = $.parseJSON(x)
+    var cmtid = json.data.ID;
+    if (json.err.code === 0 && json.data.word !== '' && json.data.word !== undefined) surprise(json.data.word);
+});
+
+function surprise(word){
+    var w = $(document).width();
+    var head  = '<style>.surprise{width: 100%;height: 100%;background-color: #666;position: fixed;top: 0;left: 0;opacity:0.6;z-index:999998}';
+        head += '.surprise-box{display:none;position: fixed;top: 50%;left: 50%;height: 500px;width: '+w+'px;max-width: 500px;margin-left: -280px;margin-top: -300px;z-index:999999;background:url("'+bloghost+'zb_users/plugin/surprise/red.png");background-size:100% 100%}';
+        head += '.surprise-box .close {color: #fff;line-height: 25px;text-align: center;height: 25px;width: 25px;font-size: 18px;cursor: pointer;}';
+        head += '.surprise-box .close::before {content: "\\2716";}.surprise-box .close {top: 30px;right: 30px;position: absolute;transition: ease-in-out 0.4s;}.surprise-box .close:hover {transform:rotate(90deg)}';
+        head += '.surprise-box{-webkit-animation:1s seconddiv;}.surprise-box .code{top: 130px;font-size: 40px;font-weight: bold;color: #e9003b;}';
+        head += '.surprise-box .code span{letter-spacing: 15px;margin-left: 20px;}';
+        head += '.surprise-box > div{position:absolute;width: 100%;max-width: '+w+'px;text-align: center;}';
+        head += '.surprise-box > div.top{top:80px;font-size: 23px;color: #ca0033;}';
+        head += '.surprise-box > div.body{top: 245px;color: #f4f4f4;line-height: 30px;font-size: 18px;}';
+        head += '.surprise-box > div.end{top: 360px;font-size: 25px;color: #f4f4f4;}';
+        // head += '@keyframes seconddiv{0% {transform: scale(1.4,1.4);}10% {transform: scale(1,1);}25% {transform: scale(1.2,1.2);}50% {transform: scale(1,1);}}';
+        head += '@media only screen and (max-width: 500px){.surprise-box .code span {letter-spacing: 2px;margin-left: 5px;}.surprise-box{margin-top: -250px;margin-left: -'+(w/2)+'px;}.surprise-box > div.body{font-size: 13px;}}</style>';
+    var html  = '<div class="surprise"></div><div class="surprise-box"><span class="close"></span><div class="top">恭喜获得现金红包</div><div class="code"><span>'+word+'</span></div><div class="body">打开支付宝 - 红包<br>输入口令“<span>'+word+'</span>”就可以领取</div><div class="end">点击复制红包口令</div></div>';
+    $('head').append(head);
+    $('body').append(html);
+    $('.surprise-box').slideDown();
+    
+    var jsclipboard = $('<script src="'+bloghost+'zb_users/plugin/surprise/clipboard.min.js"></script>');
+    $('body').append(jsclipboard);
+
+	var clip = new Clipboard(".surprise-box", {
+        target: function(trigger) {
+    		return trigger.children[2];
+        }
+    });
+	clip.on('success', function (e) {
+		$('.surprise-box .end').html('→ 红包口令复制成功 ←');
+		e.clearSelection();
+	});
+	clip.on('error', function (e) {
+		alert("复制失败");
+	});
+}
+
+$(document).on("click",'.surprise-box .close',function(){
+    $('.surprise').remove();
+    $('.surprise-box').slideUp(function(){$(this).remove()});
+})

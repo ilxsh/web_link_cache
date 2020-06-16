@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="canonical" href="https://blog.csdn.net/u013737447/article/details/48294939"/>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="renderer" content="webkit"/>
+    <meta name="force-rendering" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="report" content='{"pid": "blog", "spm":"1001.2101"}'>
+    <meta name="referrer" content="always">
+    <meta http-equiv="Cache-Control" content="no-siteapp" /><link rel="alternate" media="handheld" href="#" />
+    <meta name="shenma-site-verification" content="5a59773ab8077d4a62bf469ab966a63b_1497598848">
+        <meta name="csdn-baidu-search"  content='{"autorun":true,"install":true,"keyword":"linuxvlan"}'>
+    
+    <link href="https://csdnimg.cn/public/favicon.ico" rel="SHORTCUT ICON">
+    <title>Linux下VLAN功能的实现_u013737447的博客-CSDN博客_linuxvlan</title>
+        <meta name="keywords" content="linuxvlan">
+        <meta name="description" content="http://www.cnblogs.com/zmkeil/archive/2013/04/18/3029339.html2013-04-1820:19byzmkeil,1666阅读,0评论,收藏,编辑1.Linux网络栈下两层实现1.1简介    VLAN是网络栈的一个附加功能，且位于下两层。首先来学习Linux中网络栈下两层的实现_linuxvlan">
+    <script src='//g.csdnimg.cn/tingyun/1.8.3/blog.js' type='text/javascript'></script>
+        
+                    <link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/new_css/detail_enter-951e09a005.min.css">
+                            <script type="application/ld+json">{"@context":"https:\/\/ziyuan.baidu.com\/contexts\/cambrian.jsonld","@id":"https:\/\/blog.csdn.net\/u013737447\/java\/article\/details\/48294939","appid":1638831770136827,"title":"Linux\u4e0bVLAN\u529f\u80fd\u7684\u5b9e\u73b0_u013737447\u7684\u535a\u5ba2-CSDN\u535a\u5ba2_linux vlan","pubDate":"2015-09-08T18:28:35","upDate":"2015-09-08T18:28:35"}</script>
+    
+            <link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/themes_skin/skin3-template/skin3-template-3faf0f2897.min.css">
+    
+<!--    自定义皮肤样式-->
+    
+    <script type="text/javascript">
+        var username = "u013737447";
+        var blog_address = "https://blog.csdn.net/u013737447";
+        var static_host = "https://csdnimg.cn/release/phoenix/";
+        var currentUserName = "";
+        var isOwner = false;
+        var loginUrl = "http://passport.csdn.net/account/login?from=https://blog.csdn.net/u013737447/java/article/details/48294939"
+        var blogUrl = "https://blog.csdn.net/";
+
+        var curSkin = "skin3-template";
+        // 收藏所需数据
+        var articleTitle = "Linux下VLAN功能的实现";
+        var articleDesc = "http://www.cnblogs.com/zmkeil/archive/2013/04/18/3029339.html2013-04-18 20:19 by zmkeil, 1666 阅读, 0 评论, 收藏, 编辑 1.Linux网络栈下两层实现1.1简介    VLAN是网络栈的一个附加功能，且位于下两层。首先来学习Linux中网络栈下两层的实现_linux vlan";
+
+        var articleTitles = "Linux下VLAN功能的实现_u013737447的博客-CSDN博客_linux vlan";
+        
+        var nickName = "云飞扬N";
+        var isCorporate = false;
+        var subDomainBlogUrl = "https://blog.csdn.net/"
+        var digg_base_url = "https://blog.csdn.net/u013737447";
+        var articleDetailUrl = "https://blog.csdn.net/u013737447/article/details/48294939";
+        var isShowThird = "0"
+        var skinStatus = "White"
+        var canRead = true;
+        
+        var sideToolbarVersion = 2.2;
+    </script>
+    <script src="https://csdnimg.cn/public/common/libs/jquery/jquery-1.9.1.min.js" type="text/javascript"></script>
+    <!--js引用-->
+            <script src="//g.csdnimg.cn/??fixed-sidebar/1.1.6/fixed-sidebar.js,report/1.5.0/report.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css">
+    <style>
+        .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+    </style>
+</head>
+<body class="nodata " > 
+    <link rel="stylesheet" href="https://csdnimg.cn/public/common/toolbar/content_toolbar_css/content_toolbar.css">
+    <script id="toolbar-tpl-scriptId" src="https://csdnimg.cn/public/common/toolbar/js/content_toolbar.js" type="text/javascript" domain="https://blog.csdn.net/"></script>
+    <script>
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+<link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/new_css/blog_code-c3a0c33d5c.css">
+<link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/vendor/pagination/paging-e040f0c7c8.css">
+
+<script type="text/javascript">
+	var NEWS_FEED = function(){}
+</script>
+
+<link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/new_css/chart-3456820cac.css" />
+<div class="main_father clearfix d-flex justify-content-center" style="height:100%;"> 
+    <div class="container clearfix" id="mainBox">
+        <aside class="blog_container_aside">
+	<!--主页引入-->
+    
+    <div id="asideProfile" class="aside-box">
+    <div class="profile-intro d-flex">
+        <div class="avatar-box d-flex justify-content-center flex-column">
+            <a href="https://blog.csdn.net/u013737447"  data-report-click='{"mod":"popu_379","dest":"https://blog.csdn.net/u013737447","ab":"new"}'>
+                <img src="https://profile.csdnimg.cn/9/E/A/3_u013737447" class="avatar_pic" username='u013737447'>
+            </a>
+        </div>
+        <div class="user-info d-flex flex-column profile-intro-name-box">
+            <div>
+                                <a href="https://blog.csdn.net/u013737447" class="" id="uid" title='云飞扬N' data-report-click='{"mod":"popu_379","dest":"https://blog.csdn.net/u013737447","ab":"new"}' >
+                    <span class="name " username='u013737447'>
+                        云飞扬N                    </span>
+                </a>
+                <span></span>
+                <span class="flag expert-blog"><span class="bubble">CSDN认证博客专家</span></span>
+                <span class="flag company-blog"><span class="bubble">CSDN认证企业博客</span></span>
+            </div>
+            <div class="profile-intro-name-boxFooter">
+                <span class="personal-home-page">码龄6年</span>
+                            </div>
+        </div>
+    </div>
+    <div class="data-info d-flex item-tiling">
+                <dl class="text-center" title="0">
+                            <dt><span class="count">0</span></dt>
+                <dd>原创</dd>
+                    </dl>
+        <dl class="text-center" id="fanBox" title="2">
+            <dt><span class="count" id="fan">2</span></dt>
+            <dd>粉丝</dd>
+        </dl>
+        <dl class="text-center" title="4">
+            <dt><span class="count">4</span></dt>
+            <dd>获赞</dd>
+        </dl>
+        <dl class="text-center" title="0">
+            <dt><span class="count">0</span></dt>
+            <dd>评论</dd>
+        </dl>
+        <dl class="text-center" style="min-width:58px" title="38101">  
+            <dt><span class="count">3万+</span></dt>
+            <dd>访问</dd>
+        </dl>
+    </div>
+    <div class="item-rank"></div>
+    <div class="data-info d-flex item-tiling">
+        <dl class="text-center" title="238">
+            <dt><span class="count">238</span></dt>
+            <dd>积分</dd>
+        </dl>
+        <dl class="text-center" title="12">
+            <dt><span class="count">12</span></dt>
+            <dd>收藏</dd>
+        </dl>
+        <dl class="text-center" title="1371458">
+            <dt><span class="count">137万+</span></dt>
+            <dd><a href="https://blog.csdn.net/rank/writing_rank" target="_blank">周排名</a></dd>
+        </dl>
+        <dl class="text-center" title="279936">
+            <dt><span class="count">27万+</span></dt>
+            <dd><a href="https://blog.csdn.net/rank/writing_rank_total" target="_blank">总排名</a></dd>
+        </dl>
+        <dl class="text-center" title="2级,点击查看等级说明">
+            <dt><a href="https://blog.csdn.net/home/help.html#level"  target="_blank">
+            <img class="level" src="https://csdnimg.cn/identity/blog2.png"/>            </a>
+            </dt>
+            <dd>等级</dd>
+        </dl>
+    </div>
+    <div class="aside-box-footer">
+                
+    </div>
+        <div class="profile-intro-name-boxOpration">
+        <div class='opt-letter-watch-box'>
+            <a class="bt-button personal-letter" href="https://me.csdn.net/u013737447" target="_blank" rel="noopener">TA的主页</a>
+        </div>
+        <div class='opt-letter-watch-box'>
+            <a class="bt-button personal-letter" href=https://im.csdn.net/im/main.html?userName=u013737447 target="_blank" rel="noopener">私信</a>
+        </div>
+        <div class="opt-letter-watch-box">
+                            <a class="personal-watch bt-button" id="btnAttent" data-report-click='{"mod":"popu_379","ab":"new","extend1":"个人主页未关注"}'>关注</a>
+                    </div>
+    </div>
+    </div>
+<div id="asideSearchArticle" class="aside-box">
+	<div class="aside-content">
+    <div class="aside-search aside-search-blog">         
+        <input type="text" class="input-serch-blog" name="" autocomplete="off" value="" id="search-blog-words" placeholder="搜博主文章">
+        <a class="btn-search-blog">
+            <img src="//csdnimg.cn/cdn/content-toolbar/csdn-sou.png?v=1587021042">
+        </a>
+    </div>
+    </div>
+</div><script>
+    function watchBtnChange(flag, username) {
+        $('span.blog-expert-button-follow').each(function(index) {
+            if (flag) {
+                if ($(this).attr("data-name") == username) {
+                    $(this).html('<span class="hover-hide">已关注</span><span class="hover-show">取消</span>').removeClass('btn-red-follow').addClass('btn-gray-follow attented');
+                }
+            } else {
+                if ($(this).attr("data-name") == username) {
+                    $(this).html("关注").addClass('btn-red-follow').removeClass('btn-gray-follow attented');
+                }
+            }
+        })
+        if (username == $('p.csdn-tracking-statistics').attr("username")) {
+            if (flag) {
+                $('#btnAttent').addClass("attented").text("已关注").removeClass('btn-red-hollow').addClass('btn-gray-hollow');
+                changeFans(1)
+            } else {
+                $('#btnAttent').text("关注").addClass('btn-red-hollow').removeClass('btn-gray-hollow attented');
+                changeFans(-1)
+            }
+        }
+
+    }
+
+    function changeFans(num) {
+        if ($('#fan').text().indexOf('+') < 0) {
+            $('#fan').text(parseInt($('#fan').text()) + num);
+        } else {
+            $('#fanBox').attr('title', parseInt($('#fanBox').attr('title')) + num);
+        }
+    }
+    window.csdn = window.csdn ? window.csdn : {};
+    window.csdn.watchBtnChange = watchBtnChange;
+</script><div class="csdn-tracking-statistics mb8 box-shadow" data-pid="blog" style="height:250px;">
+    <div class="aside-content text-center" id="cpro_u2734133">
+        <div id="kp_box_56" data-pid="56"><script src='https://securepubads.g.doubleclick.net/tag/js/gpt.js'>
+  googletag.pubads().definePassback('/162717810/CA-MarketingChoiceMedia/300x250', [300, 250]).display();
+</script><img class="pre-img-lasy" data-src="https://kunyu.csdn.net/1.png?p=56&a=2230&c=0&k=&d=1&t=3&u=31dc1ff9ff9341b5a096f0214a2885bd"></div>    </div>
+</div>
+<div id="asideNewArticle" class="aside-box">
+    <h3 class="aside-title">最新文章</h3>
+    <div class="aside-content">
+        <ul class="inf_list clearfix">
+                        <li class="clearfix">
+                <a data-report-click='{"mod":"popu_382","dest":"https://blog.csdn.net/u013737447/article/details/50013201","ab":"new"}' href="https://blog.csdn.net/u013737447/article/details/50013201" target="_blank" >
+                                        Vmware中RedHat命令行和图形界面切换                </a>
+            </li>
+                        <li class="clearfix">
+                <a data-report-click='{"mod":"popu_382","dest":"https://blog.csdn.net/u013737447/article/details/50008377","ab":"new"}' href="https://blog.csdn.net/u013737447/article/details/50008377" target="_blank" >
+                                        mount                </a>
+            </li>
+                        <li class="clearfix">
+                <a data-report-click='{"mod":"popu_382","dest":"https://blog.csdn.net/u013737447/article/details/49154509","ab":"new"}' href="https://blog.csdn.net/u013737447/article/details/49154509" target="_blank" >
+                                        X86-64寄存器和栈帧                </a>
+            </li>
+                        <li class="clearfix">
+                <a data-report-click='{"mod":"popu_382","dest":"https://blog.csdn.net/u013737447/article/details/49154451","ab":"new"}' href="https://blog.csdn.net/u013737447/article/details/49154451" target="_blank" >
+                                        X86-64寄存器和栈帧                </a>
+            </li>
+                        <li class="clearfix">
+                <a data-report-click='{"mod":"popu_382","dest":"https://blog.csdn.net/u013737447/article/details/48292837","ab":"new"}' href="https://blog.csdn.net/u013737447/article/details/48292837" target="_blank" >
+                                        Linux中如何配置IP                </a>
+            </li>
+                    </ul>
+    </div>
+</div>
+    <div id="asideCategory" class="aside-box"
+         style="display:block!important;">
+    <h3 class="aside-title">分类专栏</h3>
+    <div class="aside-content">
+        <ul>
+                            <li class="">
+                                        <a class="clearfix" 
+                                                    data-report-click='{"mod":"popu_537","strategy":"","dest":"https://blog.csdn.net/u013737447/category_5799727.html","ab":"new"}'
+                            data-report-view='{"mod":"popu_537","strategy":"","dest":"https://blog.csdn.net/u013737447/category_5799727.html","ab":"new"}'
+                                               href="https://blog.csdn.net/u013737447/category_5799727.html">
+                                                    <img src="https://img-blog.csdnimg.cn/20190927151043371.png" alt="">
+                                                <!--####是否付费-->
+                        <span class="title oneline"><span class="text">linuxOS</span>
+                                                    </span>
+                        <!--####是否付费-->
+                                                    <span class="count float-right">1篇</span>
+                                            </a>
+                </li>
+                    </ul>
+    </div>
+    </div>
+<div id="asideArchive" class="aside-box">
+    <h3 class="aside-title">归档</h3>
+    <div class="aside-content">
+        <div class="archive-box">
+                        <div class="archive-title">2015</div>
+            <div class="archive-content">
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/u013737447/article/month/2015/11" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/u013737447/article/month/2015/11"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/u013737447/article/month/2015/11"}'>
+                        <span class="time">11月</span>
+                        <span class="count">2篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/u013737447/article/month/2015/10" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/u013737447/article/month/2015/10"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/u013737447/article/month/2015/10"}'>
+                        <span class="time">10月</span>
+                        <span class="count">2篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/u013737447/article/month/2015/09" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/u013737447/article/month/2015/09"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/u013737447/article/month/2015/09"}'>
+                        <span class="time">9月</span>
+                        <span class="count">7篇</span>
+                        </a>
+                    </div>
+                            </div>
+                    </div>
+    </div>
+</div>
+<div id="asideHotArticle" class="aside-box">
+	<h3 class="aside-title">热门文章</h3>
+	<div class="aside-content">
+		<ul class="hotArticle-list">
+							<li>
+
+                    <a
+                    data-report-click='{"mod":"popu_541","dest":"https://blog.csdn.net/u013737447/article/details/49154509","ab":"new"}' 
+                     href="https://blog.csdn.net/u013737447/article/details/49154509" >
+                                                X86-64寄存器和栈帧                        <img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt=""><span class="read">25862</span>
+                    </a>
+				</li>
+							<li>
+
+                    <a
+                    data-report-click='{"mod":"popu_541","dest":"https://blog.csdn.net/u013737447/article/details/48292763","ab":"new"}' 
+                     href="https://blog.csdn.net/u013737447/article/details/48292763" >
+                                                TCPDump抓取vlan/pppoe等数据帧的规则                        <img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt=""><span class="read">7802</span>
+                    </a>
+				</li>
+							<li>
+
+                    <a
+                    data-report-click='{"mod":"popu_541","dest":"https://blog.csdn.net/u013737447/article/details/48294939","ab":"new"}' 
+                     href="https://blog.csdn.net/u013737447/article/details/48294939" >
+                                                Linux下VLAN功能的实现                        <img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt=""><span class="read">1876</span>
+                    </a>
+				</li>
+							<li>
+
+                    <a
+                    data-report-click='{"mod":"popu_541","dest":"https://blog.csdn.net/u013737447/article/details/49154451","ab":"new"}' 
+                     href="https://blog.csdn.net/u013737447/article/details/49154451" >
+                                                X86-64寄存器和栈帧                        <img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt=""><span class="read">513</span>
+                    </a>
+				</li>
+							<li>
+
+                    <a
+                    data-report-click='{"mod":"popu_541","dest":"https://blog.csdn.net/u013737447/article/details/50013201","ab":"new"}' 
+                     href="https://blog.csdn.net/u013737447/article/details/50013201" >
+                                                Vmware中RedHat命令行和图形界面切换                        <img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt=""><span class="read">453</span>
+                    </a>
+				</li>
+					</ul>
+	</div>
+</div>
+                <div id="footerRightAds">
+        <div class="aside-box">
+            <div id="kp_box_57" data-pid="57"><script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- 博客内页左下视窗-20181130 -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:300px;height:250px"
+     data-ad-client="ca-pub-1076724771190722"
+     data-ad-slot="1894159733"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script><img class="pre-img-lasy" data-src="https://kunyu.csdn.net/1.png?p=57&a=707&c=0&k=&d=1&t=3&u=1ed0dd33de5d4812ab53c8a137b4cc7c"></div>        </div>
+        </div>
+            <!-- 详情页显示目录 -->
+        <!--文章目录-->
+<div id="asidedirectory" class="aside-box">
+    <div class='groupfile' id="directory">
+        <h3 class="aside-title">目录</h3>
+        <div class="align-items-stretch group_item">
+            <div class="pos-box">
+            <div class="scroll-box">
+                <div class="toc-box"></div>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+    	<div id="asideFooter">
+		<div class="aside-box">
+			<div class="persion_article">
+			</div>
+		</div>
+	</div>
+</aside>
+<script src="https://csdnimg.cn/pubfooter/js/publib_footer-1.0.3.js" data-isfootertrack="false" type="text/javascript"></script>
+<script>
+	$("a.flexible-btn").click(function(){
+		$(this).parents('div.aside-box').removeClass('flexible-box');
+		$(this).parents("p.text-center").remove();
+	})
+</script>
+<script type="text/javascript"  src="https://g.csdnimg.cn/user-tooltip/2.1/user-tooltip.js"></script>
+        <main>
+            
+<div class="blog-content-box">
+    <div class="article-header-box">
+        <div class="article-header">
+            <div class="article-title-box">
+                <h1 class="title-article">Linux下VLAN功能的实现</h1>
+            </div>
+            <div class="article-info-box">
+                <div class="article-bar-top">
+                    <!--文章类型-->
+                                        <!--原创-->
+                                        <!--翻译-->
+                                        <!--转载-->
+                                        <img class="article-type-img" src="https://csdnimg.cn/release/phoenix/template/new_img/reprint.png" alt="">
+                                        <div class="bar-content">
+                                                                                                                                            <a class="follow-nickName" href="https://me.csdn.net/u013737447" target="_blank" rel="noopener">云飞扬N</a>
+                    <span class="time">2015-09-08 18:28:35</span>
+                    <img class="article-read-img article-heard-img" src="https://csdnimg.cn/release/phoenix/template/new_img/articleRead.png" alt="">
+                    <span class="read-count">1892</span>
+                    <a id='blog_detail_zk_collection' class="un-collection" data-report-click='{"mod":"popu_823","ab":"new"}'>
+                        <img class="article-collect-img article-heard-img un-collect-status" style="display:inline-block" src="https://csdnimg.cn/release/phoenix/template/new_img/collect.png" alt="">
+                        <img class="article-collect-img article-heard-img collect-status" style="display:none" src="https://csdnimg.cn/release/phoenix/template/new_img/tobarCollectionActive.png" alt="">
+                        <span class="name">收藏</span>
+                        <span class="get-collection">
+                                                </span>
+                    </a>
+                                        </div>
+                </div>
+                                <div class="up-time"><span>最后发布:2015-09-08 18:28:35</span><span>首发:2015-09-08 18:28:35</span></div>
+                <div class="slide-content-box">
+                <div class="all-tags-box">
+                                                                        </div>
+                                                        </div>
+                <div class="operating">
+                                                        </div>
+            </div>
+        </div>
+    </div>
+    <!--python安装手册结束-->
+                    <article class="baidu_pl">
+                 <div id="article_content" class="article_content clearfix">
+            <link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/css/ck_htmledit_views-211130ba7a.css" />
+                            <link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/css/ck_htmledit_views-211130ba7a.css" />
+                <div class="htmledit_views" id="content_views">
+                                            
+<p><small>http://www.cnblogs.com/zmkeil/archive/2013/04/18/3029339.html<br /></small></p>
+<p><small><br /></small></p>
+<p><small>2013-04-18 20:19 by zmkeil, <span id="post_view_count">1666</span> 阅读, <span id="post_comment_count">
+0</span> 评论, <a href="http://www.cnblogs.com/zmkeil/archive/2013/04/18/3029339.html#" rel="nofollow">
+收藏</a>, <a href="http://i.cnblogs.com/EditPosts.aspx?postid=3029339" rel="nofollow">
+编辑</a></small> </p>
+<div id="cnblogs_post_body">
+<h2>1.Linux网络栈下两层实现</h2>
+<h3>1.1简介</h3>
+<p>    VLAN是网络栈的一个附加功能，且位于下两层。首先来学习Linux中网络栈下两层的实现，再去看如何把VLAN这个功能附加上去。下两层涉及到具体的硬件设备，日趋完善的Linux内核已经做到了很好的代码隔离，对网络设备驱动也是如此，如下图所示：</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201828-a18efe9cc85d4e589fe416ef7e74f4b9.png" alt="" /></p>
+<p>这里要注意的是，Linux下的网络设备net_dev并不一定都对应实际的硬件设备，只要注册一个struct net_device{}结构体（netdevice.h）到内核中，那么这个网络设备就存在了。该结构体很庞大，其中包含设备的协议地址（对于IP即IP地址），这样它就能被网络层识别，并参与路由系统，最有名的当数loopback设备。不同的设备（包括硬件和非硬件）的ops操作方法各不相同，由驱动自己实现。一些通用性的、与设备无关的操作流程（如设备锁定等）则被Linux提炼出来，我们称为驱动框架。</p>
+<h3>1.2代码框架</h3>
+<p>    就是对于上图的扩展，从代码的角度看网络栈的实现。这里主要是学习的过程，一方面算是赏析Linux优美的代码结构，另一方面只有了解这些，才能更好地写网络设备的驱动，或者做平台移植。</p>
+<p>与网络相关的代码主要在~/net，框架性的代码在~/net/core中，另外很多结构定义、宏、简单内联函数在~/include/net、~/include/linux中，具体设备的驱动在~/driver/net中。代码量很大，这里仅给出一些关键的代码流程，且有些流程比较复杂，放到下一节描述。如下图所示：</p>
+<p><img src="http://images.cnitblog.com/blog/517910/201304/18201828-41f3a7f774ed4c7d896ecf437f6e0cd9.png" alt="" /></p>
+<p> </p>
+<p>    <strong>网络层</strong>的代码比较清晰，实际上还有一个forward流程（即路过主机，传向他处），这里没画出，其中NF_函数就是Netfilter框架的钩子函数。这里以IP协议为例，发送流程的代码大多在ip_input.c文件中，接收流程的代码大多在ip_output.c文件中。其它网络层协议如IPv6、X25等，流程大致相同。各种协议在发送流程的最后，都会主动调用dev_queue_xmit()函数；而设备接收到数据包后，会根据包的类型，传送给相应的协议函数，如ip_rcv()，当然这里的实现还是比较复杂的，设计到一些全局的数据结构，不是重点，没看。</p>
+<p>    <strong>驱动框架</strong>的代码基本都在~/net/core/dev.c中。其中的代码分为3部分：</p>
+<ol><li>
+<div style="text-align:justify;"><span style="font-size:10pt;">全局性的代码，如netdev_init()是在系统启动时初始化网络环境的（注意并不是初始化具体的设备），register_netdevice()函数是添加\注册网络设备时调用的，它们中的一些细节直接关系到设备的工作过程，下一节针对具体模块时分别讲述；</span></div>
+</li><li>
+<div style="text-align:justify;"><span style="font-size:10pt;">发送框架相关的，由上层调用dev_queue_xmit()函数，经过一系列处理（包括锁定设备、选择队列、<span style="color:#FF0000;"><strong>vlan相关</strong></span>的处理等），最终调用设备的hard_start_xmit()函数，由它完成硬件的发送过程；</span></div>
+</li><li>
+<div style="text-align:justify;"><span style="font-size:10pt;">接收框架相关的，因为接收是一个被动过程，一般通过中断来发起，但为了提高性能，Linux中的中断处理一般分为两部分（时间紧急的和时间不紧急的），即典型的UH+BH模型；另外近年来，人们发现大数据量时，连续的中断有损性能，现在越来越多的驱动都改用NPI接收模型，将BH部分直接在驱动中实现，比较复杂。不过不管通过什么流程接收到数据包后（封装成skb），都会把它交给netif_receive_skb()函数，该函数对数据包进行处理（包括<span style="color:#FF0000;"><strong>vlan相关</strong></span>的），最终通过deliver_skb(ptype)交付给相应的上层。</span></div>
+</li></ol><p><strong>设备驱动</strong>的代码（即netdev-&gt;ops所指向的函数），各个设备不同，其中最最重要的有5个：dev_open()，hard_start_xmit()，tx_timeout()，interrupt()，poll()。另外其他一些函数如设置mtu，更改mac等，则根据具体设备的功能选择实现。</p>
+<h3>1.3代码细节</h3>
+<p>    以tealtek的rtl8169驱动为例，首先介绍一般的设备驱动中实现那些功能，以及这些功能是如何组合起来的。然后分别从发送、接收流程出发，分析驱动框架中的代码是如何支持这些功能的实现的。</p>
+<h4>1.3.1设备驱动的功能组合</h4>
+<p>    前面讲到了，设备驱动中最最重要的5个函数，这些函数有机组合在一起，实现了可靠的设备功能，如下图所示：</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201829-564c6f9e8a1744b98475bdbd45b6f54d.png" alt="" /></p>
+<p>    <strong>打开函数</strong>dev_open()中，首先初始化设备的私有空间。每个网络设备有一个net_device结构体，同时还有一个私有结构，由net_device.priv指针指向。在module_init()函数中，一般会调用netdev_alloc(sizeof(priv),name,setup_func)函数，该函数指明设备的唯一名称及一个初始化函数（对于以太网，一般用ethe_setup()），同时申请net_device结构和private结构的空间。Private结构由不同的设备自己决定，在dev_open()中，应初始化之。</p>
+<p>    <strong>发送函数</strong>hard_start_xmit()中，首先利用硬件发送数据，注意这里仅是把数据写入设备的发送缓存中（或有些设备直接是利用dma的），然后写相应的寄存器，通知硬件开始发送，之后该函数就正确返回了，然后硬件到底有没有正确发送数据还不知道。</p>
+<p>    <strong>中断函数</strong>interrupt()，是在dev_open()时申请的，并根据实际硬件的中断号，与某个中断线联系并注册进内核。当该中断线上有中断时，CPU跳转到该函数执行。虽然是一根中断线，但设备中断的类型却不一样，这有具体设备决定，一般可通过读取硬件的状态寄存器获悉。若是接收中断，则以某种方式去调用poll()函数，把数据包传递给上层。</p>
+<h4>1.3.2发送流程细节</h4>
+<p>    首先需要知道，Linux为每个网络设备准备了发送/接收队列，alloc_netdev(sizeof(priv),name,setup_func)实际上被定义为alloc_netdev_mqs(x,x,x,1,1)（netdevice.h），即默认为每个设备分配一个发送队列和一个接收队列，队列结构为struct netdev_queue，每个队列中有个重要的结构struct Qdisc。该结构的功能主要是提供多进程使用同一个设备时的锁定功能，在SMP架构（或多核架构）的机器中，这种锁定功能的实现变得尤为复杂，这也是现在内核设计的关键和难点，暂且不管。</p>
+<p>    现在来看网络设备的发送流程，如下图所示：</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201829-8a096f9f33db4bf98fa225581f8707ca.png" alt="" /></p>
+<p>    对于没有队列的设备（主要是一些虚拟设备，如loopback），处理比较简单。对于一般设备，主要对它进行一些复杂的锁定功能，而且函数调用出错时需把该skb重新放回队列中。最终都会调用dev_hard_start_xmit()函数，该函数是发送流程中的关键，它是设备无关的，主要会检查并处理skb中的各种特性，一些新功能（如vlan）的实现都在这个函数中完成。该函数最终调用设备驱动中的设备相关的发送函数。</p>
+<p>    前面讲的出错，仅是函数调用的出错。正如前面讲述的，即使函数调用正确返回了，也并不代表硬件成功把数据包发送出去了。所以一般网卡设备都会在设备成功发送数据时产生中断，并在相应的寄存器中显示这是个TxOK中断。</p>
+<p>    Linux的网络设备驱动框架中，很好地利用了这点。每个设备的net_device结构体中都有一个watchdog_timer，在module_init()中注册该模块时，register_netdev()函数中会初始化该定时器，并注册其func为dev_watchdog()，该函数的内容就是运行设备驱动中实现的tx_timeout()。另外内核提供打开、消去该定时器的函数，供驱动程序在相应的位置使用。</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201829-9d98093b62644d30a1b18e52e2780e97.png" alt="" /></p>
+<h4>1.3.3接收流程细节</h4>
+<p>    接收过程是被动触发的，一般由硬件的中断引发。Linux在处理这种IO时一般采用典型的UH+BH模型，即把一些实时性高的操作（如把设备缓存中的数据copy到内核中，以便设备可接收其它数据）发在中断处理函数中完成，而把实时性要求不高的操作（如处理数据）发在稍后的时间里完成（一般是另开一个线程）。</p>
+<p>    在经典的网络设备驱动中也经常使用这种模型，首先介绍两个数据结构，分别是struct napi_struct{}，里面主要有拥有该数据结构的设备的索引dev，和一个函数指针poll_func；另一个是struct softnet_data{}，该结构中主要维护一个napi_struct的队列。</p>
+<p>    内核准备了一个全局的struct softnet_data sd结构（实际上是为每个cpu准备了一个），另外准备了一个通用的poll_func函数process_backlog()。好了，现在来看驱动中的BH部分，如下图所示：</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201830-761a0b24956b48b5bd0bd81f3e436078.png" alt="" /></p>
+<p>设备驱动中的interrupt函数，检查到接收了新数据包时，就准备新的skb，并把数据copy到skb中，然后调用驱动框架中的netif_rx(skb)函数；该函数主要调用enqueue_to_backlog()；该函数检查是否初次进入，是则准备一个新的napi_struct结构，其poll_func定义为通用函数process_backlog()，并调用__napi_schedule()函数，把准备好的结构体放入sd的poll_list中，然后调用__raise_softirq_irqoff(RxIRQ)打开软中断，且以后每次进入都把skb压入backlog的queue中。</p>
+<p>这里要检索另一个函数netdev_init()（在系统启动时调用的），上述讲的sd结构就是在这个函数中分配的，另外该函数还注册了软中断函数net_rx_action()，软中断的原理没去看，应该就是利用Linux内核的tasklet机制实现的。__raise_softirq_irqoff(RxIRQ)函数讲软中断掩码mask中的RxIRQ置位，这样，BH部分就完成了，此时的sd结构如下图：</p>
+<p><img src="http://images.cnitblog.com/blog/517910/201304/18201830-d21e599a96d04e2e98be136cc97f1ac5.png" alt="" /></p>
+<p>    之后就是UH部分了，即系统在之后的某个时间，启动软中断线程，执行net_rx_action()函数，该函数遍历softnet_data sd结构中的poll_list，并执行每个napi_struct-&gt;poll_func()函数，由前面的叙述可知，这里的poll_func()函数都是process_backlog()，该函数采用while循环取下dev上的skb（因为在软中断执行前可能发生了多次接收中断），并调用__netif_receive_skb(skb)函数，讲skb传递给上层协议。当接收到一定数量的包后，就认为本次数据包接收完毕了，并把该napi_struct结构从sd中删除，如下图所示：</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201831-1e25500c0ebd4db1ac957d8feb12c91f.png" alt="" /></p>
+<p>    这就是传统的中断方式，可以参见RTL8012的驱动~/driver/net/ethernet/realtek/apt.c，就是利用的该方法，它的优点是，需要驱动程序 做的非常少，仅需准备好skb，调用net_rx(skb)即可，其它都有驱动框架完成。缺点是，欠灵活，且数据量大时，会不停的中断，影响系统性能。</p>
+<p> </p>
+<p>现在很多网络设备驱动已不再使用这种结构，而是采用NAPI结构，它完全摒弃了内核驱动框架中的UH+BH模型，并且不再用中断方式，而是在驱动内部使用轮询方式。</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201832-816631e131e843f4a3eec25052453851.png" alt="" /></p>
+<p>    与中断方式最大的不同在于，每次发生接收中断时，关闭接收中断，启动软中断，在poll函数break前，重新打开接收中断，一遍下一轮的数据接收。其次，驱动程序自己定义napi_struct结构和poll_func函数。最后，poll_func函数和前面讲的在结构上差不多，都是while循环，但它要自己准备skb（因为<span style="color:#FF0000;">它之前</span>没有中断程序来准备skb），并且直接上传该skb，一般不会实现队列queue（因为<span style="color:#FF0000;">它之后</span>没有其它线程再去处理queue了）。</p>
+<p>    这就是所谓的NAPI方式，它避免了多次的硬件中断，一定程度上提高系统系能。但驱动程序也因此更加复杂，并且poll_func()函数中要做的事太多（摒弃了UH+BH模型），在数据量很大时，会出现丢包的现象（这好像是Linux的一个bug）。Rtl8169就是采用的这种方式，参见~/driver/net/Ethernet/realtek/r8169.c。</p>
+<h2>2.Linux中VLAN的实现</h2>
+<h3>2.1Linux网络中的namespace</h3>
+<p>    这个概念我不是了解的很清楚，不过可以简单地把它看成是一种分类，目前所了解的网络设备有3类：传统的网络设备，它们不需要依赖于其它设备而独自存在，如eth0、loopback等；VLAN网络设备，它需要依赖于一个宿主设备，若宿主设备没了，它是不能工作的；Bridge网络设备，它也是虚拟的，它依赖于从设备。</p>
+<p>    与此相关的结构有struct net{}，相关文件包括namespace.h、namespace.c等。这3类网络设备都是以module的形式被加入内核中，它们可以看成是网络子系统的顶层module，下面实现的驱动模块等都依赖于它们。这3个顶层模块加载时分别执行的init函数为：netdev_init(),@dev.c；vlan_proto_init(),@vlan.c；br_init(),@br_device.c。</p>
+<p>这3个函数中有自己特有的部分，如netdev_init中分配softnet_data等，它们也有相似的部分，如</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201832-9ff17e1317c047e9aacc1b4e3ee7d7d0.png" alt="" /></p>
+<p>这里要重点看的是ioctl_set函数，这涉及到Linux下网络设备的ioctl操作。在Linux中，所有网络设备的ioctl操作都被抽象成对/proc/net/下的文件的操作，最终调用内核中的sock_ioctl函数，该函数结构如下：</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201833-e10cc542e22946c6ae61c9fc73dcfe68.png" alt="" /></p>
+<p>其中各个hook函数就这里init()时利用ioctl_set_func()设置的。这种设计架构大大方便了用户空间对各类虚拟设备（如vlan，br等）的操作，如目前Linux下vlan的操作命令vconfig就是打开/proc/net/vlan/config文件，然后对它进行ioctl操作，详细参见vconfig的源码（非常简单）。Br也是差不多，以后学习br时再细看。</p>
+<p>    <span style="color:#FF0000;"><strong>注意：</strong></span>这里关于namespace的概念可能错了，现在先不看，后面讲到协议族时，再一起看看整个网络栈顶层的实现框架，这里先关注底层的设备。另注：这里的vlan_ioctl的概念可能是错误的，它实际上是sock_ioctl的特殊情况，以后再看吧，包括应用层如何调用到它。</p>
+<h3>2.2VLAN的实现</h3>
+<p>    Vlan的分析，主要从其ioctl入手，一步步看其源码就能大致理解了，为了叙述方便，这里首先给出我所理解的vlan实现框架，再去叙述其实现细节。</p>
+<h4>2.2.1Vlan的功能框图</h4>
+<p>    如前面所述，Linux中VLAN是一种特殊的设备，首先简单看一下vconfig命令创建一个VLAN设备</p>
+<p style="text-align:center;">vconfig add eth0 10</p>
+<p>VLAN设备必须依赖于一个实际的宿主设备，并制定一个vlan_id，这样就创建出一个eth0.10设备。创建好后，就可以和实际网络设备一样，用ifconfig命令配置它。</p>
+<p>    它发送/接收数据的流程大致如下图所示：</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201833-7c56890432c341eeb41073d16c886517.png" alt="" /></p>
+<p>通过vlan_dev发送时，首先会调用它自己的驱动中的ndo_start_xmit()函数，就仿佛它是一个实际设备一样，而它的发送函数会将skb重定向到real_dev，并利用real_dev重启发送流程，这是内部实现的，后面会讲到，且对上层是透明的。</p>
+<p>接收是有硬件中断触发的，所以一定是由real_dev的驱动接收到数据并打包成skb，若发现该数据是vlan的，则重定向skb-&gt;dev=vlan_dev，然后提交给上层。对上层而言，这也是透明的，就仿佛是vlan_dev收到了数据。注意vlan_dev的硬件地址必须和real_dev相同，这样，发往vlan_dev的数据包才能被实际的硬件设备接收到。</p>
+<p>相关数据结构框图如下。Vlan设备的priv结构中有real_dev指针，同时实际设备中的vlan_info信息指明它所有的vlan设备。</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201833-820ab20239cf47ad9130f988350bc602.png" alt="" /></p>
+<h4>2.2.2Vlan设备的创建</h4>
+<p>    前面讲了，通过vconfig add命令可以创建一个vlan设备，该命令实际上是对/proc/net/vlan/config文件的ioctl操作，映射到内核中就是vlan.c中的vlan_ioctl_handler()函数，add命令最终调用register_vlan_device(*real_dev, vid)。</p>
+<p><img src="http://images.cnitblog.com/blog/517910/201304/18201834-ef9fe710ecc145179c52ac09cb3f7206.png" alt="" /></p>
+<p>    首先申请了一个新的struct net_device结构作为vlan设备，并为它分配一个struct vlan_dev_priv型的私有空间（vlan.h），并指明它的初始化函数为vlan_setup。该初始化函数设置该dev的flag为802.1q；并设置它的发送queue为0，这一点对vlan的发送流程很重要；设置其netdev_ops为一个通用的vlan_netdev_ops，它直接决定了vlan设备的工作方式，后面会细讲。</p>
+<p>    然后修改vlan设备的私有空间，指明它的宿主设备及vid；并且相应地修改宿主设备real_dev中的vlan_info信息。</p>
+<p>    最后把它注册进内核中的netdevice链表中，从此它对上层协议栈而言，就仿佛是一个实际的设备，和其它所有设备有平等的地位，可以用ifconfig配置它，也可以把它加入bridge等。</p>
+<p>    相关函数集中在vlan.c中，里面还有其它一些ioctl功能函数；另外vlan_core.c中主要是和vlan相关的核心操作；vlan_dev.c中主要是vlan设备相关的代码。</p>
+<h4>2.2.3Vlan设备的发送流程</h4>
+<p>    Vlan设备对上层协议栈而言，和实际设备时平等的，所以它也会参与路由选择，若vlan设备被选中为出口设备，那么上层最终会调用dev_queue_xmit(vlan_dev)来发送数据，参见1.3.2节的图。上一节讲了，vlan设备的tx_queue被初始化为0，所以发送流程会直接调用hard_dev_start_xmit()函数，该函数首先对skb作一系列检查，包括vlan的检查，然后调用skb-&gt;dev-&gt;ops-&gt;ndo_start_xmit()发送。</p>
+<p>    首先来看对vlan的检查，参见dev.c中的hard_dev_start_xmit(skb)函数，其实很简单，检查skb中的vlan标志，若有，则插入vlan_tag，并修改skb-&gt;proto=802.1q，最后去除skb中的vlan标志。skb中为什么会有vlan标志，因为上层选择vlan_dev后，根据它的priv_flags（见上一节）可知道它是一个vlan设备，因此给它打上一个vlan标志。</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201835-b15fc392c9354125b73c598c4016edfa.png" alt="" /></p>
+<p> </p>
+<p>    然后来看vlan设备的驱动中的发送函数，有上一节知道，所有vlan设备的netdev_ops都被初始化为vlan_netdev_ops，它的发送函数为设置为vlan_dev_hard_start_xmit()（vlan_dev.c）。也很简单，如下图所示</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201835-f29185e3c23d4eca9494f693964a75f1.png" alt="" /></p>
+<h4>2.2.4Vlan设备的接收流程</h4>
+<p>    在1.3.3节讲了网络设备的接收流程，不管采用中断方式，还是NAPI方式，最终都会准备好skb，并在一个内核线程中调用__netif_receive_skb(skb)函数，该函数检查skb，包括vlan的检查，然后把skb提交给上层。</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201835-ada1fe439d9144d6ab642001de71f39d.png" alt="" /></p>
+<p>若接收到的skb是802.1q协议的，即mac地址后面跟了0x8100，注意，网卡接收的仅是bit流，这里只能从bit流中的特定字节来判断它是否是vlan包。若是vlan包，则调用vlan_untag()函数，该函数读出数据流中的vlan_id，并填写入skb-&gt;vlan_tci中，然后删除vlan_head，从而实现对上层的透明。注意这里的skb-&gt;vlan_tci标志仅是为了把该skb交给vlan_dev（见下面），而skb中的数据是透明的以太网包。</p>
+<p>    发现skb-&gt;vlan_tci置位，则执行vlan_do_receive(skb)，该函数由skb-&gt;vlan_tci得到该skb包所要发往的vlan_dev，并且重定向skb-&gt;dev为该vlan_dev，最后消除skb中的vlan_tci标志。</p>
+<p>    这样之后vlan_do_receive()返回，流程继续回到netif_receive_skb()中，不过此时的skb已经是一个普通的数据包了（实现了对上层的透明），且它看起来就像是由vlan_dev接收的数据包。</p>
+<h4>2.2.5关于设备重定向的总结</h4>
+<p>    <strong>在发送流程中</strong>，数据包由上层下发时（如IP经过路由后下发），首先是到了虚拟设备（如这里的VLAN，包括以后讲的Bridge），这正是这种虚拟化技术所期望的对上层透明，要注意的是，此时数据包skb就已经准备好了，其中报文的MAC地址、IP地址就是这个虚拟设备的地址，并且不再改变，这就实现了对外仿佛是实际存在的。</p>
+<p>    然后在dev_hard_start_xmit(skb,dev)中，对skb进行检查，发现是虚拟设备的数据，则做相应操作（如vlan_untag()，其它的都安正常发送流程走），接着就调用虚拟设备的ops-&gt;ndo_start_xmit()函数，在这个函数中，进行设备重定向。最后以real_dev重启发送流程（vlan是这样的，因为real_dev可能被多个vlan_dev使用，必须重新进行锁定等，而bridge则直接调用real_dev-&gt;ops-&gt;ndo_start_xmit()，因为它的端口从设备仅为它所用）。</p>
+<p>    <strong>在接收流程中</strong>，数据包skb首先在real_dev中被接收，并通过_netif_receive_skb()提交给上层，正是在这个函数中，检查数据包skb，若发现是发往虚拟设备的，则重定向skb-&gt;dev，再提交上层，从而实现对上层透明。</p>
+<h2>3.Linux中VLAN的应用场景</h2>
+<h3>3.1一般交换机中的VLAN</h3>
+<p>    Vlan最初的概念是应用与交换机中，并且由硬件来划分vlan。最传统的方法是基于port的vlan，即每个vlan虚拟网由一个vlan_id标示，并由一个vlan_mask来标示哪些port和它同处于一个vlan虚拟网，如下图所示：</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201836-cc33a1c480f84f4e9260a0e7f94bcbed.png" alt="" /></p>
+<p>其中vid和vlan_mask都存放在设备寄存器中，由硬件自动访问识别。</p>
+<p>    更简化一点，上图中packet中都可以不需要vid（即不需要vlan_head），硬件根据包是由哪个port收到的来索引VID_table，从而知道哪些port和它同处于一个vlan虚拟网。但对于有些应用，需要一个port同属于多个vlan的，如下图所示：</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201836-aab7be7cf8ba46d4a190c80c8c76001c.png" alt="" /></p>
+<p>承载多个vlan的port称为trunk口，它上面收发的数据包必须含有vlan_head，以识别该包是属于哪个vlan的；只承载一个vlan的port称为access口，若硬件支持，可以不需要vlan_head就能完成vlan功能。</p>
+<h3>3.2一个应用场景分析</h3>
+<p>    Linux中，Vlan设备建立在宿主设备的基础上，即该物理端口应该是trunk口，如下图所示：</p>
+<p style="text-align:center;"><img src="http://images.cnitblog.com/blog/517910/201304/18201837-01260aaa44964984b517b34233d70aaa.png" alt="" /></p>
+<p>由前面Linux中vlan的实现可知，发往vlan设备的数据包都被打上vlan_head，而vlan设备接收到的数据包都默认为有vlan_head，并将其去除。这是符合trunk口的定义的。</p>
+<p>    总之Linux下的VLAN模型，是一套虚拟化的架构，它为了虚拟出vlan端口，做得比较臃肿。如果把上图中下方的switch设备用Linux来驱动，该怎么模型化这个设备，还要充分利用硬件的特性，实现高效的vlan。</p>
+</div>
+                                    </div>
+                                </div>
+    </article>
+</div>
+
+            <div class="hide-article-box hide-article-pos text-center">
+            <a class="btn-readmore" id="btn-readmore-zk" data-report-view='{"mod":"popu_376","dest":"https://blog.csdn.net/u013737447/java/article/details/48294939","strategy":"readmore","ab":"new"}' data-report-click='{"mod":"popu_376","dest":"https://blog.csdn.net/u013737447/java/article/details/48294939","strategy":"readmore","ab":"new"}'>
+                展开阅读全文
+                <svg class="icon chevrondown" aria-hidden="true">
+                    <use xlink:href="#csdnc-chevrondown"></use>
+                </svg>
+            </a>
+        </div>
+    
+<script>
+    $.get("https://blog.csdn.net/u013737447/article/uvc/48294939");
+</script>
+
+<div class="more-toolbox" id="toolBarBox">
+    <span id="fixedBar"></span>
+    <div class="left-toolbox">
+        <ul class="toolbox-list">
+            <li class="tool-item tool-active is-like" id="is-like"><a>
+            <img style="display:none;" id="is-like-imgactive" src="https://csdnimg.cn/release/phoenix/template/new_img/tobarThumbUpactive.png" alt="">
+            <img style="display:block;" id="is-like-img" src="https://csdnimg.cn/release/phoenix/template/new_img/thumbUpWhite.png" alt="">   
+            <span class="name" id="is-like-span">点赞</span>
+            <span id="spanCount" class="count"></span>
+            </a></li>
+            <li class="tool-item tool-active tool-item-comment">
+                                <a href="#commentBox">
+                    <img src="https://csdnimg.cn/release/phoenix/template/new_img/commentWhite.png" alt="">
+                    <span class="name">评论</span>
+                    <span class="count"></span>
+                </a>
+            </li>
+            <li class="tool-item tool-active tool-QRcode" id="tool-share">
+                <a href="javascript:;" data-report-click='{"mod":"1582594662_002","ab":"new"}'>
+                    <img src="https://csdnimg.cn/release/phoenix/template/new_img/shareWhite.png" alt="">
+                    <span class="name">分享</span>
+                </a>
+                <div class="QRcode" id="tool-QRcode" style="left:-92%;">
+                    <span id="QRcode-close">x</span>
+                    <p class="title">
+                    海报分享
+                    </p>
+                    <div id='shareCode'></div>
+                    <p>
+                    扫一扫，分享海报
+                    </p>
+                </div>
+            </li>
+            <li class="tool-item tool-active is-collection ">
+                <a href="javascript:;" data-report-click='{"mod":"popu_824","ab":"new"}'>
+                    <img id="is-collection-img" style="display:block;" src="https://csdnimg.cn/release/phoenix/template/new_img/collectWhite.png" alt="">
+                    <img id="is-collection-imgactive" style="display:none;" src="https://csdnimg.cn/release/phoenix/template/new_img/tobarCollectionActive.png" alt="">
+                    <span class="name" id="is-collection">收藏</span>
+                    <span class="count get-collection"></span>
+                </a>
+            </li>
+            <li class="tool-item tool-active tool-phong" id="tool-phong">
+                <a href="javascript:;" data-report-click='{"mod":"popu_831","dest":"","ab":"new"}'>
+                    <img src="https://csdnimg.cn/release/phoenix/template/new_img/mobileWhite.png" alt="">
+                    <span class="name">
+                        手机看
+                    </span>
+                </a>
+                <div class="QRcode" id="tool-QRcode-phong" style="left:-78%;">
+                    <p class="title">
+                    分享到微信朋友圈
+                    </p>
+                    <span id="QRcode-phong-close">x</span>
+                    <div id='shareQrCode'></div>
+                    <p>
+                    扫一扫，手机阅读 
+                    </p>
+                </div>
+            </li>
+            <!--打赏开始-->
+                        <!--打赏结束-->
+            <li class="tool-item tool-active tool-more">
+                <!-- <a>
+                <img src="https://csdnimg.cn/release/phoenix/template/new_img/lookMore.png" alt="">
+                </a>
+                <ul class="more-box">
+                    <li class="item"><a class="article-report">文章举报</a></li>
+                </ul> -->
+                <a class="article-report">文章举报</a>
+            </li>
+        </ul>
+        <div style="display:flex">
+                        <a class="tool-mover-open" id="btn-readmore" style="display: none;"  data-type="0" data-report-view='{"mod":"popu_376","dest":"https://blog.csdn.net/u013737447/java/article/details/48294939","strategy":"packupbar","ab":"new"}' data-report-click='{"mod":"popu_376","dest":"https://blog.csdn.net/u013737447/java/article/details/48294939","strategy":"packupbar","ab":"new"}'>
+                <span>收起全文</span>
+                <img id="btn-close-img" style="display: block;" src="https://csdnimg.cn/release/phoenix/template/new_img/CommentArrow.png" alt="">
+            </a>
+         </div>
+    </div>  
+</div>
+<script type=text/javascript crossorigin src="https://csdnimg.cn/release/phoenix/production/qrcode-7c90a92189.min.js"></script>
+<script src="//g.csdnimg.cn/??sharewx/1.2.1/sharewx.js" type="text/javascript"></script>
+<script type="text/javascript" crossorigin src="https://g.csdnimg.cn/collection-box/1.1.9/collection-box.js"></script>
+            <div id="dmp_ad_58" style="width:100%;overflow-x:hidden"><div id="kp_box_58" data-pid="58"><script type="text/javascript">
+        (function() {
+            var s = "_" + Math.random().toString(36).slice(2);
+            document.write('<div style="" id="' + s + '"></div>');
+            (window.slotbydup = window.slotbydup || []).push({
+                id: "u3501897",
+                container: s
+            });
+        })();
+</script>
+<!-- 多条广告如下脚本只需引入一次 -->
+<script type="text/javascript" src="//cpro.baidustatic.com/cpro/ui/c.js" async="async" defer="defer" >
+</script><img class="pre-img-lasy" data-src="https://kunyu.csdn.net/1.png?p=58&a=386&c=0&k=&d=1&t=3&u=e911290dd6594f21abe15badeabc86d0"></div></div>            
+            <a id="commentBox" name="commentBox"></a>
+<div class="comment-box">
+	<div class="comment-edit-box d-flex">
+		<a id="commentsedit"></a>
+		<div class="user-img">
+			<a href="javascript:void(0);"  rel="noopener">
+				<img class="show_loginbox" src="//g.csdnimg.cn/static/user-img/anonymous-User-img.png">
+			</a>
+		</div>
+		<form id="commentform">
+			<img class="comment-sofa-flag" src="https://csdnimg.cn/release/phoenix/template/new_img/commentFlag@2x.png">
+			<textarea class="comment-content" name="comment_content" id="comment_content" placeholder="优质评论可以帮助作者获得更高权重" maxlength="1000"></textarea>
+			<div class="opt-box"> <!-- d-flex -->
+				<div id="ubbtools" class="add_code">
+					<a href="#insertcode" code="code" target="_self"><i class="icon iconfont icon-daima"></i></a>
+				</div>
+				<input type="hidden" id="comment_replyId" name="comment_replyId">
+				<input type="hidden" id="article_id" name="article_id" value="48294939">
+				<input type="hidden" id="comment_userId" name="comment_userId" value="">
+				<input type="hidden" id="commentId" name="commentId" value="">
+				<div class="dropdown" id="myDrap">
+					<a class="dropdown-face d-flex align-items-center" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+					<div class="txt-selected text-truncate">添加代码片</div>
+					<svg class="icon d-block" aria-hidden="true">
+						<use xlink:href="#csdnc-triangledown"></use>
+					</svg>
+					</a>
+					<ul class="dropdown-menu" id="commentCode" aria-labelledby="drop4">
+						<li><a data-code="html">HTML/XML</a></li>
+						<li><a data-code="objc">objective-c</a></li>
+						<li><a data-code="ruby">Ruby</a></li>
+						<li><a data-code="php">PHP</a></li>
+						<li><a data-code="csharp">C</a></li>
+						<li><a data-code="cpp">C++</a></li>
+						<li><a data-code="javascript">JavaScript</a></li>
+						<li><a data-code="python">Python</a></li>
+						<li><a data-code="java">Java</a></li>
+						<li><a data-code="css">CSS</a></li>
+						<li><a data-code="sql">SQL</a></li>
+						<li><a data-code="plain">其它</a></li>
+					</ul>
+				</div>  
+				<div class="right-box">
+                                        <span id="tip_comment" class="tip">还能输入<em>1000</em>个字符</span>
+					<input type="button" class="btn btn-sm btn-cancel d-none" value="取消回复">
+					<a data-report-click='{"mod":"1582594662_003","ab":"new"}'><input type="submit" class="btn btn-sm btn-comment" value="发表评论"></a>
+				</div>
+			</div>
+		</form>
+		<input type="button" class="bt-comment-show" value="评论">
+	</div>
+
+	<div class="comment-list-container">
+		<a id="comments"></a>
+		<div class="comment-list-box">
+		</div>
+		<div id="commentPage" class="pagination-box d-none"></div>
+		<div class="opt-box text-center">
+			<div class="btn btn-sm btn-link-blue" id="btnMoreComment"></div>
+		</div>
+	</div>
+</div>
+            <div class="recommend-box">
+                                    	<div class="recommend-item-box recommend-box-ident recommend-download-box clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-1.nonecase\"}","index":"1","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/qq_39156811\/10116847","ab":"new"}'>
+		<div class="content clearfix">
+			<div class="">
+				<h4 class="text-truncate oneline clearfix">
+				<a href="https://download.csdn.net/download/qq_39156811/10116847"rel="noopener" target="_blank" rel="noopener" data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-1.nonecase\"}","index":"1","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/qq_39156811\/10116847","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-1.nonecase' >
+					<!-- <span class="recommend-article-type">下载</span> -->
+					50个微信小程序模板				</a>
+				</h4>
+				<span class="data float-right">11-13</span>
+			</div>
+		</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase\"}","index":"2","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/zeal9s\/article\/details\/82891883","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/zeal9s">
+					<span class="blog_title"> 小思的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">09-29</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				1万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/zeal9s/article/details/82891883" target="_blank"  rel="noopener" title="Linux环境的搭建"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase\"}","index":"2","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/zeal9s\/article\/details\/82891883","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>Linux</em>环境的搭建			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/zeal9s/article/details/82891883" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase\"}","index":"2","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/zeal9s\/article\/details\/82891883","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase' >
+				1、准备工作工具：（网上下载，也可以留言评论，我给你链接）VMware-workstation-full-12.5.7.20721.exe（虚拟机）ubuntu-16.04.5-desktop-amd64.iso（ubuntu镜像文件）winscp(图形用户界面)备注:也可以不用虚拟机，直接在window系统下安装，但是比较麻烦，要分出盘给<em>linux</em>系统，相当于电脑有双系统。我是把lin......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box recommend-recommend-box"><div id="kp_box_59" data-pid="59"><script type="text/javascript">
+        (function() {
+            var s = "_" + Math.random().toString(36).slice(2);
+            document.write('<div style="" id="' + s + '"></div>');
+            (window.slotbydup = window.slotbydup || []).push({
+                id: "u3501897",
+                container: s
+            });
+        })();
+</script>
+<!-- 多条广告如下脚本只需引入一次 -->
+<script type="text/javascript" src="//cpro.baidustatic.com/cpro/ui/c.js" async="async" defer="defer" >
+</script><img class="pre-img-lasy" data-src="https://kunyu.csdn.net/1.png?p=59&a=386&c=0&k=&d=1&t=3&u=251cb0433efa437da2aa6cb4a5f75a27"></div></div><div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase\"}","index":"3","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/likun557\/article\/details\/105355394","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/likun557">
+					<span class="blog_title"> 路人甲Java</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">04-06</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				8万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/likun557/article/details/105355394" target="_blank"  rel="noopener" title="终于，月薪过5万了！"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase\"}","index":"3","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/likun557\/article\/details\/105355394","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				终于，月薪过5万了！			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/likun557/article/details/105355394" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase\"}","index":"3","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/likun557\/article\/details\/105355394","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase' >
+				来看几个问题想不想月薪超过5万？想不想进入公司架构组？想不想成为项目组的负责人？想不想成为spring的高手，超越99%的对手？那么本文内容是你必须要掌握的。本文主要详解bean的生命...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase\"}","index":"4","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/banruoju\/article\/details\/70674502","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/banruoju">
+					<span class="blog_title"> coder</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">04-25</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				3362</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/banruoju/article/details/70674502" target="_blank"  rel="noopener" title="linux下vlan的实现分析(上)"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase\"}","index":"4","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/banruoju\/article\/details\/70674502","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>linux</em>下<em>vlan</em>的<em>实现</em>分析(上)			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/banruoju/article/details/70674502" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase\"}","index":"4","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/banruoju\/article\/details\/70674502","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase' >
+				一. <em>VLAN</em>的核心概念    1. 划分<em>VLAN</em>的核心目的只有一个：分割广播域。       通过<em>VLAN</em>对广播域进行合理分割之后，一是可以缩小ARP攻击的范围，从而提高网络的安全性；二是可以缩小广播域的大小，从而提高网络的性能。       所以要注意的是，划分<em>VLAN</em>的目的中根本没有隔离不同<em>VLAN</em>用户互访这一说法，这只是划分<em>VLAN</em>之后的一种应用，不然使用三层设备<em>实现</em>不同V...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase\"}","index":"5","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/cckevincyh\/article\/details\/80468296","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/cckevincyh">
+					<span class="blog_title"> C.</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">05-27</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				3万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/cckevincyh/article/details/80468296" target="_blank"  rel="noopener" title="Linux操作系统基础"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase\"}","index":"5","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/cckevincyh\/article\/details\/80468296","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>Linux</em>操作系统基础			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/cckevincyh/article/details/80468296" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase\"}","index":"5","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/cckevincyh\/article\/details\/80468296","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase' >
+				<em>Linux</em>简介<em>Linux</em>是一种自由和开放源码的操作系统，存在着许多不同的<em>Linux</em>版本，但它们都使用了<em>Linux</em>内核。<em>Linux</em>可安装在各种计算机硬件设备中，比如手机、平板电脑、路由器、台式计算机 <em>Linux</em>介绍<em>Linux</em>出现于1991年，是由芬兰赫尔辛基大学学生Linus Torvalds和后来加入的众多爱好者共同开发完成<em>Linux</em>特点多用户，多任务，丰富的网络<em>功能</em>......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase\"}","index":"6","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_582\/article\/details\/82358104","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/iteye_582">
+					<span class="blog_title"> iteye_582的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">06-20</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				858</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/iteye_582/article/details/82358104" target="_blank"  rel="noopener" title="linux VLAN配置(vconfig) -转"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase\"}","index":"6","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_582\/article\/details\/82358104","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>linux</em> <em>VLAN</em>配置(vconfig) -转			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/iteye_582/article/details/82358104" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase\"}","index":"6","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_582\/article\/details\/82358104","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase' >
+				<em>linux</em> <em>VLAN</em>配置(vconfig) 1.安装<em>vlan</em>(vconfig)和加载8021q模块 #aptitude install <em>vlan</em> #modprobe 8021q或：#yum install vconfig#modprobe 8021q#lsmod |grep -i 8021q2.使用<em>linux</em> vconfig命令配置<em>vlan</em> #vconfig add et...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase\"}","index":"7","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34026484\/article\/details\/93768834","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_34026484">
+					<span class="blog_title"> weixin_34026484的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">07-17</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				29</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/weixin_34026484/article/details/93768834" target="_blank"  rel="noopener" title="Linux下VLAN功能的实现 （转）"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase\"}","index":"7","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34026484\/article\/details\/93768834","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>Linux</em>下<em>VLAN</em><em>功能</em>的<em>实现</em> （转）			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/weixin_34026484/article/details/93768834" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase\"}","index":"7","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34026484\/article\/details\/93768834","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase' >
+				1.<em>Linux</em>网络栈下两层<em>实现</em>  1.1简介   <em>VLAN</em>是网络栈的一个附加<em>功能</em>，且位于下两层。首先来学习<em>Linux</em>中网络栈下两层的<em>实现</em>，再去看如何把<em>VLAN</em>这个<em>功能</em>附加上去。下两层涉及到具体的硬件设备，日趋完善的<em>Linux</em>内核已经做到了很好的代码隔离，对网络设备驱动也是如此，如下图所示：    这里要注意的是，<em>Linux</em>下的网络设备net_dev并不一定都对应实际的硬件设备，只要注册一个s......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase\"}","index":"8","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/kebi007\/article\/details\/104284800","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/kebi007">
+					<span class="blog_title"> dotNet全栈开发</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">02-11</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				1万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/kebi007/article/details/104284800" target="_blank"  rel="noopener" title="啥水平？谷歌程序员：我用东北方言编程"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase\"}","index":"8","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/kebi007\/article\/details\/104284800","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				啥水平？谷歌程序员：我用东北方言编程			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/kebi007/article/details/104284800" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase\"}","index":"8","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/kebi007\/article\/details\/104284800","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase' >
+				东北方言编程火了之前在北京工作了两年，16年6月-18年8月，接触了不少东北人，工作、打篮球都接触到不少，他们的方言也听了许多，有一句魔幻的方言必须的我必须教给大家，当然也是本人的口头禅...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase\"}","index":"9","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/qing_gee\/article\/details\/104323806","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/qing_gee">
+					<span class="blog_title"> 沉默王二</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">02-15</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				19万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/qing_gee/article/details/104323806" target="_blank"  rel="noopener" title="在三线城市工作爽吗？"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase\"}","index":"9","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/qing_gee\/article\/details\/104323806","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				在三线城市工作爽吗？			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/qing_gee/article/details/104323806" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase\"}","index":"9","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/qing_gee\/article\/details\/104323806","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase' >
+				我是一名程序员，从正值青春年华的 24 岁回到三线城市洛阳工作，至今已经 6 年有余。一不小心又暴露了自己的实际年龄，但老读者都知道，我驻颜有术，上次去看房子，业务员肯定地说：“小哥肯定比我小，我今年还不到 24。”我只好强颜欢笑：“你说得对。”从我拥有记忆到现在进入而立之年，我觉得，我做过最明智的选择有下面三个：1）高中三年，和一位女同学保持着算不上朋友的冷淡关系；大学半年，把这位女同学追到......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase\"}","index":"10","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_30254435\/article\/details\/97172488","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_30254435">
+					<span class="blog_title"> weixin_30254435的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">02-26</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				47</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/weixin_30254435/article/details/97172488" target="_blank"  rel="noopener" title="Linux 系统下实践 VLAN"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase\"}","index":"10","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_30254435\/article\/details\/97172488","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>Linux</em> 系统下实践 <em>VLAN</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/weixin_30254435/article/details/97172488" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase\"}","index":"10","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_30254435\/article\/details\/97172488","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase' >
+				本文首发于我的公众号 <em>Linux</em>云计算网络（id: cloud_dev），专注于干货分享，号内有 10T 书籍和视频资源，后台回复「1024」即可领取，欢迎大家关注，二维码文末可以扫。01 准备环境环境：ubuntu 16.04 环境（物理 or 虚拟）确认 CPU 是否支持虚拟化：# egrep -o &#039;(vmx|svm)&#039; /proc/cpuinfo# vmx如果不支持，开启 ......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase\"}","index":"11","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/huakai_sun\/article\/details\/82252264","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/huakai_sun">
+					<span class="blog_title"> huakai_sun的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">08-31</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				5001</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/huakai_sun/article/details/82252264" target="_blank"  rel="noopener" title="linux网卡的vlan配置"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase\"}","index":"11","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/huakai_sun\/article\/details\/82252264","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>linux</em>网卡的<em>vlan</em>配置			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/huakai_sun/article/details/82252264" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase\"}","index":"11","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/huakai_sun\/article\/details\/82252264","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase' >
+				如果服务器上连的交换机端口已经预先设置了TRUNK,并允许特定的<em>VLAN</em>可以通过，那么服务器的网卡在配置时就必须指定所属的<em>VLAN</em>，否则就不通了，这种情形在虚拟化部署时较常见。  例如在一个办公环境中，办公所在<em>VLAN</em>为1020，虚拟化的物理主机上有两块万兆网卡，分属与3111和3112<em>VLAN</em>，这三个<em>VLAN</em>间可以互通，那么该如何配置呢？  一.首先要确认<em>Linux</em>系统内核是......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase\"}","index":"12","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_44046696\/article\/details\/85991151","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_44046696">
+					<span class="blog_title"> weixin_44046696的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">01-07</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				1862</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/weixin_44046696/article/details/85991151" target="_blank"  rel="noopener" title="Linux Bridge实现Vlan"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase\"}","index":"12","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_44046696\/article\/details\/85991151","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>Linux</em> Bridge<em>实现</em><em>Vlan</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/weixin_44046696/article/details/85991151" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase\"}","index":"12","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_44046696\/article\/details\/85991151","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase' >
+				（1）查看核心是否提供<em>VLAN</em> <em>功能</em>，执行# dmesg | grep -i 802或者检查/proc/net/<em>vlan</em>目录是否存在。如果沒有提供<em>VLAN</em> <em>功能</em>，/proc/net/<em>vlan</em>目录是不存在的。 如果8021q模块没有载入系统，则可以通过使用modprobe模组命令载入802.1q模组，並且利用lsmod命令确认模组是否已经载入到核心内。# modprobe 80......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase\"}","index":"13","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_19045\/article\/details\/103300731","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/iteye_19045">
+					<span class="blog_title"> 薛定谔的雄猫的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">04-30</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				3万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/iteye_19045/article/details/103300731" target="_blank"  rel="noopener" title="如何优雅的替换掉代码中的ifelse"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase\"}","index":"13","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_19045\/article\/details\/103300731","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				如何优雅的替换掉代码中的ifelse			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/iteye_19045/article/details/103300731" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase\"}","index":"13","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_19045\/article\/details\/103300731","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase' >
+				平时我们在写代码时，处理不同的业务逻辑，用得最多的就是if和else，简单粗暴省事，但是ifelse不是最好的方式，本文将通过设计模式来替换ifelse，使代码更优雅简洁。			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase\"}","index":"14","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/guyan1101\/article\/details\/77932619","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/guyan1101">
+					<span class="blog_title"> 达蒙奇的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">09-11</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				1万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/guyan1101/article/details/77932619" target="_blank"  rel="noopener" title="Linux下如何配置Vlan"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase\"}","index":"14","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/guyan1101\/article\/details\/77932619","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>Linux</em>下如何配置<em>Vlan</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/guyan1101/article/details/77932619" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase\"}","index":"14","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/guyan1101\/article\/details\/77932619","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase' >
+				<em>VLAN</em>是虚拟局域网的缩写。一个物理交换机上可以共存多个<em>VLAN</em>，这些交换机通过<em>Linux</em>软件配置，而不是通过硬件接口（您仍然需要配置实际的硬件交换机）。<em>VLAN</em>作为名称建议一次组合多个LAN。但是，<em>VLAN</em>的优点是什么？—高性能.—易于管理.—安全.为了安全起见，<em>VLAN</em>为提供了划分LAN的能力。当将服务器计算机物理移动到另一个位置时，您不必配置任何硬件设备。关于LAN硬件的注...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase\"}","index":"15","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/qq_38265137\/article\/details\/80390763","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_38265137">
+					<span class="blog_title"> 曹世宏的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">05-21</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				1万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/qq_38265137/article/details/80390763" target="_blank"  rel="noopener" title="VLAN命令行配置"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase\"}","index":"15","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/qq_38265137\/article\/details\/80390763","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>VLAN</em>命令行配置			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/qq_38265137/article/details/80390763" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase\"}","index":"15","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/qq_38265137\/article\/details\/80390763","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase' >
+				VLNA配置任务概览各配置任务间的逻辑关系：<em>VLAN</em>配置任务概览：  配置任务  描述  划分<em>VLAN</em>  创建并划分<em>VLAN</em>，将没有二层互通需求的用户进行隔离，可增强网络的安全性、减少广播流量，同时也减少了广播风暴的产生。  配置通过<em>VLAN</em>IF<em>实现</em><em>VLAN</em>间互访  划分<em>VLAN</em>后，不同<em>VLAN</em>的用户不能直接互通。不同<em>VLAN</em>的用户如果有互通需求，可通......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase\"}","index":"16","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/bc_vnetwork\/article\/details\/51787473","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/bc_vnetwork">
+					<span class="blog_title"> 赤焰军</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">06-30</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				8805</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/bc_vnetwork/article/details/51787473" target="_blank"  rel="noopener" title="Linux  802.1Q VLAN网络报文收发分析"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase\"}","index":"16","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/bc_vnetwork\/article\/details\/51787473","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>Linux</em>  802.1Q <em>VLAN</em>网络报文收发分析			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/bc_vnetwork/article/details/51787473" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase\"}","index":"16","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/bc_vnetwork\/article\/details\/51787473","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase' >
+				﻿﻿前段时间对新版<em>Linux</em> Kernel处理<em>VLAN</em>网络报文存在些疑惑，现对<em>linux</em>-4.4.4内核<em>VLAN</em>处理粗略的分析解除疑惑,即新版<em>Linux</em>内核在__netif_receive_skb_core函数中脱掉网络报文<em>VLAN</em>头部信息后,在没有对应的<em>VLAN</em>网络接口接收处理的情况下,<em>VLAN</em>网络报文将如何转发。<em>VLAN</em>网络报文接收:<em>Linux</em>网络协议栈...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase\"}","index":"17","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u011815404\/article\/details\/80899935","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/u011815404">
+					<span class="blog_title"> Alex_McAvoy的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">07-03</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				8926</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/u011815404/article/details/80899935" target="_blank"  rel="noopener" title="Linux 下的帮助命令"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase\"}","index":"17","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u011815404\/article\/details\/80899935","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>Linux</em> 下的帮助命令			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/u011815404/article/details/80899935" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase\"}","index":"17","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u011815404\/article\/details\/80899935","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase' >
+				【概述】在<em>Linux</em>环境中，如果遇到困难，可以使用帮助命令来取得帮助。常见的帮助命令有：man命令、help命令、info命令【man命令】1.概述man命令，它是Manualpages的缩写，它是<em>Linux</em>系统中在线软件文档的一种普遍的形式，其内容包括计算机程序（包括库和系统调用）、正式的标准和惯例，抽象的概念等。man工具是显示系统手册页中的内容，也就是一本电子版的字......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase\"}","index":"18","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u013537471\/article\/details\/80237925","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/u013537471">
+					<span class="blog_title"> u013537471的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">05-08</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				2万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/u013537471/article/details/80237925" target="_blank"  rel="noopener" title="Window系统改装为linux系统"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase\"}","index":"18","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u013537471\/article\/details\/80237925","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				Window系统改装为<em>linux</em>系统			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/u013537471/article/details/80237925" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase\"}","index":"18","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u013537471\/article\/details\/80237925","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase' >
+				以下以安装Centos6.5为例1. 下载资料1.1 准备一个U盘(大于8G)1.2 下载U盘启动盘制作工具 UltraISOhttp://qunying.jb51.net:81/201311/tools/UltraISOPortable(jb51.net).rar1.3 下载IOS镜像文件 CentOS-6.5-i386-bin-DVD1.isohttp://<em>linux</em>.xitong...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase\"}","index":"19","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34014555\/article\/details\/93050749","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_34014555">
+					<span class="blog_title"> weixin_34014555的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">04-06</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				4003</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/weixin_34014555/article/details/93050749" target="_blank"  rel="noopener" title="VMware ESXi中VLAN的三种实现及设置"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase\"}","index":"19","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34014555\/article\/details\/93050749","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				VMware ESXi中<em>VLAN</em>的三种<em>实现</em>及设置			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/weixin_34014555/article/details/93050749" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase\"}","index":"19","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34014555\/article\/details\/93050749","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase' >
+				在VMwareESXi网络中<em>VLAN</em><em>实现</em>方式可以分成3种：1.EST–ExternalSwitchTagging通过将交换机的端口划分到不同的<em>VLAN</em><em>实现</em>虚拟机的<em>VLAN</em>分配.优点:与管理物理环境相似,无需在ESXi服务器上配置<em>VLAN</em>缺点:绑定在同一物理端口的虚拟机只能属于同一<em>VLAN</em>物理交换机配置:[思科]#switchportmodeaccess......			</a>
+		</div>
+	</div>
+	</div>
+
+                    <div class="recommend-item-box type_hot_word">
+                    <div class="content clearfix">
+                        <div class="float-left">
+                                                                                <span>
+                                <a href="https://java.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://java.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://java.csdn.net/","index":"#"}'  target="_blank">
+                                Java</a>
+                            </span>
+                                                        <span>
+                                <a href="https://c1.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://c1.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://c1.csdn.net/","index":"#"}'  target="_blank">
+                                C语言</a>
+                            </span>
+                                                        <span>
+                                <a href="https://python.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://python.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://python.csdn.net/","index":"#"}'  target="_blank">
+                                Python</a>
+                            </span>
+                                                        <span>
+                                <a href="https://cplus.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://cplus.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://cplus.csdn.net/","index":"#"}'  target="_blank">
+                                C++</a>
+                            </span>
+                                                        <span>
+                                <a href="https://csharp.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://csharp.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://csharp.csdn.net/","index":"#"}'  target="_blank">
+                                C#</a>
+                            </span>
+                                                        <span>
+                                <a href="https://vbn.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://vbn.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://vbn.csdn.net/","index":"#"}'  target="_blank">
+                                Visual Basic .NET</a>
+                            </span>
+                                                        <span>
+                                <a href="https://js.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://js.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://js.csdn.net/","index":"#"}'  target="_blank">
+                                JavaScript</a>
+                            </span>
+                                                        <span>
+                                <a href="https://php.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://php.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://php.csdn.net/","index":"#"}'  target="_blank">
+                                PHP</a>
+                            </span>
+                                                        <span>
+                                <a href="https://sql.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://sql.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://sql.csdn.net/","index":"#"}'  target="_blank">
+                                SQL</a>
+                            </span>
+                                                        <span>
+                                <a href="https://go.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://go.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://go.csdn.net/","index":"#"}'  target="_blank">
+                                Go语言</a>
+                            </span>
+                                                        <span>
+                                <a href="https://r.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://r.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://r.csdn.net/","index":"#"}'  target="_blank">
+                                R语言</a>
+                            </span>
+                                                        <span>
+                                <a href="https://assembly.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://assembly.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://assembly.csdn.net/","index":"#"}'  target="_blank">
+                                Assembly language</a>
+                            </span>
+                                                        <span>
+                                <a href="https://swift.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://swift.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://swift.csdn.net/","index":"#"}'  target="_blank">
+                                Swift</a>
+                            </span>
+                                                        <span>
+                                <a href="https://ruby.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://ruby.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://ruby.csdn.net/","index":"#"}'  target="_blank">
+                                Ruby</a>
+                            </span>
+                                                        <span>
+                                <a href="https://matlab.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://matlab.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://matlab.csdn.net/","index":"#"}'  target="_blank">
+                                MATLAB</a>
+                            </span>
+                                                        <span>
+                                <a href="https://plsql.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://plsql.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://plsql.csdn.net/","index":"#"}'  target="_blank">
+                                PL/SQL</a>
+                            </span>
+                                                        <span>
+                                <a href="https://perl.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://perl.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://perl.csdn.net/","index":"#"}'  target="_blank">
+                                Perl</a>
+                            </span>
+                                                        <span>
+                                <a href="https://vb.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://vb.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://vb.csdn.net/","index":"#"}'  target="_blank">
+                                Visual Basic</a>
+                            </span>
+                                                        <span>
+                                <a href="https://obj.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://obj.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://obj.csdn.net/","index":"#"}'  target="_blank">
+                                Objective-C</a>
+                            </span>
+                                                        <span>
+                                <a href="https://delphi.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://delphi.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://delphi.csdn.net/","index":"#"}'  target="_blank">
+                                Delphi/Object Pascal</a>
+                            </span>
+                                                        <span>
+                                <a href="https://www.csdn.net/unity/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://www.csdn.net/unity/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://www.csdn.net/unity/","index":"#"}'  target="_blank">
+                                Unity3D</a>
+                            </span>
+                                                    
+                                                </div>
+                    </div>
+                    </div>
+                                    <div class="recommend-loading-box">
+                    <img src='https://csdnimg.cn/release/phoenix/images/feedLoading.gif'>
+                </div>
+                <div class="recommend-end-box">
+                    <p class="text-center">没有更多推荐了，<a href="https://blog.csdn.net/" class="c-blue c-blue-hover c-blue-focus">返回首页</a></p>
+                </div>
+            </div>
+                            <div class="template-box">
+                    <span>©️2019 CSDN</span>
+                <span>皮肤主题: 大白</span>
+                <span> 设计师:
+                                            CSDN官方博客                                    </span>
+                </div>
+                    </main>
+    </div>
+                <div class="recommend-right  align-items-stretch clearfix" id="rightAside" data-type="recommend">
+            <aside class="recommend-right_aside">
+                <div id="recommend-right" style="height:100%;position:fixed;">
+                    <div class='d-flex flex-column aside-box groupfile' id="groupfile">
+                        <h3 class="aside-title">目录</h3>
+                        <div class="align-items-stretch group_item">
+                            <div class="pos-box">
+                                <div class="scroll-box">
+                                    <div class="toc-box"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                                                <div class="recommend-top-adbox">
+                        <div id="kp_box_479" data-pid="479"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- PC-博客详情页右侧视窗（自适应） -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:300px;height:300px"
+     data-ad-client="ca-pub-1076724771190722"
+     data-ad-slot="9785577561"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script><img class="pre-img-lasy" data-src="https://kunyu.csdn.net/1.png?p=479&a=874&c=0&k=&d=1&t=3&u=3f0abc77dd3745cb9b3387373ec46e1e"></div>                        </div>
+                                        <div class="recommend-list-box d-flex flex-column aside-box">
+                    <ul class="recommend-fixed-box align-items-stretch">
+                                                    <li class="right-item">
+                                <a
+                                        href="https://download.csdn.net/download/qq_39156811/10116847"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-1.nonecase\"}","index":"1","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/qq_39156811\/10116847","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-1.nonecase\"}","index":"1","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/qq_39156811\/10116847","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-1.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix content-width">
+                                            <h5>
+                                                50个微信小程序模板                                            </h5>
+                                                                                            <span class="time">11-13</span>
+                                                                                                                                </div>
+                                                                                    <span class="download_mark_button ">立即下载 </span>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/zeal9s/article/details/82891883"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase\"}","index":"2","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/zeal9s\/article\/details\/82891883","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase\"}","index":"2","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/zeal9s\/article\/details\/82891883","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em>环境的搭建                                            </h5>
+                                                                                            <span class="time">09-29</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/likun557/article/details/105355394"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase\"}","index":"3","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/likun557\/article\/details\/105355394","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase\"}","index":"3","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/likun557\/article\/details\/105355394","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                终于，月薪过5万了！                                            </h5>
+                                                                                            <span class="time">04-06</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">8万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/banruoju/article/details/70674502"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase\"}","index":"4","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/banruoju\/article\/details\/70674502","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase\"}","index":"4","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/banruoju\/article\/details\/70674502","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>linux</em>下<em>vlan</em>的<em>实现</em>分析(上)                                            </h5>
+                                                                                            <span class="time">04-25</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">3362 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/cckevincyh/article/details/80468296"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase\"}","index":"5","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/cckevincyh\/article\/details\/80468296","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase\"}","index":"5","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/cckevincyh\/article\/details\/80468296","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-5.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em>操作系统基础                                            </h5>
+                                                                                            <span class="time">05-27</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">3万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/iteye_582/article/details/82358104"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase\"}","index":"6","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_582\/article\/details\/82358104","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase\"}","index":"6","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_582\/article\/details\/82358104","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-6.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>linux</em> <em>VLAN</em>配置(vconfig) -转                                            </h5>
+                                                                                            <span class="time">06-20</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">858 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/weixin_34026484/article/details/93768834"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase\"}","index":"7","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34026484\/article\/details\/93768834","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase\"}","index":"7","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34026484\/article\/details\/93768834","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em>下<em>VLAN</em><em>功能</em>的<em>实现</em> （转）                                            </h5>
+                                                                                            <span class="time">07-17</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">29 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/kebi007/article/details/104284800"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase\"}","index":"8","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/kebi007\/article\/details\/104284800","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase\"}","index":"8","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/kebi007\/article\/details\/104284800","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                啥水平？谷歌程序员：我用东北方言编程                                            </h5>
+                                                                                            <span class="time">02-11</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/qing_gee/article/details/104323806"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase\"}","index":"9","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/qing_gee\/article\/details\/104323806","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase\"}","index":"9","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/qing_gee\/article\/details\/104323806","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                在三线城市工作爽吗？                                            </h5>
+                                                                                            <span class="time">02-15</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">19万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/weixin_30254435/article/details/97172488"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase\"}","index":"10","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_30254435\/article\/details\/97172488","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase\"}","index":"10","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_30254435\/article\/details\/97172488","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em> 系统下实践 <em>VLAN</em>                                            </h5>
+                                                                                            <span class="time">02-26</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">47 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/huakai_sun/article/details/82252264"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase\"}","index":"11","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/huakai_sun\/article\/details\/82252264","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase\"}","index":"11","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/huakai_sun\/article\/details\/82252264","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>linux</em>网卡的<em>vlan</em>配置                                            </h5>
+                                                                                            <span class="time">08-31</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">5001 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/weixin_44046696/article/details/85991151"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase\"}","index":"12","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_44046696\/article\/details\/85991151","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase\"}","index":"12","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_44046696\/article\/details\/85991151","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em> Bridge<em>实现</em><em>Vlan</em>                                            </h5>
+                                                                                            <span class="time">01-07</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1862 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/iteye_19045/article/details/103300731"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase\"}","index":"13","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_19045\/article\/details\/103300731","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase\"}","index":"13","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_19045\/article\/details\/103300731","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                如何优雅的替换掉代码中的ifelse                                            </h5>
+                                                                                            <span class="time">04-30</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">3万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/guyan1101/article/details/77932619"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase\"}","index":"14","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/guyan1101\/article\/details\/77932619","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase\"}","index":"14","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/guyan1101\/article\/details\/77932619","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em>下如何配置<em>Vlan</em>                                            </h5>
+                                                                                            <span class="time">09-11</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/qq_38265137/article/details/80390763"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase\"}","index":"15","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/qq_38265137\/article\/details\/80390763","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase\"}","index":"15","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/qq_38265137\/article\/details\/80390763","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>VLAN</em>命令行配置                                            </h5>
+                                                                                            <span class="time">05-21</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/bc_vnetwork/article/details/51787473"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase\"}","index":"16","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/bc_vnetwork\/article\/details\/51787473","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase\"}","index":"16","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/bc_vnetwork\/article\/details\/51787473","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em>  802.1Q <em>VLAN</em>网络报文收发分析                                            </h5>
+                                                                                            <span class="time">06-30</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">8805 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/u011815404/article/details/80899935"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase\"}","index":"17","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u011815404\/article\/details\/80899935","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase\"}","index":"17","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u011815404\/article\/details\/80899935","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em> 下的帮助命令                                            </h5>
+                                                                                            <span class="time">07-03</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">8926 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/u013537471/article/details/80237925"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase\"}","index":"18","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u013537471\/article\/details\/80237925","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase\"}","index":"18","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u013537471\/article\/details\/80237925","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-18.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                Window系统改装为<em>linux</em>系统                                            </h5>
+                                                                                            <span class="time">05-08</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">2万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/weixin_34014555/article/details/93050749"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase\"}","index":"19","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34014555\/article\/details\/93050749","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase\"}","index":"19","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34014555\/article\/details\/93050749","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-19.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                VMware ESXi中<em>VLAN</em>的三种<em>实现</em>及设置                                            </h5>
+                                                                                            <span class="time">04-06</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">4003 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/iteye_21199/article/details/82297653"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-20.nonecase\"}","index":"20","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_21199\/article\/details\/82297653","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-20.nonecase\"}","index":"20","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/iteye_21199\/article\/details\/82297653","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-20.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-20.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em><em>实现</em>的IEEE 802.1Q <em>VLAN</em>                                            </h5>
+                                                                                            <span class="time">03-14</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">190 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/weixin_33849942/article/details/91592644"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-21.nonecase\"}","index":"21","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33849942\/article\/details\/91592644","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-21.nonecase\"}","index":"21","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33849942\/article\/details\/91592644","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-21.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-21.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>linux</em> brctl                                            </h5>
+                                                                                            <span class="time">07-28</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">39 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/zongyimin/article/details/53740428"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-22.nonecase\"}","index":"22","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/zongyimin\/article\/details\/53740428","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-22.nonecase\"}","index":"22","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/zongyimin\/article\/details\/53740428","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-22.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-22.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                转载《<em>Linux</em><em>实现</em><em>VLAN</em><em>功能</em>》                                            </h5>
+                                                                                            <span class="time">12-19</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1025 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/dkfajsldfsdfsd/article/details/79492633"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-23.nonecase\"}","index":"23","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/dkfajsldfsdfsd\/article\/details\/79492633","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-23.nonecase\"}","index":"23","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/dkfajsldfsdfsd\/article\/details\/79492633","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-23.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-23.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em>网络虚拟化之<em>vlan</em>                                            </h5>
+                                                                                            <span class="time">03-09</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">653 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/shiniji_hh1126/article/details/6002612"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-24.nonecase\"}","index":"24","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/shiniji_hh1126\/article\/details\/6002612","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-24.nonecase\"}","index":"24","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/shiniji_hh1126\/article\/details\/6002612","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-24.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-24.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>VLAN</em>在<em>linux</em>中的<em>实现</em>                                            </h5>
+                                                                                            <span class="time">11-11</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">3102 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/lickylin/article/details/41832967"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-25.nonecase\"}","index":"25","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/lickylin\/article\/details\/41832967","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-25.nonecase\"}","index":"25","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/lickylin\/article\/details\/41832967","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-25.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-25.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em> <em>vlan</em> <em>功能</em>模块分析                                            </h5>
+                                                                                            <span class="time">12-09</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/u010821757/article/details/104337514"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-26.nonecase\"}","index":"26","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010821757\/article\/details\/104337514","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-26.nonecase\"}","index":"26","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010821757\/article\/details\/104337514","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-26.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-26.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                强烈推荐 10 款珍藏的 Chrome 浏览器插件                                            </h5>
+                                                                                            <span class="time">02-15</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/CloudMan6/article/details/50968305"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-27.nonecase\"}","index":"27","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/CloudMan6\/article\/details\/50968305","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-27.nonecase\"}","index":"27","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/CloudMan6\/article\/details\/50968305","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-27.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-27.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Linux</em> 如何<em>实现</em> <em>VLAN</em> - 每天5分钟玩转 OpenStack（12）                                            </h5>
+                                                                                            <span class="time">03-24</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">3496 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                            </ul>
+                    </div>
+                                    </div>
+            </aside>
+        </div>
+    
+</div>
+<div class="mask-dark"></div>
+<script>
+    var recommendCount = 19;
+    recommendCount = recommendCount > 1 ? (recommendCount + (recommendCount>6 ? 2 : 1)) : recommendCount;
+    var ChannelId = 0;
+    var articleId = "48294939";
+    var commentscount = 0;
+    var islock = false;
+    var curentUrl = "https://blog.csdn.net/u013737447/java/article/details/48294939";
+    var myUrl = "https://my.csdn.net/";
+    //1禁止评论，2正常
+    var commentAuth = 2;
+    //百度搜索
+    var baiduKey = "Linux下VLAN功能的实现_u013737447的博客-CSDN博客_linux vlan";
+    var needInsertBaidu = true;
+    // 代码段样式
+    var codeStyle = '';
+	var highlight = ["Linux","VLAN","\u529f\u80fd","\u5b9e\u73b0"];//高亮数组
+
+    var share_card_url = 'https://blog.csdn.net/u013737447/article/shareArticleCardPage?article_id=48294939'
+    var RecommendBlogExpertList = [];
+	var articleType = 2;
+	var CopyrightContent = '';
+            var recommendRegularDomainArr = ["blog.csdn.net\/.+\/article\/details\/","download.csdn.net\/download\/","edu.csdn.net\/course\/detail\/"];
+</script>
+<script src="https://csdnimg.cn/public/sandalstrap/1.4/js/sandalstrap.min.js"></script>
+<script src="https://csdnimg.cn/release/phoenix/vendor/pagination/paging-3d3b805766.js"></script>
+<div class="skin-boxshadow"></div>
+<div class="pay-code">
+        <div class="pay-money">应支付<span class="pay-money-span" data-nowprice='0' data-oldprice='0.00'>0元</span></div>
+        <div class=content>
+        <div id="payCode" data-id="">
+                <div class="renovate">
+                    <img src="https://csdnimg.cn/release/phoenix/static_blog/images/pay-time-out.png">
+                    <span>点击重新获取</span>
+                </div>
+            </div>
+            <div class="pay-style"><span><img src="https://csdnimg.cn/release/phoenix/static_blog/images/wx.png"></span><span><img src="https://csdnimg.cn/release/phoenix/static_blog/images/zfb.png"></span><span><img src="https://csdnimg.cn/release/phoenix/static_blog/images/JD.png"></span><span class="text">扫码支付</span></div>
+        </div>
+        <div class="bt-close"><svg t="1567152543821" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="10924" xmlns:xlink="http://www.w3.org/1999/xlink" width="12" height="12"><defs><style type="text/css"></style></defs><path d="M512 438.378667L806.506667 143.893333a52.032 52.032 0 1 1 73.6 73.621334L585.621333 512l294.485334 294.485333a52.074667 52.074667 0 0 1-73.6 73.642667L512 585.621333 217.514667 880.128a52.053333 52.053333 0 1 1-73.621334-73.642667L438.378667 512 143.893333 217.514667a52.053333 52.053333 0 1 1 73.621334-73.621334L512 438.378667z" fill="" p-id="10925"></path></svg></div>
+        <p style="margin-top: 8px;font-size: 14px;" class="text-center">支付成功即可阅读</p>
+    </div>
+<div style="display:none;">
+	<img src="" onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window.location.href="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);'>
+</div>
+</body>
+    <!-- 高亮未与 markdown兼容  -->
+	<link rel="stylesheet" href="https://csdnimg.cn/release/blog_editor_html/release1.6.0/ckeditor/plugins/chart/chart.css" />
+	<script type="text/javascript" src="https://csdnimg.cn/release/blog_editor_html/release1.6.0/ckeditor/plugins/chart/lib/chart.min.js"></script>
+    <script type="text/javascript" src="https://csdnimg.cn/release/blog_editor_html/release1.6.0/ckeditor/plugins/chart/widget2chart.js"></script>
+    <script type="text/javascript" src="https://csdnimg.cn/release/phoenix/production/pc_wap_common-f91259fb12.js"></script>
+<link rel="stylesheet" href="https://csdnimg.cn/release/blog_editor_html/release1.6.0/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css">
+<script>
+ // 全局声明
+ if (window.csdn === undefined) {
+      window.csdn = {};
+    }
+    window.csdn.sideToolbar = {
+        options: {
+            report:{
+                isShow: true,
+            },
+            qr: {
+                isShow: false,
+            }
+        }
+    }
+    $(function(){
+        $(document).on('click',"a.option-box[data-type='report']",function() {
+            window.csdn.userLogin.loadAjax(function(res){
+                showReport(false,articleTitles);
+            })
+        });
+    })
+</script>
+<script src="https://csdnimg.cn/release/phoenix/vendor/iconfont/csdnc-c439e66521.js"></script>
+<script src="https://csdnimg.cn/release/phoenix/template/new_js/common-85508f0920.min.js"></script>
+<script src="https://csdnimg.cn/release/phoenix/template/new_js/detail-289556f029.min.js"></script>
+<script src="//csdnimg.cn/release/download/old_static/js/qrcode.js"></script>
+<script src="https://csdnimg.cn/release/cart/pub/1.0.4/cart_jsonp.js?v=2"></script>
+<script src="https://csdnimg.cn/release/phoenix/template/new_js/column_pay-b9bd326887.min.js"></script>
+	
+<script src="https://g.csdnimg.cn/copyright/1.0.3/copyright.js" type="text/javascript"></script>
+<script>
+    $(".MathJax").remove();
+    if ($('div.markdown_views pre.prettyprint code.hljs').length > 0) {
+        $('div.markdown_views')[0].className = 'markdown_views';
+    }
+</script>
+<script type="text/javascript" src="https://csdnimg.cn/release/blog_mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+            "HTML-CSS": {
+                    linebreaks: { automatic: true, width: "94%container" },
+                    imageFont: null
+            },
+            tex2jax: {
+                preview: "none"
+            },
+            mml2jax: {
+                preview: 'none'
+            }
+    });
+</script>
+    <script src="//g.csdnimg.cn/baidu-search/1.0.3/baidu-search.js"  type="text/javascript"></script>
+</html>

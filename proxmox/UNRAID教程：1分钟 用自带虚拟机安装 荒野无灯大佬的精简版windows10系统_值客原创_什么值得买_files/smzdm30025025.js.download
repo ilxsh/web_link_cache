@@ -1,0 +1,12 @@
+var dmSlot = document.getElementById('smzdm30025025');
+var dmScript = document.createElement('script');
+dmScript.setAttribute('type', 'text/javascript');
+dmScript.setAttribute('src', '//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js');
+dmSlot.appendChild(dmScript);
+dmSlot.className = 'adsbygoogle';
+dmSlot.style.display = 'inline-block';
+dmSlot.style.width = '300px';
+dmSlot.style.height = '250px';
+dmSlot.setAttribute('data-ad-client', 'ca-pub-8208359796926620');
+dmSlot.setAttribute('data-ad-slot', '6542372798');
+(adsbygoogle = window.adsbygoogle || []).push({});

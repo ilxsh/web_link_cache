@@ -1,0 +1,46 @@
+if (zbp.options.comment) {
+    // 1.6新版本
+    zbp.options.comment.inputs.lcp_tverify = {
+    	required: true,
+    	validateOnly: true,
+    	getter: function () {
+    		return ''
+    	},
+    	validator: function (text, callback) {
+            if (!zbp.cookie.get('ticket')){
+                lcp.tcaptcha(function(){
+                    zbp.comment.post();
+                });
+                throw new Error('请进行图形验证');
+            }else{
+    			callback(null)
+    		}
+    	}
+    }
+}else{
+    // 老版本
+    window.objSubmit = $("#inpId").parent("form").find(":submit");
+    objSubmit.data("original", objSubmit.val())
+    
+    zbp.plugin.on("comment.postsuccess", "tverify", function (i) {
+        recoverySubmit();
+    });
+    
+    zbp.plugin.on("comment.verifydata", "tverify", function (i,j) {
+        if (i.code == 0 && !zbp.cookie.get('ticket')){
+            lcp.tcaptcha(function(){
+                objSubmit.click();
+            },function(){
+                recoverySubmit();
+            });
+            throw new Error('请进行图形验证');
+        }
+    });
+    
+    function recoverySubmit(){
+        objSubmit.removeClass("loading").removeAttr("disabled");
+        if (objSubmit.data("original")) {
+            objSubmit.val(objSubmit.data("original"))
+        }
+    }
+}
