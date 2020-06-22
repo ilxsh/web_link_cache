@@ -1,0 +1,501 @@
+﻿
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh">
+<head>
+<title>Ubuntu下利用Apache和WebSVN搭建SVN服务器_服务器应用_Linux公社-Linux系统门户网站</title>
+<meta http-equiv="content-type" content="text/html;charset=utf-8"/>
+<link rel="icon" href="../../favicon.ico" type="image/x-icon"/>
+<link rel="shortcut icon" href="../../favicon.ico" type="image/x-icon"/>
+<meta name="description" content="在vps上搭建svn服务器是一件很常见的工作。本文就简单介绍一下如何在ubuntu下利用apache搭建一个svn服务器，并利用websvn进行在线"/>
+<meta name="keywords" content="SVN服务器,Ubuntu下利用Apache和WebSVN搭建SVN服务器,服务器,Linux服务器,Apache,Hadoop,集群,分布式,Nginx,Tomcat,分布式系统"/>
+<link rel="canonical" href="http://www.linuxidc.com/Linux/2012-06/62457.htm"/>
+<meta name="generator" content="Linux公社"/>
+<meta name="generator" content="Linux"/>
+<link rel="stylesheet" href="../../style/systems/style.css" type="text/css"/>
+<meta name="generator" content="专业的Linux网站"/>
+<script type="text/javascript" src="../../inc/jquery.js"></script>
+<script type="text/javascript" src="../../inc/iwms.js"></script>
+<script type="text/javascript">iwms.urlPrefix="../../";</script>
+
+<script type="text/javascript" src="../../inc/show.js"></script>
+</head>
+<body>
+<div class="topBar">
+	<div class="twidth">
+	
+	<div style="float:right">
+		<script type="text/javascript" src="../../inc/language.js"></script>
+	</div>
+	
+	<div id="topUser">你好，游客 <a href="#" onclick="iwms.logPop()">登录</a>
+	<a href="../../memberreg.aspx" rel="nofollow">注册</a>
+	<a href="../../search.aspx" rel="nofollow">搜索</a>
+	</div>
+	</div>
+</div>
+<div class="twidth">
+<div id="sitehead">
+<div class="l"></div>
+<div class="r"></div>
+<div class="m">
+	<table width="100%">
+	<tr align="center"><td width="160">
+	<a href="http://www.linuxidc.com/"><img style="filter: chroma(color=#FFFFFF);" src="../../pic/logo.jpg" alt="Linux公社" width="155" height="53" border="0" /></a>
+	</td><td>
+	<div align="center"><script type="text/javascript" src="/linuxfile/linux.js"></script></div>
+	</td>
+	</tr></table>
+</div>
+</div>
+<div id="navbar">
+<div class="l"></div>
+<div class="r"></div>
+<div class="m">
+	<a href="../../index.htm" class="first">首页</a><a href="../../it/">Linux新闻</a><a href="../../Linuxit/">Linux教程</a><a href="../../MySql/">数据库技术</a><a href="../../RedLinux/">Linux编程</a><a href="../../Apache/" class="thisclass">服务器应用</a><a href="../../Unix/">Linux安全</a><a href="../../download/">Linux下载</a><a href="../../Linuxrz/">Linux认证</a><a href="../../theme/">Linux主题</a><a href="../../Linuxwallpaper/">Linux壁纸</a><a href="../../linuxsoft/">Linux软件</a><a href="../../digi/">数码</a><a href="../../mobile/">手机</a><a href="../../diannao/">电脑</a>
+
+</div>
+</div>
+
+<div id="navsub">
+<div class="l"></div>
+<div class="r"></div>
+<div class="m">
+	<a href="../../index.htm">首页</a> → <a href="../../Apache/">服务器应用</a>
+</div>
+</div>
+<div class="linuxe1"><script type="text/javascript" src="/linuxfile/linuxe1.js"></script></div>
+<div class="linux1"><script type="text/javascript" src="/linuxfile/linux1.js"></script></div>
+<div class="linuxa"><script type="text/javascript" src="/linuxfile/linuxa.js"></script></div>
+<div class="linuxa1"><script type="text/javascript" src="/linuxfile/linuxa1.js"></script></div>
+<table id="middle" width="100%" cellspacing="0" cellpadding="0" style="table-layout:fixed">
+<tr valign="top"><td>
+
+	<div class="mframe mR">
+	<div class="tl"></div>
+	<div class="tr"></div>
+	<div class="tm">
+		<div class="moreR">
+			背景：<script type="text/javascript">WriteBg()</script>
+		</div>
+		<span class="tt">阅读新闻</span>
+	</div>
+	<div class="wrapper">
+	<div class="ml"></div>
+	<div class="mr"></div>
+	<div class="mm" id="bodyTd">
+		<div id="printBody" style="word-break:break-all;">
+			<div style="text-align:center"><h1 class="aTitle">Ubuntu下利用Apache和WebSVN搭建SVN服务器</h1></div>
+			
+			<table width="97%" align="center">
+				<tr>
+				<td width="140">[日期：2012-06-10]</td>
+				<td align="center">来源：Linux社区&nbsp;
+				作者：lalor</td>
+				<td width="160" align="right">[字体：<a href="javascript:ContentSize(16)">大</a> <a href="javascript:ContentSize(0)">中</a> <a href="javascript:ContentSize(12)">小</a>]
+				</td></tr>
+			</table>
+<div id="li_all">
+<div id="li_1"><script type="text/javascript" src="/linuxfile/linux201.js"></script></div>
+<div id="li_2"><script type="text/javascript" src="/linuxfile/linux2.js"></script></div>
+</div>
+			<div id="content"><P>在vps上搭建svn服务器是一件很常见的工作。本文就简单介绍一下如何在<a href="http://www.linuxidc.com/topicnews.aspx?tid=2" target="_blank" title="Ubuntu">Ubuntu</a>下利用apache搭建一个svn服务器，并利用websvn进行在线浏览。本文假设读者已经安装好svn、php、apache以及apache的dav_module和dav_svn_module插件，并且假设用户名为linuxidc、网站域名为www.linuxidc.com、网站网页的存储位置为“/home/linuxidc/www/www.linuxidc.com/public_html”。</P>
+<P>第一步，先建立相应的文件及文件夹。</P>
+<DIV class="syntaxhighlighter  bash" id=highlighter_91896>
+<DIV class="bar     ">
+<DIV class=toolbar>&nbsp;</DIV></DIV>
+<DIV class=lines>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">1</FONT></CODE></TD>
+<TD class=content><CODE class="bash functions"><FONT face="Courier New">mkdir</FONT></CODE> <FONT face="Courier New"><CODE class="bash plain">~/svn &amp;&amp; </CODE><CODE class="bash functions">cd</CODE></FONT> <CODE class="bash plain"><FONT face="Courier New">~/svn </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">2</FONT></CODE></TD>
+<TD class=content><CODE class="bash functions"><FONT face="Courier New">mkdir</FONT></CODE> <CODE class="bash plain"><FONT face="Courier New">repos </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">3</FONT></CODE></TD>
+<TD class=content><CODE class="bash functions"><FONT face="Courier New">touch</FONT></CODE> <CODE class="bash plain"><FONT face="Courier New">svn-auth </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">4</FONT></CODE></TD>
+<TD class=content><CODE class="bash functions"><FONT face="Courier New">touch</FONT></CODE> <CODE class="bash plain"><FONT face="Courier New">svn-policy</FONT></CODE></TD></TR></TBODY></TABLE></DIV></DIV></DIV>
+<P>第二步，将文档库移动到上面创建的repos文件夹中。当然，也可以利用“svnadmin create”来创建一个新的版本库。值得注意的一点是，为了让apache能正常的处理文件，我们需要更改版本库的所有权。下面的命令就创建了一个名为test的版本库并更改其所有者为apache所管理的用户www-data。</P>
+<DIV class="syntaxhighlighter  bash" id=highlighter_374768>
+<DIV class="bar ">
+<DIV class=toolbar>&nbsp;</DIV></DIV>
+<DIV class=lines>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">1</FONT></CODE></TD>
+<TD class=content><CODE class="bash functions"><FONT face="Courier New">cd</FONT></CODE> <CODE class="bash plain"><FONT face="Courier New">~/svn/repos </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">2</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class="bash plain">svnadmin create </CODE><CODE class="bash functions">test</CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">3</FONT></CODE></TD>
+<TD class=content><CODE class="bash functions"><FONT face="Courier New">chown</FONT></CODE> <FONT face="Courier New"><CODE class="bash plain">-R www-data:www-data </CODE><CODE class="bash functions">test</CODE></FONT></TD></TR></TBODY></TABLE></DIV></DIV></DIV>
+<P>第三步， 添加能够访问版本库的用户并为他们设置密码。下面的命令创建了两个用户linuxidc和alice，并分别为他们设置了密码。</P>
+<DIV class="syntaxhighlighter  bash" id=highlighter_978214>
+<DIV class="bar  ">
+<DIV class=toolbar>&nbsp;</DIV></DIV>
+<DIV class=lines>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">1</FONT></CODE></TD>
+<TD class=content><CODE class="bash functions"><FONT face="Courier New">cd</FONT></CODE> <CODE class="bash plain"><FONT face="Courier New">~/svn </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">2</FONT></CODE></TD>
+<TD class=content><CODE class="bash plain"><FONT face="Courier New">htpasswd svn-auth alice </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">3</FONT></CODE></TD>
+<TD class=content><CODE class="bash plain"><FONT face="Courier New">htpasswd svn-auth linuxidc</FONT></CODE></TD></TR></TBODY></TABLE></DIV></DIV></DIV>
+<P>第四步，设置各个能够访问版本库的用户的权限。这里，我们使用svn的“path-based authorization”，不了解或者想了解更多的读者可以参考<A onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://svnbook.red-bean.com']);" href="http://svnbook.red-bean.com/en/1.7/svn.serverconfig.pathbasedauthz.html">这里</A>。例如，将svn-policy的内容改为如下使得linuxidc对所有的版本库都有读写权限，而alice仅对test版本库有读权限。</P>
+<DIV class="syntaxhighlighter  plain" id=highlighter_79823>
+<DIV class="bar  ">
+<DIV class=toolbar>&nbsp;</DIV></DIV>
+<DIV class=lines>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">1</FONT></CODE></TD>
+<TD class=content><CODE class="plain plain"><FONT face="Courier New">[/] </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">2</FONT></CODE></TD>
+<TD class=content><CODE class="plain plain"><FONT face="Courier New">linuxidc = rw </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">3</FONT></CODE></TD>
+<TD class=content><CODE class="plain plain"><FONT face="Courier New">[test:/] </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">4</FONT></CODE></TD>
+<TD class=content><CODE class="plain plain"><FONT face="Courier New">alice = r</FONT></CODE></TD></TR></TBODY></TABLE></DIV></DIV></DIV>
+<P>第五步，在www.linuxidc.com的apache配置文件中添加下列内容。</P>
+<DIV class="syntaxhighlighter  plain" id=highlighter_453704>
+<DIV class="bar ">
+<DIV class=toolbar>&nbsp;</DIV></DIV>
+<DIV class=lines>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">01</FONT></CODE></TD>
+<TD class=content><CODE class="plain plain"><FONT face="Courier New">&lt;Location /svn/&gt; </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">02</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">Options Indexes FollowSymLinks </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">03</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">DAV svn </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">04</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">SVNParentPath /home/linuxidc/svn/repos </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">05</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">SVNListParentPath on </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">06</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">AuthzSVNAccessFile /home/linuxidc/svn/svn-policy </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">07</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">Require valid-user </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">08</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">AuthType Basic </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">09</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">AuthName "linuxidc.COM SVN Server Access" </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">10</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">AuthUserFile /home/linuxidc/svn/svn-auth </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">11</FONT></CODE></TD>
+<TD class=content><CODE class="plain plain"><FONT face="Courier New">&lt;/Location&gt;</FONT></CODE></TD></TR></TBODY></TABLE></DIV></DIV></DIV>
+<P>至此，一个简单而灵活的svn服务器就搭建完成了。linuxidc可以使用svn并通过www.linuxidc.com/svn/test来对test这个版本库进行控制，linuxidc也可以直接访问www.linuxidc.com/svn来在线查看各个版本库最近一次的快照。但是，apache所提供的在线浏览的功能是很有限的。为了能够更好的在线浏览版本库，我们可以使用websvn。</P>
+<P>第一步，我们前往<A onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://www.websvn.info']);" href="http://www.websvn.info/download/">http://www.websvn.info/download/</A>下载最新版本的websvn并将其解压。假设解压出来的所有文件存放在“/home/linuxidc/www/www.linuxidc.com/public_html/websvn”中。</P>
+<P>第二步，将websvn/include/distconfig.php拷贝一份并重命名为websvn/include/config.php</P>
+<DIV class="syntaxhighlighter  bash" id=highlighter_443816>
+<DIV class=bar>
+<DIV class=toolbar>&nbsp;</DIV></DIV>
+<DIV class=lines>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">1</FONT></CODE></TD>
+<TD class=content><CODE class="bash functions"><FONT face="Courier New">cp</FONT></CODE> <CODE class="bash plain"><FONT face="Courier New">~/www/www.linuxidc.com/public_html/websvn/include/distconfig.php ~/www/www.linuxidc.com/public_html/websvn/include/config.php</FONT></CODE></TD></TR></TBODY></TABLE></DIV></DIV></DIV>
+<P>第三步，打开websvn/include/config.php并添加如下设置。大家也可以根据自己的需要进行其他设置。</P>
+<UL style="Z-INDEX: 40">
+<LI>$config-&gt;parentPath('/home/linuxidc/svn/repos'); 
+<LI>$config-&gt;useAuthenticationFile('/home/linuxidc/svn/svn-policy'); 
+<LI>$config-&gt;setBlockRobots(); </LI></UL>
+<P>第四步，在www.linuxidc.com的apache配置文件中添加下列内容。</P>
+<DIV class="syntaxhighlighter  plain" id=highlighter_38891>
+<DIV class=bar>
+<DIV class=toolbar>&nbsp;</DIV></DIV>
+<DIV class=lines>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">1</FONT></CODE></TD>
+<TD class=content><CODE class="plain plain"><FONT face="Courier New">&lt;Location /websvn/&gt; </FONT></CODE></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">2</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">Require valid-user </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">3</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">AuthType Basic </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">4</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">AuthName "linuxidc.COM WebSVN Viewer Access" </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">5</FONT></CODE></TD>
+<TD class=content><FONT face="Courier New"><CODE class=spaces>&nbsp;&nbsp;</CODE><CODE class="plain plain">AuthUserFile /home/linuxidc/svn/svn-auth </CODE></FONT></TD></TR></TBODY></TABLE></DIV>
+<DIV class="line alt2">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">6</FONT></CODE></TD>
+<TD class=content><CODE class="plain plain"><FONT face="Courier New">&lt;/Location&gt;</FONT></CODE></TD></TR></TBODY></TABLE></DIV></DIV></DIV>
+<P>最后，重启apache服务器。</P>
+<DIV class="syntaxhighlighter  bash" id=highlighter_890222>
+<DIV class="bar  ">
+<DIV class=toolbar>&nbsp;</DIV></DIV>
+<DIV class=lines>
+<DIV class="line alt1">
+<TABLE>
+<TBODY>
+<TR>
+<TD class=number><CODE><FONT face="Courier New">1</FONT></CODE></TD>
+<TD class=content><CODE class="bash functions"><FONT face="Courier New">sudo</FONT></CODE> <CODE class="bash plain"><FONT face="Courier New">/etc/init.d/apache2 restart</FONT></CODE></TD></TR></TBODY></TABLE></DIV></DIV></DIV>
+<P>现在，我们就可以通过<A href="../../websvn">www.linuxidc.com/websvn</A>进行在线浏览了。并且，我们前面设置的访问控制权限对其依然有效。</P>
+<P><FONT color=#ff0000>更多Ubuntu相关信息见</FONT><A title=Ubuntu href="../../topicnews.aspx?tid=2" target=_self><FONT color=#0000ff>Ubuntu</FONT></A><FONT color=#ff0000> 专题页面 </FONT><FONT color=#0000ff><A title=Ubuntu href="../../topicnews.aspx?tid=2" target="">http://www.linuxidc.com/topicnews.aspx?tid=2</A></FONT></P><a href="http://www.linuxidc.com" target="_blank"><img src="/linuxfile/logo.gif" alt="linux" width="15" height="17" /></div>
+<div class="linux3"><script type="text/javascript" src="/linuxfile/linux3.js"></script></div>
+<div class="linux302"><script type="text/javascript" src="/linuxfile/linux302.js"></script></div>		
+			
+			
+		</div>
+<div class="linuxfx"><script type="text/javascript" src="/linuxfile/fx.js"></script></div>	
+<div class="linux8"><script type="text/javascript" src="/linuxfile/linux8.js"></script></div>
+<div class="linux801"><script type="text/javascript" src="/linuxfile/linux801.js"></script></div>
+		<div class="nearNews">
+			<div class="prevNews"><a href="../../Linux/2012-06/62454.htm">CentOS 5.3 Cacti 完美安装配置</a></div>
+			<div class="nextNews"><a href="../../Linux/2012-06/62478.htm">Nagios 限制报警次数</a></div>
+		</div>
+	</div>
+	</div>
+	<div class="bl"></div>
+	<div class="br"></div>
+	<div class="bm"></div>
+	</div>
+<div class="linux809"><script type="text/javascript" src="/linuxfile/linux809.js"></script></div>
+	<div class="mframe mR">
+	<div class="tl"></div>
+	<div class="tr"></div>
+	<div class="tm">
+		<span class="tt">相关资讯</span> &nbsp; &nbsp; &nbsp;
+		<a href="../../search.aspx?where=nkey&amp;keyword=5002" target="_blank">SVN服务器</a>&nbsp; 
+	</div>
+	<div class="wrapper">
+	<div class="ml"></div>
+	<div class="mr"></div>
+	<div class="mm">
+		<table width='100%'><tr><td width='50%' valign='top'><ul class='nl'><li><a href="../../Linux/2017-12/149777.htm"  target="_blank" >Linux上手动搭建svn服务器</a>&nbsp; <span class="gray">(<span class="time">今 07:59</span>)</span></li>
+<li><a href="../../Linux/2017-05/143669.htm"  target="_blank" >CentOS6.8 SVN服务器管理多项目</a>&nbsp; <span class="gray">(05月11日)</span></li>
+<li><a href="../../Linux/2017-01/139282.htm"  target="_blank" >SVN 服务器搭建步骤及使用实战</a>&nbsp; <span class="gray">(01月06日)</span></li>
+</ul></td><td width='50%' valign='top'><ul class='nl'><li><a href="../../Linux/2017-05/144254.htm"  target="_blank" >CentOS 7下搭建配置SVN服务器</a>&nbsp; <span class="gray">(05月25日)</span></li>
+<li><a href="../../Linux/2017-05/143351.htm"  target="_blank"  title="SUSE Linux Enterprise Server 11 SP3 安装搭建SVN服务器">SUSE Linux Enterprise Server 11 </a>&nbsp; <span class="gray">(05月02日)</span></li>
+<li><a href="../../Linux/2016-12/137864.htm"  target="_blank" >CentOS 6.6搭建SVN服务器</a>&nbsp; <span class="gray">(12/03/2016 21:17:26)</span></li>
+</ul></td></tr></table>
+	</div>
+	</div>
+	<div class="bl"></div>
+	<div class="br"></div>
+	<div class="bm"></div>
+	</div>
+<div class="linux808"><script type="text/javascript" src="/linuxfile/linux808.js"></script></div>
+	
+	<div class="mframe mR">
+	<div class="tl"></div>
+	<div class="tr"></div>
+	<div class="tm">
+		<span class="tt">本文评论</span>
+		 	　　<a href="../../remark.aspx?id=62457" target="_blank">查看全部评论</a> <span class="gray">(0)</span>
+	</div>
+	<div class="wrapper">
+	<div class="ml"></div>
+	<div class="mr"></div>
+	<div class="mm">
+		<table width="100%" style="margin:6px">		
+		<tr><td width="50%">
+			<form action="" name="fmRemarkSt" onsubmit="return remark.post(this);">
+			<input type="hidden" value="1" name="face"/>
+			表情： <img src="../../pic/b.gif" alt="表情" class="face1" style="cursor:pointer;vertical-align:middle" onclick="remark.dispFace(this)" onmouseout="remark.hideFace()"/>
+			姓名： <input type="text" name="username" value="" maxlength="15" style="width:60px" class="inputbg"/>
+			<input type="checkbox" id="rmAnonymitySt" onclick="remark.anony(this)"/><label for="rmAnonymitySt">匿名</label>
+			字数 <input type="text" id="bodyLen" size="3" readonly="readonly" style="border-width:0;background:transparent;vertical-align:middle" value="0"/>
+			<br/>
+			<textarea name="body" cols="40" rows="4" onkeydown="remark.dispLen(this)" onkeyup="remark.handle(event,this);remark.dispLen(this)" style="width:39em;height:100px;margin:3px 0;overflow-y:auto"></textarea>
+				<br/>
+		　　　<input type="checkbox" checked="checked" id="rmAgreeSt"/><label for="rmAgreeSt">同意评论声明</label>
+		　　　<button type="submit" style="width:50px">发表</button>
+			</form><br>
+			评论声明
+			<ul style="list-style-type:square;margin:5px 0 0 1em;padding:0">
+			<li>尊重网上道德，遵守中华人民共和国的各项有关法律法规</li>
+			<li>承担一切因您的行为而直接或间接导致的民事或刑事法律责任</li>
+			<li>本站管理人员有权保留或删除其管辖留言中的任意内容</li>
+			<li>本站有权在网站内转载或引用您的评论</li>
+			<li>参与本评论即表明您已经阅读并接受上述条款</li>
+			</ul>
+		</td>
+		<td width="50%"><div class="linux799"><script type="text/javascript" src="/linuxfile/linux799.js"></script></div></td></tr>
+		</table>
+		<script type="text/javascript" src="../../inc/remark.js"></script>
+		<script type="text/javascript">
+			remark.maxSize=500;
+			remark.minSize=2;
+			remark.sourceEle=$(document.fmRemarkSt).find("button").get(0);
+			iwms.vCode="CC74440A";
+			iwms.user.name.length==0 ? $i("rmAnonymitySt").click() : $i("rmAnonymitySt").form.username.value=iwms.user.name;
+		</script>
+		<div class="reCont" id="reContainer"></div>
+	</div>
+	</div>
+	<div class="bl"></div>
+	<div class="br"></div>
+	<div class="bm"></div>
+	</div>
+	
+</td><td width="300" valign="top">
+<div class="linux901"><script type="text/javascript" src="/linuxfile/linux901.js"></script></div>
+<div class="linux902"><script type="text/javascript" src="/linuxfile/linux902.js"></script></div>
+<div class="linux903"><script type="text/javascript" src="/linuxfile/linux903.js"></script></div>
+<div class="linux905"><script type="text/javascript" src="/linuxfile/linux905.js"></script></div>
+	
+	<div class="lframe">
+	<div class="tl"></div>
+	<div class="tr"></div>
+	<div class="tm">
+		<span class="tt">最新资讯</span>
+	</div>
+	<div class="wrapper">
+	<div class="ml"></div>
+	<div class="mr"></div>
+	<div class="mm">
+		<ul class="nl">
+<li><a href="../../Linux/2017-12/149777.htm" target="_blank">Linux上手动搭建svn服务器</a></li>
+<li><a href="../../Linux/2017-12/149776.htm" target="_blank">NVIDIA 将取消支持 32-bit 系统</a></li>
+<li><a href="../../Linux/2017-12/149775.htm" target="_blank" title="Slax 9.3 圣诞发布，基于Debian的Linux发行版">Slax 9.3 圣诞发布，基于Debian的Linux发行</a></li>
+<li><a href="../../Linux/2017-12/149774.htm" target="_blank" title="Black Lab Software 发布Linspire 7.0 Linux 系统，圣诞免费下载">Black Lab Software 发布Linspire 7.0 </a></li>
+<li><a href="../../Linux/2017-12/149773.htm" target="_blank">darktable 2.4正式发布，数字摄影暗房软件</a></li>
+<li><a href="../../Linux/2017-12/149772.htm" target="_blank">Anbox将使Ubuntu手机能运行Android应用程序</a></li>
+<li><a href="../../Linux/2017-12/149771.htm" target="_blank" title="Linus Torvalds在圣诞节发布Linux Kernel 4.15 RC5">Linus Torvalds在圣诞节发布Linux Kernel 4</a></li>
+<li><a href="../../Linux/2017-12/149770.htm" target="_blank">CentOS 7中手动编译Greenplum</a></li>
+<li><a href="../../Linux/2017-12/149769.htm" target="_blank" title="PostgreSQL源码安装 ./configure出现问题及解决">PostgreSQL源码安装 ./configure出现问题及</a></li>
+<li><a href="../../Linux/2017-12/149768.htm" target="_blank">MySQL启动失败报1067错误解决</a></li>
+</ul>
+	</div>
+	</div>
+	<div class="bl"></div>
+	<div class="br"></div>
+	<div class="bm"></div>
+	</div>
+	<div class="u70"><script type="text/javascript" src="/linuxfile/u70.js"></script></div>
+	<div class="u80"><script type="text/javascript" src="/linuxfile/u80.js"></script></div>
+	<div class="u90"><script type="text/javascript" src="/linuxfile/u90.js"></script></div>
+	<div class="space"></div>
+	<div id="pin">
+	<script type="text/javascript" src="/linuxfile/pin.js"></script>
+	</div>
+</td></tr>
+</table>
+<div class="linux906"><script type="text/javascript" src="/linuxfile/linux906.js"></script></div>
+<div id="footer">
+<a href="http://www.linuxidc.com/aboutus.htm">Linux公社简介</a> - <a href="http://www.linuxidc.com/adsense.htm">广告服务</a> - <a href="http://www.linuxidc.com/sitemap.aspx">网站地图</a> - <a href="http://www.linuxidc.com/help.htm">帮助信息</a> - <a href="http://www.linuxidc.com/contactus.htm">联系我们</a><br />本站（LinuxIDC）所刊载文章不代表同意其说法或描述，仅为提供更多信息，也不构成任何建议。<br /><script type="text/javascript" src="/linuxfile/qq.js"></script><br />
+<script type="text/javascript" src="/linuxfile/foot.js"></script><br />Copyright &copy; 2006-2017　<a href="http://www.linuxidc.com/">Linux公社</a>　All rights reserved 沪ICP备15008072号-1号
+	<script type="text/javascript">iwms.aId=62457;$(function(){iwms.imgCont=$i('content');iwms.imgResize();InitContStyle();iwms.getVars();})</script>
+	
+</div>
+</div>
+<script type="text/javascript" src="/linuxren/linuxren1.js"></script>
+<script type="text/javascript" src="/linuxren/linuxren2.js"></script>
+<script type="text/javascript" src="/linuxren/linuxren3.js"></script>
+</body>
+</html>

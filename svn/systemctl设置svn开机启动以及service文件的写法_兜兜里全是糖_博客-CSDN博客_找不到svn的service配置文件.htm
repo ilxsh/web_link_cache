@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="canonical" href="https://blog.csdn.net/zilaike/article/details/78283256"/>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="renderer" content="webkit"/>
+    <meta name="force-rendering" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="report" content='{"pid": "blog", "spm":"1001.2101"}'>
+    <meta name="referrer" content="always">
+    <meta http-equiv="Cache-Control" content="no-siteapp" /><link rel="alternate" media="handheld" href="#" />
+    <meta name="shenma-site-verification" content="5a59773ab8077d4a62bf469ab966a63b_1497598848">
+        <meta name="csdn-baidu-search"  content='{"autorun":true,"install":true,"keyword":"找不到svn的service配置文件"}'>
+    
+    <link href="https://csdnimg.cn/public/favicon.ico" rel="SHORTCUT ICON">
+    <title>systemctl设置svn开机启动以及service文件的写法_兜兜里全是糖_博客-CSDN博客_找不到svn的service配置文件</title>
+        <meta name="keywords" content="找不到svn的service配置文件">
+        <meta name="description" content="使用systemd配置SVN服务器开机自动启动步骤比较简单。步骤如下：1）在/etc/systemd/system/目录创建单元文件，并且保证只能被root用户编辑：vim/etc/systemd/system/svn.servicechmod664/etc/systemd/system/svn.service其中，“svn.service”是我们自定义的服务单元文_找不到svn的service配置文件">
+    <script src='//g.csdnimg.cn/tingyun/1.8.3/blog.js' type='text/javascript'></script>
+        
+                    <link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/new_css/detail_enter-951e09a005.min.css">
+                            <script type="application/ld+json">{"@context":"https:\/\/ziyuan.baidu.com\/contexts\/cambrian.jsonld","@id":"https:\/\/blog.csdn.net\/zilaike\/java\/article\/details\/78283256","appid":1638831770136827,"title":"systemctl\u8bbe\u7f6esvn\u5f00\u673a\u542f\u52a8\u4ee5\u53caservice\u6587\u4ef6\u7684\u5199\u6cd5_\u515c\u515c\u91cc\u5168\u662f\u7cd6_\u535a\u5ba2-CSDN\u535a\u5ba2_\u627e\u4e0d\u5230 svn \u7684 service \u914d\u7f6e\u6587\u4ef6","pubDate":"2017-10-19T12:09:48","upDate":"2017-10-19T12:09:48"}</script>
+    
+            <link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/themes_skin/skin-yellow/skin-yellow-c084fc24c6.min.css">
+    
+<!--    自定义皮肤样式-->
+    
+    <script type="text/javascript">
+        var username = "zilaike";
+        var blog_address = "https://blog.csdn.net/zilaike";
+        var static_host = "https://csdnimg.cn/release/phoenix/";
+        var currentUserName = "";
+        var isOwner = false;
+        var loginUrl = "http://passport.csdn.net/account/login?from=https://blog.csdn.net/zilaike/java/article/details/78283256"
+        var blogUrl = "https://blog.csdn.net/";
+
+        var curSkin = "skin-yellow";
+        // 收藏所需数据
+        var articleTitle = "systemctl设置svn开机启动以及service文件的写法";
+        var articleDesc = "使用systemd配置SVN服务器开机自动启动步骤比较简单。步骤如下：1） 在/etc/systemd/system/目录创建单元文件，并且保证只能被root用户编辑：vim /etc/systemd/system/svn.servicechmod 664 /etc/systemd/system/svn.service其中，“svn.service”是我们自定义的服务单元文_找不到 svn 的 service 配置文件";
+
+        var articleTitles = "systemctl设置svn开机启动以及service文件的写法_兜兜里全是糖_博客-CSDN博客_找不到 svn 的 service 配置文件";
+        
+        var nickName = "兜兜里o全是糖";
+        var isCorporate = false;
+        var subDomainBlogUrl = "https://blog.csdn.net/"
+        var digg_base_url = "https://blog.csdn.net/zilaike";
+        var articleDetailUrl = "https://blog.csdn.net/zilaike/article/details/78283256";
+        var isShowThird = "0"
+        var skinStatus = "White"
+        var canRead = true;
+        
+        var sideToolbarVersion = 2.2;
+    </script>
+    <script src="https://csdnimg.cn/public/common/libs/jquery/jquery-1.9.1.min.js" type="text/javascript"></script>
+    <!--js引用-->
+            <script src="//g.csdnimg.cn/??fixed-sidebar/1.1.6/fixed-sidebar.js,report/1.5.0/report.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css">
+    <style>
+        .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+    </style>
+</head>
+<body class="nodata " > 
+    <link rel="stylesheet" href="https://csdnimg.cn/public/common/toolbar/content_toolbar_css/content_toolbar.css">
+    <script id="toolbar-tpl-scriptId" src="https://csdnimg.cn/public/common/toolbar/js/content_toolbar.js" type="text/javascript" domain="https://blog.csdn.net/"></script>
+    <script>
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+<link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/new_css/blog_code-c3a0c33d5c.css">
+<link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/vendor/pagination/paging-e040f0c7c8.css">
+
+<script type="text/javascript">
+	var NEWS_FEED = function(){}
+</script>
+
+<link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/new_css/chart-3456820cac.css" />
+<div class="main_father clearfix d-flex justify-content-center" style="height:100%;"> 
+    <div class="container clearfix" id="mainBox">
+        <aside class="blog_container_aside">
+	<!--主页引入-->
+    
+    <div id="asideProfile" class="aside-box">
+    <div class="profile-intro d-flex">
+        <div class="avatar-box d-flex justify-content-center flex-column">
+            <a href="https://blog.csdn.net/zilaike"  data-report-click='{"mod":"popu_379","dest":"https://blog.csdn.net/zilaike","ab":"new"}'>
+                <img src="https://profile.csdnimg.cn/C/D/7/3_zilaike" class="avatar_pic" username='zilaike'>
+            </a>
+        </div>
+        <div class="user-info d-flex flex-column profile-intro-name-box">
+            <div>
+                                <a href="https://blog.csdn.net/zilaike" class="" id="uid" title='兜兜里o全是糖' data-report-click='{"mod":"popu_379","dest":"https://blog.csdn.net/zilaike","ab":"new"}' >
+                    <span class="name " username='zilaike'>
+                        兜兜里o全是糖                    </span>
+                </a>
+                <span></span>
+                <span class="flag expert-blog"><span class="bubble">CSDN认证博客专家</span></span>
+                <span class="flag company-blog"><span class="bubble">CSDN认证企业博客</span></span>
+            </div>
+            <div class="profile-intro-name-boxFooter">
+                <span class="personal-home-page">码龄9年</span>
+                            </div>
+        </div>
+    </div>
+    <div class="data-info d-flex item-tiling">
+                <dl class="text-center" title="193">
+                            <dt><a href="https://blog.csdn.net/zilaike" data-report-query="t=1"><span class="count">193</span></a></dt>
+                <dd><a href="https://blog.csdn.net/zilaike" data-report-query="t=1">原创</a></dd>
+                    </dl>
+        <dl class="text-center" id="fanBox" title="19">
+            <dt><span class="count" id="fan">19</span></dt>
+            <dd>粉丝</dd>
+        </dl>
+        <dl class="text-center" title="20">
+            <dt><span class="count">20</span></dt>
+            <dd>获赞</dd>
+        </dl>
+        <dl class="text-center" title="15">
+            <dt><span class="count">15</span></dt>
+            <dd>评论</dd>
+        </dl>
+        <dl class="text-center" style="min-width:58px" title="340884">  
+            <dt><span class="count">34万+</span></dt>
+            <dd>访问</dd>
+        </dl>
+    </div>
+    <div class="item-rank"></div>
+    <div class="data-info d-flex item-tiling">
+        <dl class="text-center" title="2968">
+            <dt><span class="count">2968</span></dt>
+            <dd>积分</dd>
+        </dl>
+        <dl class="text-center" title="50">
+            <dt><span class="count">50</span></dt>
+            <dd>收藏</dd>
+        </dl>
+        <dl class="text-center" title="11339">
+            <dt><span class="count">1万+</span></dt>
+            <dd><a href="https://blog.csdn.net/rank/writing_rank" target="_blank">周排名</a></dd>
+        </dl>
+        <dl class="text-center" title="26445">
+            <dt><span class="count">2万+</span></dt>
+            <dd><a href="https://blog.csdn.net/rank/writing_rank_total" target="_blank">总排名</a></dd>
+        </dl>
+        <dl class="text-center" title="5级,点击查看等级说明">
+            <dt><a href="https://blog.csdn.net/home/help.html#level"  target="_blank">
+            <img class="level" src="https://csdnimg.cn/identity/blog5.png"/>            </a>
+            </dt>
+            <dd>等级</dd>
+        </dl>
+    </div>
+    <div class="aside-box-footer">
+                    <div class="badge-box d-flex">
+                <div class="badge d-flex">
+                                                                                                        <div class="icon-badge" title="勤写标兵Lv1">
+                                    <div class="mouse-box">
+                                        <img src="https://csdnimg.cn/medal/qixiebiaobing1@240.png" alt="">
+                                        <div class="icon-arrow"></div>
+                                    </div>
+                                    <div class="grade-detail-box">
+                                        <div class="pos-box">
+                                            <div class="left-box d-flex justify-content-center align-items-center flex-column">
+                                                <img src="https://csdnimg.cn/medal/qixiebiaobing1@240.png" alt="">
+                                            </div>
+                                            <div class="right-box">
+                                                <div class="title">勤写标兵Lv1</div>
+                                                <div class="desc">授予每个自然周发布1篇到3篇原创IT博文的用户。本勋章将于次周周三上午根据用户上周的博文发布情况由系统自动颁发。</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                                                                        </div>
+                <script>
+                    (function($) {
+                        setTimeout(function() {
+                            $('div.icon-badge.show-moment').removeClass('show-moment');
+                        }, 5000);
+                    })(window.jQuery)
+                </script>
+            </div>
+                
+    </div>
+        <div class="profile-intro-name-boxOpration">
+        <div class='opt-letter-watch-box'>
+            <a class="bt-button personal-letter" href="https://me.csdn.net/zilaike" target="_blank" rel="noopener">TA的主页</a>
+        </div>
+        <div class='opt-letter-watch-box'>
+            <a class="bt-button personal-letter" href=https://im.csdn.net/im/main.html?userName=zilaike target="_blank" rel="noopener">私信</a>
+        </div>
+        <div class="opt-letter-watch-box">
+                            <a class="personal-watch bt-button" id="btnAttent" data-report-click='{"mod":"popu_379","ab":"new","extend1":"个人主页未关注"}'>关注</a>
+                    </div>
+    </div>
+    </div>
+<div id="asideSearchArticle" class="aside-box">
+	<div class="aside-content">
+    <div class="aside-search aside-search-blog">         
+        <input type="text" class="input-serch-blog" name="" autocomplete="off" value="" id="search-blog-words" placeholder="搜博主文章">
+        <a class="btn-search-blog">
+            <img src="//csdnimg.cn/cdn/content-toolbar/csdn-sou.png?v=1587021042">
+        </a>
+    </div>
+    </div>
+</div><script>
+    function watchBtnChange(flag, username) {
+        $('span.blog-expert-button-follow').each(function(index) {
+            if (flag) {
+                if ($(this).attr("data-name") == username) {
+                    $(this).html('<span class="hover-hide">已关注</span><span class="hover-show">取消</span>').removeClass('btn-red-follow').addClass('btn-gray-follow attented');
+                }
+            } else {
+                if ($(this).attr("data-name") == username) {
+                    $(this).html("关注").addClass('btn-red-follow').removeClass('btn-gray-follow attented');
+                }
+            }
+        })
+        if (username == $('p.csdn-tracking-statistics').attr("username")) {
+            if (flag) {
+                $('#btnAttent').addClass("attented").text("已关注").removeClass('btn-red-hollow').addClass('btn-gray-hollow');
+                changeFans(1)
+            } else {
+                $('#btnAttent').text("关注").addClass('btn-red-hollow').removeClass('btn-gray-hollow attented');
+                changeFans(-1)
+            }
+        }
+
+    }
+
+    function changeFans(num) {
+        if ($('#fan').text().indexOf('+') < 0) {
+            $('#fan').text(parseInt($('#fan').text()) + num);
+        } else {
+            $('#fanBox').attr('title', parseInt($('#fanBox').attr('title')) + num);
+        }
+    }
+    window.csdn = window.csdn ? window.csdn : {};
+    window.csdn.watchBtnChange = watchBtnChange;
+</script><div class="csdn-tracking-statistics mb8 box-shadow" data-pid="blog" style="height:250px;">
+    <div class="aside-content text-center" id="cpro_u2734133">
+        <div id="kp_box_56" data-pid="56"><script  data-ad-client="ca-pub-1076724771190722" async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- 博客内页左上视窗-20181120 -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:300px;height:250px"
+     data-ad-client="ca-pub-1076724771190722"
+     data-ad-slot="7700527946"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script><img class="pre-img-lasy" data-src="https://kunyu.csdn.net/1.png?p=56&a=703&c=0&k=&d=1&t=3&u=12aa8647b8ca4d4f8f362db354da9712"></div>    </div>
+</div>
+<div id="asideNewArticle" class="aside-box">
+    <h3 class="aside-title">最新文章</h3>
+    <div class="aside-content">
+        <ul class="inf_list clearfix">
+                        <li class="clearfix">
+                <a data-report-click='{"mod":"popu_382","dest":"https://blog.csdn.net/zilaike/article/details/106524623","ab":"new"}' href="https://blog.csdn.net/zilaike/article/details/106524623" target="_blank" >
+                                        git使用说明                </a>
+            </li>
+                        <li class="clearfix">
+                <a data-report-click='{"mod":"popu_382","dest":"https://blog.csdn.net/zilaike/article/details/106493939","ab":"new"}' href="https://blog.csdn.net/zilaike/article/details/106493939" target="_blank" >
+                                        ubuntu通过apt-get安装JDK8                </a>
+            </li>
+                        <li class="clearfix">
+                <a data-report-click='{"mod":"popu_382","dest":"https://blog.csdn.net/zilaike/article/details/106138022","ab":"new"}' href="https://blog.csdn.net/zilaike/article/details/106138022" target="_blank" >
+                                        shell 中| &amp;&amp; || () {} 用法以及shell的逻辑与或非                </a>
+            </li>
+                        <li class="clearfix">
+                <a data-report-click='{"mod":"popu_382","dest":"https://blog.csdn.net/zilaike/article/details/105381037","ab":"new"}' href="https://blog.csdn.net/zilaike/article/details/105381037" target="_blank" >
+                                        javax.ws.rs 创建 restful 服务以及和resteasy的关系                </a>
+            </li>
+                        <li class="clearfix">
+                <a data-report-click='{"mod":"popu_382","dest":"https://blog.csdn.net/zilaike/article/details/104511381","ab":"new"}' href="https://blog.csdn.net/zilaike/article/details/104511381" target="_blank" >
+                                        ubuntu下安装 Mysql 5.6.40                </a>
+            </li>
+                    </ul>
+    </div>
+</div>
+    <div id="asideCategory" class="aside-box"
+         style="display:block!important;">
+    <h3 class="aside-title">分类专栏</h3>
+    <div class="aside-content">
+        <ul>
+                            <li class="">
+                                        <a class="clearfix" 
+                                                    data-report-click='{"mod":"popu_537","strategy":"","dest":"https://blog.csdn.net/zilaike/category_7235273.html","ab":"new"}'
+                            data-report-view='{"mod":"popu_537","strategy":"","dest":"https://blog.csdn.net/zilaike/category_7235273.html","ab":"new"}'
+                                               href="https://blog.csdn.net/zilaike/category_7235273.html">
+                                                    <img src="https://img-blog.csdnimg.cn/20190927151053287.png" alt="">
+                                                <!--####是否付费-->
+                        <span class="title oneline"><span class="text">mark</span>
+                                                    </span>
+                        <!--####是否付费-->
+                                                    <span class="count float-right">6篇</span>
+                                            </a>
+                </li>
+                    </ul>
+    </div>
+    </div>
+<div id="asideArchive" class="aside-box">
+    <h3 class="aside-title">归档</h3>
+    <div class="aside-content">
+        <div class="archive-box">
+                        <div class="archive-title">2020</div>
+            <div class="archive-content">
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2020/06" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2020/06"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2020/06"}'>
+                        <span class="time">6月</span>
+                        <span class="count">2篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2020/05" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2020/05"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2020/05"}'>
+                        <span class="time">5月</span>
+                        <span class="count">1篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2020/04" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2020/04"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2020/04"}'>
+                        <span class="time">4月</span>
+                        <span class="count">1篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2020/02" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2020/02"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2020/02"}'>
+                        <span class="time">2月</span>
+                        <span class="count">3篇</span>
+                        </a>
+                    </div>
+                            </div>
+                        <div class="archive-title">2019</div>
+            <div class="archive-content">
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2019/12" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2019/12"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2019/12"}'>
+                        <span class="time">12月</span>
+                        <span class="count">3篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2019/11" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2019/11"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2019/11"}'>
+                        <span class="time">11月</span>
+                        <span class="count">2篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2019/07" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2019/07"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2019/07"}'>
+                        <span class="time">7月</span>
+                        <span class="count">1篇</span>
+                        </a>
+                    </div>
+                            </div>
+                        <div class="archive-title">2018</div>
+            <div class="archive-content">
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2018/09" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/09"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/09"}'>
+                        <span class="time">9月</span>
+                        <span class="count">6篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2018/08" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/08"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/08"}'>
+                        <span class="time">8月</span>
+                        <span class="count">3篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2018/07" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/07"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/07"}'>
+                        <span class="time">7月</span>
+                        <span class="count">1篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2018/06" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/06"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/06"}'>
+                        <span class="time">6月</span>
+                        <span class="count">4篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2018/05" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/05"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/05"}'>
+                        <span class="time">5月</span>
+                        <span class="count">5篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2018/04" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/04"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/04"}'>
+                        <span class="time">4月</span>
+                        <span class="count">7篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2018/03" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/03"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/03"}'>
+                        <span class="time">3月</span>
+                        <span class="count">2篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2018/02" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/02"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/02"}'>
+                        <span class="time">2月</span>
+                        <span class="count">3篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2018/01" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/01"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2018/01"}'>
+                        <span class="time">1月</span>
+                        <span class="count">9篇</span>
+                        </a>
+                    </div>
+                            </div>
+                        <div class="archive-title">2017</div>
+            <div class="archive-content">
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2017/12" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2017/12"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2017/12"}'>
+                        <span class="time">12月</span>
+                        <span class="count">4篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2017/11" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2017/11"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2017/11"}'>
+                        <span class="time">11月</span>
+                        <span class="count">4篇</span>
+                        </a>
+                    </div>
+                                    <div class="archive-item">
+                        <a href="https://blog.csdn.net/zilaike/article/month/2017/10" target="_blank" data-report-click='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2017/10"}' data-report-view='{"mod":"popu_538","ab":"new","dest":"https://blog.csdn.net/zilaike/article/month/2017/10"}'>
+                        <span class="time">10月</span>
+                        <span class="count">188篇</span>
+                        </a>
+                    </div>
+                            </div>
+                    </div>
+    </div>
+</div>
+<div id="asideHotArticle" class="aside-box">
+	<h3 class="aside-title">热门文章</h3>
+	<div class="aside-content">
+		<ul class="hotArticle-list">
+							<li>
+
+                    <a
+                    data-report-click='{"mod":"popu_541","dest":"https://blog.csdn.net/zilaike/article/details/78922524","ab":"new"}' 
+                     href="https://blog.csdn.net/zilaike/article/details/78922524" >
+                                                linux下开启SSH，并且允许root用户远程登录,允许无密码登录                        <img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt=""><span class="read">53451</span>
+                    </a>
+				</li>
+							<li>
+
+                    <a
+                    data-report-click='{"mod":"popu_541","dest":"https://blog.csdn.net/zilaike/article/details/82112803","ab":"new"}' 
+                     href="https://blog.csdn.net/zilaike/article/details/82112803" >
+                                                nginx keepalive_timeout 设置策略问题分析                        <img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt=""><span class="read">19590</span>
+                    </a>
+				</li>
+							<li>
+
+                    <a
+                    data-report-click='{"mod":"popu_541","dest":"https://blog.csdn.net/zilaike/article/details/78227823","ab":"new"}' 
+                     href="https://blog.csdn.net/zilaike/article/details/78227823" >
+                                                websocket&nbsp;传输文件及图片的…                        <img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt=""><span class="read">13808</span>
+                    </a>
+				</li>
+							<li>
+
+                    <a
+                    data-report-click='{"mod":"popu_541","dest":"https://blog.csdn.net/zilaike/article/details/78227810","ab":"new"}' 
+                     href="https://blog.csdn.net/zilaike/article/details/78227810" >
+                                                WebSocket之ServerEndPoint                        <img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt=""><span class="read">12271</span>
+                    </a>
+				</li>
+							<li>
+
+                    <a
+                    data-report-click='{"mod":"popu_541","dest":"https://blog.csdn.net/zilaike/article/details/82147178","ab":"new"}' 
+                     href="https://blog.csdn.net/zilaike/article/details/82147178" >
+                                                Linux下的压缩和解压缩命令——jar                        <img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt=""><span class="read">11691</span>
+                    </a>
+				</li>
+					</ul>
+	</div>
+</div>
+<div id="asideNewComments" class="aside-box">
+    <h3 class="aside-title">最新评论</h3>
+    <div class="aside-content">
+        <ul class="newcomment-list">
+                        <li>
+                <a class="title text-truncate" data-report-click='{"mod":"popu_542","dest":"https://blog.csdn.net/zilaike/article/details/82910214#comments","ab":"new"}'  target="_blank" href="https://blog.csdn.net/zilaike/article/details/82910214#comments">docker安装mysql 5.8...</a>
+                <p class="comment ellipsis">
+                    <a href="https://my.csdn.net/l_mloveforever" class="user-name" target="_blank">l_mloveforever：</a>谢谢                </p>
+            </li>
+                        <li>
+                <a class="title text-truncate" data-report-click='{"mod":"popu_542","dest":"https://blog.csdn.net/zilaike/article/details/82807040#comments","ab":"new"}'  target="_blank" href="https://blog.csdn.net/zilaike/article/details/82807040#comments">CentOS6-x到CentOS7...</a>
+                <p class="comment ellipsis">
+                    <a href="https://my.csdn.net/qq_39615545" class="user-name" target="_blank">qq_39615545：</a>https://segmentfault.com/a/1190000022050815                </p>
+            </li>
+                        <li>
+                <a class="title text-truncate" data-report-click='{"mod":"popu_542","dest":"https://blog.csdn.net/zilaike/article/details/78227940#comments","ab":"new"}'  target="_blank" href="https://blog.csdn.net/zilaike/article/details/78227940#comments">ubuntu终端Tab键不能自动补全</a>
+                <p class="comment ellipsis">
+                    <a href="https://my.csdn.net/weixin_42236288" class="user-name" target="_blank">weixin_42236288：</a>[reply]mar_1th[/reply]
+你没有进编辑模式，或者打开的时候没有权限                </p>
+            </li>
+                        <li>
+                <a class="title text-truncate" data-report-click='{"mod":"popu_542","dest":"https://blog.csdn.net/zilaike/article/details/82112803#comments","ab":"new"}'  target="_blank" href="https://blog.csdn.net/zilaike/article/details/82112803#comments">nginx keepalive_t...</a>
+                <p class="comment ellipsis">
+                    <a href="https://my.csdn.net/ismallboy" class="user-name" target="_blank">ismallboy：</a>博主最后怎么解决这个难题？                </p>
+            </li>
+                        <li>
+                <a class="title text-truncate" data-report-click='{"mod":"popu_542","dest":"https://blog.csdn.net/zilaike/article/details/79013138#comments","ab":"new"}'  target="_blank" href="https://blog.csdn.net/zilaike/article/details/79013138#comments">远程升级云服务器系统 CentOS...</a>
+                <p class="comment ellipsis">
+                    <a href="https://my.csdn.net/nich002" class="user-name" target="_blank">nich002：</a>复制的缺胳膊少腿的，太坑人~~~                </p>
+            </li>
+                    </ul>
+    </div>
+</div>
+                <div id="footerRightAds">
+        <div class="aside-box">
+            <div id="kp_box_57" data-pid="57"><script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- 博客内页左下视窗-20181130 -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:300px;height:250px"
+     data-ad-client="ca-pub-1076724771190722"
+     data-ad-slot="1894159733"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script><img class="pre-img-lasy" data-src="https://kunyu.csdn.net/1.png?p=57&a=707&c=0&k=&d=1&t=3&u=6ae6c11677dc4034a2070fe14bebef78"></div>        </div>
+        </div>
+            <!-- 详情页显示目录 -->
+        <!--文章目录-->
+<div id="asidedirectory" class="aside-box">
+    <div class='groupfile' id="directory">
+        <h3 class="aside-title">目录</h3>
+        <div class="align-items-stretch group_item">
+            <div class="pos-box">
+            <div class="scroll-box">
+                <div class="toc-box"></div>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+    	<div id="asideFooter">
+		<div class="aside-box">
+			<div class="persion_article">
+			</div>
+		</div>
+	</div>
+</aside>
+<script src="https://csdnimg.cn/pubfooter/js/publib_footer-1.0.3.js" data-isfootertrack="false" type="text/javascript"></script>
+<script>
+	$("a.flexible-btn").click(function(){
+		$(this).parents('div.aside-box').removeClass('flexible-box');
+		$(this).parents("p.text-center").remove();
+	})
+</script>
+<script type="text/javascript"  src="https://g.csdnimg.cn/user-tooltip/2.1/user-tooltip.js"></script>
+        <main>
+            
+<div class="blog-content-box">
+    <div class="article-header-box">
+        <div class="article-header">
+            <div class="article-title-box">
+                <h1 class="title-article">systemctl设置svn开机启动以及service文件的写法</h1>
+            </div>
+            <div class="article-info-box">
+                <div class="article-bar-top">
+                    <!--文章类型-->
+                                        <!--原创-->
+                                        <!--翻译-->
+                                        <!--转载-->
+                                        <img class="article-type-img" src="https://csdnimg.cn/release/phoenix/template/new_img/reprint.png" alt="">
+                                        <div class="bar-content">
+                                                                                                                                            <a class="follow-nickName" href="https://me.csdn.net/zilaike" target="_blank" rel="noopener">兜兜里o全是糖</a>
+                    <span class="time">2017-10-19 12:09:48</span>
+                    <img class="article-read-img article-heard-img" src="https://csdnimg.cn/release/phoenix/template/new_img/articleRead.png" alt="">
+                    <span class="read-count">1543</span>
+                    <a id='blog_detail_zk_collection' class="un-collection" data-report-click='{"mod":"popu_823","ab":"new"}'>
+                        <img class="article-collect-img article-heard-img un-collect-status" style="display:inline-block" src="https://csdnimg.cn/release/phoenix/template/new_img/collect.png" alt="">
+                        <img class="article-collect-img article-heard-img collect-status" style="display:none" src="https://csdnimg.cn/release/phoenix/template/new_img/tobarCollectionActive.png" alt="">
+                        <span class="name">收藏</span>
+                        <span class="get-collection">
+                                                2                                                </span>
+                    </a>
+                                        </div>
+                </div>
+                                <div class="up-time"><span>最后发布:2017-10-19 12:09:48</span><span>首发:2017-10-19 12:09:48</span></div>
+                <div class="slide-content-box">
+                <div class="all-tags-box">
+                                                                        </div>
+                                                        </div>
+                <div class="operating">
+                                                        </div>
+            </div>
+        </div>
+    </div>
+    <!--python安装手册结束-->
+                    <article class="baidu_pl">
+                 <div id="article_content" class="article_content clearfix">
+            <link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/css/ck_htmledit_views-211130ba7a.css" />
+                            <link rel="stylesheet" href="https://csdnimg.cn/release/phoenix/template/css/ck_htmledit_views-211130ba7a.css" />
+                <div class="htmledit_views" id="content_views">
+                                            
+<div id="article_content" class="article_content tracking-ad" style="line-height:26px;font-family:Arial;">
+<p style="font-size:14px;color:rgb(51,51,51);">使用systemd配置SVN服务器开机自动启动步骤比较简单。步骤如下：</p>
+<p style="font-size:14px;color:rgb(51,51,51);"><br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);">1） 在/etc/systemd/system/目录创建单元文件，并且保证只能被root用户编辑：</p>
+<p style="font-size:14px;color:rgb(51,51,51);">vim /etc/systemd/system/svn.service</p>
+<p style="font-size:14px;color:rgb(51,51,51);">chmod 664 /etc/systemd/system/svn.service</p>
+<p style="font-size:14px;color:rgb(51,51,51);">其中，“svn.service”是我们自定义的服务单元文件名称，可以根据情况修改，下同。<br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);">2）打开svn.service文件，添加服务配置:</p>
+<p style="font-size:14px;color:rgb(51,51,51);"><br /></p>
+<p><span style="font-size:18px;color:#3333ff;">[Unit]<br />
+Description=Subversion Server<br />
+[Service]<br />
+Type=forking<br />
+ExecStart=/usr/bin/svnserve --daemon --root /software/svn<br />
+ExecStop=/usr/bin/killall svnserve<br />
+Restart=always<br />
+[Install]<br />
+WantedBy=default.target</span></p>
+<p style="font-size:14px;color:rgb(51,51,51);"><br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);"><br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);"><br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);"><br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);">其中，“<span style="color:rgb(51,51,51);font-family:Arial;font-size:14px;">/software/svn</span>”是SVN仓库的根路径，请根据情况修改。</p>
+<p style="font-size:14px;color:rgb(51,51,51);">3）通知systemd有个新服务添加：</p>
+<p style="font-size:14px;color:rgb(51,51,51);">systemctl daemon-reload<br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);">4）启动和停止SVN服务<br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);">systemctl start svn.service</p>
+<p style="font-size:14px;color:rgb(51,51,51);">systemctl stop svn.service</p>
+<p style="font-size:14px;color:rgb(51,51,51);">用于测试刚才创建的服务单元是否工作正常。<br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);">5）配置开机自动启动</p>
+<p style="font-size:14px;color:rgb(51,51,51);"></p>
+<p style="font-size:14px;color:rgb(51,51,51);">systemctl enable svn.service</p>
+<p style="font-size:14px;color:rgb(51,51,51);"><br /></p>
+<span style="color:#333333;font-size:14px;">其他有用的命令</span>
+<p style="font-size:14px;color:rgb(51,51,51);">1）列出systemd管理的所有服务状态<br /></p>
+<p><span style="font-size:18px;"><span style="color:#ff6666;"> </span><span style="color:#3333ff;">systemctl --type service  --all<br /></span></span></p>
+<p><span style="font-size:14px;color:#ff6666;">----------------------------------  Show all properties/all units currently in memory,<br />
+                                           including dead/empty ones. To list all units installed on<br />
+                                           the system, use the 'list-unit-files' command instead.</span></p>
+<p><strong><span style="font-size:18px;color:#3333ff;"> systemctl --type service  --state active --all<br /></span></strong></p>
+<p><span style="font-size:18px;"><span style="color:rgb(255,0,0);">---------------------------------- </span><span style="color:#ff0000;">List units with particular</span>LOAD<span style="color:#ff0000;">or</span>SUB<span style="color:#ff0000;">or</span>ACTIVE<span style="color:#ff0000;">state</span></span></p>
+<p><span><span style="font-size:18px;"><br /><span style="font-family:Arial;"><span style="color:#3333ff;">systemctl list-unit-files</span></span></span></span><br /><span style="font-size:14px;color:#ff6666;"><strong>-----------------------------------------To show all installed unit files  </strong></span><br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);">2）检查SVN服务运作状态 <br /></p>
+<p style="font-size:14px;color:rgb(51,51,51);">systemctl status svn.service<br /></p>
+</div>
+<div class="bdsharebuttonbox tracking-ad bdshare-button-style0-16" style="color:rgb(51,51,51);font-family:Arial, Console, Verdana, 'Courier New';">
+<br /><a href="http://blog.csdn.net/dlite/article/details/50956190#" class="bds_tsina" title="分享到新浪微博" style="color:rgb(51,102,153);line-height:16px;"></a><a href="http://blog.csdn.net/dlite/article/details/50956190#" class="bds_tqq" title="分享到腾讯微博" style="color:rgb(51,102,153);line-height:16px;"></a><a href="http://blog.csdn.net/dlite/article/details/50956190#" class="bds_renren" title="分享到人人网" style="color:rgb(51,102,153);line-height:16px;"><br /></a></div>
+                                    </div>
+                                </div>
+    </article>
+</div>
+
+            <div class="hide-article-box hide-article-pos text-center">
+            <a class="btn-readmore" id="btn-readmore-zk" data-report-view='{"mod":"popu_376","dest":"https://blog.csdn.net/zilaike/java/article/details/78283256","strategy":"readmore","ab":"new"}' data-report-click='{"mod":"popu_376","dest":"https://blog.csdn.net/zilaike/java/article/details/78283256","strategy":"readmore","ab":"new"}'>
+                展开阅读全文
+                <svg class="icon chevrondown" aria-hidden="true">
+                    <use xlink:href="#csdnc-chevrondown"></use>
+                </svg>
+            </a>
+        </div>
+    
+<script>
+    $.get("https://blog.csdn.net/zilaike/article/uvc/78283256");
+</script>
+
+<div class="more-toolbox" id="toolBarBox">
+    <span id="fixedBar"></span>
+    <div class="left-toolbox">
+        <ul class="toolbox-list">
+            <li class="tool-item tool-active is-like" id="is-like"><a>
+            <img style="display:none;" id="is-like-imgactive" src="https://csdnimg.cn/release/phoenix/template/new_img/tobarThumbUpactive.png" alt="">
+            <img style="display:block;" id="is-like-img" src="https://csdnimg.cn/release/phoenix/template/new_img/thumbUpWhite.png" alt="">   
+            <span class="name" id="is-like-span">点赞</span>
+            <span id="spanCount" class="count"></span>
+            </a></li>
+            <li class="tool-item tool-active tool-item-comment">
+                                <a href="#commentBox">
+                    <img src="https://csdnimg.cn/release/phoenix/template/new_img/commentWhite.png" alt="">
+                    <span class="name">评论</span>
+                    <span class="count"></span>
+                </a>
+            </li>
+            <li class="tool-item tool-active tool-QRcode" id="tool-share">
+                <a href="javascript:;" data-report-click='{"mod":"1582594662_002","ab":"new"}'>
+                    <img src="https://csdnimg.cn/release/phoenix/template/new_img/shareWhite.png" alt="">
+                    <span class="name">分享</span>
+                </a>
+                <div class="QRcode" id="tool-QRcode" style="left:-92%;">
+                    <span id="QRcode-close">x</span>
+                    <p class="title">
+                    海报分享
+                    </p>
+                    <div id='shareCode'></div>
+                    <p>
+                    扫一扫，分享海报
+                    </p>
+                </div>
+            </li>
+            <li class="tool-item tool-active is-collection ">
+                <a href="javascript:;" data-report-click='{"mod":"popu_824","ab":"new"}'>
+                    <img id="is-collection-img" style="display:block;" src="https://csdnimg.cn/release/phoenix/template/new_img/collectWhite.png" alt="">
+                    <img id="is-collection-imgactive" style="display:none;" src="https://csdnimg.cn/release/phoenix/template/new_img/tobarCollectionActive.png" alt="">
+                    <span class="name" id="is-collection">收藏</span>
+                    <span class="count get-collection">                    2                    </span>
+                </a>
+            </li>
+            <li class="tool-item tool-active tool-phong" id="tool-phong">
+                <a href="javascript:;" data-report-click='{"mod":"popu_831","dest":"","ab":"new"}'>
+                    <img src="https://csdnimg.cn/release/phoenix/template/new_img/mobileWhite.png" alt="">
+                    <span class="name">
+                        手机看
+                    </span>
+                </a>
+                <div class="QRcode" id="tool-QRcode-phong" style="left:-78%;">
+                    <p class="title">
+                    分享到微信朋友圈
+                    </p>
+                    <span id="QRcode-phong-close">x</span>
+                    <div id='shareQrCode'></div>
+                    <p>
+                    扫一扫，手机阅读 
+                    </p>
+                </div>
+            </li>
+            <!--打赏开始-->
+                        <!--打赏结束-->
+            <li class="tool-item tool-active tool-more">
+                <!-- <a>
+                <img src="https://csdnimg.cn/release/phoenix/template/new_img/lookMore.png" alt="">
+                </a>
+                <ul class="more-box">
+                    <li class="item"><a class="article-report">文章举报</a></li>
+                </ul> -->
+                <a class="article-report">文章举报</a>
+            </li>
+        </ul>
+        <div style="display:flex">
+                        <a class="tool-mover-open" id="btn-readmore" style="display: none;"  data-type="0" data-report-view='{"mod":"popu_376","dest":"https://blog.csdn.net/zilaike/java/article/details/78283256","strategy":"packupbar","ab":"new"}' data-report-click='{"mod":"popu_376","dest":"https://blog.csdn.net/zilaike/java/article/details/78283256","strategy":"packupbar","ab":"new"}'>
+                <span>收起全文</span>
+                <img id="btn-close-img" style="display: block;" src="https://csdnimg.cn/release/phoenix/template/new_img/CommentArrow.png" alt="">
+            </a>
+         </div>
+    </div>  
+</div>
+<script type=text/javascript crossorigin src="https://csdnimg.cn/release/phoenix/production/qrcode-7c90a92189.min.js"></script>
+<script src="//g.csdnimg.cn/??sharewx/1.2.1/sharewx.js" type="text/javascript"></script>
+<script type="text/javascript" crossorigin src="https://g.csdnimg.cn/collection-box/1.1.9/collection-box.js"></script>
+            <div id="dmp_ad_58" style="width:100%;overflow-x:hidden"><div id="kp_box_58" data-pid="58"><script type="text/javascript">
+        (function() {
+            var s = "_" + Math.random().toString(36).slice(2);
+            document.write('<div style="" id="' + s + '"></div>');
+            (window.slotbydup = window.slotbydup || []).push({
+                id: "u3501897",
+                container: s
+            });
+        })();
+</script>
+<!-- 多条广告如下脚本只需引入一次 -->
+<script type="text/javascript" src="//cpro.baidustatic.com/cpro/ui/c.js" async="async" defer="defer" >
+</script><img class="pre-img-lasy" data-src="https://kunyu.csdn.net/1.png?p=58&a=386&c=0&k=&d=1&t=3&u=0d7197d589a147aebce7a5325cf10c46"></div></div>            
+            <a id="commentBox" name="commentBox"></a>
+<div class="comment-box">
+	<div class="comment-edit-box d-flex">
+		<a id="commentsedit"></a>
+		<div class="user-img">
+			<a href="javascript:void(0);"  rel="noopener">
+				<img class="show_loginbox" src="//g.csdnimg.cn/static/user-img/anonymous-User-img.png">
+			</a>
+		</div>
+		<form id="commentform">
+			<img class="comment-sofa-flag" src="https://csdnimg.cn/release/phoenix/template/new_img/commentFlag@2x.png">
+			<textarea class="comment-content" name="comment_content" id="comment_content" placeholder="优质评论可以帮助作者获得更高权重" maxlength="1000"></textarea>
+			<div class="opt-box"> <!-- d-flex -->
+				<div id="ubbtools" class="add_code">
+					<a href="#insertcode" code="code" target="_self"><i class="icon iconfont icon-daima"></i></a>
+				</div>
+				<input type="hidden" id="comment_replyId" name="comment_replyId">
+				<input type="hidden" id="article_id" name="article_id" value="78283256">
+				<input type="hidden" id="comment_userId" name="comment_userId" value="">
+				<input type="hidden" id="commentId" name="commentId" value="">
+				<div class="dropdown" id="myDrap">
+					<a class="dropdown-face d-flex align-items-center" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+					<div class="txt-selected text-truncate">添加代码片</div>
+					<svg class="icon d-block" aria-hidden="true">
+						<use xlink:href="#csdnc-triangledown"></use>
+					</svg>
+					</a>
+					<ul class="dropdown-menu" id="commentCode" aria-labelledby="drop4">
+						<li><a data-code="html">HTML/XML</a></li>
+						<li><a data-code="objc">objective-c</a></li>
+						<li><a data-code="ruby">Ruby</a></li>
+						<li><a data-code="php">PHP</a></li>
+						<li><a data-code="csharp">C</a></li>
+						<li><a data-code="cpp">C++</a></li>
+						<li><a data-code="javascript">JavaScript</a></li>
+						<li><a data-code="python">Python</a></li>
+						<li><a data-code="java">Java</a></li>
+						<li><a data-code="css">CSS</a></li>
+						<li><a data-code="sql">SQL</a></li>
+						<li><a data-code="plain">其它</a></li>
+					</ul>
+				</div>  
+				<div class="right-box">
+                                        <span id="tip_comment" class="tip">还能输入<em>1000</em>个字符</span>
+					<input type="button" class="btn btn-sm btn-cancel d-none" value="取消回复">
+					<a data-report-click='{"mod":"1582594662_003","ab":"new"}'><input type="submit" class="btn btn-sm btn-comment" value="发表评论"></a>
+				</div>
+			</div>
+		</form>
+		<input type="button" class="bt-comment-show" value="评论">
+	</div>
+
+	<div class="comment-list-container">
+		<a id="comments"></a>
+		<div class="comment-list-box">
+		</div>
+		<div id="commentPage" class="pagination-box d-none"></div>
+		<div class="opt-box text-center">
+			<div class="btn btn-sm btn-link-blue" id="btnMoreComment"></div>
+		</div>
+	</div>
+</div>
+            <div class="recommend-box">
+                                    <div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase\"}","index":"1","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/whimewcm\/article\/details\/83153817","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/whimewcm">
+					<span class="blog_title"> whime</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">10-23</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				1715</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/whimewcm/article/details/83153817" target="_blank"  rel="noopener" title="systemctl 针对 service 类型的配置文件"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase\"}","index":"1","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/whimewcm\/article\/details\/83153817","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>systemctl</em> 针对 <em>service</em> 类型的配置<em>文件</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/whimewcm/article/details/83153817" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase\"}","index":"1","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/whimewcm\/article\/details\/83153817","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase' >
+				<em>systemctl</em> 配置<em>文件</em>相关目录简介<em>systemctl</em> 配置<em>文件</em>的<em>设置</em>项目简介Sshd.<em>service</em>s的配置<em>文件</em> 部分<em>设置</em>规则 【unit】【<em>service</em>】【install】tty相关 暂时<em>启动</em>tty8 ...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase\"}","index":"2","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/hshl1214\/article\/details\/45566957","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline no-title">
+												</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">05-07</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				5401</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/hshl1214/article/details/45566957" target="_blank"  rel="noopener" title="linux中service与chkconfig的替代者systemctl"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase\"}","index":"2","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/hshl1214\/article\/details\/45566957","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				linux中<em>service</em>与chkconfig的替代者<em>systemctl</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/hshl1214/article/details/45566957" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase\"}","index":"2","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/hshl1214\/article\/details\/45566957","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase' >
+				http://www.111cn.net/sys/linux/65797.htmlinux中有很多命令已经存在了N多年，渐渐一些已被一些新命令所代替，不过由于习惯的原因，很多时候我们并不能一下子适应过来 ，例如ifconfig之于ip命令。最近在玩ubuntu和opensuse时发现了<em>systemctl</em>命令了，后来在试玩centos7时也发现了该命令，<em>systemctl</em>是s...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase\"}","index":"3","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/chengpeng1996\/article\/details\/81235764","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/chengpeng1996">
+					<span class="blog_title"> chengpeng的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">07-27</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				2901</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/chengpeng1996/article/details/81235764" target="_blank"  rel="noopener" title="Centos7安装、配置SVN服务，并设置开机自启动"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase\"}","index":"3","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/chengpeng1996\/article\/details\/81235764","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				Centos7安装、配置<em>SVN</em>服务，并<em>设置</em><em>开机</em>自<em>启动</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/chengpeng1996/article/details/81235764" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase\"}","index":"3","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/chengpeng1996\/article\/details\/81235764","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase' >
+				一、安装<em>SVN</em>检查是否已经安装：	<em>svn</em> --version		安装：	yum install subversion		创建<em>SVN</em>版本目录：	mkdir -p /server/<em>svn</em>/repo		创建版本库：	<em>svn</em>admin create /server/<em>svn</em>/repo		进入conf目录（该<em>svn</em>版本库配置<em>文件</em>）:	cd /server/<em>svn</em>/rep...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase\"}","index":"4","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33800593\/article\/details\/92529580","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_33800593">
+					<span class="blog_title"> weixin_33800593的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">10-13</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				355</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/weixin_33800593/article/details/92529580" target="_blank"  rel="noopener" title="如何编写systemctl自启动服务 .service文件"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase\"}","index":"4","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33800593\/article\/details\/92529580","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				如何编写<em>systemctl</em>自<em>启动</em>服务 .<em>service</em><em>文件</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/weixin_33800593/article/details/92529580" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase\"}","index":"4","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33800593\/article\/details\/92529580","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase' >
+				systemd 的单元<em>文件</em>是受 XDG Desktop Entry .desktop <em>文件</em>启发而产生，而最初起源是 Windows 下的 .ini <em>文件</em>。处理依赖关系使用systemd时，可通过正确编写单元配置<em>文件</em>来解决其依赖关系。典型的情况是，单元A要求单元B在A<em>启动</em>之前运行。在此情况下，向单元A配置<em>文件</em>中的 [Unit] 段添加 Requires=B 和 After=B ......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box recommend-recommend-box"><div id="kp_box_59" data-pid="59"><script type="text/javascript">
+        (function() {
+            var s = "_" + Math.random().toString(36).slice(2);
+            document.write('<div style="" id="' + s + '"></div>');
+            (window.slotbydup = window.slotbydup || []).push({
+                id: "u3501897",
+                container: s
+            });
+        })();
+</script>
+<!-- 多条广告如下脚本只需引入一次 -->
+<script type="text/javascript" src="//cpro.baidustatic.com/cpro/ui/c.js" async="async" defer="defer" >
+</script><img class="pre-img-lasy" data-src="https://kunyu.csdn.net/1.png?p=59&a=386&c=0&k=&d=1&t=3&u=03e2909dfbcb4fe698d5247d70a71a04"></div></div>	<div class="recommend-item-box recommend-box-ident recommend-download-box clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-5.nonecase\"}","index":"5","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/qq_39156811\/10116847","ab":"new"}'>
+		<div class="content clearfix">
+			<div class="">
+				<h4 class="text-truncate oneline clearfix">
+				<a href="https://download.csdn.net/download/qq_39156811/10116847"rel="noopener" target="_blank" rel="noopener" data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-5.nonecase\"}","index":"5","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/qq_39156811\/10116847","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-5.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-5.nonecase' >
+					<!-- <span class="recommend-article-type">下载</span> -->
+					50个微信小程序模板				</a>
+				</h4>
+				<span class="data float-right">11-13</span>
+			</div>
+		</div>
+	</div>
+
+	<div class="recommend-item-box recommend-box-ident recommend-download-box clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-6.nonecase\"}","index":"6","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/tmlx8\/10203622","ab":"new"}'>
+		<div class="content clearfix">
+			<div class="">
+				<h4 class="text-truncate oneline clearfix">
+				<a href="https://download.csdn.net/download/tmlx8/10203622"rel="noopener" target="_blank" rel="noopener" data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-6.nonecase\"}","index":"6","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/tmlx8\/10203622","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-6.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-download-BlogCommendFromMachineLearnPai2-6.nonecase' >
+					<!-- <span class="recommend-article-type">下载</span> -->
+					最新的微信小程序源码				</a>
+				</h4>
+				<span class="data float-right">01-13</span>
+			</div>
+		</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase\"}","index":"7","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33795093\/article\/details\/92967467","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_33795093">
+					<span class="blog_title"> weixin_33795093的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">01-16</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				1363</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/weixin_33795093/article/details/92967467" target="_blank"  rel="noopener" title="Loaded:loaded(/usr/lib/systemd/system/iptables.service;enabled)Active: inactive"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase\"}","index":"7","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33795093\/article\/details\/92967467","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				Loaded:loaded(/usr/lib/systemd/system/iptables.<em>service</em>;enabled)Active: inactive			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/weixin_33795093/article/details/92967467" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase\"}","index":"7","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33795093\/article\/details\/92967467","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase' >
+				[root@localhost ~]# <em>service</em> iptables startRedirecting to /bin/<em>systemctl</em> start iptables.<em>service</em>[root@localhost ~]# /bin/<em>systemctl</em> start iptables.<em>service</em>[root@localhost ~]# <em>service</em> iptables...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase\"}","index":"8","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/Blue_Sky8888\/article\/details\/51302777","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/Blue_Sky8888">
+					<span class="blog_title"> Blue_Sky8888的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">05-03</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				1万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/Blue_Sky8888/article/details/51302777" target="_blank"  rel="noopener" title="ubuntu 16.04 svn开机启动的两种方法"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase\"}","index":"8","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/Blue_Sky8888\/article\/details\/51302777","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				ubuntu 16.04 <em>svn</em><em>开机</em><em>启动</em>的两种方法			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/Blue_Sky8888/article/details/51302777" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase\"}","index":"8","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/Blue_Sky8888\/article\/details\/51302777","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase' >
+				1、方法一，编辑rc.loacl脚本 Ubuntu<em>开机</em>之后会执行/etc/rc.local<em>文件</em>中的脚本，所以我们可以直接在/etc/rc.local中添加<em>启动</em>脚本。当然要添加到语句：exit 0 前面才行。如：sudo vi /etc/rc.local然后在 exit 0 前面添加好脚本代码，按ESC退出编辑，:wq!保存编辑。 ...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase\"}","index":"9","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010071211\/article\/details\/79877303","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/u010071211">
+					<span class="blog_title"> djl的专栏，blog.djl.cx好记</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">04-10</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				3万+</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/u010071211/article/details/79877303" target="_blank"  rel="noopener" title="centOS7下SVN的安装和使用"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase\"}","index":"9","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010071211\/article\/details\/79877303","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				centOS7下<em>SVN</em>的安装和使用			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/u010071211/article/details/79877303" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase\"}","index":"9","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010071211\/article\/details\/79877303","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase' >
+				1. 安装CentOS通过yum安装subversion。# yum install subversion subversion安装在/bin目录：# which <em>svn</em>serve     #查看目录命令/usr/bin/<em>svn</em>serve检查一下subversion是否安装成功。不要使用1.8版本# <em>svn</em>serve --version <em>svn</em>serve, version 1.7.14 (r154...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase\"}","index":"10","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/king13127\/article\/details\/101535006","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/king13127">
+					<span class="blog_title"> timothy的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">09-27</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				307</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/king13127/article/details/101535006" target="_blank"  rel="noopener" title="centos7.X设置SVN服务器开机启动"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase\"}","index":"10","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/king13127\/article\/details\/101535006","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				centos7.X<em>设置</em><em>SVN</em>服务器<em>开机</em><em>启动</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/king13127/article/details/101535006" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase\"}","index":"10","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/king13127\/article\/details\/101535006","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase' >
+				1.关闭防火墙和SELINUX1.1关闭防火墙<em>systemctl</em> stop firewalld.<em>service</em> #停止firewall<em>systemctl</em> disable firewalld.<em>service</em> #禁止firewall<em>开机</em><em>启动</em>firewall-cmd --state #查看默认防火墙状态（关闭后显示notrunning，开启后显示running）1.2关闭SELINUX...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase\"}","index":"11","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010566813\/article\/details\/40481627","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/u010566813">
+					<span class="blog_title"> 企鹅菜鸟的成长过程</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">10-26</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				9131</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/u010566813/article/details/40481627" target="_blank"  rel="noopener" title="CentOS 7中启动/停止/重启服务"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase\"}","index":"11","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010566813\/article\/details\/40481627","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				CentOS 7中<em>启动</em>/停止/重启服务			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/u010566813/article/details/40481627" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase\"}","index":"11","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010566813\/article\/details\/40481627","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase' >
+				RHEL/CentOS 7.0中一个最主要的改变，就是切换到了systemd。它用于替代红帽企业版Linux前任版本中的SysV和Upstart，对系统和服务进行管理。systemd兼容SysV和Linux标准组的<em>启动</em>脚本。Systemd是一个Linux操作系统下的系统和服务管理器。它被设计成向后兼容SysV<em>启动</em>脚本，并提供了大量的特性，如<em>开机</em>时平行<em>启动</em>系统服务，按需<em>启动</em>守护进程，支持系统状态...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase\"}","index":"12","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/realghost\/article\/details\/52396648","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/realghost">
+					<span class="blog_title"> ◆gHOST◇的专栏</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">09-01</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				9116</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/realghost/article/details/52396648" target="_blank"  rel="noopener" title="CentOS 7 设置 svn 开机启动"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase\"}","index":"12","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/realghost\/article\/details\/52396648","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				CentOS 7 <em>设置</em> <em>svn</em> <em>开机</em><em>启动</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/realghost/article/details/52396648" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase\"}","index":"12","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/realghost\/article\/details\/52396648","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase' >
+				安装好 <em>svn</em> 服务后，默认是没有随系统<em>启动</em>自动<em>启动</em>的， CentOS 7 的 /etc/rc.d/rc.local 是没有执行权限的， 系统建议创建 systemd <em>service</em> <em>启动</em>服务			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase\"}","index":"13","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34315485\/article\/details\/93934356","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_34315485">
+					<span class="blog_title"> weixin_34315485的博客</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">11-11</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				75</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/weixin_34315485/article/details/93934356" target="_blank"  rel="noopener" title="centos设置svn开机自启动"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase\"}","index":"13","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34315485\/article\/details\/93934356","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				centos<em>设置</em><em>svn</em><em>开机</em>自<em>启动</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/weixin_34315485/article/details/93934356" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase\"}","index":"13","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34315485\/article\/details\/93934356","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase' >
+				安装好 <em>svn</em> 服务后，默认是没有随系统<em>启动</em>自动<em>启动</em>的， CentOS 7 的 /etc/rc.d/rc.local 是没有执行权限的， 系统建议创建 systemd <em>service</em> <em>启动</em>服务于是查看 systemd 里 <em>svn</em> 的配置<em>文件</em> /lib/systemd/system/<em>svn</em>serve.<em>service</em>[plain]view plaincopy...			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase\"}","index":"14","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/jf_xu\/article\/details\/53440017","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/jf_xu">
+					<span class="blog_title"> jfxu</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">12-02</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				2973</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/jf_xu/article/details/53440017" target="_blank"  rel="noopener" title="Ubuntu下安装svn service以及常用的svn命令"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase\"}","index":"14","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/jf_xu\/article\/details\/53440017","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				Ubuntu下安装<em>svn</em> <em>service</em>以及常用的<em>svn</em>命令			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/jf_xu/article/details/53440017" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase\"}","index":"14","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/jf_xu\/article\/details\/53440017","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase' >
+				1.进入root权限直接安装#apt-get install subversion  2.创建版本库# mkdir /home/.<em>svn</em>    #创建隐藏<em>文件</em>夹# <em>svn</em>admin create /home/.<em>svn</em>/Openwrt(随意取，最好是与所存储的代码相关)3.版本库生成的相关<em>文件</em>  3.1 版本库下#cd /home/.<em>svn</em>/Openwrt/			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase\"}","index":"15","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/gjf281\/article\/details\/78305523","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline no-title">
+												</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">10-21</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				1037</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/gjf281/article/details/78305523" target="_blank"  rel="noopener" title="service svnserve start启动svn server失败问题定位"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase\"}","index":"15","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/gjf281\/article\/details\/78305523","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>service</em> <em>svn</em>serve start<em>启动</em><em>svn</em> server失败问题定位			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/gjf281/article/details/78305523" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase\"}","index":"15","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/gjf281\/article\/details\/78305523","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase' >
+				现象描述：<em>svn</em>服务是通过yum安装的，安装后，自定义的<em>svn</em>库路径为/home/<em>svn</em>/repos，并且通过<em>svn</em>serve -d -r /home/<em>svn</em>/repos<em>启动</em>服务成功，并且测试<em>svn</em>也是好用的。通过<em>service</em> <em>svn</em>serve start命令<em>启动</em>后，服务无法访问。			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase\"}","index":"16","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/y505772146\/article\/details\/82560537","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/y505772146">
+					<span class="blog_title"> DerWeltraum</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">09-09</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				1737</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/y505772146/article/details/82560537" target="_blank"  rel="noopener" title="Systemctl守护进程简单例子"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase\"}","index":"16","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/y505772146\/article\/details\/82560537","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				<em>Systemctl</em>守护进程简单例子			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/y505772146/article/details/82560537" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase\"}","index":"16","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/y505772146\/article\/details\/82560537","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase' >
+				最近在使用symfony的console组件，需要执行一个后台的php进程，并且保持后台进程一直存在。这里我使用的是<em>Systemctl</em>命令。<em>Systemctl</em>是一个系统管理守护进程、工具和库的集合。后面我就直接把自己的配置贴出来，仅供参考： （1）以我的centos为例：首先我来到这个目录：/usr/lib/systemd/system/ （2）新建一个<em>service</em><em>文件</em>order_conso......			</a>
+		</div>
+	</div>
+	</div>
+
+<div class="recommend-item-box type_blog clearfix"  data-report-view='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase\"}","index":"17","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/DLite\/article\/details\/50956190","ab":"new"}'>
+	<div class="content">
+		<div class="info-box d-flex align-content-center">
+			<p class="from-where">
+			<span class="blog_title_box oneline ">
+												<a target="_blank" rel="noopener" href="https://blog.csdn.net/DLite">
+					<span class="blog_title"> Dlite的技术笔记</span>
+					</a>
+									</span>
+		</p>
+		<p class="date-and-readNum oneline">
+						<span class="hover-show">03-22</span>
+			<span class="hover-hide">
+				<img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">
+				2351</span>
+						</p>
+		</div>
+		<h4 class="text-truncate oneline">
+			<a href="https://blog.csdn.net/DLite/article/details/50956190" target="_blank"  rel="noopener" title="使用systemd配置SVN服务器自动启动"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase\"}","index":"17","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/DLite\/article\/details\/50956190","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase' >
+				<!-- <span class="recommend-article-type">博文</span> -->
+				使用systemd配置<em>SVN</em>服务器自动<em>启动</em>			</a>
+		</h4>
+		<div class="desc">
+			<a href="https://blog.csdn.net/DLite/article/details/50956190" target="_blank"  rel="noopener"  data-report-click='{"mod":"popu_387","extra":"{\"utm_medium\":\"distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase\"}","index":"17","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/DLite\/article\/details\/50956190","ab":"new"}' data-report-query='utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase' >
+				使用systemd配置<em>SVN</em>服务器<em>开机</em>自动<em>启动</em>步骤比较简单。步骤如下：1） 在/etc/systemd/system/目录创建单元<em>文件</em>，并且保证只能被root用户编辑：touch /etc/systemd/system/<em>svn</em>.<em>service</em>chmod 664 /etc/systemd/system/<em>svn</em>.<em>service</em>其中，“<em>svn</em>.<em>service</em>”是我们自定义的服务单...			</a>
+		</div>
+	</div>
+	</div>
+
+                    <div class="recommend-item-box type_hot_word">
+                    <div class="content clearfix">
+                        <div class="float-left">
+                                                                                <span>
+                                <a href="https://java.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://java.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://java.csdn.net/","index":"#"}'  target="_blank">
+                                Java</a>
+                            </span>
+                                                        <span>
+                                <a href="https://c1.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://c1.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://c1.csdn.net/","index":"#"}'  target="_blank">
+                                C语言</a>
+                            </span>
+                                                        <span>
+                                <a href="https://python.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://python.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://python.csdn.net/","index":"#"}'  target="_blank">
+                                Python</a>
+                            </span>
+                                                        <span>
+                                <a href="https://cplus.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://cplus.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://cplus.csdn.net/","index":"#"}'  target="_blank">
+                                C++</a>
+                            </span>
+                                                        <span>
+                                <a href="https://csharp.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://csharp.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://csharp.csdn.net/","index":"#"}'  target="_blank">
+                                C#</a>
+                            </span>
+                                                        <span>
+                                <a href="https://vbn.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://vbn.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://vbn.csdn.net/","index":"#"}'  target="_blank">
+                                Visual Basic .NET</a>
+                            </span>
+                                                        <span>
+                                <a href="https://js.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://js.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://js.csdn.net/","index":"#"}'  target="_blank">
+                                JavaScript</a>
+                            </span>
+                                                        <span>
+                                <a href="https://php.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://php.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://php.csdn.net/","index":"#"}'  target="_blank">
+                                PHP</a>
+                            </span>
+                                                        <span>
+                                <a href="https://sql.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://sql.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://sql.csdn.net/","index":"#"}'  target="_blank">
+                                SQL</a>
+                            </span>
+                                                        <span>
+                                <a href="https://go.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://go.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://go.csdn.net/","index":"#"}'  target="_blank">
+                                Go语言</a>
+                            </span>
+                                                        <span>
+                                <a href="https://r.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://r.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://r.csdn.net/","index":"#"}'  target="_blank">
+                                R语言</a>
+                            </span>
+                                                        <span>
+                                <a href="https://assembly.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://assembly.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://assembly.csdn.net/","index":"#"}'  target="_blank">
+                                Assembly language</a>
+                            </span>
+                                                        <span>
+                                <a href="https://swift.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://swift.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://swift.csdn.net/","index":"#"}'  target="_blank">
+                                Swift</a>
+                            </span>
+                                                        <span>
+                                <a href="https://ruby.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://ruby.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://ruby.csdn.net/","index":"#"}'  target="_blank">
+                                Ruby</a>
+                            </span>
+                                                        <span>
+                                <a href="https://matlab.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://matlab.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://matlab.csdn.net/","index":"#"}'  target="_blank">
+                                MATLAB</a>
+                            </span>
+                                                        <span>
+                                <a href="https://plsql.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://plsql.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://plsql.csdn.net/","index":"#"}'  target="_blank">
+                                PL/SQL</a>
+                            </span>
+                                                        <span>
+                                <a href="https://perl.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://perl.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://perl.csdn.net/","index":"#"}'  target="_blank">
+                                Perl</a>
+                            </span>
+                                                        <span>
+                                <a href="https://vb.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://vb.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://vb.csdn.net/","index":"#"}'  target="_blank">
+                                Visual Basic</a>
+                            </span>
+                                                        <span>
+                                <a href="https://obj.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://obj.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://obj.csdn.net/","index":"#"}'  target="_blank">
+                                Objective-C</a>
+                            </span>
+                                                        <span>
+                                <a href="https://delphi.csdn.net/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://delphi.csdn.net/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://delphi.csdn.net/","index":"#"}'  target="_blank">
+                                Delphi/Object Pascal</a>
+                            </span>
+                                                        <span>
+                                <a href="https://www.csdn.net/unity/" data-report-click='{"mod":"1586412712_001","ab":"new","dest":"https://www.csdn.net/unity/","index":"索引#"}' data-report-view='{"mod":"1586412712_001","ab":"new","dest":"https://www.csdn.net/unity/","index":"#"}'  target="_blank">
+                                Unity3D</a>
+                            </span>
+                                                    
+                                                </div>
+                    </div>
+                    </div>
+                                    <div class="recommend-loading-box">
+                    <img src='https://csdnimg.cn/release/phoenix/images/feedLoading.gif'>
+                </div>
+                <div class="recommend-end-box">
+                    <p class="text-center">没有更多推荐了，<a href="https://blog.csdn.net/" class="c-blue c-blue-hover c-blue-focus">返回首页</a></p>
+                </div>
+            </div>
+                            <div class="template-box">
+                    <span>©️2019 CSDN</span>
+                <span>皮肤主题: 编程工作室</span>
+                <span> 设计师:
+                                            CSDN官方博客                                    </span>
+                </div>
+                    </main>
+    </div>
+                <div class="recommend-right  align-items-stretch clearfix" id="rightAside" data-type="recommend">
+            <aside class="recommend-right_aside">
+                <div id="recommend-right" style="height:100%;position:fixed;">
+                    <div class='d-flex flex-column aside-box groupfile' id="groupfile">
+                        <h3 class="aside-title">目录</h3>
+                        <div class="align-items-stretch group_item">
+                            <div class="pos-box">
+                                <div class="scroll-box">
+                                    <div class="toc-box"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                                                <div class="recommend-top-adbox">
+                        <div id="kp_box_479" data-pid="479"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- PC-博客详情页-矩形-300*250-右上视窗 -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:300px;height:250px"
+     data-ad-client="ca-pub-1076724771190722"
+     data-ad-slot="9261210258"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script><img class="pre-img-lasy" data-src="https://kunyu.csdn.net/1.png?p=479&a=2314&c=0&k=&d=1&t=3&u=4ca9db210d8d4d8f9a284f7bfa5bdccb"></div>                        </div>
+                                        <div class="recommend-list-box d-flex flex-column aside-box">
+                    <ul class="recommend-fixed-box align-items-stretch">
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/whimewcm/article/details/83153817"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase\"}","index":"1","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/whimewcm\/article\/details\/83153817","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase\"}","index":"1","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/whimewcm\/article\/details\/83153817","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>systemctl</em> 针对 <em>service</em> 类型的配置<em>文件</em>                                            </h5>
+                                                                                            <span class="time">10-23</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1715 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/hshl1214/article/details/45566957"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase\"}","index":"2","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/hshl1214\/article\/details\/45566957","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase\"}","index":"2","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/hshl1214\/article\/details\/45566957","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-2.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                linux中<em>service</em>与chkconfig的替代者<em>systemctl</em>                                            </h5>
+                                                                                            <span class="time">05-07</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">5401 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/chengpeng1996/article/details/81235764"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase\"}","index":"3","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/chengpeng1996\/article\/details\/81235764","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase\"}","index":"3","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/chengpeng1996\/article\/details\/81235764","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-3.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                Centos7安装、配置<em>SVN</em>服务，并<em>设置</em><em>开机</em>自<em>启动</em>                                            </h5>
+                                                                                            <span class="time">07-27</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">2901 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/weixin_33800593/article/details/92529580"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase\"}","index":"4","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33800593\/article\/details\/92529580","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase\"}","index":"4","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33800593\/article\/details\/92529580","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-4.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                如何编写<em>systemctl</em>自<em>启动</em>服务 .<em>service</em><em>文件</em>                                            </h5>
+                                                                                            <span class="time">10-13</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">355 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://download.csdn.net/download/qq_39156811/10116847"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-5.nonecase\"}","index":"5","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/qq_39156811\/10116847","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-5.nonecase\"}","index":"5","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/qq_39156811\/10116847","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-5.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-5.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix content-width">
+                                            <h5>
+                                                50个微信小程序模板                                            </h5>
+                                                                                            <span class="time">11-13</span>
+                                                                                                                                </div>
+                                                                                    <span class="download_mark_button ">立即下载 </span>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://download.csdn.net/download/tmlx8/10203622"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-6.nonecase\"}","index":"6","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/tmlx8\/10203622","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-6.nonecase\"}","index":"6","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/download.csdn.net\/download\/tmlx8\/10203622","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-6.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-download-BlogCommendFromMachineLearnPai2-6.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix content-width">
+                                            <h5>
+                                                最新的微信小程序源码                                            </h5>
+                                                                                            <span class="time">01-13</span>
+                                                                                                                                </div>
+                                                                                    <span class="download_mark_button ">立即下载 </span>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/weixin_33795093/article/details/92967467"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase\"}","index":"7","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33795093\/article\/details\/92967467","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase\"}","index":"7","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_33795093\/article\/details\/92967467","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-7.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                Loaded:loaded(/usr/lib/systemd/system/iptables.<em>service</em>;enabled)Active: inactive                                            </h5>
+                                                                                            <span class="time">01-16</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1363 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/Blue_Sky8888/article/details/51302777"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase\"}","index":"8","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/Blue_Sky8888\/article\/details\/51302777","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase\"}","index":"8","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/Blue_Sky8888\/article\/details\/51302777","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-8.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                ubuntu 16.04 <em>svn</em><em>开机</em><em>启动</em>的两种方法                                            </h5>
+                                                                                            <span class="time">05-03</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/u010071211/article/details/79877303"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase\"}","index":"9","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010071211\/article\/details\/79877303","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase\"}","index":"9","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010071211\/article\/details\/79877303","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-9.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                centOS7下<em>SVN</em>的安装和使用                                            </h5>
+                                                                                            <span class="time">04-10</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">3万+ </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/king13127/article/details/101535006"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase\"}","index":"10","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/king13127\/article\/details\/101535006","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase\"}","index":"10","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/king13127\/article\/details\/101535006","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-10.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                centos7.X<em>设置</em><em>SVN</em>服务器<em>开机</em><em>启动</em>                                            </h5>
+                                                                                            <span class="time">09-27</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">307 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/u010566813/article/details/40481627"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase\"}","index":"11","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010566813\/article\/details\/40481627","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase\"}","index":"11","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/u010566813\/article\/details\/40481627","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-11.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                CentOS 7中<em>启动</em>/停止/重启服务                                            </h5>
+                                                                                            <span class="time">10-26</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">9131 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/realghost/article/details/52396648"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase\"}","index":"12","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/realghost\/article\/details\/52396648","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase\"}","index":"12","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/realghost\/article\/details\/52396648","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-12.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                CentOS 7 <em>设置</em> <em>svn</em> <em>开机</em><em>启动</em>                                            </h5>
+                                                                                            <span class="time">09-01</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">9116 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/weixin_34315485/article/details/93934356"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase\"}","index":"13","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34315485\/article\/details\/93934356","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase\"}","index":"13","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/weixin_34315485\/article\/details\/93934356","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-13.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                centos<em>设置</em><em>svn</em><em>开机</em>自<em>启动</em>                                            </h5>
+                                                                                            <span class="time">11-11</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">75 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/jf_xu/article/details/53440017"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase\"}","index":"14","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/jf_xu\/article\/details\/53440017","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase\"}","index":"14","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/jf_xu\/article\/details\/53440017","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-14.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                Ubuntu下安装<em>svn</em> <em>service</em>以及常用的<em>svn</em>命令                                            </h5>
+                                                                                            <span class="time">12-02</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">2973 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/gjf281/article/details/78305523"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase\"}","index":"15","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/gjf281\/article\/details\/78305523","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase\"}","index":"15","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/gjf281\/article\/details\/78305523","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-15.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>service</em> <em>svn</em>serve start<em>启动</em><em>svn</em> server失败问题定位                                            </h5>
+                                                                                            <span class="time">10-21</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1037 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/y505772146/article/details/82560537"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase\"}","index":"16","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/y505772146\/article\/details\/82560537","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase\"}","index":"16","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/y505772146\/article\/details\/82560537","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-16.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                <em>Systemctl</em>守护进程简单例子                                            </h5>
+                                                                                            <span class="time">09-09</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">1737 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                                    <li class="right-item">
+                                <a
+                                        href="https://blog.csdn.net/DLite/article/details/50956190"
+                                        target="_blank"
+                                     data-report-click='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase\"}","index":"17","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/DLite\/article\/details\/50956190","ab":"new"}'                                     data-report-view='{"mod":"popu_858","extra":"{\"utm_medium\":\"distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase\"}","index":"17","strategy":"BlogCommendFromMachineLearnPai2","dest":"https:\/\/blog.csdn.net\/DLite\/article\/details\/50956190","ab":"new"}'                                     data-report-query='utm_medium=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase&depth_1-utm_source=distribute.pc_relevant_right.none-task-blog-BlogCommendFromMachineLearnPai2-17.nonecase'                                 >
+                                    <div class="context-box ">
+                                        <div class="content clearfix ">
+                                            <h5>
+                                                使用systemd配置<em>SVN</em>服务器自动<em>启动</em>                                            </h5>
+                                                                                            <span class="time">03-22</span>
+                                                                                                                                        <span class="read"><img src="https://csdnimg.cn/release/phoenix/template/new_img/readCountWhite.png" alt="">2351 </span>
+                                                                                    </div>
+                                                                            </div>
+                                </a>
+                            </li>
+                                            </ul>
+                    </div>
+                                    </div>
+            </aside>
+        </div>
+    
+</div>
+<div class="mask-dark"></div>
+<script>
+    var recommendCount = 17;
+    recommendCount = recommendCount > 1 ? (recommendCount + (recommendCount>6 ? 2 : 1)) : recommendCount;
+    var ChannelId = 0;
+    var articleId = "78283256";
+    var commentscount = 0;
+    var islock = false;
+    var curentUrl = "https://blog.csdn.net/zilaike/java/article/details/78283256";
+    var myUrl = "https://my.csdn.net/";
+    //1禁止评论，2正常
+    var commentAuth = 2;
+    //百度搜索
+    var baiduKey = "systemctl设置svn开机启动以及service文件的写法_兜兜里全是糖_博客-CSDN博客_找不到 svn 的 service 配置文件";
+    var needInsertBaidu = true;
+    // 代码段样式
+    var codeStyle = '';
+	var highlight = ["systemctl","\u8bbe\u7f6e","svn","\u5f00\u673a","\u542f\u52a8","service","\u6587\u4ef6","\u5199\u6cd5"];//高亮数组
+
+    var share_card_url = 'https://blog.csdn.net/zilaike/article/shareArticleCardPage?article_id=78283256'
+    var RecommendBlogExpertList = [];
+	var articleType = 2;
+	var CopyrightContent = '';
+            var recommendRegularDomainArr = ["blog.csdn.net\/.+\/article\/details\/","download.csdn.net\/download\/","edu.csdn.net\/course\/detail\/"];
+</script>
+<script src="https://csdnimg.cn/public/sandalstrap/1.4/js/sandalstrap.min.js"></script>
+<script src="https://csdnimg.cn/release/phoenix/vendor/pagination/paging-3d3b805766.js"></script>
+<div class="skin-boxshadow"></div>
+<div class="pay-code">
+        <div class="pay-money">应支付<span class="pay-money-span" data-nowprice='0' data-oldprice='0.00'>0元</span></div>
+        <div class=content>
+        <div id="payCode" data-id="">
+                <div class="renovate">
+                    <img src="https://csdnimg.cn/release/phoenix/static_blog/images/pay-time-out.png">
+                    <span>点击重新获取</span>
+                </div>
+            </div>
+            <div class="pay-style"><span><img src="https://csdnimg.cn/release/phoenix/static_blog/images/wx.png"></span><span><img src="https://csdnimg.cn/release/phoenix/static_blog/images/zfb.png"></span><span><img src="https://csdnimg.cn/release/phoenix/static_blog/images/JD.png"></span><span class="text">扫码支付</span></div>
+        </div>
+        <div class="bt-close"><svg t="1567152543821" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="10924" xmlns:xlink="http://www.w3.org/1999/xlink" width="12" height="12"><defs><style type="text/css"></style></defs><path d="M512 438.378667L806.506667 143.893333a52.032 52.032 0 1 1 73.6 73.621334L585.621333 512l294.485334 294.485333a52.074667 52.074667 0 0 1-73.6 73.642667L512 585.621333 217.514667 880.128a52.053333 52.053333 0 1 1-73.621334-73.642667L438.378667 512 143.893333 217.514667a52.053333 52.053333 0 1 1 73.621334-73.621334L512 438.378667z" fill="" p-id="10925"></path></svg></div>
+        <p style="margin-top: 8px;font-size: 14px;" class="text-center">支付成功即可阅读</p>
+    </div>
+<div style="display:none;">
+	<img src="" onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window.location.href="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);'>
+</div>
+</body>
+    <!-- 高亮未与 markdown兼容  -->
+	<link rel="stylesheet" href="https://csdnimg.cn/release/blog_editor_html/release1.6.0/ckeditor/plugins/chart/chart.css" />
+	<script type="text/javascript" src="https://csdnimg.cn/release/blog_editor_html/release1.6.0/ckeditor/plugins/chart/lib/chart.min.js"></script>
+    <script type="text/javascript" src="https://csdnimg.cn/release/blog_editor_html/release1.6.0/ckeditor/plugins/chart/widget2chart.js"></script>
+    <script type="text/javascript" src="https://csdnimg.cn/release/phoenix/production/pc_wap_common-f91259fb12.js"></script>
+<link rel="stylesheet" href="https://csdnimg.cn/release/blog_editor_html/release1.6.0/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css">
+<script>
+ // 全局声明
+ if (window.csdn === undefined) {
+      window.csdn = {};
+    }
+    window.csdn.sideToolbar = {
+        options: {
+            report:{
+                isShow: true,
+            },
+            qr: {
+                isShow: false,
+            }
+        }
+    }
+    $(function(){
+        $(document).on('click',"a.option-box[data-type='report']",function() {
+            window.csdn.userLogin.loadAjax(function(res){
+                showReport(false,articleTitles);
+            })
+        });
+    })
+</script>
+<script src="https://csdnimg.cn/release/phoenix/vendor/iconfont/csdnc-c439e66521.js"></script>
+<script src="https://csdnimg.cn/release/phoenix/template/new_js/common-85508f0920.min.js"></script>
+<script src="https://csdnimg.cn/release/phoenix/template/new_js/detail-289556f029.min.js"></script>
+<script src="//csdnimg.cn/release/download/old_static/js/qrcode.js"></script>
+<script src="https://csdnimg.cn/release/cart/pub/1.0.4/cart_jsonp.js?v=2"></script>
+<script src="https://csdnimg.cn/release/phoenix/template/new_js/column_pay-b9bd326887.min.js"></script>
+	
+<script src="https://g.csdnimg.cn/copyright/1.0.3/copyright.js" type="text/javascript"></script>
+<script>
+    $(".MathJax").remove();
+    if ($('div.markdown_views pre.prettyprint code.hljs').length > 0) {
+        $('div.markdown_views')[0].className = 'markdown_views';
+    }
+</script>
+<script type="text/javascript" src="https://csdnimg.cn/release/blog_mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+            "HTML-CSS": {
+                    linebreaks: { automatic: true, width: "94%container" },
+                    imageFont: null
+            },
+            tex2jax: {
+                preview: "none"
+            },
+            mml2jax: {
+                preview: 'none'
+            }
+    });
+</script>
+    <script src="//g.csdnimg.cn/baidu-search/1.0.3/baidu-search.js"  type="text/javascript"></script>
+</html>
