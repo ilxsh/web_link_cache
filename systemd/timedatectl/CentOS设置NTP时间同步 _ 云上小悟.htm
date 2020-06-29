@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-38168071-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-38168071-1');
+</script>
+<link rel="stylesheet" type="text/css" href="https://www.maixj.net/wp-content/themes/mt2/style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+<meta name="applicable-device" content="pc,mobile" />
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>CentOS设置NTP时间同步 | 云上小悟</title>
+<meta name="description" content="NTP时间同步非常必要的，对于作为服务器的CentOS来说，如果时间不准，会有很多麻烦。例如，支付的时候，无法下单，游戏无法登录等。" /><link rel="shortcut icon" href="https://www.maixj.net/pics/favicon.jpg" />
+<link rel='stylesheet' id='wp-block-library-css'  href='https://www.maixj.net/wp-includes/css/dist/block-library/style.min.css?ver=5.2.4' type='text/css' media='all' />
+<script type='text/javascript' src='https://www.maixj.net/wp-includes/js/jquery/jquery.js?ver=1.12.4-wp'></script>
+<script type='text/javascript' src='https://www.maixj.net/wp-includes/js/jquery/jquery-migrate.min.js?ver=1.4.1'></script>
+<link rel='prev' title='对数函数的图形' href='https://www.maixj.net/misc/logarithm-19265' />
+<link rel='next' title='VIM的常用操作' href='https://www.maixj.net/ict/vim-caozuo-19270' />
+
+<link rel="canonical" href="https://www.maixj.net/ict/centos-ntp-19268" />
+</head>
+
+<body id="top">
+<div class="on">
+
+<div style="position:fixed;background-color:#333;width:100%;top:0;left:0">
+<div class="daxiaoshi" style="text-align:right;color:#fff;padding:4px 0;">
+<span style="float:left;font-size:24px">&emsp;<a style="color:#fff" target="_blank" href="https://www.maixj.net/cat/ict"><b>＜</b></a></span>
+<span id="ctrl" onclick="showmenu()" style="font-size:24px">云上小悟&emsp;＋&emsp;</span>
+<div id="menu" style="display:none">
+<ul id="mm">
+<li><a target="_blank" href="https://www.maixj.net/about">关于</a></li>
+<li><a target="_blank" href="https://www.maixj.net/xiaowuzhi">小悟志</a></li>
+<li><a target="_blank" href="https://www.maixj.net/sitemap">网站地图</a></li>
+<li><a target="_blank" href="https://www.maixj.net/archive">归档</a></li>
+<li><a target="_blank" href="https://www.maixj.net/links">友情链接</a></li>
+<li><a target="_blank" href="https://www.maixj.net/contact">联系</a></li>
+<li><a target="_blank" href="https://www.maixj.net/feed">订阅RSS</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="xiaoshi">
+<ul id="mm">
+<li><a target="_blank" href="https://www.maixj.net/about">关于</a></li>
+<li><a target="_blank" href="https://www.maixj.net/xiaowuzhi">小悟志</a></li>
+<li><a target="_blank" href="https://www.maixj.net/sitemap">网站地图</a></li>
+<li><a target="_blank" href="https://www.maixj.net/archive">归档</a></li>
+<li><a target="_blank" href="https://www.maixj.net/links">友情链接</a></li>
+<li><a target="_blank" href="https://www.maixj.net/contact">联系</a></li>
+<li><a target="_blank" href="https://www.maixj.net/feed">订阅RSS</a></li>
+</ul>
+</div>
+
+<div>
+<div id="rr" class="rrkuan">
+
+<div>
+<p><a target="_blank" href="https://www.maixj.net">首页</a> » <a target="_blank" href="https://www.maixj.net/cat/ict">信息技术</a> »</p></div>
+
+
+<div style="line-height:28px;word-wrap:break-word">
+<h1 style="color:#903;line-height:36px;margin-bottom:4px">CentOS设置NTP时间同步</h1>
+<p style="color:#aaa">
+2018年11月3日<span> / </span>188次阅读<br/><a style="color:#903" target="_blank" href="https://www.maixj.net/tag/centos">CentOS</a></p>
+
+<div>
+<div id="wz"><p>NTP服务器（Network Time Protocol）是用来使计算机时间同步化的一种协议，它可以使计算机的时间跟其它服务器或时钟源（如石英钟，GPS等等）保持同步，它可以提供高精准度的时间校正（LAN上与标准间差小于1毫秒，WAN上几十毫秒），且可通过加密确认的方式来防止恶毒的协议攻击。今天NTP协议已经发展到V4版本，V1版本在1988年6月推出，主要RFC为RFC1059，今天我们大规模使用的V4版本的NTP，还没有正式的RFC出版，但是简单的协议内容，在RFC2030里已有描述。</p>
+<p>NTP时间同步非常必要的，对于作为服务器的CentOS来说，如果时间不准，会有很多麻烦。例如，支付的时候，无法下单，游戏无法登录等。自己用的PC也不是无所谓，比如在使用git push的时候，至少要确保时间的正确，否则你的log看着会时间都是不对的。</p>
+<p><strong>安装ntp软件包</strong></p>
+<p>$ <span style="color: #0000ff;">sudo yum -y install ntp</span></p>
+<p><strong>设置开机自启动</strong></p>
+<p>$ <span style="color: #0000ff;">sudo systemctl enable ntpd</span></p>
+<p><strong>手动启动ntpd进程</strong></p>
+<p>$ <span style="color: #0000ff;">sudo systemctl start ntpd</span></p>
+<p><strong>设置时区</strong></p>
+<p>$ <span style="color: #0000ff;">sudo timedatectl set-timezone Asia/Shanghai</span></p>
+<p><strong>对时</strong></p>
+<p>$ <span style="color: #0000ff;">sudo ntpdate -u time.nist.gov</span></p>
+<p>time.nist.gov是美国NIST提供的时间同步服务器，<a href="https://www.maixj.net/misc/win7-shijian-19124" target="_blank" rel="noopener">Windows的时间同步</a>也有这个选项。</p>
+<p>其实，我觉得对时这个步骤是可以不需要的，ntpd起来后一段时间，自然会跟配置文件中的服务器进行对时。我看到还有人在cron里面定时跑ntpdate这个命令，感觉也是没有必要的。</p>
+<p><strong>注意：NTP服务端重启后，客户机要等5分钟再与其进行时间同步，否则会提示“no server suitable for synchronization found”错误。</strong></p>
+<p><strong>设置系统时间NTP同步</strong></p>
+<p>$ <span style="color: #0000ff;">sudo timedatectl set-ntp true</span></p>
+<p>这个命令下去后，请再用timedatectl命令查看一下NTP时间同步的状态，要看到两个yes，具体请参考<a href="https://www.maixj.net/ict/timedatectl-22599" target="_blank" rel="noopener">timedatectl命令介绍</a>。</p>
+<p><strong>查看NTP时间同步状态</strong></p>
+<p>$ <span style="color: #0000ff;">ntpstat</span><br />
+synchronised to NTP server (218.186.3.36) at stratum 2<br />
+time correct to within 11269 ms<br />
+polling server every 1024 s</p>
+<p>另一个查看ntpd进程运行状态的命令</p>
+<pre>$ <span style="color: #0000ff;">ntpq -p</span>
+     remote           refid      st t when poll reach   delay   offset  jitter
+==============================================================================
+ 103.47.76.177   195.66.241.3     2 u  665 1024  357    3.206  11243.0 6009.45
+ time3.maxonline .GPS.            1 u  704 1024   77    3.197  11243.0 6009.76
+ ns-vultr.nono.i 218.73.139.35    2 u 1532 1024  276    2.602  11245.5 6007.90
+ time1.maxonline .GPS.            1 u  749 1024  377    3.061  11242.8 4249.28
+</pre>
+<p>st：即stratum阶层，值越小表示ntp serve的精准度越高；<br />
+when：几秒前曾做过时间同步更新的操作；<br />
+Poll表示，每隔多少毫秒与ntp server同步一次；<br />
+reach：已经向上层NTP服务器要求更新的次数；<br />
+delay：网络传输过程钟延迟的时间；<br />
+offset：时间补偿的结果；<br />
+jitter：Linux系统时间与BIOS硬件时间的差异时间</p>
+<p><strong>NTP服务的配置文件</strong></p>
+<p>$ <span style="color: #0000ff;">cat /etc/ntp.conf</span></p>
+<p>应该是可以在这个文件里面配置自己选择的NTP服务器，CentOS默认使用了自己提供的服务器。</p>
+<p><strong>时间不对怎么办</strong></p>
+<p>虚拟机暂停长时间后再重新运行，可能系统时间已经不对了，这时可以重启ntp进程，以保持系统时间正确：</p>
+<p>$ <span style="color: #0000ff;">systemctl restart ntpd</span></p>
+<p>以上就是对CentOS系统中NTP时间同步使用方面的一点介绍，希望能够对你有点帮助。</p>
+</div><div style="text-align:center;margin-top:32px"><script type="text/javascript">
+    (function() {
+        var s = "_" + Math.random().toString(36).slice(2);
+        document.write('<div style="" id="' + s + '"></div>');
+        (window.slotbydup = window.slotbydup || []).push({
+            id: "u3960949",
+            container:  s
+        });
+    })();
+</script>
+<script type="text/javascript" src="//cpro.baidustatic.com/cpro/ui/c.js" async="async" defer="defer" ></script></div><p style="margin-bottom:0">本文链接：https://www.maixj.net/ict/centos-ntp-19268</p><div style="margin-top:16px"><h3 class="stitle">相关文章</h3><ul style="line-height:32px"><li><a style="color:#903" rel="bookmark" target="_blank" href="https://www.maixj.net/ict/centos-mail-22567">CentOS命令行发邮件的mail程序</a></li><li><a style="color:#903" rel="bookmark" target="_blank" href="https://www.maixj.net/ict/centos8-dnf-23026">CentOS8启用DNF包管理工具</a></li><li><a style="color:#903" rel="bookmark" target="_blank" href="https://www.maixj.net/ict/centos-imagemagick-22650">在CentOS中编译安装ImageMagick</a></li><li><a style="color:#903" rel="bookmark" target="_blank" href="https://www.maixj.net/ict/centos-nslookup-22182">在CentOS中安装nslookup命令</a></li><li><a style="color:#903" rel="bookmark" target="_blank" href="https://www.maixj.net/ict/centos-openssl-21940">在CentOS7中编译安装openssl</a></li><li><a style="color:#903" rel="bookmark" target="_blank" href="https://www.maixj.net/ict/centos-no-ip-23028">解决CentOS没有ip地址的问题</a></li><li><a style="color:#903" rel="bookmark" target="_blank" href="https://www.maixj.net/ict/centos7-firewall-cmd-21028">CentOS7 firewall-cmd防火墙基础配置</a></li><li><a style="color:#903" rel="bookmark" target="_blank" href="https://www.maixj.net/ict/centos-git-22673">在CentOS编译安装Git</a></li><li><a style="color:#903" rel="bookmark" target="_blank" href="https://www.maixj.net/ict/centos-19132">CentOS初体验</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/xenu-silianjiance-4244">XENU网站死链检测工具</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/ssh-ip-port-22131">配置SSH的监听IP地址和端口号</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/vim-fold-21292">在VIM中使用代码折叠</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/soft-hard-link-22314">软链接，硬链接</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/sousuoyinqinggaojiyongfa-2793">搜索引擎的几种常见高级用法</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/juedui-uri-21691">绝对URI的格式说明</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/duankou-22248">知名端口，动态端口</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/python-gil-14204">Python全局解释器锁GIL</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/import-cv2-20247">如何解决import cv2失败</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/luyouqi-wan-12440">路由器WAN口做端口监听，收不到请求的原因</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/python-pep-13746">Python的PEP文档是什么？</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/whereis-which-15970">whereis和which命令</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/greenfish-icon-editor-21062">制作图标.ico文件就用GFIE（GreenFish Icon Editor）</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/pyftpdlib-19098">用pyftpdlib轻松搭建FTP服务器</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/linux-cpu-14999">查看Linux系统CPU信息</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/python-list-13658">清空Python List的方式比较</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/qq-danxianghaoyou-2-8612">QQ单向好友就是陌生人</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/guangtongxinjichu-3394">光通信基础（非专业人士）</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/skip-git-staged-commit-21100">跳过Git的staged步骤，直接commit</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/rollover-cable-rj45-serial-3503">Rollover Cable:RJ45转PC串口</a></li><li><a rel="bookmark" target="_blank" href="https://www.maixj.net/ict/duankou-saomiao-22023">什么是端口扫描？</a></li></ul></div></div>
+</div>
+
+<div style="margin:16px 0;text-align:center">
+<script type="text/javascript">
+    (function() {
+        var s = "_" + Math.random().toString(36).slice(2);
+        document.write('<div style="" id="' + s + '"></div>');
+        (window.slotbydup = window.slotbydup || []).push({
+            id: "u3960958",
+            container:  s
+        });
+    })();
+</script>
+<script type="text/javascript" src="//cpro.baidustatic.com/cpro/ui/c.js" async="async" defer="defer" ></script>
+</div>
+
+<div>
+<h3 class="stitle">留言区</h3>
+
+<div id="comments" class="comments-area">
+
+	    
+    
+		<p><b>《CentOS设置NTP时间同步》有3条留言</b></p>
+
+        	<div id="respond" class="comment-respond">
+		<h3 id="reply-title" class="comment-reply-title"> <small><a rel="nofollow" id="cancel-comment-reply-link" href="/ict/centos-ntp-19268#respond" style="display:none;">取消回复</a></small></h3>	</div><!-- #respond -->
+	
+		
+		<ul class="comment-list">
+					<li class="comment byuser comment-author-maixj even thread-even depth-1" id="comment-22472">
+				<div>
+				<div class="comment-author">
+				<span>麦新杰</span>		</div>
+
+        <div class="comment-meta commentmetadata">
+			<span style="font-size:12px;color:#aaa">2019年11月17日 下午3:07</span>		</div>
+
+<p>CentOS8不再有ntp这个软件包，貌似只需要使用timedatectl设置一下时区，NTP服务自动已经启动了。<span class="reply">&emsp;[<a rel="nofollow" class="comment-reply-login" href="https://www.maixj.net/wp-login.php?redirect_to=https%3A%2F%2Fwww.maixj.net%2Fict%2Fcentos-ntp-19268">登录以回复</a>]</span>
+</p>
+				</div>
+		</li><!-- #comment-## -->
+		<li class="comment byuser comment-author-maixj odd alt thread-odd thread-alt depth-1" id="comment-21774">
+				<div>
+				<div class="comment-author">
+				<span>麦新杰</span>		</div>
+
+        <div class="comment-meta commentmetadata">
+			<span style="font-size:12px;color:#aaa">2019年2月13日 下午4:53</span>		</div>
+
+<p>安装CentOS的时候，也可以解决ntp的问题。<span class="reply">&emsp;[<a rel="nofollow" class="comment-reply-login" href="https://www.maixj.net/wp-login.php?redirect_to=https%3A%2F%2Fwww.maixj.net%2Fict%2Fcentos-ntp-19268">登录以回复</a>]</span>
+</p>
+				</div>
+		</li><!-- #comment-## -->
+		<li class="comment byuser comment-author-maixj even thread-even depth-1" id="comment-21722">
+				<div>
+				<div class="comment-author">
+				<span>麦新杰</span>		</div>
+
+        <div class="comment-meta commentmetadata">
+			<span style="font-size:12px;color:#aaa">2018年11月11日 上午6:40</span>		</div>
+
+<p>Ubuntu上时间同步，有些不一样：<br/>
+<pre>sudo apt install ntp ntpdate # ntp可能不一定需要
+sudo ntpdate -u time.nist.gov
+sudo cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+</pre><span class="reply">&emsp;[<a rel="nofollow" class="comment-reply-login" href="https://www.maixj.net/wp-login.php?redirect_to=https%3A%2F%2Fwww.maixj.net%2Fict%2Fcentos-ntp-19268">登录以回复</a>]</span>
+</p>
+				</div>
+		</li><!-- #comment-## -->
+		</ul>
+
+		
+	
+</div><!-- .comments-area -->
+</div>
+
+
+<hr/>
+<div style="padding:0 16px;line-height:32px">
+<p>
+<b>前一篇：</b><a href="https://www.maixj.net/misc/logarithm-19265" rel="prev">对数函数的图形</a><br/>
+<b>后一篇：</b><a href="https://www.maixj.net/ict/vim-caozuo-19270" rel="next">VIM的常用操作</a><br/>
+<a target="_blank" rel="nofollow" href="https://www.1diaocha.com/user/Register.aspx?account=mxj78">-->只要几分钟回答问卷，就能轻松赚现金!</a>
+</p>
+</div>
+<div><h3 class="stitle">栏目精选</h3><ul style="line-height:32px"><li><a target="_blank" href="https://www.maixj.net/ict/pem-der-21566">PEM和DER</a></li><li><a target="_blank" href="https://www.maixj.net/ict/openpyxl-xlsx-20863">用openpyxl遍历excel表格</a></li><li><a target="_blank" href="https://www.maixj.net/ict/duotongdao-conv-19894">多通道数据下的卷积计算</a></li><li><a target="_blank" href="https://www.maixj.net/ict/dev-zero-15252">Linux特殊文件/dev/zero简介</a></li><li><a target="_blank" href="https://www.maixj.net/ict/ciscos-4-steps-for-ip-address-trouble-shoot-5713">Cisco's 4 steps for ip address trouble-shoot</a></li><li><a target="_blank" href="https://www.maixj.net/ict/tuichu-vim-recording-21519">如何退出VIM的recording模式？</a></li><li><a target="_blank" href="https://www.maixj.net/ict/list-comprehensions-17972">用List Comprehensions创建复杂列表</a></li><li><a target="_blank" href="https://www.maixj.net/ict/import-module-20250">from .module import，模块前面的点是什么意思？</a></li><li><a target="_blank" href="https://www.maixj.net/ict/xuliehua-13765">序列化和反序列化</a></li><li><a target="_blank" href="https://www.maixj.net/ict/pyinstaller-icon-21340">用pyinstaller做standalone程序，如何解决图标文件的打包？</a></li><li><a target="_blank" href="https://www.maixj.net/ict/fuhaozhuyi-18014">符号主义</a></li><li><a target="_blank" href="https://www.maixj.net/ict/unicode-21369">不同语言Unicode的编码范围</a></li></ul></div>
+</div><!--end rr-->
+
+
+<div class="sidekuan">
+<a href="https://www.maixj.net"><img class="pure-img" src="https://www.maixj.net/pics/nlogo.jpg" width="200" height="90" alt="云上小悟,麦新杰的独立博客" /></a><p style="text-align:center"><b>Ctrl+D 收藏本页</b></p>
+<div class="box-1">
+<form style="text-align:center" method="get" target="_blank" action="https://www.maixj.net">
+    <input style="width:50%;margin:8px;padding:4px" type="text" name="s" placeholder="站内.." />
+    <button style="padding:4px" type="submit">搜索</button>
+</form>
+</div>
+
+<div style="text-align:center;clear:both">
+<script type="text/javascript">
+    (function() {
+        var s = "_" + Math.random().toString(36).slice(2);
+        document.write('<div style="" id="' + s + '"></div>');
+        (window.slotbydup = window.slotbydup || []).push({
+            id: "u3960957",
+            container:  s
+        });
+    })();
+</script>
+<script type="text/javascript" src="//cpro.baidustatic.com/cpro/ui/c.js" async="async" defer="defer" ></script>
+</div>
+
+<div class="box-1">
+<div class="stitle">
+<h3 class="h2op">栏目</h3>
+</div><ul style="padding:0"><li class="cat-item"><a target="_blank" href="https://www.maixj.net/cat/misc">7788</a><span style="font-size:14px">&nbsp;&nbsp;(1021)</span></li><li class="cat-item"><a target="_blank" href="https://www.maixj.net/cat/ict">信息技术</a><span style="font-size:14px">&nbsp;&nbsp;(900)</span></li><li class="cat-item"><a target="_blank" href="https://www.maixj.net/cat/xs">小说</a><span style="font-size:14px">&nbsp;&nbsp;(85)</span></li><li class="cat-item"><a target="_blank" href="https://www.maixj.net/cat/inv">投资理财</a><span style="font-size:14px">&nbsp;&nbsp;(847)</span></li><li class="cat-item"><a target="_blank" href="https://www.maixj.net/cat/wz">网站建设</a><span style="font-size:14px">&nbsp;&nbsp;(445)</span></li></ul></div>
+<div class="box-1" style="clear:both">
+<div class="stitle">
+<h3 class="h2op">标签</h3>
+</div><ul style="line-height:24px;list-style:none;padding:0"><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/ruanjian"><span style="color:#903">小软件</span></a><span style="color:#aaa"> (32)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/ganggutouzi"><span style="color:#903">港股投资</span></a><span style="color:#aaa"> (7)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/smqy"><span style="color:#903">生命起源</span></a><span style="color:#aaa"> (12)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/wangzhananquan"><span style="color:#903">网站安全</span></a><span style="color:#aaa"> (22)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/fdctz"><span style="color:#903">房地产投资</span></a><span style="color:#aaa"> (22)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/jiu"><span style="color:#903">酒</span></a><span style="color:#aaa"> (16)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/wuxianghong"><span style="color:#903">吴向宏</span></a><span style="color:#aaa"> (15)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/zhezhiyishu"><span style="color:#903">折纸艺术</span></a><span style="color:#aaa"> (15)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/firefox"><span style="color:#903">Firefox</span></a><span style="color:#aaa"> (14)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/pianshu"><span style="color:#903">骗术揭秘</span></a><span style="color:#aaa"> (30)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/hjp"><span style="color:#903">黄建平</span></a><span style="color:#aaa"> (44)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/zhuanzai"><span style="color:#903">授权转载</span></a><span style="color:#aaa"> (10)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/tcpip"><span style="color:#903">TCPIP</span></a><span style="color:#aaa"> (29)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/kjzs"><span style="color:#903">会计知识</span></a><span style="color:#aaa"> (23)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/pic"><span style="color:#903">图片处理</span></a><span style="color:#aaa"> (13)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/yingyu"><span style="color:#903">英语</span></a><span style="color:#aaa"> (35)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/php"><span style="color:#903">PHP</span></a><span style="color:#aaa"> (19)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/gjcyh"><span style="color:#903">网站关键词优化</span></a><span style="color:#aaa"> (11)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/qq-jiqiao"><span style="color:#903">QQ技巧</span></a><span style="color:#aaa"> (12)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/shuzidianlu"><span style="color:#903">数字电路</span></a><span style="color:#aaa"> (13)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/centos"><span style="color:#903">CentOS</span></a><span style="color:#aaa"> (10)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/america"><span style="color:#903">美国</span></a><span style="color:#aaa"> (18)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/baidu-seo"><span style="color:#903">百度搜索引擎优化</span></a><span style="color:#aaa"> (18)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/founder"><span style="color:#903">创始人</span></a><span style="color:#aaa"> (22)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/ym"><span style="color:#903">云蒙</span></a><span style="color:#aaa"> (31)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/html"><span style="color:#903">HTML</span></a><span style="color:#aaa"> (17)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/zibizheng"><span style="color:#903">自闭症</span></a><span style="color:#aaa"> (8)</span></li><li style="float:left;padding:4px 8px"><a target="_blank" href="https://www.maixj.net/tag/movie"><span style="color:#903">电影</span></a><span style="color:#aaa"> (8)</span></li></ul></div>
+
+<div style="text-align:center;clear:both;padding:16px 0">
+<script type="text/javascript">
+document.write('<a style="display:none!important" id="tanx-a-mm_13510175_543950244_109002500168"></a>');
+tanx_s = document.createElement("script");
+tanx_s.type = "text/javascript";
+tanx_s.charset = "gbk";
+tanx_s.id = "tanx-s-mm_13510175_543950244_109002500168";
+tanx_s.async = true;
+tanx_s.src = "http://p.tanx.com/ex?i=mm_13510175_543950244_109002500168";
+tanx_h = document.getElementsByTagName("head")[0];
+if(tanx_h) tanx_h.insertBefore(tanx_s,tanx_h.firstChild);
+</script>
+</div>
+
+</div>
+</div>
+
+<div style="clear:both">
+<hr/>
+<div>
+<p style="font-size:14px;text-align:center">&copy;Copyright 麦新杰 Since 2014 云上小悟独立博客版权所有&nbsp;备案号：<a target="_blank" rel="nofollow" href="http://beian.miit.gov.cn">苏ICP备14045477号-1</a>。云上小悟网站部分内容来源于网络，转载目的是为了整合信息，收藏学习，服务大家，有些转载内容也难以判断是否有侵权问题，如果侵犯了您的权益，请及时联系站长，我会立即删除。</p>
+
+<div>
+<div style="float:left;margin:8px"><img class="pure-img" src="https://www.maixj.net/pics/erweima.jpg" width="150" height="150" alt="网站二维码" />
+</div>
+
+</div>
+</div>
+</div>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var viewsCacheL10n = {"admin_ajax_url":"https:\/\/www.maixj.net\/wp-admin\/admin-ajax.php","post_id":"19268"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='https://www.maixj.net/wp-content/plugins/wp-postviews/postviews-cache.js?ver=1.68'></script>
+<script type='text/javascript' src='https://www.maixj.net/wp-includes/js/wp-embed.min.js?ver=5.2.4'></script>
+</div>
+
+<a href="#top"><img style="position:fixed;right:1%;bottom:1%;opacity:.7;z-index:9" src="https://www.maixj.net/pics/goTop.jpg" width="40" height="40" alt="go to top" /></a>
+<script>
+function showmenu() {
+    control = document.getElementById('ctrl');
+    menu = document.getElementById('menu');
+
+    if (menu.style.display == "block") {
+        menu.style.display = "none";
+        control.innerHTML = '云上小悟&emsp;＋&emsp;';
+    } else {
+        menu.style.display = "block";
+        control.innerHTML = '云上小悟&emsp;－&emsp;';
+    }
+}
+</script>
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+<script>
+(function(){
+var src = (document.location.protocol == "http:") ? "http://js.passport.qihucdn.com/11.0.1.js?d648b4452737dd06c2c3d90c10488f71":"https://jspassport.ssl.qhimg.com/11.0.1.js?d648b4452737dd06c2c3d90c10488f71";
+document.write('<script src="' + src + '" id="sozz"><\/script>');
+})();
+</script>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?c3798fc0955642aed63fc8388e61588c";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<div style="display:none"><script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1255374300'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/stat.php%3Fid%3D1255374300' type='text/javascript'%3E%3C/script%3E"));</script></div>
+</body>
+</html>
