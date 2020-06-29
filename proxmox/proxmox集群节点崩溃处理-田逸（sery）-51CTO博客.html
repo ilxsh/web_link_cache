@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<!-- saved from url=(0061)https://blog.51cto.com/sery/2324067?tdsourcetag=s_pcqq_aiomsg -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="https://blog.51cto.com/favicon.ico">
+        <title>proxmox集群节点崩溃处理-田逸（sery）-51CTO博客</title>
+    <meta name="keywords" content="proxmox,超融合">
+<meta name="description" content="问题描述 在现有集群加入一个物理节点，接着再此节点创建ceph监视器、创建OSD。从宿主机系统执行ceph osd tree查看状态，创建起来的几个OSD状态都正常（up），从proxmox管理界面看也是这样。 突然不知道什么原因，刚加入的节点就突然不能从集群中失效了。再进宿主机系统查OSD状态，居然自己从up变成down。新增节点没数据，于是就试试重启，看能不能正常。重启以后">    <link href="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/header.css" rel="stylesheet"><link href="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/other.css" rel="stylesheet"><link href="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/right.css" rel="stylesheet"><link href="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/blog_details.css" rel="stylesheet"><link href="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/highlight.css" rel="stylesheet">
+    <script type="text/javascript" async="" src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/vds.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/push.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/hm.js"></script><script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/jquery.min.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/cookie.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/login.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/common.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/mbox.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/follow.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/vip.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/window.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/share.js"></script><style></style><link rel="stylesheet" href="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/share_style0_16.css"></head>
+<body>
+<img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s4.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s4.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s4.51cto.com/images/blog/202006/12/12a93e064eb980d392ade2d96e1d4581.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url(&#39;https://s4.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png&#39;) 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=12" target="_blank">
+  <img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/017225af7badc249b32ff2746fa4f695.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li><a href="https://blog.51cto.com/">首页</a></li>
+      <li><a href="https://blog.51cto.com/original">文章</a></li>
+      <li><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+        <li>
+            <a href="http://aix.51cto.com/activity/index.html?blog" target="_blank">大咖来了</a>
+        </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com/" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com/" target="_blank">WOT</a>
+            <a href="http://www.51cto.com/" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li>
+			<a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fsery%2F2324067%3Ftdsourcetag%3Ds_pcqq_aiomsg&amp;logintype=reg" target="_self">注册</a>
+			<!--领VIP图标-->
+			<span style="position: absolute;top:0px;">
+				<a href="https://edu.51cto.com/center/activity/member-activity" target="_blank">
+					<img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/50768f7d453813db433782e76c9f1d44.png">
+				</a>
+			</span>
+		  </li>
+          <li class="login"><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fsery%2F2324067%3Ftdsourcetag%3Ds_pcqq_aiomsg" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index" target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onclick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s4.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=12" class="closeMB" target="_blank" styel="display:block;"><img src="https://s4.51cto.com/images/blog/202006/12/9560dbc4eeb061cf22adc67cb0caddc0.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog162',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/entrance.js" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box" style="min-height: 727px;">
+      <link rel="stylesheet" href="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/mdeShow.css">
+  <link rel="stylesheet" href="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/prism.css">
+  <script type="text/javascript" charset="utf-8" src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/prism.js"></script>
+<link rel="stylesheet" href="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/tinyscrollbar.css">
+<script type="text/javascript" src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/jquery.tinyscrollbar.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+							</div>
+			<h1 class="artical-title">proxmox集群节点崩溃处理</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/sery" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="10037" src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/f02132ff9f08de01c7d326b79d5ef227.jpg"></a>
+				</div>
+				<a href="https://blog.51cto.com/sery" class="name fl" target="_blank" style="margin-right:0;">sery</a>
+									<a class="clo-author clo-author-litt fl" href="https://blog.51cto.com/cloumn/index" target="_blank" style="margin:9px 0px 0 4px"><span class="last" style="top: -45px;">专栏作者</span></a>
+									                	                    <a id="checkFollow1_10037" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">0</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">4225人阅读</a>
+				<a href="javascript:;" class="time fr">2018-11-30 01:11:26</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content editor-side-new">
+          <div class="con editor-preview-side" id="result"><p style="text-align:center"><br></p><p><strong>问题描述</strong></p><p><strong>&nbsp;</strong></p><p>在现有集群加入一个物理节点，接着再此节点创建ceph监视器、创建OSD。从宿主机系统执行ceph osd tree查看状态，创建起来的几个OSD状态都正常（up），从proxmox管理界面看也是这样。</p><p>&nbsp;</p><p>突然不知道什么原因，刚加入的节点就突然不能从集群中失效了。</p><p><img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/1543511545215958.png" title="1543511545215958.png" alt="image.png" style="cursor: pointer;"></p><p>再进宿主机系统查OSD状态，居然自己从up变成down。新增节点没数据，于是就试试重启，看能不能正常。重启以后，网络能通，ssh不能连接，web管理界面也不能访问。接下来，需要先把故障节点从集群中撤离出来，恢复以后，再加入集群。</p><p>&nbsp;</p><p><strong>从集群中删除故障节点</strong></p><p><strong>&nbsp;</strong></p><p>按操作顺序分两个步骤：从集群中删除故障ceph和从集群中删除物理节点。</p><p>&nbsp;</p><p class="MsoListParagraph" style="margin-left: 28px"><span style=";font-family:Wingdings">ü<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp; </span></span>从集群中删除故障ceph</p><p class="MsoListParagraph" style="margin-left: 56px">1.<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>登录集群任意物理正常节点系统，执行如下命令查看ceph osd状态：</p><table><tbody><tr class="firstRow"><td width="553" valign="top" style="border-width: 1px; border-color: windowtext; padding: 0px 7px; word-break: break-all;"><p>root@pve48:~# <span style="color: rgb(0, 112, 192);">ceph osd tree</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">ID CLASS WEIGHT&nbsp;&nbsp; TYPE NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; STATUS REWEIGHT PRI-AFF</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">-1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 18.00357 root default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">-3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve48&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">&nbsp;0&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">&nbsp;1&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">&nbsp;2&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;osd.2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; up&nbsp; 1.00000 1.00000</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">-5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve49&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">&nbsp;3&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">&nbsp;4&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">&nbsp;5&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">-7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve50&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">&nbsp;6&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">&nbsp;7&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">&nbsp;8&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">-9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 3.27338&nbsp;&nbsp;&nbsp;&nbsp; host pve51&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span></p><p><span style="color: rgb(255, 0, 0);"><span style="font-size: 14px;">9</span><span style="font-variant-numeric: normal; font-stretch: normal; font-size: 9px; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; </span><span style="font-size: 14px;">&nbsp;&nbsp;hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.9&nbsp;&nbsp;&nbsp; down&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 1.00000</span></span></p><p><span style="font-size: 14px; color: rgb(255, 0, 0);">10&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.10&nbsp;&nbsp; down&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 0 1.00000</span></p></td></tr></tbody></table><p class="MsoListParagraph" style="margin-left: 56px;text-indent: 0">从输出可知物理节点pve51的两个OSD有问题，需要删除。</p><p class="MsoListParagraph" style="margin-left: 56px">2.<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>离线有问题的ceph osd,执行的操作如下：</p><table><tbody><tr class="firstRow"><td width="553" valign="top" style="border-width: 1px; border-color: windowtext; padding: 0px 7px;"><p>root@pve48:~# <span style="color: rgb(0, 112, 192);">ceph osd out osd.9</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">osd.9 is already out.</span></p><p>root@pve48:~# <span style="color: rgb(0, 112, 192);">ceph osd out osd.10</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">osd.10 is already out.</span></p></td></tr></tbody></table><p class="MsoListParagraph" style="margin-left: 56px;text-indent: 0">操作时要仔细，别把正常的osd离线了。</p><p class="MsoListParagraph" style="margin-left: 56px">3.<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>删除已经离线osd认证信息，执行的操作如下：</p><table><tbody><tr class="firstRow"><td width="553" valign="top" style="border-width: 1px; border-color: windowtext; padding: 0px 7px;"><p>root@pve48:~#<span style="color: rgb(0, 112, 192);"> ceph auth del osd.9</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">updated</span></p><p>root@pve48:~# <span style="color: rgb(0, 112, 192);">ceph auth del osd.10</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">updated</span></p></td></tr></tbody></table><p class="MsoListParagraph" style="margin-left: 56px;text-indent: 0">&nbsp;</p><p class="MsoListParagraph" style="margin-left: 56px">4.<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>彻底删除故障osd，操作如下：</p><table><tbody><tr class="firstRow"><td width="553" valign="top" style="border-width: 1px; border-color: windowtext; padding: 0px 7px;"><p>root@pve48:~# <span style="color: rgb(0, 112, 192);">ceph osd rm 9</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">removed osd.9</span></p><p>root@pve48:~#<span style="color: rgb(0, 112, 192);"> ceph osd rm 10</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">removed osd.10</span></p></td></tr></tbody></table><p class="MsoListParagraph" style="margin-left: 56px;text-indent: 0">注意：此操作ceph最后一列参数与前边的不同，是纯数字格式！！！</p><p class="MsoListParagraph" style="margin-left: 56px">5.<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>查看集群osd状态，操作如下：</p><table><tbody><tr class="firstRow"><td width="553" valign="top" style="border-width: 1px; border-color: windowtext; padding: 0px 7px;"><p>root@pve48:~# <span style="color: rgb(0, 112, 192);">ceph osd tree</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">ID CLASS WEIGHT&nbsp;&nbsp; TYPE NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; STATUS REWEIGHT PRI-AFF</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">-1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 18.00357 root default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">-3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve48&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">&nbsp;0&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">&nbsp;1&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">&nbsp;2&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">-5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve49&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">&nbsp;3&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">&nbsp;4&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">&nbsp;5&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">-7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve50&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">&nbsp;6&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">&nbsp;7&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">&nbsp;8&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">-9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 3.27338&nbsp;&nbsp;&nbsp;&nbsp; host pve51&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p class="MsoListParagraph" style="margin-left: 31px"><span style="font-size: 14px; color: rgb(255, 0, 0);">9<span style="font-variant-numeric: normal; font-stretch: normal; font-size: 9px; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; </span>&nbsp;&nbsp;hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.9&nbsp;&nbsp;&nbsp;&nbsp; DNE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p><span style="font-size: 14px; color: rgb(255, 0, 0);">10&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.10&nbsp;&nbsp;&nbsp; DNE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 0&nbsp;&nbsp;</span></p></td></tr></tbody></table><p class="MsoListParagraph" style="margin-left: 56px;text-indent: 0">操作完成后，故障节点的osd状态从down变成了DNE</p><p class="MsoListParagraph" style="margin-left: 56px">6.<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>删除故障节点的ceph磁盘，操作如下：</p><table><tbody><tr class="firstRow"><td width="553" valign="top" style="border-width: 1px; border-color: windowtext; padding: 0px 7px;"><p>root@pve48:~# <span style="color: rgb(0, 112, 192);">ceph osd crush rm osd.9</span></p><p><span style="color: rgb(0, 176, 80); font-size: 14px;">removed item id 9 name 'osd.9' from crush &nbsp; map</span></p><p>root@pve48:~# <span style="color: rgb(0, 112, 192);">ceph osd crush rm osd.10</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">removed item id 10 name 'osd.10' from crush &nbsp; map</span></p></td></tr></tbody></table><p class="MsoListParagraph" style="margin-left: 56px;text-indent: 0">&nbsp;</p><p class="MsoListParagraph" style="margin-left: 56px">7.<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>从ceph集群中删除物理节点，操作如下：</p><table><tbody><tr class="firstRow"><td width="553" valign="top" style="border-width: 1px; border-color: windowtext; padding: 0px 7px;"><p>root@pve48:~#<span style="color: rgb(0, 112, 192);"> ceph osd crush rm&nbsp; pve51</span></p><p><span style="font-size: 14px; color: rgb(0, 176, 80);">removed item id -9 name 'pve51' from crush &nbsp; map</span></p></td></tr></tbody></table><p class="MsoListParagraph" style="margin-left: 56px;text-indent: 0">&nbsp;</p><p class="MsoListParagraph" style="margin-left: 56px">8.<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>执行指令 ceph osd tree 查看状态，看是否把故障节点从ceph集群清理出去。</p><p>&nbsp;</p><p class="MsoListParagraph" style="margin-left: 28px"><span style=";font-family:Wingdings">ü<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp; </span></span><strong>从集群中删除故障节点</strong></p><p><strong>&nbsp;</strong></p><p class="MsoListParagraph" style="margin-left: 28px"><span style=";font-family:Wingdings">Ø<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp; </span></span>集群上的操作</p><p class="MsoListParagraph" style="margin-left: 28px;text-indent: 0">登录集群中任意正常节点，执行如下指令进行驱逐操作：</p><table><tbody><tr class="firstRow"><td width="553" valign="top" style="border-width: 1px; border-color: windowtext; padding: 0px 7px;"><p>root@pve48:~# <span style="color: rgb(0, 176, 240);">pvecm&nbsp; delnode pve51</span></p><p class="MsoListParagraph" style="text-indent: 0"><span style="font-size: 14px; color: rgb(0, 176, 80);">Killing &nbsp; node 4</span></p></td></tr></tbody></table><p>&nbsp;</p><p class="MsoListParagraph" style="margin-left: 28px"><span style=";font-family:Wingdings">Ø<span style="font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;">&nbsp; </span></span>故障机恢复操作</p><p class="MsoListParagraph" style="margin-left: 28px;text-indent: 0">最好全部干掉，重新安装系统，并用新的ip地址，加入集群。</p><p><br></p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者sery的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+										<div class="appreciate-box">
+					<h2>每一份赞赏源于懂得</h2>
+											<p class="appreciate-btn appreciate-open">赞赏</p>
+										<p class="appreciate-txt">0人进行了赞赏支持</p>
+									</div>
+						<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=proxmox" target="_blank">proxmox</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E8%B6%85%E8%9E%8D%E5%90%88" target="_blank">超融合</a>
+															                				<a class="last" href="https://blog.51cto.com/sery/category7.html" target="_blank"><i></i>《互联网运营智慧》</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="2324067" userid="10037">2</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1592645999729">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina">微博</a>
+					  <a class="bds_sqq" data-cmd="sqq">QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin">微信</a>
+					  <img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/qr-url">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/sery/2309999" title="proxmox超融合集群用户授权">
+						上一篇：proxmox超融合集群用户授权</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/sery/2326420" title="proxmox超融合私有云发布最新版本PVE 5.3">
+						下一篇：proxmox超融合私有云发布最...</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/sery" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="10037" src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/f02132ff9f08de01c7d326b79d5ef227.jpg">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/sery" target="_blank" style="display:inline-block;">sery</a>
+										<a class="clo-author clo-author-big" href="https://blog.51cto.com/cloumn/index" target="_blank" style="display:inline-block;margin:0;vertical-align:sub;"><span class="last">专栏作者</span></a>
+										<h3>178篇文章，562W+人气，2480粉丝</h3>
+					<h4>全真教龙门高字辈道长，linux硬派运维</h4>				</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_10037" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/sery" class="header-img" target="_blank">
+						<img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可" maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="10037">
+					<input type="hidden" class="reply_id" value="2324067">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+						<div class="commentList"></div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog" style="display: none;"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);" style="display: block;"></a>
+		</div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="https://blog.51cto.com/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>512人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="5" href="https://blog.51cto.com/cloumn/detail/5" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>585人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="6" href="https://blog.51cto.com/cloumn/detail/6" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>550人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="13" href="https://blog.51cto.com/cloumn/detail/13" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1973人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="18" href="https://blog.51cto.com/cloumn/detail/18" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTOsummer</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>2428人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="30" href="https://blog.51cto.com/cloumn/detail/30" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/sery/2500501?source=dra" target="_blank">Rhel 7 pcs 实现oracle 12c高可用</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sery/2495136?source=dra" target="_blank">Centreon 19.04升级到centreon 20.04</a>
+															<a class="white-space" href="https://blog.51cto.com/xtbao/2132130?source=drt" target="_blank">超详细的Hadoop2配置详解</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/369369/790921?source=drt" target="_blank">mysql主从复制（超简单）</a>
+															<a class="white-space" href="https://blog.51cto.com/wyait/2137112?source=drt" target="_blank">springboot创建父子工程、聚合工程及问题解决</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sery/2421595?source=drt" target="_blank">在最新版proxmox VE 6 部署oracle 19C（单实例）</a>
+															<a class="white-space" href="https://blog.51cto.com/wenguonideshou/2083301?source=drt" target="_blank">Centos7 yum安装Python3.6环境，超简单</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/netseagull/102533?source=drt" target="_blank">FreeBSD安装图解（超详细）（一）</a>
+															<a class="white-space" href="https://blog.51cto.com/smallwoniu/1308959?source=drt" target="_blank">【移动开发】Android中三种超实用的滑屏方式汇总（ViewPager、ViewFlipper、ViewFlow）</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/6222666/2161860?source=drt" target="_blank">Proxmox VE 安装、配置、使用之第四章 存储使用</a>
+															<a class="white-space" href="https://blog.51cto.com/13746824/2153847?source=drt" target="_blank">超详细OSPF的基本概念；OSPF多区域配置和综合实验</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/6222666/2161799?source=drt" target="_blank">Proxmox VE 安装、配置、使用之第一章 安装配置</a>
+															<a class="white-space" href="https://blog.51cto.com/237826/2504461?source=drh" target="_blank">企业实战LNMP高性能服务器_wordpress、discuz双网站部署</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/bigboss/2504122?source=drh" target="_blank">利用Jenkins Shared Libraries隐藏你的Jenkinsfile</a>
+															<a class="white-space" href="https://blog.51cto.com/swiki/2503403?source=drh" target="_blank">consul+upsync+nginx实现动态负载均衡</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14156658/2503237?source=drh" target="_blank">配置Jenkins通过邮件发送警告</a>
+															<a class="white-space" href="https://blog.51cto.com/zlong37/2502652?source=drh" target="_blank">Zabbix 5.0 LTS 源码包编译部署以及新特性介绍</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/hexiaoshuai/2501771?source=drh" target="_blank">MySQL主主复制+keepalived高可用方案实现</a>
+															<a class="white-space" href="https://blog.51cto.com/9025736/2501694?source=drh" target="_blank">consul1.6实现Mysql-Gtid主从读写分离和高可用-03</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14601726/2501687?source=drh" target="_blank">LNMPA 中PHP 连接MySQL，公网访问</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box" style="position: fixed;top: 40%;left:49%;">
+		<div class="group_git_box">
+                	 <img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/f84902630cd49eab16f7895cd73e3092.png" style="width:50px;height:50px;"> 	
+			<!--<img src="https://s4.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+		
+		<div><!--学院领VIP-->
+            <a href="https://edu.51cto.com/center/activity/member-activity?qd=bokexiaotu" target="_blank">
+                <img src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/556fdbd28b29d2a48a431a95f9e06c90.gif" style="width:55px;margin-top: 10px;">
+            </a>
+        </div>
+		
+	</div>
+	<div class="the-lowest-bg">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="2324067" userid="10037">2</span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>0</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number"></font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1592645999729">
+				  <a class="bds_tsina p2" data-cmd="tsina"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin"><em class="code-icon"></em><img class="code-img" src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/qr-url"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_10037" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a class="clo-author clo-author-litt fr" href="https://blog.51cto.com/cloumn/index" target="_blank" style="margin:8px 0 0 12px"><span class="last">专栏作者</span></a>
+						<a href="https://blog.51cto.com/sery" class="b-name fr">sery</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/sery" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="10037" src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/f02132ff9f08de01c7d326b79d5ef227.jpg"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+	<script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/shCores.js"></script>
+<script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '2324067'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'10037',
+            'blog_id':'2324067'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/sery';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='10037'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '1'
+    	nicknameurl = 'https://blog.51cto.com/sery'
+    	nickname = 'sery'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_10037'),'10037','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_10037'),'10037','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_10037'),'10037','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("<p style=\"text-align:center\"><br\/><\/p><p><strong>\u95ee\u9898\u63cf\u8ff0<\/strong><\/p><p><strong>&nbsp;<\/strong><\/p><p>\u5728\u73b0\u6709\u96c6\u7fa4\u52a0\u5165\u4e00\u4e2a\u7269\u7406\u8282\u70b9\uff0c\u63a5\u7740\u518d\u6b64\u8282\u70b9\u521b\u5efaceph\u76d1\u89c6\u5668\u3001\u521b\u5efaOSD\u3002\u4ece\u5bbf\u4e3b\u673a\u7cfb\u7edf\u6267\u884cceph osd tree\u67e5\u770b\u72b6\u6001\uff0c\u521b\u5efa\u8d77\u6765\u7684\u51e0\u4e2aOSD\u72b6\u6001\u90fd\u6b63\u5e38\uff08up\uff09\uff0c\u4eceproxmox\u7ba1\u7406\u754c\u9762\u770b\u4e5f\u662f\u8fd9\u6837\u3002<\/p><p>&nbsp;<\/p><p>\u7a81\u7136\u4e0d\u77e5\u9053\u4ec0\u4e48\u539f\u56e0\uff0c\u521a\u52a0\u5165\u7684\u8282\u70b9\u5c31\u7a81\u7136\u4e0d\u80fd\u4ece\u96c6\u7fa4\u4e2d\u5931\u6548\u4e86\u3002<\/p><p><img src=\"https:\/\/s1.51cto.com\/images\/20181130\/1543511545215958.png?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=\" title=\"1543511545215958.png\" alt=\"image.png\"\/><\/p><p>\u518d\u8fdb\u5bbf\u4e3b\u673a\u7cfb\u7edf\u67e5OSD\u72b6\u6001\uff0c\u5c45\u7136\u81ea\u5df1\u4eceup\u53d8\u6210down\u3002\u65b0\u589e\u8282\u70b9\u6ca1\u6570\u636e\uff0c\u4e8e\u662f\u5c31\u8bd5\u8bd5\u91cd\u542f\uff0c\u770b\u80fd\u4e0d\u80fd\u6b63\u5e38\u3002\u91cd\u542f\u4ee5\u540e\uff0c\u7f51\u7edc\u80fd\u901a\uff0cssh\u4e0d\u80fd\u8fde\u63a5\uff0cweb\u7ba1\u7406\u754c\u9762\u4e5f\u4e0d\u80fd\u8bbf\u95ee\u3002\u63a5\u4e0b\u6765\uff0c\u9700\u8981\u5148\u628a\u6545\u969c\u8282\u70b9\u4ece\u96c6\u7fa4\u4e2d\u64a4\u79bb\u51fa\u6765\uff0c\u6062\u590d\u4ee5\u540e\uff0c\u518d\u52a0\u5165\u96c6\u7fa4\u3002<\/p><p>&nbsp;<\/p><p><strong>\u4ece\u96c6\u7fa4\u4e2d\u5220\u9664\u6545\u969c\u8282\u70b9<\/strong><\/p><p><strong>&nbsp;<\/strong><\/p><p>\u6309\u64cd\u4f5c\u987a\u5e8f\u5206\u4e24\u4e2a\u6b65\u9aa4\uff1a\u4ece\u96c6\u7fa4\u4e2d\u5220\u9664\u6545\u969cceph\u548c\u4ece\u96c6\u7fa4\u4e2d\u5220\u9664\u7269\u7406\u8282\u70b9\u3002<\/p><p>&nbsp;<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 28px\"><span style=\";font-family:Wingdings\">\u00fc<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp; <\/span><\/span>\u4ece\u96c6\u7fa4\u4e2d\u5220\u9664\u6545\u969cceph<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 56px\">1.<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <\/span>\u767b\u5f55\u96c6\u7fa4\u4efb\u610f\u7269\u7406\u6b63\u5e38\u8282\u70b9\u7cfb\u7edf\uff0c\u6267\u884c\u5982\u4e0b\u547d\u4ee4\u67e5\u770bceph osd\u72b6\u6001\uff1a<\/p><table><tbody><tr class=\"firstRow\"><td width=\"553\" valign=\"top\" style=\"border-width: 1px; border-color: windowtext; padding: 0px 7px; word-break: break-all;\"><p>root@pve48:~# <span style=\"color: rgb(0, 112, 192);\">ceph osd tree<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">ID CLASS WEIGHT&nbsp;&nbsp; TYPE NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; STATUS REWEIGHT PRI-AFF<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">-1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 18.00357 root default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">-3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve48&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">&nbsp;0&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">&nbsp;1&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">&nbsp;2&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;osd.2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; up&nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">-5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve49&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">&nbsp;3&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">&nbsp;4&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">&nbsp;5&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">-7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve50&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">&nbsp;6&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">&nbsp;7&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">&nbsp;8&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">-9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 3.27338&nbsp;&nbsp;&nbsp;&nbsp; host pve51&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<\/span><\/p><p><span style=\"color: rgb(255, 0, 0);\"><span style=\"font-size: 14px;\">9<\/span><span style=\"font-variant-numeric: normal; font-stretch: normal; font-size: 9px; line-height: normal; font-family: &quot;Times New Roman&quot;;\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; <\/span><span style=\"font-size: 14px;\">&nbsp;&nbsp;hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.9&nbsp;&nbsp;&nbsp; down&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 1.00000<\/span><\/span><\/p><p><span style=\"font-size: 14px; color: rgb(255, 0, 0);\">10&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.10&nbsp;&nbsp; down&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 0 1.00000<\/span><\/p><\/td><\/tr><\/tbody><\/table><p class=\"MsoListParagraph\" style=\"margin-left: 56px;text-indent: 0\">\u4ece\u8f93\u51fa\u53ef\u77e5\u7269\u7406\u8282\u70b9pve51\u7684\u4e24\u4e2aOSD\u6709\u95ee\u9898\uff0c\u9700\u8981\u5220\u9664\u3002<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 56px\">2.<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <\/span>\u79bb\u7ebf\u6709\u95ee\u9898\u7684ceph osd,\u6267\u884c\u7684\u64cd\u4f5c\u5982\u4e0b\uff1a<\/p><table><tbody><tr class=\"firstRow\"><td width=\"553\" valign=\"top\" style=\"border-width: 1px; border-color: windowtext; padding: 0px 7px;\"><p>root@pve48:~# <span style=\"color: rgb(0, 112, 192);\">ceph osd out osd.9<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">osd.9 is already out.<\/span><\/p><p>root@pve48:~# <span style=\"color: rgb(0, 112, 192);\">ceph osd out osd.10<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">osd.10 is already out.<\/span><\/p><\/td><\/tr><\/tbody><\/table><p class=\"MsoListParagraph\" style=\"margin-left: 56px;text-indent: 0\">\u64cd\u4f5c\u65f6\u8981\u4ed4\u7ec6\uff0c\u522b\u628a\u6b63\u5e38\u7684osd\u79bb\u7ebf\u4e86\u3002<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 56px\">3.<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <\/span>\u5220\u9664\u5df2\u7ecf\u79bb\u7ebfosd\u8ba4\u8bc1\u4fe1\u606f\uff0c\u6267\u884c\u7684\u64cd\u4f5c\u5982\u4e0b\uff1a<\/p><table><tbody><tr class=\"firstRow\"><td width=\"553\" valign=\"top\" style=\"border-width: 1px; border-color: windowtext; padding: 0px 7px;\"><p>root@pve48:~#<span style=\"color: rgb(0, 112, 192);\"> ceph auth del osd.9<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">updated<\/span><\/p><p>root@pve48:~# <span style=\"color: rgb(0, 112, 192);\">ceph auth del osd.10<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">updated<\/span><\/p><\/td><\/tr><\/tbody><\/table><p class=\"MsoListParagraph\" style=\"margin-left: 56px;text-indent: 0\">&nbsp;<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 56px\">4.<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <\/span>\u5f7b\u5e95\u5220\u9664\u6545\u969cosd\uff0c\u64cd\u4f5c\u5982\u4e0b\uff1a<\/p><table><tbody><tr class=\"firstRow\"><td width=\"553\" valign=\"top\" style=\"border-width: 1px; border-color: windowtext; padding: 0px 7px;\"><p>root@pve48:~# <span style=\"color: rgb(0, 112, 192);\">ceph osd rm 9<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">removed osd.9<\/span><\/p><p>root@pve48:~#<span style=\"color: rgb(0, 112, 192);\"> ceph osd rm 10<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">removed osd.10<\/span><\/p><\/td><\/tr><\/tbody><\/table><p class=\"MsoListParagraph\" style=\"margin-left: 56px;text-indent: 0\">\u6ce8\u610f\uff1a\u6b64\u64cd\u4f5cceph\u6700\u540e\u4e00\u5217\u53c2\u6570\u4e0e\u524d\u8fb9\u7684\u4e0d\u540c\uff0c\u662f\u7eaf\u6570\u5b57\u683c\u5f0f\uff01\uff01\uff01<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 56px\">5.<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <\/span>\u67e5\u770b\u96c6\u7fa4osd\u72b6\u6001\uff0c\u64cd\u4f5c\u5982\u4e0b\uff1a<\/p><table><tbody><tr class=\"firstRow\"><td width=\"553\" valign=\"top\" style=\"border-width: 1px; border-color: windowtext; padding: 0px 7px;\"><p>root@pve48:~# <span style=\"color: rgb(0, 112, 192);\">ceph osd tree<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">ID CLASS WEIGHT&nbsp;&nbsp; TYPE NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; STATUS REWEIGHT PRI-AFF<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">-1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 18.00357 root default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">-3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve48&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">&nbsp;0&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">&nbsp;1&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">&nbsp;2&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">-5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve49&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">&nbsp;3&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">&nbsp;4&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">&nbsp;5&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">-7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 4.91006&nbsp;&nbsp;&nbsp;&nbsp; host pve50&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">&nbsp;6&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">&nbsp;7&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">&nbsp;8&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up&nbsp; &nbsp; 1.00000 1.00000<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">-9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 3.27338&nbsp;&nbsp;&nbsp;&nbsp; host pve51&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p class=\"MsoListParagraph\" style=\"margin-left: 31px\"><span style=\"font-size: 14px; color: rgb(255, 0, 0);\">9<span style=\"font-variant-numeric: normal; font-stretch: normal; font-size: 9px; line-height: normal; font-family: &quot;Times New Roman&quot;;\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; <\/span>&nbsp;&nbsp;hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.9&nbsp;&nbsp;&nbsp;&nbsp; DNE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(255, 0, 0);\">10&nbsp;&nbsp; &nbsp; hdd&nbsp; 1.63669&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; osd.10&nbsp;&nbsp;&nbsp; DNE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 0&nbsp;&nbsp;<\/span><\/p><\/td><\/tr><\/tbody><\/table><p class=\"MsoListParagraph\" style=\"margin-left: 56px;text-indent: 0\">\u64cd\u4f5c\u5b8c\u6210\u540e\uff0c\u6545\u969c\u8282\u70b9\u7684osd\u72b6\u6001\u4ecedown\u53d8\u6210\u4e86DNE<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 56px\">6.<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <\/span>\u5220\u9664\u6545\u969c\u8282\u70b9\u7684ceph\u78c1\u76d8\uff0c\u64cd\u4f5c\u5982\u4e0b\uff1a<\/p><table><tbody><tr class=\"firstRow\"><td width=\"553\" valign=\"top\" style=\"border-width: 1px; border-color: windowtext; padding: 0px 7px;\"><p>root@pve48:~# <span style=\"color: rgb(0, 112, 192);\">ceph osd crush rm osd.9<\/span><\/p><p><span style=\"color: rgb(0, 176, 80); font-size: 14px;\">removed item id 9 name &#39;osd.9&#39; from crush &nbsp; map<\/span><\/p><p>root@pve48:~# <span style=\"color: rgb(0, 112, 192);\">ceph osd crush rm osd.10<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">removed item id 10 name &#39;osd.10&#39; from crush &nbsp; map<\/span><\/p><\/td><\/tr><\/tbody><\/table><p class=\"MsoListParagraph\" style=\"margin-left: 56px;text-indent: 0\">&nbsp;<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 56px\">7.<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <\/span>\u4ececeph\u96c6\u7fa4\u4e2d\u5220\u9664\u7269\u7406\u8282\u70b9\uff0c\u64cd\u4f5c\u5982\u4e0b\uff1a<\/p><table><tbody><tr class=\"firstRow\"><td width=\"553\" valign=\"top\" style=\"border-width: 1px; border-color: windowtext; padding: 0px 7px;\"><p>root@pve48:~#<span style=\"color: rgb(0, 112, 192);\"> ceph osd crush rm&nbsp; pve51<\/span><\/p><p><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">removed item id -9 name &#39;pve51&#39; from crush &nbsp; map<\/span><\/p><\/td><\/tr><\/tbody><\/table><p class=\"MsoListParagraph\" style=\"margin-left: 56px;text-indent: 0\">&nbsp;<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 56px\">8.<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <\/span>\u6267\u884c\u6307\u4ee4 ceph osd tree \u67e5\u770b\u72b6\u6001\uff0c\u770b\u662f\u5426\u628a\u6545\u969c\u8282\u70b9\u4ececeph\u96c6\u7fa4\u6e05\u7406\u51fa\u53bb\u3002<\/p><p>&nbsp;<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 28px\"><span style=\";font-family:Wingdings\">\u00fc<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp; <\/span><\/span><strong>\u4ece\u96c6\u7fa4\u4e2d\u5220\u9664\u6545\u969c\u8282\u70b9<\/strong><\/p><p><strong>&nbsp;<\/strong><\/p><p class=\"MsoListParagraph\" style=\"margin-left: 28px\"><span style=\";font-family:Wingdings\">\u00d8<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp; <\/span><\/span>\u96c6\u7fa4\u4e0a\u7684\u64cd\u4f5c<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 28px;text-indent: 0\">\u767b\u5f55\u96c6\u7fa4\u4e2d\u4efb\u610f\u6b63\u5e38\u8282\u70b9\uff0c\u6267\u884c\u5982\u4e0b\u6307\u4ee4\u8fdb\u884c\u9a71\u9010\u64cd\u4f5c\uff1a<\/p><table><tbody><tr class=\"firstRow\"><td width=\"553\" valign=\"top\" style=\"border-width: 1px; border-color: windowtext; padding: 0px 7px;\"><p>root@pve48:~# <span style=\"color: rgb(0, 176, 240);\">pvecm&nbsp; delnode pve51<\/span><\/p><p class=\"MsoListParagraph\" style=\"text-indent: 0\"><span style=\"font-size: 14px; color: rgb(0, 176, 80);\">Killing &nbsp; node 4<\/span><\/p><\/td><\/tr><\/tbody><\/table><p>&nbsp;<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 28px\"><span style=\";font-family:Wingdings\">\u00d8<span style=\"font-variant-numeric: normal;font-stretch: normal;font-size: 9px;line-height: normal;font-family: &#39;Times New Roman&#39;\">&nbsp; <\/span><\/span>\u6545\u969c\u673a\u6062\u590d\u64cd\u4f5c<\/p><p class=\"MsoListParagraph\" style=\"margin-left: 28px;text-indent: 0\">\u6700\u597d\u5168\u90e8\u5e72\u6389\uff0c\u91cd\u65b0\u5b89\u88c5\u7cfb\u7edf\uff0c\u5e76\u7528\u65b0\u7684ip\u5730\u5740\uff0c\u52a0\u5165\u96c6\u7fa4\u3002<\/p><p><br\/><\/p>", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"proxmox集群节点崩溃处理",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s4.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1592645998; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})
+</script>
+</div>
+<script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/marked.min.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/highlight.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/detail_mp.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/detail.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/details_new.js"></script><script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/copy.js"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/pageview.html"></iframe>
+</div>
+
+<script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type="text/javascript">
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/jquery.cookie.js"></script>
+<script src="./proxmox集群节点崩溃处理-田逸（sery）-51CTO博客_files/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+
+
+<div id="zhichiBtnBox" style="position: fixed; z-index: 2147483583; box-shadow: rgba(15, 66, 76, 0.25) 0px 0px 14px 0px; width: 60px; height: 60px; border-radius: 50%; background-color: rgb(66, 133, 244); background-image: url(&quot;//www.sobot.com/chat/frame/imgs/icon.png&quot;); background-repeat: no-repeat; background-position: 18px -58px; right: 40px; bottom: 90px; display: none;"><a hidefocus="" id="zhichiBtn" style="position:relative;text-decoration: none; outline: none; font-family: Microsoft Yahei, Arial, Helvetica; color: #fff; font-size: 16px; display: inline-block; margin: 0; padding: 0; border: none; line-height:43px; float:none;width:100%;height:100%;border-radius:50%;"><span class="zc-advice-icon-btn-title" style="box-shadow: rgba(107, 113, 114, 0.15) 0px 2px 4px 0px; border: 1px solid rgb(235, 239, 240); font-family: &quot;Microsoft Yahei&quot;, Arial, Helvetica; color: rgb(85, 85, 86); font-size: 13px; margin: 0px; text-align: right; background: rgb(255, 255, 255); position: absolute; top: 15px; right: 70px; text-overflow: ellipsis; white-space: nowrap; word-break: normal; display: none; border-radius: 3px; padding: 0px 5px; height: 30px; line-height: 30px;">咨询在线客服</span></a><i style="position:absolute;top:0px;right:0px;padding:1px;line-height:20px;text-align:center;color:#fff;font-weight:bold;height:18px;min-width:18px;background-color:#ed5c5c;border-radius:18px;font-size:12px;display:none;font-style:normal;" id="zhichiCount"></i></div></body></html>

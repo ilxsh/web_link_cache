@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<!-- saved from url=(0035)https://blog.51cto.com/sery/2179137 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="favicon" rel="shortcut icon" href="https://blog.51cto.com/favicon.ico">
+        <title>Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客</title>
+    <meta name="keywords" content="proxmox,超融合,私有云">
+<meta name="description" content="作者：田逸（sery@163.com）使用nfs的目的Proxmox集群中，如果将ISO文件存储于本地，只能供本节点存取，要用于集群的其它节点进行安装，将无法如愿。现已经在物理节点pve48的本地存储上传了可以使用的ISO镜像，接下来，试着创建虚拟机，用此ISO镜像来安装虚拟机操作系统。此虚拟机创建在集群中另外一个物理节点pve50上，随便给其命名进行测试。这样有些麻烦，如果要在每个节点给虚拟机安">    <link href="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/header.css" rel="stylesheet"><link href="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/other.css" rel="stylesheet"><link href="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/right.css" rel="stylesheet"><link href="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/blog_details.css" rel="stylesheet"><link href="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/highlight.css" rel="stylesheet">
+    <script type="text/javascript" async="" src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/vds.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/push.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/hm.js"></script><script>
+        var HOME_URL = 'https://home.51cto.com/';
+    </script>
+    <script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/jquery.min.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/cookie.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/login.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/common.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/mbox.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/follow.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/vip.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/window.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/share.js"></script><style></style><link rel="stylesheet" href="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/share_style0_16.css"></head>
+<body>
+<img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/share_default.jpg" border="0" style="width:0; height:0; position:absolute;">
+<style type="text/css">
+	.service-btn{
+		width: 53px;
+height: 36px;
+color: #1ac6fe;
+line-height: 16px;
+padding-top: 50px;
+		display: inline-block;
+		background: url(https://s4.51cto.com/images/blog/201811/02/463350acf4c693cfb3dc248bc8a2a0eb.png) no-repeat center;
+	}
+	.service-btn:hover{
+		background: url(https://s4.51cto.com/images/blog/201811/02/2d5fa2ff4eb9ef66847aff20ba4c8bae.png) no-repeat center;
+height: 36px;
+color: #fff;
+line-height: 16px;
+padding-top: 50px;
+	}
+</style>
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+<div id="topbanner14" style="position: relative;width:100%;height:40px;background:url(https://s4.51cto.com/images/blog/202006/12/12a93e064eb980d392ade2d96e1d4581.jpg)">
+<a class="close fl" href="javascript:;" style="position:absolute;width:13px;height:13px;top:0px;z-index: 20;background: url(&#39;https://s4.51cto.com/images/blog/201808/23/0363c65f527ea7c9880ab5f275303d1a.png&#39;) 0 0 no-repeat;background-size: 100% 100%;left: 50%;margin-left: 587px;"></a>
+<a href="https://blog.51cto.com/cloumn/composedetail?id=12" target="_blank">
+  <img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/017225af7badc249b32ff2746fa4f695.jpg" alt="" style="position:absolute;width:1200px;height:40px;margin-left: -600px;left:50%;z-index: 10;">
+</a>
+</div>
+<script>
+    $("#topbanner14").on("click",".close",function(){
+        $("#topbanner14").remove();
+    })
+</script>
+<div class="Header">
+  <div class="Page ">
+    <h1 class="Logo"><a href="https://blog.51cto.com/">Logo</a></h1>
+    <ul class="Navigates fl">
+      <li><a href="https://blog.51cto.com/">首页</a></li>
+      <li><a href="https://blog.51cto.com/original">文章</a></li>
+      <li><a href="https://blog.51cto.com/blog/follow">关注</a></li>
+      <li class="">
+        <a class="column-stress" href="https://blog.51cto.com/cloumn/index" target="_blank">订阅专栏</a>
+      </li>
+        <li>
+            <a href="http://aix.51cto.com/activity/index.html?blog" target="_blank">大咖来了</a>
+        </li>
+                    
+                  </ul>
+    <ul class="Navigates Navigates-right fr">
+      <li class="more maps">
+        <a href="javascript:void(0);">网站导航</a>
+        <div>
+            <a href="https://edu.51cto.com/" target="_blank">学院</a>
+            <a href="https://e.51cto.com/" target="_blank">微职位</a>
+            <a href="https://blog.51cto.com/" target="_blank">博客</a>
+            <a href="http://down.51cto.com/" target="_blank">下载</a>
+            <a href="https://home.51cto.com/" target="_blank">家园</a>
+            <a href="http://bbs.51cto.com/" target="_blank">论坛</a>
+            <a href="http://x.51cto.com/" target="_blank">CTO训练营</a>
+            <!--a href=" http://club.51cto.com?blog" target="_blank">CTO俱乐部</a-->
+            <a href="http://wot.51cto.com/" target="_blank">WOT</a>
+            <a href="http://www.51cto.com/" target="_blank">51CTO</a>
+            <i class="arrow"></i>
+        </div>
+      </li>
+                <li>
+			<a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fsery%2F2179137&amp;logintype=reg" target="_self">注册</a>
+			<!--领VIP图标-->
+			<span style="position: absolute;top:0px;">
+				<a href="https://edu.51cto.com/center/activity/member-activity" target="_blank">
+					<img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/50768f7d453813db433782e76c9f1d44.png">
+				</a>
+			</span>
+		  </li>
+          <li class="login"><a href="https://blog.51cto.com/site/login?reback=https%3A%2F%2Fblog.51cto.com%2Fsery%2F2179137" target="_self">登录</a></li>
+                        <li class="mRead">
+          <a href="javascript:;">手机阅读</a>
+          <div>
+            <img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/blog_qr.png">
+            <p>扫一扫体验手机阅读</p>
+            <i class="arrow"></i>
+          </div>
+        </li>
+            <li class="search"><a href="https://blog.51cto.com/search/index" target="_self">搜索</a></li>
+                  <li class="write"><a href="javascript:;" onclick="Login()">写文章</a></li>
+                  </ul>
+
+          <div class="clear"></div>
+  </div>
+</div>
+<script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/box.js"></script> 
+<script>
+    var isLogin = '0';
+    var userId = '';
+    var imgpath = 'https://s4.51cto.com/';
+    var BLOG_URL = 'https://blog.51cto.com/';
+    var msg_num_url = '/index/ajax-msg-num';
+    $('.msg-follow, .msg-follow-max').eq(1).css({top: '91px'});
+    $('.msg-follow, .msg-follow-max').eq(2).css({top: '121px'});
+    setTimeout(function(){
+            $.ajax({
+                url:msg_num_url,
+                type:"get",
+                dataType:'json',
+                success:function(res){
+                    if(res.status == '0'){
+                       //
+                       var hasNewMsg = false;
+                       if(res.data.msgNum > 0 && !$('#myMsg i').hasClass('dot')){
+                            $('#myMsg i').addClass('dot');
+                            hasNewMsg = true;
+                       }
+                       if(res.data.notifyNum > 0 && !$('#myNotify i').hasClass('dot')){
+                           $('#myNotify i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(res.data.recommend_new > 0 && !$('#myRecommend i').hasClass('dot')){
+                           $('#myRecommend i').addClass('dot');
+                           hasNewMsg = true;
+                       }
+                       if(hasNewMsg && !$('#myAllMsg i').hasClass('dot')){
+                           $('#myAllMsg i').addClass('dot');
+                       }
+                    }
+
+                }
+            });
+    },70);
+    //广告图
+$(function(){
+     new AutoAD({
+      ADD:$('<a href="https://blog.51cto.com/cloumn/composedetail?id=12" class="closeMB" target="_blank" styel="display:block;"><img src="https://s4.51cto.com/images/blog/202006/12/9560dbc4eeb061cf22adc67cb0caddc0.jpg"></a><a class="closeMB" style="position: absolute;right:2px;top: 3px;width: 50px;height: 40px;cursor: pointer;" href="javascript:;"></a>'),
+      W:500,
+      H:400,
+      cookie:'blog_activity_blog162',
+      mask:"#000",
+      ts:'21600',
+      noCBtn: true
+    }) 
+})    
+</script>
+ <script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/entrance.js" id="zhichiScript" class="zhiCustomBtn" data-args="manual=true"></script>
+<a href="javascript:;" class="zhiCustomBtn" style="position: fixed;z-index: 2147483583;width: 60px;height: 6px;text-align: center;bottom:275px;right:0px;">
+<span class="service-btn">在线<br>客服</span>
+</a>
+
+<script type="text/javascript">
+var zhiManager = (getzhiSDKInstance());
+zhiManager.on("load", function() {
+    zhiManager.initBtnDOM();
+});
+//zhiManager.set('title','垃圾/广告信息举报');
+zhiManager.set('powered',false);
+zhiManager.set('color', '4285f4');
+zhiManager.set('customBtn', 'true');
+zhiManager.set('moduleType',2);
+zhiManager.set('size',{'width':360,'height':500});
+
+zhiManager.set('userinfo', {partnerId:'',uname:'',params:'{"用户名":""}'});
+zhiManager.set('customMargin', 20);
+zhiManager.set('horizontal', 20);
+zhiManager.set('vertical', 90);
+zhiManager.set('preVisitArgs',{'preVisitUrl': document.referrer?document.referrer:''});
+zhiManager.set('curVisitArgs',{'curVisitUrl': location.href,curVisitTitle:document.title,});
+</script>
+<div class="Content-box" style="min-height: 776px;">
+    	<link rel="stylesheet" href="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/mdeShow.css">
+<link rel="stylesheet" href="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/tinyscrollbar.css">
+<script type="text/javascript" src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/jquery.tinyscrollbar.js"></script>
+<div class="Content Index" style="padding-bottom: 50px;">
+	<div class="Page M764">
+		<!-- left start -->
+		<div class="artical-Left-blog">
+			<div class="status">
+	        					<a class="tab_name original">原创</a>
+				<a class="tab_name translation">推荐</a>			</div>
+			<h1 class="artical-title">Proxmox 使用nfs备份及存储iso</h1>
+			<div class="artical-title-list">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/sery" class="a-img" target="_blank"><img class="is-vip-img is-vip-img-4" data-uid="10037" src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/f02132ff9f08de01c7d326b79d5ef227.jpg"></a>
+				</div>
+				<a href="https://blog.51cto.com/sery" class="name fl" target="_blank" style="margin-right:0;">sery</a>
+									<a class="clo-author clo-author-litt fl" href="https://blog.51cto.com/cloumn/index" target="_blank" style="margin:9px 0px 0 4px"><span class="last" style="top: -45px;">专栏作者</span></a>
+									                	                    <a id="checkFollow1_10037" class="checkFollow-btn on fl" style="margin-left:8px;">关注</a>
+	                	            				<a class="comment comment-num fr"><font class="comment_number">2</font>人评论</a>
+				<span class="fr"></span>
+				<a href="javascript:;" class="read fr">35819人阅读</a>
+				<a href="javascript:;" class="time fr">2018-09-23 00:35:21</a>
+				<div class="clear"></div>
+			</div>
+							<div class="artical-content-bak main-content">
+					<div class="con artical-content editor-preview-side"><p>作者：田逸（sery@163.com）</p>
+<h1>使用nfs的目的</h1>
+<p>Proxmox集群中，如果将ISO文件存储于本地，只能供本节点存取，要用于集群的其它节点进行安装，将无法如愿。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/3d3a5fa8a1daca6340aa7fe16c8e3880.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"><br>现已经在物理节点pve48的本地存储上传了可以使用的ISO镜像，接下来，试着创建虚拟机，用此ISO镜像来安装虚拟机操作系统。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/559a99fae8247ff0c95c1acf48a524fe.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"><br>此虚拟机创建在集群中另外一个物理节点pve50上，随便给其命名进行测试。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/d63c974580252f94661851937e51a43a.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"><br>这样有些麻烦，如果要在每个节点给虚拟机安装操作系统，按常规的方式，每个物理节点，都得上传好所需的操作系统ISO镜像，既费时又浪费宝贵的存储资源。</p>
+<p>那么，有没有好的解决方案呢？有的，nfs就是很好的工具。外挂nfs服务，即解决了容量扩展问题，又能让所有的虚拟机都可以共享读取。可能会有人质疑，这nfs可用性差，而超融合可行性确实极高，何必多此一举呢？</p>
+<p>我们用nfs来存储ISO镜像以及定时备份虚拟机，并不需要很高的可用性。因此，作为超融合高可用私有云的辅助手段，是非常经济和适用的。因为独立的物理nfs作为私有云集群的补充，并不需要较高的配置，只要磁盘容量足够大就行（不像集群计算节点，需要性能极佳的磁盘）。</p>
+<h1>挂接NFS服务</h1>
+<p>Proxmox web管理界面，在“数据中心”之下，选中“存储”，点击“添加按钮”。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/b22a9da02341ad49582124715853fee8.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"><br>只要nfs服务器权限设置正常，在管理界面输入nfs服务器的ip地址之后，可自动探测到设定的共享目录（实际是调用系统指令 pvesm nfsscan 172.16.228.254）。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/2b254f9923986fc185aa7238cf5a1618.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"></p>
+<h1>修改NFS内容</h1>
+<p>挂接上共享的nfs存储后，存储的内容仅仅包含“磁盘映像”一个项目，要用于ISO存储以及虚拟机备份，还需对nfs进行编辑。</p>
+<p>Proxmox web管理界面，“数据中心”下，对“存储” 项NFS进行编辑，用鼠标进行多选操作，至少把“ISO映像”、“VZDump”给选上。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/a3e4dc70a18d5a5a3cdaba73dc9896fa.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"><br>选完并点击“OK”按钮以后，将在nfs的共享目录生成子目录template/iso、dump。</p>
+<p>把所需的操作系统ISO文件，上传到目录template/iso ,后边就可以供集群中各物理节点使用。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/ee4c7555a766f79b59d20b7afd118463.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"></p>
+<h1>使用NFS共享存储</h1>
+<p>○用nfs共享ISO安装虚拟机操作系统<br>创建虚拟机，可选任意节点，镜像文件所在的存储，选“NFS”，然后就可以看到所需的ISO文件，进行下一步操作。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/c5c37d1f59b285bed6e12e1ae3d3f683.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"></p>
+<p>○把虚拟机备份到NFS</p>
+<p>Proxmox web管理界面，“数据中心”下，选“备份”，点击“添加”按钮（此操作适合批量备份，单个虚拟机备份可用其它方式）。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/216168ced886caa411fd643c3e018162.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"><br>定时备份的星期，可以用鼠标进行多选。创建成功以后，可以在web界面看见这个计划任务。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/5bffce2fd54387a3f2d72f672cd2c28c.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"><br>Web界面我们看到了任务，那么系统的任务在哪里呢？登录物理节点系统，打开文件/etc/cron.d/vzdump,其内容如下：</p>
+<pre><code class="hljs ruby">root@pve50<span class="hljs-symbol">:/var/lib/vz/template/iso</span><span class="hljs-comment"># more /etc/cron.d/vzdump </span>
+PATH=<span class="hljs-string">"/usr/sbin:/usr/bin:/sbin:/bin"</span>
+
+<span class="hljs-number">15</span> <span class="hljs-number">0</span> * * <span class="hljs-number">6</span>,<span class="hljs-number">7</span>         root vzdump <span class="hljs-number">100</span> <span class="hljs-number">101</span> <span class="hljs-number">102</span> <span class="hljs-number">103</span> <span class="hljs-number">104</span> <span class="hljs-number">105</span> <span class="hljs-number">106</span> <span class="hljs-number">107</span> <span class="hljs-number">108</span> <span class="hljs-number">115</span>
+ --mailnotification always --storage nfs254 --quiet <span class="hljs-number">1</span>
+ --mailto sery@163.com --compress lzo --mode snapshot</code></pre>
+<p>现在时间是0：18，备份应该开始了，查看系统进程，应该有vzdump存在。<br><img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/016a8a36c4042d93d920455a012c3898.jpg" alt="Proxmox 使用nfs备份及存储iso" style="cursor: pointer;"><br>果然如此，再登录nfs所在的系统，查看是否有文件生成。</p>
+<pre><code class="hljs perl">[root@storage-<span class="hljs-number">254</span> <span class="hljs-keyword">dump</span>]<span class="hljs-comment"># pwd</span>
+/mnt/mmystor/bbs_att/uploads/<span class="hljs-keyword">dump</span>
+[root@storage-<span class="hljs-number">254</span> <span class="hljs-keyword">dump</span>]<span class="hljs-comment"># ls -al</span>
+total <span class="hljs-number">3272352</span>
+drwxr-xr-<span class="hljs-keyword">x</span>   <span class="hljs-number">5</span> root    ofguest       <span class="hljs-number">4096</span> <span class="hljs-number">2018</span>-09-<span class="hljs-number">23</span> <span class="hljs-number">00</span>:<span class="hljs-number">52</span> .
+drwxr-xr-<span class="hljs-keyword">x</span>+ <span class="hljs-number">28</span> ofguest ofguest       <span class="hljs-number">4096</span> <span class="hljs-number">2018</span>-09-<span class="hljs-number">22</span> <span class="hljs-number">23</span>:<span class="hljs-number">40</span> ..
+drwxr-xr-<span class="hljs-keyword">x</span>   <span class="hljs-number">2</span> root    root            <span class="hljs-number">29</span> <span class="hljs-number">2018</span>-09-<span class="hljs-number">23</span> <span class="hljs-number">00</span>:<span class="hljs-number">52</span> vzdump-qemu-<span class="hljs-number">100</span>-<span class="hljs-number">2018_09_23</span>-<span class="hljs-number">00_15_02</span>.tmp
+-rw-r--r--   <span class="hljs-number">1</span> root    root    <span class="hljs-number">1040303291</span> <span class="hljs-number">2018</span>-09-<span class="hljs-number">23</span> <span class="hljs-number">00</span>:<span class="hljs-number">58</span> vzdump-qemu-<span class="hljs-number">100</span>-<span class="hljs-number">2018_09_23</span>-<span class="hljs-number">00_15_02</span>.vma.dat
+drwxr-xr-<span class="hljs-keyword">x</span>   <span class="hljs-number">2</span> root    root            <span class="hljs-number">29</span> <span class="hljs-number">2018</span>-09-<span class="hljs-number">23</span> <span class="hljs-number">00</span>:<span class="hljs-number">52</span> vzdump-qemu-<span class="hljs-number">103</span>-<span class="hljs-number">2018_09_23</span>-<span class="hljs-number">00_15_02</span>.tmp
+-rw-r--r--   <span class="hljs-number">1</span> root    root    <span class="hljs-number">1189962672</span> <span class="hljs-number">2018</span>-09-<span class="hljs-number">23</span> <span class="hljs-number">00</span>:<span class="hljs-number">58</span> vzdump-qemu-<span class="hljs-number">103</span>-<span class="hljs-number">2018_09_23</span>-<span class="hljs-number">00_15_02</span>.vma.dat
+drwxr-xr-<span class="hljs-keyword">x</span>   <span class="hljs-number">2</span> root    root            <span class="hljs-number">29</span> <span class="hljs-number">2018</span>-09-<span class="hljs-number">23</span> <span class="hljs-number">00</span>:<span class="hljs-number">52</span> vzdump-qemu-<span class="hljs-number">104</span>-<span class="hljs-number">2018_09_23</span>-<span class="hljs-number">00_15_02</span>.tmp
+-rw-r--r--   <span class="hljs-number">1</span> root    root    <span class="hljs-number">1120599385</span> <span class="hljs-number">2018</span>-09-<span class="hljs-number">23</span> <span class="hljs-number">00</span>:<span class="hljs-number">58</span> vzdump-qemu-<span class="hljs-number">104</span>-<span class="hljs-number">2018_09_23</span>-<span class="hljs-number">00_15_02</span>.vma.dat</code></pre>
+<p>这里数据也在不断生成，可以睡觉去了。</p>
+<p>更加体系化和实例化的proxmox超融合私有云实践系列文章，请移步本人专栏<a href="https://blog.51cto.com/cloumn/detail/21" style="color: rgb(66, 133, 244);">“人人都能玩的私有云神器-proxmox”，猛戳此处，片刻直达</a>！</p></div>
+				</div>
+													<div class="artical-copyright mt26">©著作权归作者所有：来自51CTO博客作者sery的原创作品，如需转载，请注明出处，否则将追究法律责任</div>
+										<div class="appreciate-box">
+					<h2>每一份赞赏源于懂得</h2>
+											<p class="appreciate-btn appreciate-open">赞赏</p>
+										<p class="appreciate-txt">0人进行了赞赏支持</p>
+									</div>
+						<div class="for-tag mt26">
+																						<a href="https://blog.51cto.com/search/result?q=proxmox" target="_blank">proxmox</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E8%B6%85%E8%9E%8D%E5%90%88" target="_blank">超融合</a>
+																								<a href="https://blog.51cto.com/search/result?q=%E7%A7%81%E6%9C%89%E4%BA%91" target="_blank">私有云</a>
+															                				<a class="last" href="https://blog.51cto.com/sery/category7.html" target="_blank"><i></i>《互联网运营智慧》</a>
+                				<div class="clear"></div>
+			</div>
+			<div class="more-list">
+				<p class="is-praise fl "><span type="1" blog_id="2179137" userid="10037">4</span></p>
+				<div class="share-box fr">
+					<p class="share"><i></i>分享</p>
+					<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1592495938108">
+					  <span></span>
+					  <a class="bds_tsina" data-cmd="tsina" title="分享到新浪微博">微博</a>
+					  <a class="bds_sqq" data-cmd="sqq" title="分享到QQ好友">QQ</a>
+					  <a class="bds_weixin" data-cmd="weixin" title="分享到微信">微信</a>
+					  <img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/qr-url">
+					</div>
+				</div>
+				<p class="favorites favorites-opt fr"><i></i>收藏</p>
+								<div class="clear"></div>
+			</div>
+							<div class="artical-list">
+	            					<a class="fl" href="https://blog.51cto.com/sery/2178466" title="proxmox不付费订阅要出麻烦">
+						上一篇：proxmox不付费订阅要出麻烦</a>
+	            	            					<a class="fr" href="https://blog.51cto.com/sery/2297627" title="监控平台实施方案">
+						下一篇：监控平台实施方案</a>
+	            					<div class="clear"></div>
+				</div>
+						<div class="author-module">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/sery" class="a-img" target="_blank">
+						<img class="is-vip-img is-vip-img-4" data-uid="10037" src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/f02132ff9f08de01c7d326b79d5ef227.jpg">
+					</a>
+				</div>
+				<div class="author-module-center fl">
+					<a class="h2" href="https://blog.51cto.com/sery" target="_blank" style="display:inline-block;">sery</a>
+										<a class="clo-author clo-author-big" href="https://blog.51cto.com/cloumn/index" target="_blank" style="display:inline-block;margin:0;vertical-align:sub;"><span class="last">专栏作者</span></a>
+										<h3>188篇文章，571W+人气，2480粉丝</h3>
+					<h4>全真教龙门高字辈道长，linux硬派运维</h4>				</div>
+									<div class="author-module-right author-checkFollow fr">
+          	                  <a id="checkFollow2_10037" class="follow-1 checkFollow on">关注</a>
+              					</div>
+        				<div class="clear"></div>
+			</div>
+		</div>
+		<div class="artical-Left" id="comment">
+			<!-- 发布评论 -->
+			<div class="comment-creat">
+				<div class="is-vip-bg-6 fl">
+					<a href="https://blog.51cto.com/sery" class="header-img" target="_blank">
+						<img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/noavatar_middle.gif">
+					</a>
+				</div>
+				<div class="first-publish fr publish_user_id">
+					<textarea class="textareadiv textareadiv-publish" name="" id="" placeholder="提问和评论都可以，用心的回复会被更多人看到和认可" maxlength="500"></textarea>
+					<div class="comment-push">
+						<p class="msg fl">Ctrl+Enter&nbsp;发布</p>
+													<p class="publish-btn blue-btn fr" flag="1">发布</p>
+												<p class="cancel-btn cancel-btn-1 fr">取消</p>
+						<div class="clear"></div>
+					</div>
+					<input type="hidden" class="user_id" value="10037">
+					<input type="hidden" class="reply_id" value="2179137">
+					<input type="hidden" class="first_pid" value="">
+				</div>
+				<div class="clear"></div>
+			</div>
+							<div class="comment-number" id="comment_pl">
+					<p class="number fl"><span class="comment_number">2</span>条评论</p>
+					<a class="time-last time fr comment-sort" id="sort-desc" flag="desc" page="1">按时间倒序</a>
+				    <a class="time-first time fr comment-sort on" id="sort-asc" flag="asc" page="2">按时间正序</a>
+				    <div class="clear"></div>
+				</div>
+						<div class="commentList"><div class="commentList-box cbox-729532" id="729532"><div class="comment-1 publish_user_id reply_id_box comment_number-list" rid="729532"><div class="top"><div class="is-vip-bg-6 fl header-con"><a href="https://blog.51cto.com/2871079" class="header-img"><img class="is-vip-img-bg is-vip-img-4" src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/noavatar_middle.gif"></a></div><div class="head-right jf-list-box"><p class="name"><a href="https://blog.51cto.com/2871079">yuchi0902</a></p><div class="time"><span class="fl">1楼&nbsp;&nbsp;2019-03-12 10:08:25</span><span class="reply-btn fr" data-type="1"></span><span class="zan fr" blog_id="729532" type="2" userid="2861079"></span><div class="clear"></div></div><input type="hidden" class="reply_id" value="729532"><input type="hidden" class="user_id" value="2861079"><input type="hidden" class="first_pid" value="729532"></div></div><div class="con">MARK</div></div><div class="comment-2"><ul class="comment-2-list" flag="729532"></ul></div></div><div class="commentList-box cbox-741188" id="741188"><div class="comment-1 publish_user_id reply_id_box comment_number-list" rid="741188"><div class="top"><div class="is-vip-bg-6 fl header-con"><a href="https://blog.51cto.com/14022613" class="header-img"><img class="is-vip-img-bg is-vip-img-4" src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/noavatar_middle.gif"></a></div><div class="head-right jf-list-box"><p class="name"><a href="https://blog.51cto.com/14022613">qq5bc6a99e56bb9</a></p><div class="time"><span class="fl">2楼&nbsp;&nbsp;2020-01-03 11:04:45</span><span class="reply-btn fr" data-type="1"></span><span class="zan fr" blog_id="741188" type="2" userid="14012613"></span><div class="clear"></div></div><input type="hidden" class="reply_id" value="741188"><input type="hidden" class="user_id" value="14012613"><input type="hidden" class="first_pid" value="741188"></div></div><div class="con">学习了~~~</div></div><div class="comment-2"><ul class="comment-2-list" flag="741188"></ul></div></div></div>
+			<!-- page -->
+			<div class="act_pageList_box"></div>
+		</div>
+		<!-- end left -->
+		<!-- right start -->
+		<div class="Blog-Right artical-Right">
+			<a class="catalog" style="display: block;"></a>
+			<a class="scrollTop" href="javascript:void(0);" onclick="$(window).scrollTop(0);" style="display: block;"></a>
+		<div class="directoryBox"><span class="top-icon"></span><div class="list directory"><ul class="directory-list"><li class="lv1">第1章&nbsp;&nbsp;使用nfs的目的</li><li class="lv1">第2章&nbsp;&nbsp;挂接NFS服务</li><li class="lv1">第3章&nbsp;&nbsp;修改NFS内容</li><li class="lv1 on">第4章&nbsp;&nbsp;使用NFS共享存储</li><div class="arrow" style="top: 111px;"></div></ul></div><span class="bot-icon"></span></div></div>
+		<!-- end right  -->
+	</div>
+			<div class="special-column">
+			<div class="Page M764">
+									<div class="column-1">
+						<h2 class="column-tit">推荐专栏<a href="https://blog.51cto.com/cloumn/index?utm_source=p" target="_blank"><span class="recommend-more-span" style="">更多</span></a></h2>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/5" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/dc6736c5fd50474b5df8b76b040e3d03.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/5" target="_blank"> 带你玩转高可用</a>
+									<h3 class="white-space">前百度高级工程师的架构高可用实战</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/13527416" target="_blank">曹林华</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>512人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="5" href="https://blog.51cto.com/cloumn/detail/5" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/6" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/629650e188ddde78b213e564c2e9ebff.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/6" target="_blank"> 负载均衡高手炼成记</a>
+									<h3 class="white-space">高并发架构之路</h3>
+									<h4 class="white-space">共15章&nbsp;|&nbsp;<a href="https://blog.51cto.com/sery" target="_blank">sery</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>585人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="6" href="https://blog.51cto.com/cloumn/detail/6" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/13" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/a940c66317ecbe58436a2ad3831c2d7d.png">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/13" target="_blank"> 基于Python的DevOps实战</a>
+									<h3 class="white-space">自动化运维开发新概念</h3>
+									<h4 class="white-space">共20章&nbsp;|&nbsp;<a href="https://blog.51cto.com/yuhongchun" target="_blank">抚琴煮酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>550人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="13" href="https://blog.51cto.com/cloumn/detail/13" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/18" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/45862f289339dc922ffda669fd74ad9b.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/18" target="_blank"> 网工2.0晋级攻略 ——零基础入门Python/Ansible</a>
+									<h3 class="white-space">网络工程师2.0进阶指南</h3>
+									<h4 class="white-space">共30章&nbsp;|&nbsp;<a href="https://blog.51cto.com/gingerbeer" target="_blank">姜汁啤酒</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>1972人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="18" href="https://blog.51cto.com/cloumn/detail/18" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+													<div class="column-box recommend-cloumn">
+								<a href="https://blog.51cto.com/cloumn/detail/30" class="a-img fl cloumn-tab-par" target="_blank">
+									<img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/5353379fc95da1d7d34fd243b9ace17f.jpg">
+                													</a>
+								<div class="center fl">
+									<a class="h2 white-space left-list" href="https://blog.51cto.com/cloumn/detail/30" target="_blank"> 全局视角看大型园区网</a>
+									<h3 class="white-space">路由交换+安全+无线+优化+运维</h3>
+									<h4 class="white-space">共40章&nbsp;|&nbsp;<a href="https://blog.51cto.com/weilan2222" target="_blank">51CTOsummer</a></h4>
+									<h5><span class="price">
+                                    ￥51.00
+                                    </span><span>2427人订阅</span></h5>
+								</div>
+								<div class="right fr recommend-cloumn-right">
+							        																							<a class="cloumn-subscribe left-list" cid="30" href="https://blog.51cto.com/cloumn/detail/30" ask="1" target="_blank">订&nbsp;&nbsp;&nbsp;阅</a>
+																			    								</div>
+								<div class="clear"></div>
+							</div>
+											</div>
+													<div class="column-2" style="margin-top: 76px;">
+						<h2 class="column-tit">猜你喜欢</h2>
+						<div class="column-box">
+															<a class="white-space" href="https://blog.51cto.com/sery/2500501?source=dra" target="_blank">Rhel 7 pcs 实现oracle 12c高可用</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/sery/2495136?source=dra" target="_blank">Centreon 19.04升级到centreon 20.04</a>
+															<a class="white-space" href="https://blog.51cto.com/14449530/2437903?source=drt" target="_blank">路由表的路由来源有哪些？</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/xtbao/2132130?source=drt" target="_blank">超详细的Hadoop2配置详解</a>
+															<a class="white-space" href="https://blog.51cto.com/369369/790921?source=drt" target="_blank">mysql主从复制（超简单）</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/151wqooo/1162118?source=drt" target="_blank">Linux查找含有某字符串的所有文件</a>
+															<a class="white-space" href="https://blog.51cto.com/xiaozongpeng/2170694?source=drt" target="_blank">肖哥所有课程/华为HCIA HCNP/安全/云计算/linux 资料软件视频下载链接</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/13683137989/1880744?source=drt" target="_blank">ip_forward与路由转发</a>
+															<a class="white-space" href="https://blog.51cto.com/wzlinux/1683915?source=drt" target="_blank">CentOS 用Strongswan搭建IPSec ***</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/wyait/2137112?source=drt" target="_blank">springboot创建父子工程、聚合工程及问题解决</a>
+															<a class="white-space" href="https://blog.51cto.com/sery/2421595?source=drt" target="_blank">在最新版proxmox VE 6 部署oracle 19C（单实例）</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/lavasoft/222082?source=drt" target="_blank">Java线程：新特征-有返回值的线程</a>
+															<a class="white-space" href="https://blog.51cto.com/237826/2504461?source=drh" target="_blank">企业实战LNMP高性能服务器_wordpress、discuz双网站部署</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/bigboss/2504122?source=drh" target="_blank">利用Jenkins Shared Libraries隐藏你的Jenkinsfile</a>
+															<a class="white-space" href="https://blog.51cto.com/swiki/2503403?source=drh" target="_blank">consul+upsync+nginx实现动态负载均衡</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14156658/2503237?source=drh" target="_blank">配置Jenkins通过邮件发送警告</a>
+															<a class="white-space" href="https://blog.51cto.com/zlong37/2502652?source=drh" target="_blank">Zabbix 5.0 LTS 源码包编译部署以及新特性介绍</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/hexiaoshuai/2501771?source=drh" target="_blank">MySQL主主复制+keepalived高可用方案实现</a>
+															<a class="white-space" href="https://blog.51cto.com/9025736/2501694?source=drh" target="_blank">consul1.6实现Mysql-Gtid主从读写分离和高可用-03</a>
+															<a class="white-space left-list" href="https://blog.51cto.com/14601726/2501687?source=drh" target="_blank">LNMPA 中PHP 连接MySQL，公网访问</a>
+														<div class="clear"></div>
+						</div>
+					</div>
+							</div>
+		</div>
+		<div class="group_img_box" style="position: fixed;top: 40%;left:49%;">
+		<div class="group_git_box">
+                	 <img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/f84902630cd49eab16f7895cd73e3092.png" style="width:50px;height:50px;"> 	
+			<!--<img src="https://s4.51cto.com/images/blog/201810/22/078772c84eb23213ea90f577d9316ce4.png"/>-->
+        		</div>
+			<div class="group_code_box">
+			<img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/left-qr.jpg" width="130" height="130">
+			<p>扫一扫,领取大礼包</p>
+		</div>
+		
+		<div><!--学院领VIP-->
+            <a href="https://edu.51cto.com/center/activity/member-activity?qd=bokexiaotu" target="_blank">
+                <img src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/556fdbd28b29d2a48a431a95f9e06c90.gif" style="width:55px;margin-top: 10px;">
+            </a>
+        </div>
+		
+	</div>
+	<div class="the-lowest-bg" style="display: none;">
+		<div class="the-lowest Page M764">
+			<p class="is-praise fl "><span type="1" blog_id="2179137" userid="10037">4</span></p>
+			<p class="b-favorites favorites-opt fl"><i></i><b>2</b></p>
+			<a class="b-reply fl"><i></i><font class="comment_number">2</font></a>
+			<div class="b-share fl">
+				<i></i>分享
+				<div class="bdsharebuttonbox bdshare-button-style0-16" data-bd-bind="1592495938108">
+				  <a class="bds_tsina p2" data-cmd="tsina" title="分享到新浪微博"></a>
+				  <a class="bds_sqq p3" data-cmd="sqq" title="分享到QQ好友"></a>
+				  <a class="bds_weixin p1" data-cmd="weixin" title="分享到微信"><em class="code-icon"></em><img class="code-img" src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/qr-url"></a>
+				</div>
+			</div>
+      				<div class="b-fllow author-checkFollow fr" style="margin-left: 20px;">
+                        <a id="checkFollow3_10037" class="follow-1 checkFollow on">关注</a>
+          				</div>
+      						<a class="clo-author clo-author-litt fr" href="https://blog.51cto.com/cloumn/index" target="_blank" style="margin:8px 0 0 12px"><span class="last">专栏作者</span></a>
+						<a href="https://blog.51cto.com/sery" class="b-name fr">sery</a>
+			<div class="is-vip-bg-6 fr">
+				<a href="https://blog.51cto.com/sery" class="b-img"><img class="is-vip-img is-vip-img-4" data-uid="10037" src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/f02132ff9f08de01c7d326b79d5ef227.jpg"></a>
+			</div>
+			<div class="clear"></div>
+
+		</div>
+	</div>
+</div>
+<!-- 老博文美观处理 -->
+<script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/countDown.js"></script>
+<script>
+	var praise_url = 'https://blog.51cto.com/praise/praise'
+    	addReply_url = 'https://blog.51cto.com/comments/add'
+    	removeUrl = 'https://blog.51cto.com/comments/del'
+    	blog_id = '2179137'
+    	pv_log_info = {
+            'pv_type':'blog',
+            'user_id':'10037',
+            'blog_id':'2179137'
+        };
+    	rid = '0'
+    	is_comment = '0'
+    	comment_list = '/blog/ajax-comment-list'
+    	comment_sort = "asc"
+    	index_url = 'https://blog.51cto.com/sery';
+    	uc_url = 'https://ucenter.51cto.com/'
+    	blog_url = 'https://blog.51cto.com/'
+    	img_url = 'https://static1.51cto.com/edu/blog/'
+    	i_user_id = ''
+    	c_user_id ='10037'
+    	collect_url = 'https://blog.51cto.com/collect/add'
+    	is_old = '0'
+    	nicknameurl = 'https://blog.51cto.com/sery'
+    	nickname = 'sery'
+    	myself = window.location.href;
+	$('.you-like-list li:odd').css({'margin-left': '10%'});
+	$('.column-box a:odd').addClass('left-list')
+	$('.myUrl').text(myself).click(function(){window.open(myself)})
+	setTimeout(function(){$('.Footer').css({'margin-top':'-50px'})},50)
+    		function FollowBtnSucc(e){//1:未关注,2:已关注,3:互相关注
+		    if(e==2||e==3){
+		        $.post('/index/wxbind',{uid:userId},function(res){
+		            if(res.data.wxBind == 0){//没绑定
+	                    if(getCookie('follow1'))return false;
+	                    box1()
+	                }else{
+	                    if(getCookie('follow2'))return false;
+	                    box2()
+	                }
+		        },'json')
+		    }
+		}
+		FollowBtn = new Follow($('#checkFollow1_10037'),'10037','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow2_10037'),'10037','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+		FollowBtn = new Follow($('#checkFollow3_10037'),'10037','1',['on','in','mutual','off']);
+		FollowBtn.success=FollowBtnSucc;
+        	if(is_old==1){
+    // SyntaxHighlighter.all();
+    insertCodeElement("\u4f5c\u8005\uff1a\u7530\u9038\uff08sery@163.com\uff09\n\n# \u4f7f\u7528nfs\u7684\u76ee\u7684\n\nProxmox\u96c6\u7fa4\u4e2d\uff0c\u5982\u679c\u5c06ISO\u6587\u4ef6\u5b58\u50a8\u4e8e\u672c\u5730\uff0c\u53ea\u80fd\u4f9b\u672c\u8282\u70b9\u5b58\u53d6\uff0c\u8981\u7528\u4e8e\u96c6\u7fa4\u7684\u5176\u5b83\u8282\u70b9\u8fdb\u884c\u5b89\u88c5\uff0c\u5c06\u65e0\u6cd5\u5982\u613f\u3002\n![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/3d3a5fa8a1daca6340aa7fe16c8e3880.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u73b0\u5df2\u7ecf\u5728\u7269\u7406\u8282\u70b9pve48\u7684\u672c\u5730\u5b58\u50a8\u4e0a\u4f20\u4e86\u53ef\u4ee5\u4f7f\u7528\u7684ISO\u955c\u50cf\uff0c\u63a5\u4e0b\u6765\uff0c\u8bd5\u7740\u521b\u5efa\u865a\u62df\u673a\uff0c\u7528\u6b64ISO\u955c\u50cf\u6765\u5b89\u88c5\u865a\u62df\u673a\u64cd\u4f5c\u7cfb\u7edf\u3002\n ![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/559a99fae8247ff0c95c1acf48a524fe.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u6b64\u865a\u62df\u673a\u521b\u5efa\u5728\u96c6\u7fa4\u4e2d\u53e6\u5916\u4e00\u4e2a\u7269\u7406\u8282\u70b9pve50\u4e0a\uff0c\u968f\u4fbf\u7ed9\u5176\u547d\u540d\u8fdb\u884c\u6d4b\u8bd5\u3002\n ![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/d63c974580252f94661851937e51a43a.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u8fd9\u6837\u6709\u4e9b\u9ebb\u70e6\uff0c\u5982\u679c\u8981\u5728\u6bcf\u4e2a\u8282\u70b9\u7ed9\u865a\u62df\u673a\u5b89\u88c5\u64cd\u4f5c\u7cfb\u7edf\uff0c\u6309\u5e38\u89c4\u7684\u65b9\u5f0f\uff0c\u6bcf\u4e2a\u7269\u7406\u8282\u70b9\uff0c\u90fd\u5f97\u4e0a\u4f20\u597d\u6240\u9700\u7684\u64cd\u4f5c\u7cfb\u7edfISO\u955c\u50cf\uff0c\u65e2\u8d39\u65f6\u53c8\u6d6a\u8d39\u5b9d\u8d35\u7684\u5b58\u50a8\u8d44\u6e90\u3002\n\n\u90a3\u4e48\uff0c\u6709\u6ca1\u6709\u597d\u7684\u89e3\u51b3\u65b9\u6848\u5462\uff1f\u6709\u7684\uff0cnfs\u5c31\u662f\u5f88\u597d\u7684\u5de5\u5177\u3002\u5916\u6302nfs\u670d\u52a1\uff0c\u5373\u89e3\u51b3\u4e86\u5bb9\u91cf\u6269\u5c55\u95ee\u9898\uff0c\u53c8\u80fd\u8ba9\u6240\u6709\u7684\u865a\u62df\u673a\u90fd\u53ef\u4ee5\u5171\u4eab\u8bfb\u53d6\u3002\u53ef\u80fd\u4f1a\u6709\u4eba\u8d28\u7591\uff0c\u8fd9nfs\u53ef\u7528\u6027\u5dee\uff0c\u800c\u8d85\u878d\u5408\u53ef\u884c\u6027\u786e\u5b9e\u6781\u9ad8\uff0c\u4f55\u5fc5\u591a\u6b64\u4e00\u4e3e\u5462\uff1f\n\n\u6211\u4eec\u7528nfs\u6765\u5b58\u50a8ISO\u955c\u50cf\u4ee5\u53ca\u5b9a\u65f6\u5907\u4efd\u865a\u62df\u673a\uff0c\u5e76\u4e0d\u9700\u8981\u5f88\u9ad8\u7684\u53ef\u7528\u6027\u3002\u56e0\u6b64\uff0c\u4f5c\u4e3a\u8d85\u878d\u5408\u9ad8\u53ef\u7528\u79c1\u6709\u4e91\u7684\u8f85\u52a9\u624b\u6bb5\uff0c\u662f\u975e\u5e38\u7ecf\u6d4e\u548c\u9002\u7528\u7684\u3002\u56e0\u4e3a\u72ec\u7acb\u7684\u7269\u7406nfs\u4f5c\u4e3a\u79c1\u6709\u4e91\u96c6\u7fa4\u7684\u8865\u5145\uff0c\u5e76\u4e0d\u9700\u8981\u8f83\u9ad8\u7684\u914d\u7f6e\uff0c\u53ea\u8981\u78c1\u76d8\u5bb9\u91cf\u8db3\u591f\u5927\u5c31\u884c\uff08\u4e0d\u50cf\u96c6\u7fa4\u8ba1\u7b97\u8282\u70b9\uff0c\u9700\u8981\u6027\u80fd\u6781\u4f73\u7684\u78c1\u76d8\uff09\u3002\n\n# \u6302\u63a5NFS\u670d\u52a1\nProxmox web\u7ba1\u7406\u754c\u9762\uff0c\u5728\u201c\u6570\u636e\u4e2d\u5fc3\u201d\u4e4b\u4e0b\uff0c\u9009\u4e2d\u201c\u5b58\u50a8\u201d\uff0c\u70b9\u51fb\u201c\u6dfb\u52a0\u6309\u94ae\u201d\u3002\n ![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/b22a9da02341ad49582124715853fee8.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u53ea\u8981nfs\u670d\u52a1\u5668\u6743\u9650\u8bbe\u7f6e\u6b63\u5e38\uff0c\u5728\u7ba1\u7406\u754c\u9762\u8f93\u5165nfs\u670d\u52a1\u5668\u7684ip\u5730\u5740\u4e4b\u540e\uff0c\u53ef\u81ea\u52a8\u63a2\u6d4b\u5230\u8bbe\u5b9a\u7684\u5171\u4eab\u76ee\u5f55\uff08\u5b9e\u9645\u662f\u8c03\u7528\u7cfb\u7edf\u6307\u4ee4 pvesm nfsscan 172.16.228.254\uff09\u3002\n ![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/2b254f9923986fc185aa7238cf5a1618.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\n# \u4fee\u6539NFS\u5185\u5bb9\n\n\u6302\u63a5\u4e0a\u5171\u4eab\u7684nfs\u5b58\u50a8\u540e\uff0c\u5b58\u50a8\u7684\u5185\u5bb9\u4ec5\u4ec5\u5305\u542b\u201c\u78c1\u76d8\u6620\u50cf\u201d\u4e00\u4e2a\u9879\u76ee\uff0c\u8981\u7528\u4e8eISO\u5b58\u50a8\u4ee5\u53ca\u865a\u62df\u673a\u5907\u4efd\uff0c\u8fd8\u9700\u5bf9nfs\u8fdb\u884c\u7f16\u8f91\u3002\n\nProxmox web\u7ba1\u7406\u754c\u9762\uff0c\u201c\u6570\u636e\u4e2d\u5fc3\u201d\u4e0b\uff0c\u5bf9\u201c\u5b58\u50a8\u201d \u9879NFS\u8fdb\u884c\u7f16\u8f91\uff0c\u7528\u9f20\u6807\u8fdb\u884c\u591a\u9009\u64cd\u4f5c\uff0c\u81f3\u5c11\u628a\u201cISO\u6620\u50cf\u201d\u3001\u201cVZDump\u201d\u7ed9\u9009\u4e0a\u3002\n ![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/a3e4dc70a18d5a5a3cdaba73dc9896fa.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u9009\u5b8c\u5e76\u70b9\u51fb\u201cOK\u201d\u6309\u94ae\u4ee5\u540e\uff0c\u5c06\u5728nfs\u7684\u5171\u4eab\u76ee\u5f55\u751f\u6210\u5b50\u76ee\u5f55template\/iso\u3001dump\u3002\n\n\u628a\u6240\u9700\u7684\u64cd\u4f5c\u7cfb\u7edfISO\u6587\u4ef6\uff0c\u4e0a\u4f20\u5230\u76ee\u5f55template\/iso ,\u540e\u8fb9\u5c31\u53ef\u4ee5\u4f9b\u96c6\u7fa4\u4e2d\u5404\u7269\u7406\u8282\u70b9\u4f7f\u7528\u3002\n ![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/ee4c7555a766f79b59d20b7afd118463.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\n# \u4f7f\u7528NFS\u5171\u4eab\u5b58\u50a8\n\n\u25cb\u7528nfs\u5171\u4eabISO\u5b89\u88c5\u865a\u62df\u673a\u64cd\u4f5c\u7cfb\u7edf\n\u521b\u5efa\u865a\u62df\u673a\uff0c\u53ef\u9009\u4efb\u610f\u8282\u70b9\uff0c\u955c\u50cf\u6587\u4ef6\u6240\u5728\u7684\u5b58\u50a8\uff0c\u9009\u201cNFS\u201d\uff0c\u7136\u540e\u5c31\u53ef\u4ee5\u770b\u5230\u6240\u9700\u7684ISO\u6587\u4ef6\uff0c\u8fdb\u884c\u4e0b\u4e00\u6b65\u64cd\u4f5c\u3002\n ![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/c5c37d1f59b285bed6e12e1ae3d3f683.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\n\u25cb\u628a\u865a\u62df\u673a\u5907\u4efd\u5230NFS\n\nProxmox web\u7ba1\u7406\u754c\u9762\uff0c\u201c\u6570\u636e\u4e2d\u5fc3\u201d\u4e0b\uff0c\u9009\u201c\u5907\u4efd\u201d\uff0c\u70b9\u51fb\u201c\u6dfb\u52a0\u201d\u6309\u94ae\uff08\u6b64\u64cd\u4f5c\u9002\u5408\u6279\u91cf\u5907\u4efd\uff0c\u5355\u4e2a\u865a\u62df\u673a\u5907\u4efd\u53ef\u7528\u5176\u5b83\u65b9\u5f0f\uff09\u3002\n ![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/216168ced886caa411fd643c3e018162.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u5b9a\u65f6\u5907\u4efd\u7684\u661f\u671f\uff0c\u53ef\u4ee5\u7528\u9f20\u6807\u8fdb\u884c\u591a\u9009\u3002\u521b\u5efa\u6210\u529f\u4ee5\u540e\uff0c\u53ef\u4ee5\u5728web\u754c\u9762\u770b\u89c1\u8fd9\u4e2a\u8ba1\u5212\u4efb\u52a1\u3002\n ![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/5bffce2fd54387a3f2d72f672cd2c28c.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\nWeb\u754c\u9762\u6211\u4eec\u770b\u5230\u4e86\u4efb\u52a1\uff0c\u90a3\u4e48\u7cfb\u7edf\u7684\u4efb\u52a1\u5728\u54ea\u91cc\u5462\uff1f\u767b\u5f55\u7269\u7406\u8282\u70b9\u7cfb\u7edf\uff0c\u6253\u5f00\u6587\u4ef6\/etc\/cron.d\/vzdump,\u5176\u5185\u5bb9\u5982\u4e0b\uff1a\n```\nroot@pve50:\/var\/lib\/vz\/template\/iso# more \/etc\/cron.d\/vzdump \nPATH=\"\/usr\/sbin:\/usr\/bin:\/sbin:\/bin\"\n\n15 0 * * 6,7         root vzdump 100 101 102 103 104 105 106 107 108 115\n --mailnotification always --storage nfs254 --quiet 1\n --mailto sery@163.com --compress lzo --mode snapshot\n```\n\n\n\u73b0\u5728\u65f6\u95f4\u662f0\uff1a18\uff0c\u5907\u4efd\u5e94\u8be5\u5f00\u59cb\u4e86\uff0c\u67e5\u770b\u7cfb\u7edf\u8fdb\u7a0b\uff0c\u5e94\u8be5\u6709vzdump\u5b58\u5728\u3002\n ![](https:\/\/s4.51cto.com\/images\/blog\/201809\/23\/016a8a36c4042d93d920455a012c3898.jpg?x-oss-process=image\/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)\n\u679c\u7136\u5982\u6b64\uff0c\u518d\u767b\u5f55nfs\u6240\u5728\u7684\u7cfb\u7edf\uff0c\u67e5\u770b\u662f\u5426\u6709\u6587\u4ef6\u751f\u6210\u3002\n```\n[root@storage-254 dump]# pwd\n\/mnt\/mmystor\/bbs_att\/uploads\/dump\n[root@storage-254 dump]# ls -al\ntotal 3272352\ndrwxr-xr-x   5 root    ofguest       4096 2018-09-23 00:52 .\ndrwxr-xr-x+ 28 ofguest ofguest       4096 2018-09-22 23:40 ..\ndrwxr-xr-x   2 root    root            29 2018-09-23 00:52 vzdump-qemu-100-2018_09_23-00_15_02.tmp\n-rw-r--r--   1 root    root    1040303291 2018-09-23 00:58 vzdump-qemu-100-2018_09_23-00_15_02.vma.dat\ndrwxr-xr-x   2 root    root            29 2018-09-23 00:52 vzdump-qemu-103-2018_09_23-00_15_02.tmp\n-rw-r--r--   1 root    root    1189962672 2018-09-23 00:58 vzdump-qemu-103-2018_09_23-00_15_02.vma.dat\ndrwxr-xr-x   2 root    root            29 2018-09-23 00:52 vzdump-qemu-104-2018_09_23-00_15_02.tmp\n-rw-r--r--   1 root    root    1120599385 2018-09-23 00:58 vzdump-qemu-104-2018_09_23-00_15_02.vma.dat\n```\n\n\u8fd9\u91cc\u6570\u636e\u4e5f\u5728\u4e0d\u65ad\u751f\u6210\uff0c\u53ef\u4ee5\u7761\u89c9\u53bb\u4e86\u3002\n\n\u66f4\u52a0\u4f53\u7cfb\u5316\u548c\u5b9e\u4f8b\u5316\u7684proxmox\u8d85\u878d\u5408\u79c1\u6709\u4e91\u5b9e\u8df5\u7cfb\u5217\u6587\u7ae0\uff0c\u8bf7\u79fb\u6b65\u672c\u4eba\u4e13\u680f[\u201c\u4eba\u4eba\u90fd\u80fd\u73a9\u7684\u79c1\u6709\u4e91\u795e\u5668-proxmox\u201d\uff0c\u731b\u6233\u6b64\u5904\uff0c\u7247\u523b\u76f4\u8fbe](https:\/\/blog.51cto.com\/cloumn\/detail\/21)\uff01", '#result');
+  }
+
+  function insertCodeElement(content, container){
+    container = container || document;
+    // 创建一个 div 来放置获取到的内容，这样就可以把 content 字符串内容转换成 dom
+    // 方便我们对这个 dom 进行操作（只是创建 div，并没有插入到文档，他只存在于内存中）
+    var parent = document.createElement('div');
+    parent.innerHTML = content;
+
+    // 找到 parent 中的所有 pre 标签，并遍历
+    var $pres = $(parent).find('pre');
+    $pres.each(function(index, el) {
+      var $el = $(el),
+          html = $el.html(),
+          code = document.createElement('code'),
+          elClass = $el.attr('class');
+      if(!elClass) {return};
+          // 获取 pre 标签中，class 属性中包含的本段代码所有的编程语言
+      var language = elClass.substring(6, elClass.indexOf(';'));
+
+      code.className = 'language-' + language;
+      code.innerHTML = html;
+
+      $el.html(code);
+    });
+
+    $(container).html(parent.innerHTML);
+
+    // 最后，调用 Prism 的方法来高亮代码
+    Prism.highlightAll();
+  }
+	window._bd_share_config={
+    "common":{
+      "bdText":"Proxmox 使用nfs备份及存储iso",
+      "bdDesc":$("#abstract_bdshare").text(),
+      "bdMini":"2",
+      "bdMiniList":false,
+      "bdPic":"https://s4.51cto.com/images/201710/25/bd540a4f14d822f6e69087758699358b.jpg",
+      "bdStyle":"0",
+      "bdSize":"16"
+    },
+    "share":{}
+  };
+  with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+  setTimeout(function(){
+  	$('.bdsharebuttonbox a').removeAttr('title')
+  },1000);
+
+	var now_time = 1592495934; //当前时间
+  setInterval(function(){now_time+=0.01},10);
+
+  // 初始化页面
+  updatePage();
+  // 页面tab切换
+  zDate.visibilityAction(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+   })
+  // 定时刷新现在时间
+  setInterval(function () {
+    zDate.getServerTime(function (e) {
+      var updateResult = new Date(e).getTime();
+      now_time = +updateResult.toString().substr(0, 10);
+      updatePage();
+    });
+  }, 1000*60*2);
+  // 页面刷新
+  function updatePage() {
+    $('.presell').each(function(index, item) {
+      var end_time = $(this).data('end'); // 结束时间
+      if (!end_time) {
+        return;
+      }
+      var me = $(this);
+      if (me.lastTime) {
+        clearInterval(me.lastTime);
+        me.lastTime = null;
+      } else {
+        me.lastTime = setInterval(function() {
+          zDate.setLastTimePc(me.find('.timespan'), (end_time*1000-now_time*1000), me.lastTime, function() {
+						me.parents('.right').find('.cloumn-subscribe').removeClass('presell-color');
+						me.remove();
+						$('.pre-tips').remove();
+					});
+        }, 10);
+      }
+    });
+  }
+		//二维码显示
+		$(".group_git_box").hover(function(){
+			$(this).parents('.group_img_box').find(".group_code_box").show()
+		},function(){
+			$(this).parents('.group_img_box').find(".group_code_box").hide()
+		})
+</script>
+</div>
+<script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/marked.min.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/highlight.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/detail_mp.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/detail.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/details_new.js"></script><script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/copy.js"></script>    
+<div style="display:none">
+    <iframe frameborder="0" scrolling="no" width="0" height="0" src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/pageview.html"></iframe>
+</div>
+
+<script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/pvlog.js"></script>
+<script>
+  $(".gotop").click(function(){$(window).scrollTop(0)})
+</script>
+
+
+    <script type="text/javascript">
+    //百度统计代码
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2283d46608159c3b39fc9f1178809c21";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+
+    //自动推送链接
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+    </script>
+
+    <script type="text/javascript">
+      var _vds = _vds || [];
+      window._vds = _vds;
+      (function(){
+        _vds.push(['setAccountId', '8c51975c40edfb67']);
+        (function() {
+          var vds = document.createElement('script');
+          vds.type='text/javascript';
+          vds.async = true;
+          vds.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'assets.growingio.com/vds.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(vds, s);
+        })();
+      })();
+      //document.write(decodeURI("%3Cscript src='https://tongji.51cto.com/frontend/tj.gif' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+<script>
+  var uid = '';
+  var BLOG_URL = 'https://blog.51cto.com/';
+</script>
+<script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/jquery.cookie.js"></script>
+<script src="./Proxmox 使用nfs备份及存储iso-田逸（sery）-51CTO博客_files/time-on-page.js" charset="utf-8"></script>
+<script>
+    (function(){
+        var wh=$(window).height(),fh=$('.Footer').outerHeight(true),hh=$('.Header').outerHeight(true)
+        $('.Content-box').css({'min-height': wh-fh-hh})
+    })()
+</script>
+
+
+<div id="zhichiBtnBox" style="position: fixed; z-index: 2147483583; box-shadow: rgba(15, 66, 76, 0.25) 0px 0px 14px 0px; width: 60px; height: 60px; border-radius: 50%; background-color: rgb(66, 133, 244); background-image: url(&quot;//www.sobot.com/chat/frame/imgs/icon.png&quot;); background-repeat: no-repeat; background-position: 18px -58px; right: 40px; bottom: 90px; display: none;"><a hidefocus="" id="zhichiBtn" style="position:relative;text-decoration: none; outline: none; font-family: Microsoft Yahei, Arial, Helvetica; color: #fff; font-size: 16px; display: inline-block; margin: 0; padding: 0; border: none; line-height:43px; float:none;width:100%;height:100%;border-radius:50%;"><span class="zc-advice-icon-btn-title" style="box-shadow: rgba(107, 113, 114, 0.15) 0px 2px 4px 0px; border: 1px solid rgb(235, 239, 240); font-family: &quot;Microsoft Yahei&quot;, Arial, Helvetica; color: rgb(85, 85, 86); font-size: 13px; margin: 0px; text-align: right; background: rgb(255, 255, 255); position: absolute; top: 15px; right: 70px; text-overflow: ellipsis; white-space: nowrap; word-break: normal; display: none; border-radius: 3px; padding: 0px 5px; height: 30px; line-height: 30px;">咨询在线客服</span></a><i style="position:absolute;top:0px;right:0px;padding:1px;line-height:20px;text-align:center;color:#fff;font-weight:bold;height:18px;min-width:18px;background-color:#ed5c5c;border-radius:18px;font-size:12px;display:none;font-style:normal;" id="zhichiCount"></i></div></body></html>

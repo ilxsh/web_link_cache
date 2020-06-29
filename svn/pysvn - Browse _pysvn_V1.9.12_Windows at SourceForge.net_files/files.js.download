@@ -1,0 +1,162 @@
+/*global $, ga, SF*/
+
+// mock absence of old jQ in Sandiego theme
+$.browser = $.browser || {safari:false};
+
+
+function formatAbbr(s) {
+    var $abbr = $('abbr', '<div>' + s + '</div>');
+    if ($abbr.length) {
+        return $abbr.attr('title');
+    } else {
+        // strip out HTML tags
+        var html_tags_regex = new RegExp('<(?:.|\\s)*?>', 'g');
+        return $.trim(s.replace(html_tags_regex, ""));
+    }
+}
+
+if($.tablesorter){
+    // add a custom parser for file sizes
+    $.tablesorter.addParser({
+        id: 'filesize',
+        is: function(s) {
+            // return false so this parser is not auto detected
+            return false;
+        },
+        format: function(s) {
+            var matches = s.match(/(\d+\.?\d*)\s(\w+)/) || [],
+            size = parseFloat(matches[1]) || 0,
+            suffix = matches.length ? matches[2].toLowerCase() : '',
+            bytes = size; // default case
+
+            // using standard SI definition
+            switch(suffix) {
+                case 'kb': bytes = size * 1000; break;
+                case 'mb': bytes = size * 1000000; break;
+                case 'gb': bytes = size * 1000000000; break;
+            }
+
+            return bytes;
+        },
+        // set type, either numeric, text, or natural
+        type: 'numeric'
+    });
+
+    $.tablesorter.addParser({
+        id: 'type',
+        is: function(s) {
+            // return false so this parser is not auto detected
+            return false;
+        },
+        format: function(s) {
+            var type = 0;
+            if ($(s).hasClass('folder')) {
+                type = 1;
+            } else if ($(s).hasClass('file')) {
+                type = 2;
+            } else {
+                type = 3;
+            }
+            return type;
+        },
+        // set type, either numeric, text, or natural
+        type: 'numeric'
+    });
+
+    $.tablesorter.addParser({
+        id: 'name',
+        is: function(s) {
+            return false;
+        },
+        format: function(s) {
+            var i = $(s).find('.name').html();
+            return i.toLowerCase();
+        },
+        // set type, either numeric, text, or natural
+        type: 'text'
+    });
+
+    $.tablesorter.addParser({
+        id: 'download_count',
+        is: function(s) {
+            return false;
+        },
+        format: function(s) {
+            var i = $(s).filter('.stats').find('a .count').html();
+            i = i ? i.replace(/,/g, '') : 0;
+            return i;
+        },
+        // set type, either numeric, text, or natural
+        type: 'numeric'
+    });
+
+    $.tablesorter.addParser({
+        id: 'abbrdate',
+        is: function(s) {
+            // return false so this parser is not auto detected
+            return false;
+        },
+        format: formatAbbr,
+        // set type, either numeric, text, or natural
+        type: 'text'
+    });
+}
+
+
+
+$('#download-redirect-dialog form').submit(function(e) {
+    e.preventDefault();
+    if ($('input:text', this).val()) {
+        $('label.error', this).removeClass('error');
+        $('span.error', this).remove();
+        $.ajax({
+            url: 'download_redirect',
+            type: 'POST',
+            data: $(this).serialize(),
+            beforeSend: function(xhr){
+                xhr.setRequestHeader("Accept","application/json; charset=utf-8");
+            },
+            success: function(data, statusText) {
+                $.fn.files.closeModal('#download-redirect-dialog');
+                $('#messages').notify({
+                    status: 'success',
+                    message: 'Download redirect settings saved.'
+                });
+            },
+            error: function(data, statusText) {
+                $.fn.files.closeModal('#download-redirect-dialog');
+                var exc = {};
+                try {
+                    exc = $.parseJSON(data.responseText);
+                } catch (e) {
+                    if ('console' in window) {
+                        window.console.error("Invalid JSON: " + data.responseText);
+                    }
+                }
+                if (!('error' in exc) || typeof(exc.error) !== 'string') {
+                    exc.error = 'An error occurred while creating the folder.';
+                }
+                $('#messages').notify({
+                    status: 'error',
+                    message: exc.error
+                });
+            }
+        });
+    } else {
+        $('input:text', this).focus().select();
+        $('label', this).addClass('error');
+        $(this).prepend('<span class="error">The folder name is invalid, please try again.</span>');
+    }
+    return false;
+});
+
+$('.download-redirect').click(function(e) {
+    e.preventDefault();
+    $.fn.files.openModal('#download-redirect-dialog');
+    return false;
+});
+
+
+if (SF.Ads.scrollFixableEnabled) {
+    SF.Ads.scrollFixable = new SF.ScrollFixable($('.scroll-fixable').eq(0), {"watchAvoidStickiness": true, "avoidElement": ".l-header-nav, .l-header-nav-bottom", "adjustHorizontal": false});
+}
