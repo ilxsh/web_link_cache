@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<!-- saved from url=(0049)http://www.oolap.com/running-systemd-in-container -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="MobileOptimized" content="width">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="viewport" content="width=device-width">
+  <link rel="stylesheet" type="text/css" href="./在容器中运行 systemd_files/gollum.css" media="all">
+  <link rel="stylesheet" type="text/css" href="./在容器中运行 systemd_files/editor.css" media="all">
+  <link rel="stylesheet" type="text/css" href="./在容器中运行 systemd_files/dialog.css" media="all">
+  <link rel="stylesheet" type="text/css" href="./在容器中运行 systemd_files/template.css" media="all">
+  <link rel="stylesheet" type="text/css" href="./在容器中运行 systemd_files/print.css" media="print">
+  <link rel="stylesheet" type="text/css" href="./在容器中运行 systemd_files/custom.css" media="all">
+  
+
+  <!--[if IE 7]>
+  <link rel="stylesheet" type="text/css" href="/css/ie7.css" media="all">
+  <![endif]-->
+
+  <script>
+      var baseUrl = '';
+      var uploadDest   = '';
+      var pageFullPath = 'running systemd in container';
+  </script>
+  <script type="text/javascript" src="./在容器中运行 systemd_files/jquery-1.7.2.min.js"></script>
+  <script type="text/javascript" src="./在容器中运行 systemd_files/mousetrap.min.js"></script>
+  <script type="text/javascript" src="./在容器中运行 systemd_files/gollum.js"></script>
+  <script type="text/javascript" src="./在容器中运行 systemd_files/gollum.dialog.js"></script>
+  <script type="text/javascript" src="./在容器中运行 systemd_files/gollum.placeholder.js"></script>
+  <script type="text/javascript" src="./在容器中运行 systemd_files/gollum.editor.js"></script>
+
+  
+
+  <title>在容器中运行 systemd</title>
+</head>
+<body class="webkit">
+
+<script>
+Mousetrap.bind(['e'], function( e ) {
+  e.preventDefault();
+  window.location = "/edit" + window.location.pathname;
+  return false;
+});
+</script>
+<div id="wiki-wrapper" class="page">
+<div id="head">
+  <h1>在容器中运行 systemd</h1>
+  <ul class="actions">
+    <li class="minibutton">
+      <div id="searchbar">
+        <form action="http://www.oolap.com/search" method="get" id="search-form">
+        <div id="searchbar-fauxtext">
+          <input type="text" name="q" id="search-query" value="Search…" autocomplete="off" class="ph">
+          <a href="http://www.oolap.com/running-systemd-in-container#" id="search-submit" title="Search this wiki">
+            <span>Search</span>
+          </a>
+        </div>
+        </form>
+      </div>    </li>
+    <li class="minibutton"><a href="http://www.oolap.com/" class="action-home-page">Home</a></li>
+    <li class="minibutton"><a href="http://www.oolap.com/pages" class="action-all-pages">All</a></li>
+    <li class="minibutton"><a href="http://www.oolap.com/fileview" class="action-fileview">Files</a></li>
+    <li class="minibutton"><a href="http://www.oolap.com/history/running-systemd-in-container" class="action-page-history">History</a></li>
+    <li class="minibutton"><a href="http://www.oolap.com/latest_changes" class="action-page-history">Latest Changes</a></li>
+  </ul>
+</div>
+<div id="wiki-content">
+<div class="">
+  <div id="wiki-body" class="gollum-markdown-content">
+    <div class="markdown-body">
+      
+
+<p>本文测试环境：ubuntu 16.04 。</p>
+
+<h2><a class="anchor" id="普通容器直接运行-systemd-不能正常工作" href="http://www.oolap.com/running-systemd-in-container#%E6%99%AE%E9%80%9A%E5%AE%B9%E5%99%A8%E7%9B%B4%E6%8E%A5%E8%BF%90%E8%A1%8C-systemd-%E4%B8%8D%E8%83%BD%E6%AD%A3%E5%B8%B8%E5%B7%A5%E4%BD%9C"><i class="fa fa-link"></i></a>普通容器直接运行 systemd 不能正常工作</h2>
+
+<p>尝试直接在普通容器中运行 systemd，无输出显示，systemd 不能正常工作：</p>
+
+<pre class="highlight"><code>docker run --name <span class="nb">test</span> -ti --rm hanyong/ubuntu:16.04 /sbin/init</code></pre>
+
+<p>进入容器观察：</p>
+
+<pre class="highlight"><code><span class="c"># ll /sbin/init</span>
+lrwxrwxrwx 1 root root 20 Mar  8 17:51 /sbin/init -&gt; /lib/systemd/systemd
+
+<span class="c"># env</span>
+<span class="nv">HOSTNAME</span><span class="o">=</span>9dab51b984ad
+<span class="nv">TERM</span><span class="o">=</span>xterm
+<span class="nv">LS_COLORS</span><span class="o">=</span>......
+<span class="nv">PATH</span><span class="o">=</span>/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+<span class="nv">PWD</span><span class="o">=</span>/
+<span class="nv">SHLVL</span><span class="o">=</span>1
+<span class="nv">HOME</span><span class="o">=</span>/root
+<span class="nv">_</span><span class="o">=</span>/usr/bin/env
+
+root@9dab51b984ad:/
+<span class="c"># ps -ef f</span>
+UID        PID  PPID  C STIME TTY      STAT   TIME CMD
+root         7     0  0 09:16 ?        Ss     0:00 /bin/bash
+root        18     7  0 09:16 ?        R+     0:00  <span class="se">\_</span> ps -ef f
+root         1     0  0 09:15 ?        Ss     0:00 /sbin/init
+
+root@9dab51b984ad:/
+<span class="c"># systemctl status</span>
+Failed to connect to bus: No such file or directory</code></pre>
+
+<h2><a class="anchor" id="systemd-在容器中正常工作需要的条件" href="http://www.oolap.com/running-systemd-in-container#systemd-%E5%9C%A8%E5%AE%B9%E5%99%A8%E4%B8%AD%E6%AD%A3%E5%B8%B8%E5%B7%A5%E4%BD%9C%E9%9C%80%E8%A6%81%E7%9A%84%E6%9D%A1%E4%BB%B6"><i class="fa fa-link"></i></a>systemd 在容器中正常工作需要的条件</h2>
+
+<p>参考：<a href="https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container/">What is the scoop on running systemd in a container?</a> 。</p>
+
+<p>systemd 与 docker 两者都需要一些适配才能配合正常工作（新版本中已完成必要改造）。
+systemd 正常工作还需要如下条件：</p>
+
+<ul>
+<li>Systemd expects /run is mounted as a tmpfs.</li>
+<li>Systemd expects /sys/fs/cgroup filesystem is mounted.  It can work with it being mounted read/only.</li>
+<li>Systemd expects /sys/fs/cgroup/systemd be mounted read/write.</li>
+<li>Systemd does not exit on sigterm. Systemd defines that shutdown signal as SIGRTMIN+3, docker upstream should send this signal when user does a docker stop.</li>
+<li>Systemd wants to have a unique /etc/machine-id to identify the system.</li>
+<li>Journald expects to write content to memory or to the /var/log/journal if it exists.</li>
+</ul>
+
+<p>相关条件整理：</p>
+
+<ul>
+<li>除上述条件外还有一条，指定环境变量 <code>container=docker</code>，指示当前运行在 docker 容器内。</li>
+<li>文件系统。容器内查看可知，默认情况下 <code>/etc/machine-id</code> 内容为空，<code>/var/log/journal</code> 不存在，<code>/run</code> 未挂载 tmpfs 。
+<code>/etc/machine-id</code> 可暂忽略，tmpfs 创建容器时可指定挂载。建议 <code>/tmp</code> 也挂载为 tmpfs 。</li>
+<li>cgroup 文件系统（<code>/sys/fs/cgroup</code> 等），默认未挂载，可指定从宿主机挂载到容器内。更进一步，可将除 <code>/sys/fs/cgroup/systemd</code> 之外的目录挂载为只读以增强安全性。</li>
+<li>stop-signal，可在创建容器时指定。</li>
+</ul>
+
+<p>整理 docker 参数如下：</p>
+
+<pre class="highlight"><code>docker run --name <span class="nb">test</span> -ti --rm -e <span class="nv">container</span><span class="o">=</span>docker --tmpfs /run -v /sys/fs/cgroup:/sys/fs/cgroup:ro --stop-signal SIGRTMIN+3</code></pre>
+
+<h2><a class="anchor" id="测试设置容器运行-systemd" href="http://www.oolap.com/running-systemd-in-container#%E6%B5%8B%E8%AF%95%E8%AE%BE%E7%BD%AE%E5%AE%B9%E5%99%A8%E8%BF%90%E8%A1%8C-systemd"><i class="fa fa-link"></i></a>测试设置容器运行 systemd</h2>
+
+<p>进行相关设置后再次运行容器，发现还是没有输出，systemd 未正常工作：</p>
+
+<pre class="highlight"><code>docker run --name <span class="nb">test</span> -ti --rm -e <span class="nv">container</span><span class="o">=</span>docker --tmpfs /run -v /sys/fs/cgroup:/sys/fs/cgroup:ro --stop-signal SIGRTMIN+3 hanyong/ubuntu:16.04 /sbin/init</code></pre>
+
+<p>进入容器查看：</p>
+
+<pre class="highlight"><code>root@01802d3fa9a9:/
+<span class="c"># ps -ef f</span>
+UID        PID  PPID  C STIME TTY      STAT   TIME CMD
+root         7     0  0 10:08 ?        Ss     0:00 /bin/bash
+root        24     7  0 10:09 ?        R+     0:00  <span class="se">\_</span> ps -ef f
+root         1     0  0 10:07 ?        Ss     0:00 /sbin/init
+
+root@01802d3fa9a9:/
+<span class="c"># findmnt /sys/fs/cgroup/ -R</span>
+TARGET                            SOURCE FSTYPE OPTIONS
+/sys/fs/cgroup                    tmpfs  tmpfs  ro,mode<span class="o">=</span>755
+|-/sys/fs/cgroup/systemd          cgroup cgroup rw,nosuid,nodev,noexec,relatime,xattr,release_agent<span class="o">=</span>/lib/systemd/systemd-cgroups-agent,n
+|-/sys/fs/cgroup/perf_event       cgroup cgroup rw,nosuid,nodev,noexec,relatime,perf_event,release_agent<span class="o">=</span>/run/cgmanager/agents/cgm-relea
+|-/sys/fs/cgroup/blkio            cgroup cgroup rw,nosuid,nodev,noexec,relatime,blkio
+|-/sys/fs/cgroup/cpu,cpuacct      cgroup cgroup rw,nosuid,nodev,noexec,relatime,cpu,cpuacct
+|-/sys/fs/cgroup/pids             cgroup cgroup rw,nosuid,nodev,noexec,relatime,pids,release_agent<span class="o">=</span>/run/cgmanager/agents/cgm-release-age
+|-/sys/fs/cgroup/net_cls,net_prio cgroup cgroup rw,nosuid,nodev,noexec,relatime,net_cls,net_prio
+|-/sys/fs/cgroup/hugetlb          cgroup cgroup rw,nosuid,nodev,noexec,relatime,hugetlb,release_agent<span class="o">=</span>/run/cgmanager/agents/cgm-release-
+|-/sys/fs/cgroup/cpuset           cgroup cgroup rw,nosuid,nodev,noexec,relatime,cpuset,clone_children
+|-/sys/fs/cgroup/freezer          cgroup cgroup rw,nosuid,nodev,noexec,relatime,freezer
+|-/sys/fs/cgroup/devices          cgroup cgroup rw,nosuid,nodev,noexec,relatime,devices
+<span class="sb">`</span>-/sys/fs/cgroup/memory           cgroup cgroup rw,nosuid,nodev,noexec,relatime,memory
+
+root@01802d3fa9a9:/
+<span class="c"># systemctl status</span>
+Failed to connect to bus: No such file or directory</code></pre>
+
+<p>是否因为容器内 systemd 版本较低（未经改造）？查看 ubuntu 16.04 容器内 systemd 版本：</p>
+
+<pre class="highlight"><code># systemd --version
+systemd 229
++PAM +AUDIT +SELINUX +IMA +APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ -LZ4 +SECCOMP +BLKID +ELFUTILS +KMOD -IDN</code></pre>
+
+<p>使用特权模式，不必指定挂载 cgroup 文件系统，容器内 systemd 启动很慢但可以启动成功。</p>
+
+<pre class="highlight"><code>docker run --name <span class="nb">test</span> -ti --rm -e <span class="nv">container</span><span class="o">=</span>docker --tmpfs /run --stop-signal SIGRTMIN+3 --privileged hanyong/ubuntu:16.04 /sbin/init</code></pre>
+
+<p>进入容器查看，可看到自动挂载了 cgroup 文件系统，同时启动了 getty 等容器内无用的服务，自动设置了 <code>/etc/machine-id</code>，貌似与虚拟机上启动的方式一样？</p>
+
+<pre class="highlight"><code>root@6a6f771ae4da:/
+# ps -ef f
+UID        PID  PPID  C STIME TTY      STAT   TIME CMD
+root        19     0  0 10:11 ?        Ss     0:00 /bin/bash
+root       435    19  0 11:27 ?        R+     0:00  \_ ps -ef f
+root         1     0  0 10:11 ?        Ds     0:01 /sbin/init
+root        32     1  0 10:11 ?        Ss     0:00 /lib/systemd/systemd-journald
+root        87     1  0 10:12 tty5     Ss+    0:00 /sbin/agetty --noclear tty5 linux
+root        89     1  0 10:12 tty2     Ss+    0:00 /sbin/agetty --noclear tty2 linux
+root        92     1  0 10:12 tty3     Ss+    0:00 /sbin/agetty --noclear tty3 linux
+root        95     1  0 10:12 tty4     Ss+    0:00 /sbin/agetty --noclear tty4 linux
+root        97     1  0 10:12 tty6     Ss+    0:00 /sbin/agetty --noclear tty6 linux
+root       434     1  0 11:27 ?        Rs     0:00 (agetty)
+
+root@6a6f771ae4da:/
+# findmnt /sys/fs/cgroup/ -R
+TARGET                            SOURCE                                                                           FSTYPE OPTIONS
+/sys/fs/cgroup                    tmpfs                                                                            tmpfs  ro,nosuid,node
+|-/sys/fs/cgroup/systemd          cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+|-/sys/fs/cgroup/perf_event       cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+|-/sys/fs/cgroup/blkio            cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+|-/sys/fs/cgroup/cpu,cpuacct      cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+|-/sys/fs/cgroup/pids             cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+|-/sys/fs/cgroup/net_cls,net_prio cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+|-/sys/fs/cgroup/hugetlb          cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+|-/sys/fs/cgroup/cpuset           cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+|-/sys/fs/cgroup/freezer          cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+|-/sys/fs/cgroup/devices          cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+`-/sys/fs/cgroup/memory           cgroup[/docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840] cgroup rw,nosuid,node
+
+root@6a6f771ae4da:/
+# systemctl status
+● 6a6f771ae4da
+    State: running
+     Jobs: 0 queued
+   Failed: 0 units
+    Since: Tue 2018-06-26 10:11:43 UTC; 1h 16min ago
+   CGroup: /docker/6a6f771ae4da447c4d69e5b30cb46e0df21824cb0ac23f0f01c2a4be6cb8d840
+           ├─init.scope
+           │ └─1 /sbin/init
+           └─system.slice
+             ├─systemd-journald.service
+             │ └─32 /lib/systemd/systemd-journald
+             ├─system-getty.slice
+             │ ├─getty@tty4.service
+             │ │ └─95 /sbin/agetty --noclear tty4 linux
+             │ ├─getty@tty6.service
+             │ │ └─97 /sbin/agetty --noclear tty6 linux
+             │ ├─getty@tty3.service
+             │ │ └─92 /sbin/agetty --noclear tty3 linux
+             │ ├─getty@tty5.service
+             │ │ └─87 /sbin/agetty --noclear tty5 linux
+             │ └─getty@tty2.service
+             │   └─89 /sbin/agetty --noclear tty2 linux
+             └─console-getty.service
+               └─439 (agetty)  
+
+root@6a6f771ae4da:/
+# cat /etc/machine-id 
+5bc4776a7dca4c9fb776baa55c903101</code></pre>
+
+<p>测试直接运行 <code>fedora:24</code>：</p>
+
+<pre class="highlight"><code>docker run --name <span class="nb">test</span> -ti --rm fedora:24 /sbin/init</code></pre>
+
+<p>查看 systemd 版本，与 ubuntu 16.04 一样，特性标识也完全相同：</p>
+
+<pre class="highlight"><code>[root@2e50623efb6d /]# /lib/systemd/systemd --version
+systemd 229
++PAM +AUDIT +SELINUX +IMA -APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ +LZ4 +SECCOMP +BLKID +ELFUTILS +KMOD +IDN</code></pre>
+
+<p>查看容器状态：</p>
+
+<pre class="highlight"><code>[root@2e50623efb6d /]# findmnt /sys/fs/cgroup -R
+TARGET                            SOURCE                                                                           FSTYPE OPTIONS
+/sys/fs/cgroup                    tmpfs                                                                            tmpfs  ro,nosuid,node
+|-/sys/fs/cgroup/systemd          cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+|-/sys/fs/cgroup/perf_event       cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+|-/sys/fs/cgroup/blkio            cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+|-/sys/fs/cgroup/cpu,cpuacct      cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+|-/sys/fs/cgroup/pids             cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+|-/sys/fs/cgroup/net_cls,net_prio cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+|-/sys/fs/cgroup/hugetlb          cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+|-/sys/fs/cgroup/cpuset           cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+|-/sys/fs/cgroup/freezer          cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+|-/sys/fs/cgroup/devices          cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+`-/sys/fs/cgroup/memory           cgroup[/docker/2e50623efb6d7f4e9a46605f7f497745702bb6b379620711d3ee3e4ead7af314] cgroup ro,nosuid,node
+
+[root@2e50623efb6d /]# findmnt /run
+
+[root@2e50623efb6d /]# systemctl status
+Failed to connect to bus: No such file or directory
+
+[root@2e50623efb6d /]# cat /etc/machine-id 
+cat: /etc/machine-id: No such file or directory</code></pre>
+
+<p>测试进行相关设置后运行 <code>fedora:24</code>，systemd 未正常工作，同时输出报错信息：</p>
+
+<pre class="highlight"><code>$ docker run --name test -ti --rm -e container=docker --tmpfs /run -v /sys/fs/cgroup:/sys/fs/cgroup:ro --stop-signal SIGRTMIN+3 fedora:24 /sbin/init
+Failed to determine whether /sys is a mount point: Operation not permitted
+Failed to determine whether /proc is a mount point: Operation not permitted
+Failed to determine whether /dev is a mount point: Operation not permitted
+Failed to determine whether /dev/shm is a mount point: Operation not permitted
+Failed to determine whether /run is a mount point: Operation not permitted
+Failed to determine whether /sys/fs/cgroup is a mount point: Operation not permitted
+Failed to determine whether /sys/fs/cgroup/systemd is a mount point: Operation not permitted
+[!!!!!!] Failed to mount API filesystems, freezing.
+Freezing execution.</code></pre>
+
+<p>与参考文章中正常工作的 systemd 对比，版本号同为 229，特性标识存在以下差异（但貌似并不是问题的原因？）：</p>
+
+<pre class="highlight"><code>+APPARMOR -LZ4 -IDN</code></pre>
+
+<p>搜索找到另一段启动 systemd 的配置，见：<a href="https://github.com/maci0/docker-systemd-unpriv/blob/master/Dockerfile">https://github.com/maci0/docker-systemd-unpriv/blob/master/Dockerfile</a> 。</p>
+
+    </div>
+  </div>
+  </div>
+
+</div>
+<div id="footer">
+  <p id="last-edit">Last edited by <b>hanyong</b>, 2018-06-28 20:30:00</p>
+</div>
+</div>
+
+<form name="rename" method="POST" action="http://www.oolap.com/rename/running-systemd-in-container">
+  <input type="hidden" name="rename">
+  <input type="hidden" name="message">
+</form>
+
+
+
+
+</body></html>
